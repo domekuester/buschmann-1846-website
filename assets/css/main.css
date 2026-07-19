@@ -238,7 +238,10 @@ main, footer { padding-left: var(--spine-w); }
    ========================================================================== */
 .hero {
   background: var(--navy-brand); color: var(--on-dark);
-  padding: clamp(2rem, 4vh, 3.4rem) 0 clamp(2.4rem, 5vh, 4rem) var(--pad);
+  /* Links auf dieselbe Achse wie alle .inner-Sektionen, rechts randlos —
+     dadurch teilt der Hero die Seitenachse, ohne das Bild zu beschneiden. */
+  padding: clamp(2rem, 4vh, 3.4rem) 0 clamp(2.4rem, 5vh, 4rem)
+           max(var(--pad), calc((100% - var(--container)) / 2));
   display: grid; grid-template-columns: minmax(15rem, 23rem) 1fr;
   gap: clamp(1.5rem, 3vw, 4rem); align-items: center;
 }
@@ -360,7 +363,8 @@ figure { margin: 0; }
    5 · EINORDNUNG
    ========================================================================== */
 .intro { background: var(--porcelain); padding-block: clamp(4rem, 9vh, 7rem); }
-.intro .inner { max-width: 62rem; }
+/* Kein eigener Maßrahmen — die Zeilenlänge begrenzen h2 und .lede selbst,
+   damit der Absatz auf derselben Achse sitzt wie alle anderen Sektionen. */
 .intro h2 {
   font-family: var(--sans); font-size: var(--t-intro);
   font-weight: 400; line-height: 1.45; letter-spacing: -.02em;
@@ -389,7 +393,8 @@ figure { margin: 0; }
    7 · CHRONOLOGIE — Serif-Jahre mit Champagner-Zeitmarken
    ========================================================================== */
 .chrono { background: var(--navy-night); }
-.chrono ol { list-style: none; max-width: 62rem; margin: 3rem auto 0; }
+/* Linksbündig auf dieselbe Achse wie die Überschrift, nicht zentriert. */
+.chrono ol { list-style: none; max-width: 62rem; margin: 3rem 0 0; }
 .chrono li {
   display: grid; grid-template-columns: 12rem 1fr; gap: 2.2rem;
   align-items: baseline; padding: 1.25rem 0;
