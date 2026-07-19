@@ -10,7 +10,10 @@
 - [ ] Logo in höherer Auflösung beschaffen (aktuell nur 374 px PNG)
 - [ ] Kontaktweg für Catering-Anfragen festlegen (Telefon? E-Mail? Instagram-DM?)
       — bis dahin verweist die Website nur auf Instagram/Facebook
-- [ ] Impressum + Datenschutzerklärung (rechtlich nötig, Inhalte fehlen)
+- [ ] Impressum + Datenschutzerklärung (rechtlich nötig, Inhalte fehlen).
+      Bewusst NICHT im Footer verlinkt, solange die Seiten nicht existieren —
+      ein toter Link wäre schlechter als kein Link. Beim Anlegen zusätzlich
+      im Footer verlinken. Rechtstexte nicht erfinden lassen.
 - [ ] GitHub Pages aktivieren (erst nach Freigabe, nach Merge-Entscheidung)
 - [ ] Nach Pages-Aktivierung: og:image-URL in index.html prüfen — sie ist auf
       https://domekuester.github.io/buschmann-1846-website/ vorausgesetzt;
