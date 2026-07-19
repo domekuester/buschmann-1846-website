@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+.env
+.env.*
+*.log
+backup/
+tmp/
+.temp/
+.cache/
+playwright-report/
+test-results/
