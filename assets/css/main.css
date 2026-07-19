@@ -170,7 +170,7 @@ main, footer { padding-left: var(--spine-w); }
 }
 
 /* ---------- Hero ---------- */
-.hero { position: relative; }
+.hero { position: relative; padding: 0; }
 .hero img {
   width: 100%; height: min(78vh, 820px); min-height: 560px;
   object-fit: cover; object-position: center 62%;
