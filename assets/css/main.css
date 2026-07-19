@@ -207,7 +207,7 @@ main, footer { padding-left: var(--spine-w); }
 /* ---------- Hero ---------- */
 .hero { position: relative; padding: 0; background: var(--paper); }
 .hero picture img {
-  width: 100%; height: min(82vh, 860px); min-height: 580px;
+  width: 100%; height: min(73vh, 780px); min-height: 560px;
   object-fit: cover; object-position: center 60%;
 }
 .hero-panel {
@@ -215,7 +215,7 @@ main, footer { padding-left: var(--spine-w); }
   background: var(--navy-brand); color: var(--ivory);
   border-top: 1px solid var(--champagne);
   max-width: 700px;
-  margin: -13rem 0 0 max(var(--pad), calc((100% - var(--container)) / 2));
+  margin: -9.5rem 0 0 max(var(--pad), calc((100% - var(--container)) / 2));
   padding: clamp(2.2rem, 3.5vw, 3.2rem) clamp(2rem, 3.5vw, 3.4rem) clamp(2rem, 3vw, 2.8rem);
 }
 h1 {
@@ -350,10 +350,10 @@ blockquote cite {
 .g-almonds { grid-column: 5 / 8;  grid-row: 1; margin-top: 96px; }
 .g-team    { grid-column: 8 / 13; grid-row: 1; margin-top: 28px; }
 .g-piping  { grid-column: 5 / 8;  grid-row: 2; margin-top: 1rem; }
-.g-outside { grid-column: 9 / 12; grid-row: 2; margin-top: 4.5rem; }
+.g-outside { grid-column: 8 / 11; grid-row: 2; margin-top: 4.5rem; }
 .g-note {
-  grid-column: 8 / 13; grid-row: 2; align-self: end;
-  justify-self: start; max-width: 15ch;
+  grid-column: 11 / 13; grid-row: 2; align-self: center;
+  justify-self: start; max-width: 14ch; margin-top: 4.5rem;
   font-family: var(--serif); font-style: italic;
   font-size: var(--t-sub); font-weight: 380; line-height: 1.4;
   color: var(--text-secondary); padding-bottom: .5rem;
@@ -405,7 +405,7 @@ blockquote cite {
   content: ""; position: absolute; inset: 0;
   border: 1px solid var(--line-on-dark); pointer-events: none;
 }
-.sam-claudia img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; object-position: 30% center; }
+.sam-claudia img { width: 100%; aspect-ratio: 17 / 25; object-fit: cover; object-position: 46% center; }
 .sam-side { grid-area: side; max-width: 62%; margin-top: 2.2rem; }
 .sam-facts {
   margin: 2rem 0 0; padding: 1.5rem 0;
