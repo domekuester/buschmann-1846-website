@@ -1,0 +1,209 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]: Samstags 12–17 Uhr · Akademiestrasse 8 · Düsseldorf
+    - banner [ref=e4]:
+      - navigation "Hauptnavigation links" [ref=e5]:
+        - link "Geschichte" [ref=e6] [cursor=pointer]:
+          - /url: "#geschichte"
+        - link "Pâtisserie" [ref=e7] [cursor=pointer]:
+          - /url: "#patisserie"
+      - link "Buschmann 1846 – zur Startseite" [ref=e8] [cursor=pointer]:
+        - /url: "#"
+        - img "Buschmann 1846 – Pâtisserie Catering" [ref=e9]
+      - navigation "Hauptnavigation rechts" [ref=e10]:
+        - link "Catering" [ref=e11] [cursor=pointer]:
+          - /url: "#catering"
+        - link "Samstag" [ref=e12] [cursor=pointer]:
+          - /url: "#samstag"
+        - link "Standort" [ref=e13] [cursor=pointer]:
+          - /url: "#standort"
+  - generic [ref=e14]:
+    - button "Schliessen ✕" [ref=e15]
+    - navigation "Mobiles Menü" [ref=e16]:
+      - link "Geschichte" [ref=e17] [cursor=pointer]:
+        - /url: "#geschichte"
+      - link "Pâtisserie" [ref=e18] [cursor=pointer]:
+        - /url: "#patisserie"
+      - link "Catering" [ref=e19] [cursor=pointer]:
+        - /url: "#catering"
+      - link "Samstag" [ref=e20] [cursor=pointer]:
+        - /url: "#samstag"
+      - link "Standort" [ref=e21] [cursor=pointer]:
+        - /url: "#standort"
+    - generic [ref=e22]:
+      - text: Akademiestraße 8 · 40213 Düsseldorf
+      - link "Instagram von Buschmann 1846, öffnet in neuem Tab" [ref=e23] [cursor=pointer]:
+        - /url: https://www.instagram.com/buschmann1846/
+        - text: Instagram
+      - link "Facebook von Buschmann 1846, öffnet in neuem Tab" [ref=e24] [cursor=pointer]:
+        - /url: https://www.facebook.com/Buschmannduesseldorf
+        - text: Facebook
+  - main [ref=e27]:
+    - generic [ref=e28]:
+      - img "Historische Fassade mit dem Schriftzug Bäckerei von Aug. Buschmann an der Akademiestraße in Düsseldorf, davor Gäste unter Schirmen" [ref=e30]
+      - generic [ref=e31]:
+        - heading [level=1] [ref=e32]:
+          - text: Düsseldorfer
+          - emphasis [ref=e33]: Pâtisserie.
+          - text: Seit 1846.
+        - paragraph [ref=e34]: In der Akademiestraße wird unter der Woche für Gastronomie, Catering und besondere Anlässe gebacken. Samstags ist von 12 bis 17 Uhr die Tür für Kaffee und Kuchen offen.
+        - generic [ref=e35]:
+          - generic [ref=e36]: Akademiestrasse 8, Altstadt
+          - generic [ref=e37]: Samstags 12–17 Uhr
+          - generic [ref=e38]: Gegr. 1846
+    - generic [ref=e40]:
+      - paragraph [ref=e41]: Das Haus
+      - paragraph [ref=e42]: Buschmann 1846 ist eine Backstube in der Düsseldorfer Altstadt. Unter der Woche entstehen hier Kuchen, Torten und Pâtisserie für Cafés, Gastronomie, Unternehmen und private Anlässe. Ausgeliefert wird in Düsseldorf und Umgebung. Und einmal in der Woche, samstags, geht das Fenster zur Akademiestraße auf.
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - paragraph [ref=e46]: Geschichte
+        - heading "1846 fing alles in der Akademiestraße an." [level=2] [ref=e47]
+        - paragraph [ref=e48]: August Buschmann eröffnete hier seine Backstube — dieselben Räume, in denen heute wieder gebacken wird. Sechs Generationen haben den Betrieb durch zwei Weltkriege getragen, zeitweise mit rund 120 Beschäftigten und fünf Standorten in Düsseldorf.
+        - paragraph [ref=e49]: Gregor Buschmann, direkter Nachfahre des Gründers, wuchs in der Altstadt auf und holte sich als Schüler der Maxschule nach dem Unterricht häufig ein Teilchen aus der Backstube. Nach Jahren als Koch, Küchenchef, Sous-Chef und Pâtissier in Düsseldorf und der Schweiz steht er seit Januar 2021 wieder dort, wo 1846 alles anfing.
+      - figure "Die alte Anschlagmaschine, noch im Dienst" [ref=e50]:
+        - img "Historische cremefarbene Anschlagmaschine der Marke Rego mit Schneebesen und heller Masse im Kessel" [ref=e51]
+    - generic [ref=e54]:
+      - paragraph [ref=e55]: Chronologie
+      - list [ref=e56]:
+        - listitem [ref=e57]:
+          - generic [ref=e58]: "1846"
+          - paragraph [ref=e59]: August Buschmann gründet die Bäckerei und Backstube an der Akademiestraße.
+        - listitem [ref=e60]:
+          - generic [ref=e61]: "1950"
+          - paragraph [ref=e62]: Das Café an der Flinger Straße öffnet nach dem Krieg wieder.
+        - listitem [ref=e63]:
+          - generic [ref=e64]: 1970er
+          - paragraph [ref=e65]: Rund 120 Menschen arbeiten zeitweise für Buschmann.
+        - listitem [ref=e66]:
+          - generic [ref=e67]: 1980er
+          - paragraph [ref=e68]: Bis Mitte des Jahrzehnts gehören fünf Düsseldorfer Standorte zum Unternehmen.
+        - listitem [ref=e69]:
+          - generic [ref=e70]: "2021"
+          - paragraph [ref=e71]: Gregor Buschmann nimmt die Arbeit in der historischen Backstube wieder auf.
+        - listitem [ref=e72]:
+          - generic [ref=e73]: Heute
+          - paragraph [ref=e74]: Unter der Woche wird produziert und ausgeliefert. Samstags gibt es Kaffee und Kuchen.
+    - generic [ref=e76]:
+      - paragraph [ref=e77]: Pâtisserie
+      - heading "Kuchen, Torten, Pâtisserie." [level=2] [ref=e78]
+      - generic [ref=e79]:
+        - figure "Auf altem Porzellan" [ref=e80]:
+          - img "Tortenstück mit Karamelldecke auf grün-goldenem historischem Porzellanteller"
+        - generic [ref=e82]:
+          - paragraph [ref=e83]: "Gebacken wird, was eine Backstube mit über hundertsiebzig Jahren Übung eben backt: Käsekuchen mit Karamelldecke, Torten mit Kirschfüllung, Sahne aus dem Kupferkessel. Serviert wird samstags auf altem Porzellan — manches davon ist länger im Haus als die meisten Rezepte."
+          - blockquote [ref=e84]:
+            - text: „Esst mehr Sahnetorte!"
+            - generic [ref=e85]: Gregor Buschmann, im Porträt von THE DORF
+          - figure:
+            - img "Hand über glänzender Kirschfüllung in einem Tortenrahmen"
+    - generic [ref=e87]:
+      - generic [ref=e88]:
+        - paragraph [ref=e89]: Die Backstube
+        - heading "Angerührt, gegossen, gestrichen, gebacken." [level=2] [ref=e90]
+        - paragraph [ref=e91]: Hinter dem Fenster zur Akademiestraße wird unter der Woche produziert — mit Maschinen, die seit Jahrzehnten ihren Dienst tun, und Handgriffen, die man keiner Maschine überlässt.
+        - figure:
+          - img "Hände streichen Teig mit einer Winkelpalette in eine Backform"
+      - figure [ref=e92]:
+        - img "Bäcker gießt helle Masse aus einem Kessel in eine Kupferschüssel"
+    - generic [ref=e94]:
+      - paragraph [ref=e95]: Aus der Akademiestraße
+      - generic [ref=e96]:
+        - generic [ref=e97]:
+          - figure "Kupferkessel, seit Jahrzehnten" [ref=e98]:
+            - img "Großer Schneebesen in einem Kupferkessel mit geschlagener heller Masse"
+          - figure "Samstags am Fenster" [ref=e100]:
+            - img "Zwei lächelnde Frauen hinter dem Verkaufsfenster"
+        - generic [ref=e102]:
+          - figure "Mandeln für die Kante" [ref=e103]:
+            - img "Mandelblättchen in Nahaufnahme" [ref=e104]
+          - figure:
+            - img "Bäcker füllt einen Spritzbeutel mit heller Masse"
+        - generic [ref=e106]:
+          - figure:
+            - img "Frau bestellt am Verkaufsfenster, daneben eine Kreidetafel mit Kaffeekarte"
+          - paragraph [ref=e107]: "Sechs Bilder, eine Woche: Ort, Handwerk, Menschen, Samstag."
+    - generic [ref=e109]:
+      - generic [ref=e110]:
+        - generic [ref=e111]:
+          - paragraph [ref=e112]: Catering
+          - heading "Für Cafés, Unternehmen und private Anlässe." [level=2] [ref=e113]
+        - figure [ref=e114]:
+          - img "Butter auf dunklen Schokoladenstücken in einem Edelstahlkessel" [ref=e115]
+      - generic [ref=e116]:
+        - generic [ref=e117]:
+          - heading "Gastronomie und Cafés" [level=3] [ref=e118]
+          - paragraph [ref=e119]: Kuchen, Torten und Pâtisserie für Betriebe, die nicht alles selbst backen können oder wollen — unter der Woche gebacken und ausgeliefert.
+        - generic [ref=e120]:
+          - heading "Unternehmen" [level=3] [ref=e121]
+          - paragraph [ref=e122]: Für Besprechungen, Empfänge und Feste. Bestellt wird nach Absprache, geliefert wird pünktlich.
+        - generic [ref=e123]:
+          - heading "Private Anlässe" [level=3] [ref=e124]
+          - paragraph [ref=e125]: Für Geburtstage und Feiern — nach Absprache und passend zum Anlass.
+      - paragraph [ref=e126]: Anfragen über Instagram oder Facebook
+    - generic [ref=e129]:
+      - generic [ref=e130]:
+        - paragraph [ref=e131]: Das Samstagsfenster
+        - heading "Samstags ist die Tür offen." [level=2] [ref=e132]
+        - paragraph [ref=e133]: Unter der Woche wird in der Backstube produziert. Am Samstag gibt es von 12 bis 17 Uhr Kaffee und Kuchen — und meistens noch ein kurzes Gespräch über die Theke.
+        - generic [ref=e134]:
+          - text: Samstag · 12–17 Uhr
+          - generic [ref=e135]: Akademiestrasse 8, Altstadt
+        - figure "Kaffee über die Theke" [ref=e136]:
+          - img "Espressomaschine mit Tassen, dahinter eine Person bei der Kaffeezubereitung"
+      - figure [ref=e138]:
+        - img "Mitarbeiterin lacht hinter dem geöffneten Verkaufsfenster, davor ein Gast" [ref=e139]
+    - generic [ref=e141]:
+      - generic [ref=e142]:
+        - paragraph [ref=e143]: Standort
+        - heading "Akademiestraße 8." [level=2] [ref=e144]
+      - generic [ref=e145]:
+        - generic [ref=e146]:
+          - strong [ref=e147]: Buschmann 1846
+          - text: "Akademiestraße 8 40213 Düsseldorf Samstags 12–17 Uhr — Kaffee und Kuchen. Unter der Woche: Produktion, Auslieferung und Catering."
+        - generic [ref=e148]:
+          - link "Instagram von Buschmann 1846, öffnet in neuem Tab" [ref=e149] [cursor=pointer]:
+            - /url: https://www.instagram.com/buschmann1846/
+            - text: Instagram — @buschmann1846
+          - link "Facebook von Buschmann 1846, öffnet in neuem Tab" [ref=e150] [cursor=pointer]:
+            - /url: https://www.facebook.com/Buschmannduesseldorf
+            - text: Facebook — Buschmann Düsseldorf
+  - contentinfo [ref=e151]:
+    - generic [ref=e153]:
+      - paragraph [ref=e154]: Seit 1846 an der Akademiestraße.
+      - generic [ref=e155]:
+        - img "Buschmann 1846 – Pâtisserie Catering" [ref=e156]
+        - generic [ref=e157]:
+          - heading "Besuch" [level=4] [ref=e158]
+          - list [ref=e159]:
+            - listitem [ref=e160]: Akademiestraße 8
+            - listitem [ref=e161]: 40213 Düsseldorf
+            - listitem [ref=e162]: Samstags 12–17 Uhr
+        - generic [ref=e163]:
+          - heading "Seite" [level=4] [ref=e164]
+          - list [ref=e165]:
+            - listitem [ref=e166]:
+              - link "Geschichte" [ref=e167] [cursor=pointer]:
+                - /url: "#geschichte"
+            - listitem [ref=e168]:
+              - link "Pâtisserie" [ref=e169] [cursor=pointer]:
+                - /url: "#patisserie"
+            - listitem [ref=e170]:
+              - link "Catering" [ref=e171] [cursor=pointer]:
+                - /url: "#catering"
+            - listitem [ref=e172]:
+              - link "Samstag" [ref=e173] [cursor=pointer]:
+                - /url: "#samstag"
+        - generic [ref=e174]:
+          - heading "Folgen" [level=4] [ref=e175]
+          - list [ref=e176]:
+            - listitem [ref=e177]:
+              - link "Instagram von Buschmann 1846, öffnet in neuem Tab" [ref=e178] [cursor=pointer]:
+                - /url: https://www.instagram.com/buschmann1846/
+                - text: Instagram
+            - listitem [ref=e179]:
+              - link "Facebook von Buschmann 1846, öffnet in neuem Tab" [ref=e180] [cursor=pointer]:
+                - /url: https://www.facebook.com/Buschmannduesseldorf
+                - text: Facebook
+    - generic [ref=e181]:
+      - generic [ref=e182]: Buschmann 1846 · Pâtisserie & Catering · Düsseldorf
+      - generic [ref=e183]: Seit 1846
