@@ -1,4 +1,4 @@
-/* Buschmann 1846 — Menü, Bild-Reveal, Wirbelsäulen-Punkt */
+/* Buschmann 1846 — Mobiles Menü und einmaliges Bild-Reveal */
 (function () {
   'use strict';
 
@@ -55,22 +55,5 @@
       });
     }, { threshold: 0.12 });
     reveals.forEach(function (el) { io.observe(el); });
-  }
-
-  /* ---------- Wirbelsäulen-Punkt ---------- */
-  var dot = document.getElementById('spinedot');
-  var sections = Array.prototype.slice.call(
-    document.querySelectorAll('[data-spine]')
-  );
-  if (dot && sections.length && 'IntersectionObserver' in window) {
-    var so = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (entry.isIntersecting) {
-          var i = sections.indexOf(entry.target);
-          dot.style.top = (8 + (i / (sections.length - 1)) * 84) + '%';
-        }
-      });
-    }, { rootMargin: '-40% 0px -50% 0px' });
-    sections.forEach(function (s) { so.observe(s); });
   }
 })();

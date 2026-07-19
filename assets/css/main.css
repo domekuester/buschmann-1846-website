@@ -1,8 +1,16 @@
 /* ==========================================================================
-   Buschmann 1846 — Flagship Stylesheet v2 (Brand Polish)
-   Leitidee: Das gesamte System ist aus dem Navy-Logo entwickelt.
-   Navy = Markenarchitektur · Elfenbein/Porzellan = Gegenpol ·
-   Champagner = präziser Akzent, nie Fläche.
+   Buschmann 1846 — Flagship Stylesheet v3 (Vertikale Neukomposition)
+
+   Leitidee: Die Seite ist die digitale Welt des Logos, nicht eine helle
+   Seite mit einem Logo darauf. Das Original-Signet ist eine navyfarbene
+   Scheibe mit hellen Linien — auf Navy löst sich die Scheibe in der Fläche
+   auf und nur die Linienzeichnung bleibt. Daraus folgt alles:
+
+   Navy/Markenblau = Architektur · Porzellan/Elfenbein = Atempausen ·
+   Champagner = sichtbares Liniensystem · Fotos = vertikale Fenster.
+
+   Schriftrollen: Instrument Sans trägt die Struktur (~70 %),
+   Newsreader ist die gezielte historische Stimme (~30 %).
    ========================================================================== */
 
 /* ---------- Schriften (lokal, variabel, OFL) ---------- */
@@ -40,60 +48,64 @@
   /* Navy-Architektur */
   --navy-night:  #061729;
   --navy-brand:  #0A2139;
-  --navy-raised: #102B47;
-  --navy-strong: #123A5C;
-  --blue-deep:   #082640;
+  --blue-brand:  #123F66;   /* kräftiges Markenblau — echte Fläche */
+  --blue-deep:   #0B2D4A;
 
   /* Heller Gegenpol */
-  --ivory:     #F3EDDF;
-  --paper:     #F7F2E8;
   --porcelain: #FCF9F3;
+  --ivory:     #F3EDDF;
 
   /* Wärme */
-  --choc-deep: #21120D;
+  --choc: #21120D;
 
-  /* Akzent */
-  --champagne:        #C59A52;
-  --champagne-bright: #D7BC86;
+  /* Champagner — sichtbares Liniensystem */
+  --champagne:       #C59A52;
+  --champagne-light: #DDBF83;
+  --champagne-dark:  #9A6E30;
+  /* Textvariante: --champagne-dark erreicht als 11-px-Versalie auf Porzellan
+     nur 4.3:1 und auf Elfenbein 3.9:1. Diese Abtönung liegt bei 5.6 bzw.
+     5.0:1 und bleibt tonal im Champagnerbereich. */
+  --champagne-ink:   #855D26;
 
   /* Text */
   --text-dark:      #101923;
   --text-warm:      #3F3932;
   --text-secondary: #746D64;
-  --text-on-dark:   #F3EDDF;
-  --body-on-dark:   rgba(243, 237, 223, .84);
-  --dim-on-dark:    rgba(243, 237, 223, .62);
+  --on-dark:        #F3EDDF;
+  --body-on-dark:   rgba(243, 237, 223, .82);
+  --dim-on-dark:    rgba(243, 237, 223, .58);
 
   --serif: 'Newsreader', Georgia, serif;
   --sans: 'Instrument Sans', system-ui, sans-serif;
 
-  /* Typografische Rollen */
-  --t-hero:    clamp(2.7rem, 5.2vw, 4.6rem);   /* Hero Display */
-  --t-display: clamp(2.1rem, 3.6vw, 3.1rem);   /* Section Display */
-  --t-sub:     clamp(1.3rem, 1.8vw, 1.55rem);  /* Editorial Subheading */
-  --t-year:    clamp(2rem, 3.2vw, 2.9rem);     /* Timeline Year */
-  --t-intro:   clamp(1.35rem, 2.1vw, 1.8rem);  /* Intro (Serif) */
-  --t-body-lg: 1.125rem;
-  --t-body:    1.0625rem;
-  --t-label:   .72rem;                          /* UI Label / Kicker */
-  --t-nav:     .8rem;
-  --t-caption: .75rem;
-  --t-claim:   clamp(1.7rem, 2.6vw, 2.5rem);   /* Footer Claim */
+  /* Typografische Rollen — Sans führt, Serif akzentuiert */
+  --t-hero:      clamp(2.5rem, 4.4vw, 3.9rem);   /* Hero Sans Display */
+  --t-hero-ser:  clamp(2.4rem, 4.2vw, 3.7rem);   /* Hero Serif-Akzent */
+  --t-display:   clamp(1.85rem, 3vw, 2.75rem);   /* Section Sans Display */
+  --t-serif-dsp: clamp(1.9rem, 3.1vw, 2.8rem);   /* Editorial Serif Display */
+  --t-sub:       clamp(1.2rem, 1.7vw, 1.45rem);  /* Subheading */
+  --t-year:      clamp(1.8rem, 2.8vw, 2.5rem);   /* Timeline Year (Serif) */
+  --t-intro:     clamp(1.2rem, 1.9vw, 1.55rem);
+  --t-body-lg:   1.1rem;
+  --t-body:      1.0625rem;
+  --t-label:     .7rem;                           /* UI Label / Kicker */
+  --t-nav:       .78rem;
+  --t-claim:     clamp(1.6rem, 2.5vw, 2.3rem);
 
-  --container: 1200px;
+  --container: 1240px;
   --wide: 1400px;
   --pad: clamp(1.25rem, 4vw, 3rem);
   --spine-w: 12px;
-  --header-h: 102px;
-  --section-pad: clamp(5rem, 11vh, 8.5rem);
+  --head-h: 116px;
+  --section-pad: clamp(4.5rem, 10vh, 8rem);
 
-  --line-on-light: rgba(197, 154, 82, .5);
-  --line-on-dark: rgba(215, 188, 134, .32);
-  --frame-on-light: rgba(16, 25, 35, .1);
-  --frame-on-dark: rgba(215, 188, 134, .38);
+  /* Champagner-Linien in drei Stärken */
+  --rule-light: rgba(197, 154, 82, .45);
+  --rule-dark:  rgba(221, 191, 131, .30);
+  --rule-hair:  rgba(221, 191, 131, .18);
 }
 @media (max-width: 1023px) {
-  :root { --spine-w: 8px; --header-h: 90px; --section-pad: 4rem; }
+  :root { --spine-w: 8px; --head-h: 88px; --section-pad: 4rem; }
 }
 
 /* ---------- Basis ---------- */
@@ -102,7 +114,7 @@ html { scroll-behavior: smooth; }
 body {
   font-family: var(--sans);
   color: var(--text-warm);
-  background: var(--paper);
+  background: var(--porcelain);
   font-size: var(--t-body);
   line-height: 1.68;
   font-optical-sizing: auto;
@@ -114,11 +126,11 @@ a:focus-visible, button:focus-visible {
   outline: 2px solid var(--champagne);
   outline-offset: 3px;
 }
-section[id] { scroll-margin-top: calc(var(--header-h) + 12px); }
+section[id] { scroll-margin-top: calc(var(--head-h) + 12px); }
 
 .skip-link {
   position: absolute; left: -9999px; top: 0; z-index: 200;
-  background: var(--navy-brand); color: var(--ivory);
+  background: var(--navy-brand); color: var(--on-dark);
   padding: .8rem 1.4rem; font-size: .9rem; text-decoration: none;
 }
 .skip-link:focus { left: 0; }
@@ -126,54 +138,71 @@ section[id] { scroll-margin-top: calc(var(--header-h) + 12px); }
 .inner { max-width: var(--container); margin-inline: auto; }
 .inner-wide { max-width: var(--wide); margin-inline: auto; }
 
-/* ---------- Wirbelsäule ---------- */
+/* ---------- Markenwirbelsäule ---------- */
 .spine {
-  position: fixed; left: 0; top: var(--header-h); bottom: 0;
+  position: fixed; left: 0; top: var(--head-h); bottom: 0;
   width: var(--spine-w); background: var(--navy-brand); z-index: 40;
-  border-right: 1px solid rgba(215, 188, 134, .45);
-}
-.spine-dot {
-  position: absolute; left: 50%; transform: translateX(-50%);
-  top: 10%; width: 6px; height: 6px; border-radius: 50%;
-  background: var(--champagne-bright);
-  transition: top .3s ease;
+  border-right: 1px solid var(--rule-dark);
 }
 main, footer { padding-left: var(--spine-w); }
 
-/* ---------- Infozeile + Header ---------- */
-.sticky-head { position: sticky; top: 0; z-index: 50; }
+/* ==========================================================================
+   1 · MARKENKOPF — durchgehend Navy, Logo sitzt in der Fläche
+   ========================================================================== */
+.brandhead { position: sticky; top: 0; z-index: 50; background: var(--navy-brand); }
+
 .infobar {
-  background: var(--navy-night); color: var(--champagne-bright);
-  font-size: .68rem; font-weight: 500;
-  letter-spacing: .22em; text-transform: uppercase;
-  text-align: center; padding: .6rem var(--pad);
+  background: var(--navy-night); color: var(--champagne-light);
+  font-size: .66rem; font-weight: 500;
+  letter-spacing: .24em; text-transform: uppercase;
+  text-align: center; padding: .55rem var(--pad);
   white-space: nowrap; overflow: hidden;
 }
-.infobar .mobile-only { display: none; }
+.infobar .m-only { display: none; }
 
 .site-head {
-  height: 72px; background: var(--paper);
+  height: 84px;
   display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
   padding: 0 var(--pad); position: relative;
-  border-bottom: 1px solid var(--line-on-light);
+  border-bottom: 1px solid var(--rule-hair);
 }
-.site-nav { display: flex; gap: 2.4rem; padding: 0 2.6rem; }
-.site-nav.left { justify-self: end; }
-.site-nav.right { justify-self: start; }
+
+/* Signature 1 — Medaillon-Linie: eine feine Champagnerlinie auf Höhe der
+   Logo-Kreismitte, die optisch aus dem Signet nach beiden Seiten austritt. */
+.site-head::before, .site-head::after {
+  content: ""; position: absolute; top: 50%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--champagne));
+  opacity: .55; pointer-events: none;
+}
+.site-head::before { left: var(--pad); right: calc(50% + 82px); }
+.site-head::after {
+  left: calc(50% + 82px); right: var(--pad);
+  background: linear-gradient(90deg, var(--champagne), transparent);
+}
+
+/* Die Navigation liegt als Navy-Block auf der Medaillon-Linie und
+   unterbricht sie sauber — die Linie tritt links und rechts wieder aus. */
+.site-nav {
+  display: flex; gap: 2.2rem; position: relative;
+  background: var(--navy-brand);
+}
+.site-nav.left { justify-self: end; padding: 0 2.4rem 0 1.6rem; }
+.site-nav.right { justify-self: start; padding: 0 1.6rem 0 2.4rem; }
 .site-nav a {
-  color: var(--text-dark); text-decoration: none; font-size: var(--t-nav);
-  font-weight: 500; letter-spacing: .13em; text-transform: uppercase;
-  position: relative; padding: .35rem 0; white-space: nowrap;
+  color: var(--on-dark); text-decoration: none; font-size: var(--t-nav);
+  font-weight: 500; letter-spacing: .14em; text-transform: uppercase;
+  position: relative; padding: .4rem 0; white-space: nowrap;
 }
 .site-nav a::after {
   content: ""; position: absolute; inset: auto 0 0 0; height: 1px;
-  background: var(--champagne);
+  background: var(--champagne-light);
   transform: scaleX(0); transform-origin: left;
-  transition: transform .2s ease-out;
+  transition: transform .22s ease-out;
 }
 .site-nav a:hover::after, .site-nav a:focus-visible::after { transform: scaleX(1); }
-.logo { line-height: 0; position: relative; z-index: 5; }
-.logo img { width: 114px; height: auto; }
+
+.logo { line-height: 0; position: relative; z-index: 5; display: block; }
+.logo img { width: 104px; height: auto; }
 .menu-btn { display: none; }
 
 /* ---------- Mobiles Menü ---------- */
@@ -184,416 +213,523 @@ main, footer { padding-left: var(--spine-w); }
 .m-menu.open { display: flex; }
 .m-close {
   position: absolute; top: 1.1rem; right: var(--pad);
-  background: none; border: none; color: var(--ivory); cursor: pointer;
+  background: none; border: none; color: var(--on-dark); cursor: pointer;
   font-family: var(--sans); font-size: var(--t-nav);
   letter-spacing: .14em; text-transform: uppercase;
   min-width: 44px; min-height: 44px;
 }
-.m-menu nav { display: flex; flex-direction: column; gap: 1.5rem; }
+.m-menu nav { display: flex; flex-direction: column; gap: 1.4rem; }
 .m-menu nav a {
-  font-family: var(--serif); font-size: 2.1rem; font-weight: 400;
-  color: var(--ivory); text-decoration: none; line-height: 1.1;
+  font-family: var(--sans); font-size: 1.75rem; font-weight: 500;
+  letter-spacing: -.02em;
+  color: var(--on-dark); text-decoration: none; line-height: 1.1;
+  display: flex; align-items: center; min-height: 44px;
 }
 .m-sec {
   margin-top: auto; padding-top: 1.4rem;
-  border-top: 1px solid var(--line-on-dark);
+  border-top: 1px solid var(--rule-dark);
   color: var(--dim-on-dark); font-size: .9rem; line-height: 1.9;
 }
-.m-sec a {
-  color: var(--champagne-bright); text-decoration: none;
-  display: flex; align-items: center; gap: .5rem; min-height: 44px;
-}
 
-/* ---------- Hero ---------- */
-.hero { position: relative; padding: 0; background: var(--paper); }
-.hero picture img {
-  width: 100%; height: clamp(460px, 62vh, 700px);
-  object-fit: cover; object-position: center 52%;
+/* ==========================================================================
+   2 · HERO — die Fassade bekommt die Hauptrolle
+   Bild im Seitenverhältnis 3:2 = exakt das Originalformat, also
+   vollständig sichtbar. Der Text steht daneben, nie darüber.
+   ========================================================================== */
+.hero {
+  background: var(--navy-brand); color: var(--on-dark);
+  padding: clamp(2rem, 4vh, 3.4rem) 0 clamp(2.4rem, 5vh, 4rem) var(--pad);
+  display: grid; grid-template-columns: minmax(15rem, 23rem) 1fr;
+  gap: clamp(1.5rem, 3vw, 4rem); align-items: center;
 }
-.hero-panel {
-  position: relative; z-index: 5;
-  background: var(--navy-brand); color: var(--ivory);
-  border-top: 1px solid var(--champagne);
-  max-width: 640px;
-  margin: -6rem 0 0 max(var(--pad), calc((100% - var(--container)) / 2));
-  padding: clamp(2.2rem, 3.5vw, 3rem) clamp(2rem, 3.5vw, 3.2rem) clamp(2rem, 3vw, 2.6rem);
+.hero-copy { max-width: 23rem; }
+.hero-eyebrow {
+  font-size: var(--t-label); font-weight: 600;
+  letter-spacing: .24em; text-transform: uppercase;
+  color: var(--champagne-light);
+  display: flex; align-items: center; gap: .85rem;
+}
+.hero-eyebrow::after {
+  content: ""; flex: 1; height: 1px; background: var(--rule-dark);
 }
 h1 {
-  font-family: var(--serif);
-  font-size: var(--t-hero);
-  font-weight: 380; line-height: 1.05; letter-spacing: -.015em;
-  color: var(--ivory);
+  margin-top: 1.5rem;
+  font-family: var(--sans); font-size: var(--t-hero);
+  font-weight: 500; line-height: 1.02; letter-spacing: -.035em;
+  color: var(--on-dark);
+}
+/* Der einzige historische Moment im Hero: „Seit 1846." in Newsreader. */
+h1 .since {
+  display: block; margin-top: .12em;
+  font-family: var(--serif); font-size: var(--t-hero-ser);
+  font-weight: 350; letter-spacing: -.015em;
+  color: var(--champagne-light);
   font-variation-settings: 'opsz' 72;
 }
-h1 em { font-style: italic; font-weight: 320; color: var(--champagne-bright); }
 .hero-sub {
-  max-width: 42ch; margin-top: 1.4rem;
-  font-size: clamp(1rem, 1.4vw, 1.15rem); line-height: 1.65;
-  color: var(--body-on-dark);
+  max-width: 34ch; margin-top: 1.5rem;
+  font-size: 1rem; line-height: 1.7; color: var(--body-on-dark);
 }
 .hero-meta {
   margin-top: 1.8rem; padding-top: 1.1rem;
-  border-top: 1px solid var(--line-on-dark);
+  border-top: 1px solid var(--rule-dark);
   font-size: var(--t-label); font-weight: 500;
   letter-spacing: .18em; text-transform: uppercase;
-  color: var(--champagne-bright);
-  display: flex; gap: 1.8rem; flex-wrap: wrap;
+  color: var(--champagne-light);
+  display: flex; gap: 1.6rem; flex-wrap: wrap;
+}
+.hero-shot { position: relative; }
+.hero-shot img {
+  width: 100%; aspect-ratio: 3 / 2; object-fit: cover; object-position: center;
+}
+/* Feine Champagnerkante als Verbindung zur Marke — kein Rahmen ringsum. */
+.hero-shot::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 2px; background: var(--champagne);
 }
 
-/* ---------- Sektionen allgemein ---------- */
+/* ==========================================================================
+   3 · SEKTIONS-GRUNDLAGEN
+   ========================================================================== */
 section { padding: var(--section-pad) var(--pad); }
+
+/* Signature 3 — Section-Marke: Ring mit Kern, aus dem Logo-Medaillon
+   abstrahiert, plus Abschnittsnummer. Ersetzt dekorative Kicker-Striche. */
 .kicker {
   font-size: var(--t-label); letter-spacing: .2em; text-transform: uppercase;
-  color: var(--champagne); font-weight: 600; margin-bottom: 1.3rem;
-  display: flex; align-items: center; gap: .9rem;
+  color: var(--champagne-ink); font-weight: 600; margin-bottom: 1.4rem;
+  display: flex; align-items: center; gap: .8rem;
 }
-.kicker::before {
-  content: ""; width: 2rem; height: 1px; background: var(--champagne);
-  opacity: .7;
+.k-mark {
+  width: 11px; height: 11px; border-radius: 50%; flex: none;
+  border: 1px solid currentColor; position: relative;
 }
+.k-mark::after {
+  content: ""; position: absolute; inset: 2.5px;
+  border-radius: 50%; background: currentColor;
+}
+.k-num { font-variant-numeric: tabular-nums; opacity: .75; }
+.k-num::after {
+  content: ""; display: inline-block; width: 1.4rem; height: 1px;
+  background: currentColor; opacity: .5;
+  vertical-align: .3em; margin: 0 .1rem 0 .8rem;
+}
+
+/* Section Sans Display — die strukturelle Hauptstimme */
 h2 {
-  font-family: var(--serif); font-size: var(--t-display);
-  font-weight: 410; line-height: 1.1; letter-spacing: -.01em;
-  color: var(--text-dark); max-width: 22ch;
+  font-family: var(--sans); font-size: var(--t-display);
+  font-weight: 500; line-height: 1.1; letter-spacing: -.03em;
+  color: var(--text-dark); max-width: 20ch;
   text-wrap: balance;
+}
+/* Editorial Serif Display — nur wo eine historische Stimme gefragt ist */
+h2.serif {
+  font-family: var(--serif); font-size: var(--t-serif-dsp);
+  font-weight: 380; letter-spacing: -.015em; line-height: 1.12;
   font-variation-settings: 'opsz' 60;
 }
-::selection { background: var(--navy-strong); color: var(--ivory); }
-.on-dark { color: var(--ivory); }
-.on-dark h2 { color: var(--text-on-dark); }
+::selection { background: var(--blue-brand); color: var(--on-dark); }
+
+.on-dark { color: var(--on-dark); }
+.on-dark h2 { color: var(--on-dark); }
 .on-dark .body { color: var(--body-on-dark); }
-.on-dark .kicker { color: var(--champagne-bright); }
-.on-dark .kicker::before { background: var(--champagne-bright); }
-.body { max-width: 58ch; margin-top: 1.4rem; }
-.caption {
-  font-size: var(--t-caption); color: var(--text-secondary);
-  margin-top: .65rem; letter-spacing: .03em;
-}
-.on-dark .caption { color: var(--dim-on-dark); }
+.on-dark .kicker { color: var(--champagne-light); }
+.body { max-width: 56ch; margin-top: 1.3rem; }
+.body-lg { font-size: var(--t-body-lg); }
 
-/* Einheitliches Passepartout: jedes Inhaltsbild sitzt in derselben feinen
-   Fassung — schmaler Innenabstand, 1-px-Linie, auf Dunkel in Champagner. */
-main section:not(.hero) figure {
-  padding: .55rem;
-  border: 1px solid var(--frame-on-light);
-  transition: border-color .25s ease;
+/* ==========================================================================
+   4 · BILDSYSTEM — vertikale Fenster statt Rahmen
+   Jedes Foto ist Material für ein bewusst gesetztes Hochformat.
+   --ratio, --fx, --fy werden pro Bild einzeln kuratiert.
+   ========================================================================== */
+figure { margin: 0; }
+.ph { position: relative; display: block; }
+.ph img {
+  width: 100%;
+  aspect-ratio: var(--ratio, 2 / 3);
+  object-fit: cover;
+  object-position: var(--fx, 50%) var(--fy, 50%);
 }
-main section:not(.hero) figure:hover { border-color: var(--champagne); }
-.backstube figure, .catering figure, .samstag figure, .chrono figure {
-  border-color: var(--frame-on-dark);
+/* Champagnerkante nur an ausgewählten Leitbildern — nicht an jedem Foto. */
+.ph-edge::after {
+  content: ""; position: absolute; left: 0; bottom: 0;
+  width: 100%; height: 2px; background: var(--champagne);
 }
-.backstube figure:hover, .catering figure:hover, .samstag figure:hover {
-  border-color: var(--champagne-bright);
-}
-main section:not(.hero) figure img { width: 100%; }
 
-/* ---------- Einordnung (Serif-Editorial) ---------- */
-.intro { padding-block: clamp(4rem, 9vh, 7rem); }
-.intro .body {
-  font-family: var(--serif); font-size: var(--t-intro);
-  font-weight: 400; line-height: 1.5; letter-spacing: -.005em;
-  color: var(--text-dark); max-width: 46ch; margin-top: 0;
+/* ==========================================================================
+   5 · EINORDNUNG
+   ========================================================================== */
+.intro { background: var(--porcelain); padding-block: clamp(4rem, 9vh, 7rem); }
+.intro .inner { max-width: 62rem; }
+.intro h2 {
+  font-family: var(--sans); font-size: var(--t-intro);
+  font-weight: 400; line-height: 1.45; letter-spacing: -.02em;
+  color: var(--text-dark); max-width: 30ch;
 }
-.intro .body strong { font-weight: 500; color: var(--navy-strong); }
+.intro .lede {
+  margin-top: 1.6rem; max-width: 52ch;
+  font-family: var(--sans); font-size: var(--t-body-lg);
+  font-weight: 400; line-height: 1.7; letter-spacing: 0;
+  color: var(--text-warm);
+}
+.intro strong { font-weight: 600; color: var(--blue-brand); }
 
-/* ---------- Geschichte ---------- */
+/* ==========================================================================
+   6 · GESCHICHTE
+   ========================================================================== */
 .geschichte { background: var(--ivory); }
 .geschichte .inner {
-  display: grid; grid-template-columns: 1.05fr .95fr;
+  display: grid; grid-template-columns: 1.15fr .85fr;
   gap: clamp(3rem, 6vw, 6rem); align-items: center;
 }
-.geschichte figure { margin-top: 1rem; }
 .geschichte .body + .body { margin-top: 1.1rem; }
+.geschichte figure { max-width: 24rem; margin-left: auto; }
 
-/* ---------- Chronologie ---------- */
-.chrono { background: var(--blue-deep); border-top: 1px solid rgba(215, 188, 134, .22); }
-.chrono ol { list-style: none; max-width: 860px; margin: 3rem auto 0; }
+/* ==========================================================================
+   7 · CHRONOLOGIE — Serif-Jahre mit Champagner-Zeitmarken
+   ========================================================================== */
+.chrono { background: var(--navy-night); }
+.chrono ol { list-style: none; max-width: 62rem; margin: 3rem auto 0; }
 .chrono li {
-  display: grid; grid-template-columns: 190px 1fr; gap: 2.2rem;
-  align-items: baseline; padding: 1.3rem 0;
-  border-bottom: 1px solid var(--line-on-dark);
+  display: grid; grid-template-columns: 12rem 1fr; gap: 2.2rem;
+  align-items: baseline; padding: 1.25rem 0;
+  border-bottom: 1px solid var(--rule-hair);
 }
 .chrono li:last-child { border-bottom: none; }
+/* Signature 2 — Zeitmarke: feiner Champagnerstrich vor jedem Jahr. */
 .chrono .year {
   font-family: var(--serif); font-size: var(--t-year);
-  font-weight: 350; color: var(--champagne-bright); line-height: 1;
-  letter-spacing: -.01em;
+  font-weight: 340; color: var(--champagne-light); line-height: 1;
+  letter-spacing: -.015em;
   font-variation-settings: 'opsz' 44;
   font-variant-numeric: oldstyle-nums;
+  display: flex; align-items: center; gap: .9rem;
 }
-.chrono p { color: var(--body-on-dark); font-size: 1rem; max-width: 52ch; }
+.chrono .year::before {
+  content: ""; width: 1.6rem; height: 1px; flex: none;
+  background: var(--champagne); opacity: .85;
+}
+.chrono p { color: var(--body-on-dark); font-size: 1rem; max-width: 50ch; }
 
-/* ---------- Pâtisserie ---------- */
+/* ==========================================================================
+   8 · PÂTISSERIE
+   ========================================================================== */
 .patisserie { background: var(--porcelain); }
 .pat-grid {
-  display: grid; grid-template-columns: 1.05fr .95fr;
-  gap: clamp(3rem, 5.5vw, 5.5rem); align-items: start; margin-top: 3.2rem;
+  display: grid; grid-template-columns: .8fr 1.2fr;
+  gap: clamp(2.5rem, 5vw, 5rem); align-items: center; margin-top: 3rem;
 }
-.pat-side { display: flex; flex-direction: column; gap: 2.6rem; padding-top: 2.5rem; }
-.pat-side figure { max-width: 72%; }
+.pat-side { max-width: 42rem; }
 blockquote {
-  font-family: var(--serif); font-style: italic;
-  font-size: var(--t-sub); font-weight: 420;
-  color: var(--navy-strong); line-height: 1.35;
-  border-left: 1px solid var(--champagne); padding-left: 1.6rem;
+  margin-top: 2.4rem;
+  font-family: var(--serif); font-size: var(--t-sub); font-weight: 400;
+  color: var(--blue-brand); line-height: 1.4;
+  border-left: 2px solid var(--champagne); padding-left: 1.5rem;
 }
 blockquote cite {
   display: block; font-family: var(--sans); font-style: normal;
-  font-size: var(--t-caption); color: var(--text-secondary);
-  margin-top: .9rem; letter-spacing: .06em;
+  font-size: .75rem; color: var(--text-secondary);
+  margin-top: .8rem; letter-spacing: .08em; text-transform: uppercase;
 }
 
-/* ---------- Backstube (dunkel, materiell) ---------- */
-.backstube { background: var(--navy-raised); border-top: 1px solid rgba(215, 188, 134, .22); }
+/* ==========================================================================
+   9 · BACKSTUBE — kräftiges Markenblau als echte Fläche
+   ========================================================================== */
+.backstube { background: var(--blue-brand); }
 .backstube .inner {
-  display: grid; grid-template-columns: .92fr 1.08fr;
-  gap: clamp(3rem, 5.5vw, 5.5rem);
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(2.5rem, 5vw, 5rem); align-items: end;
 }
-.backstube .text-col { padding-top: 2.6rem; }
-.backstube .text-col figure { margin-top: 2.6rem; max-width: 76%; }
+.backstube .text-col { padding-bottom: 1rem; }
+.bs-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; align-items: end; }
 
-/* ---------- Editoriale Galerie (komponierte Doppelseite) ---------- */
-.galerie { background: var(--paper); padding-bottom: calc(var(--section-pad) + 2rem); }
+/* ==========================================================================
+   10 · GALERIE — vier vertikale Spuren, keine Rahmen, keine Captions
+   Die Spuren haben verschiedene Breiten, Höhen und Startpunkte, damit die
+   Sequenz redaktionell und nicht als Grid oder Masonry gelesen wird.
+   ========================================================================== */
+.galerie { background: var(--porcelain); }
+.g-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  gap: 2rem; flex-wrap: wrap;
+  padding-bottom: 1.4rem; border-bottom: 1px solid var(--rule-light);
+}
+.g-line {
+  font-family: var(--sans); font-size: var(--t-sub); font-weight: 500;
+  letter-spacing: -.02em; color: var(--text-dark);
+  max-width: none; line-height: 1.3;
+}
 .g-board {
-  display: grid; grid-template-columns: repeat(12, 1fr);
-  gap: clamp(1.2rem, 2.2vw, 2.2rem);
-  margin-top: 3.5rem; align-items: start;
+  display: grid;
+  grid-template-columns: .78fr 1.02fr .88fr 1.16fr;
+  gap: clamp(1rem, 1.8vw, 1.9rem);
+  margin-top: 2.6rem; align-items: start;
 }
-.g-copper  { grid-column: 1 / 5;  grid-row: 1 / 3; }
-.g-almonds { grid-column: 5 / 8;  grid-row: 1; margin-top: 96px; }
-.g-team    { grid-column: 8 / 13; grid-row: 1; margin-top: 28px; }
-.g-piping  { grid-column: 5 / 8;  grid-row: 2; margin-top: 1rem; }
-.g-outside { grid-column: 8 / 11; grid-row: 2; margin-top: 4.5rem; }
-.g-note {
-  grid-column: 11 / 13; grid-row: 2; align-self: center;
-  justify-self: start; max-width: 14ch; margin-top: 4.5rem;
-  font-family: var(--serif); font-style: italic;
-  font-size: var(--t-sub); font-weight: 380; line-height: 1.4;
-  color: var(--text-secondary); padding-bottom: .5rem;
-}
-.g-almonds img { aspect-ratio: 1 / 1; object-fit: cover; }
-.g-team img { aspect-ratio: 5 / 4; object-fit: cover; }
-.g-outside img { aspect-ratio: 4 / 5; object-fit: cover; }
+.g-track { display: flex; flex-direction: column; gap: clamp(1rem, 1.8vw, 1.9rem); }
+/* Vier klar verschiedene Startpunkte — der Einstieg läuft diagonal nach
+   unten, die Unterkanten bleiben bewusst ungleich. */
+.g-t1 { margin-top: 0; }
+.g-t2 { margin-top: 6.5rem; }
+.g-t3 { margin-top: 18.5rem; }
+.g-t4 { margin-top: 30rem; }
 
-/* ---------- Catering ---------- */
-.catering { background: var(--choc-deep); border-top: 1px solid rgba(215, 188, 134, .25); }
-.cat-head {
-  display: grid; grid-template-columns: 1.25fr .75fr;
-  gap: clamp(3rem, 5.5vw, 5.5rem); align-items: end;
+/* Hochwertige Haptik: 6 px Versatz, dezentes Abdunkeln, Champagnerlinie. */
+.g-board figure { transition: transform .4s ease; }
+.g-board .ph img { transition: filter .4s ease; }
+.g-board .ph::after {
+  content: ""; position: absolute; left: 0; bottom: 0; height: 2px; width: 0;
+  background: var(--champagne); transition: width .4s ease;
 }
-.cat-head img { aspect-ratio: 4 / 3; object-fit: cover; width: 100%; }
-.cat-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; margin-top: 3.8rem; }
-.cat-cols > div { padding: 0 2.4rem; border-left: 1px solid var(--line-on-dark); }
+.g-board figure:hover { transform: translateY(-6px); }
+.g-board figure:hover .ph img { filter: brightness(.93); }
+.g-board figure:hover .ph::after { width: 100%; }
+
+/* ==========================================================================
+   11 · CATERING
+   ========================================================================== */
+.catering { background: var(--choc); }
+.cat-head {
+  display: grid; grid-template-columns: 1.4fr .6fr;
+  gap: clamp(2.5rem, 5vw, 5rem); align-items: end;
+}
+.cat-head figure { max-width: 17rem; margin-left: auto; }
+.cat-cols { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 3.5rem; }
+.cat-cols > div { padding: 0 2.2rem; border-left: 1px solid var(--rule-hair); }
 .cat-cols > div:first-child { padding-left: 0; border-left: none; }
 .cat-cols h3 {
-  font-family: var(--serif); font-weight: 430; font-size: var(--t-sub);
-  color: var(--text-on-dark); margin-bottom: .9rem; line-height: 1.25;
+  font-family: var(--sans); font-weight: 500; font-size: 1.15rem;
+  letter-spacing: -.02em;
+  color: var(--on-dark); margin-bottom: .8rem; line-height: 1.25;
 }
-.cat-cols p { font-size: .95rem; color: var(--body-on-dark); max-width: 34ch; }
+.cat-cols p { font-size: .95rem; color: var(--body-on-dark); max-width: 32ch; }
 .cat-note {
-  margin-top: 3.4rem; padding-top: 1.3rem;
-  border-top: 1px solid var(--line-on-dark);
+  margin-top: 3.2rem; padding-top: 1.3rem;
+  border-top: 1px solid var(--rule-hair);
   font-size: var(--t-label); letter-spacing: .16em; text-transform: uppercase;
   color: var(--dim-on-dark);
-  display: flex; gap: 2rem; flex-wrap: wrap; align-items: center;
+  display: flex; gap: 1.8rem; flex-wrap: wrap; align-items: center;
 }
 .cat-note a {
-  color: var(--champagne-bright); text-decoration: none;
-  display: inline-flex; align-items: center; gap: .45rem;
-  padding: .3rem 0;
+  color: var(--champagne-light); text-decoration: none;
+  display: inline-flex; align-items: center; gap: .45rem; padding: .3rem 0;
 }
-.cat-note a:hover { color: var(--ivory); }
+.cat-note a:hover { color: var(--on-dark); }
 .cat-note svg { flex: none; }
 
-/* ---------- Samstagsfenster ---------- */
-.samstag { background: var(--navy-brand); border-top: 1px solid rgba(215, 188, 134, .22); }
+/* ==========================================================================
+   12 · SAMSTAGSFENSTER — asymmetrisch, aber vollständig kontrolliert
+   ========================================================================== */
+.samstag { background: var(--navy-brand); }
+/* Text und das schmale Kaffeedetail teilen sich die linke Spalte, Claudia
+   trägt als hohes Leitbild die rechte — dadurch bleibt die Asymmetrie
+   unten aufgefangen statt in leerer Fläche auszulaufen. */
 .sam-grid {
-  display: grid; grid-template-columns: 1fr 1.05fr;
-  grid-template-areas: "text claudia" "side claudia";
-  gap: 1rem clamp(3rem, 6vw, 6.5rem); align-items: start;
+  display: grid; grid-template-columns: 1fr .78fr;
+  gap: clamp(2rem, 4vw, 3.5rem); align-items: start;
 }
-.sam-text { grid-area: text; }
-.sam-claudia { grid-area: claudia; }
-.sam-claudia img { aspect-ratio: 17 / 25; object-fit: cover; object-position: 46% center; }
-.sam-side { grid-area: side; max-width: 62%; margin-top: 2.2rem; }
+.sam-text { grid-column: 1; grid-row: 1; padding-top: 1rem; }
+.sam-side { grid-column: 1; grid-row: 2; }
+.sam-claudia { grid-column: 2; grid-row: 1 / 3; }
+/* Der emotionale Moment des Abschnitts — deshalb Newsreader. */
+.samstag h2 { max-width: 14ch; }
 .sam-facts {
-  margin: 2rem 0 0; padding: 1.5rem 0;
-  border-top: 1px solid var(--line-on-dark);
-  border-bottom: 1px solid var(--line-on-dark);
-  font-family: var(--serif); font-size: clamp(1.4rem, 2vw, 1.7rem);
-  font-weight: 400; color: var(--champagne-bright);
+  margin-top: 2rem; padding: 1.4rem 0;
+  border-top: 1px solid var(--rule-dark);
+  border-bottom: 1px solid var(--rule-dark);
+  font-family: var(--sans); font-size: 1.4rem; font-weight: 500;
+  letter-spacing: -.02em; color: var(--champagne-light);
 }
 .sam-facts span {
-  display: block; font-family: var(--sans); font-size: var(--t-label);
-  font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
-  color: var(--dim-on-dark); margin-top: .45rem;
+  display: block; font-size: var(--t-label); font-weight: 500;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--dim-on-dark); margin-top: .5rem;
 }
+.sam-claudia { margin-top: 2.5rem; }
+.sam-side { margin-top: 2.5rem; max-width: 15rem; margin-left: auto; }
 
-/* ---------- Standort (Finale) ---------- */
-.standort { background: var(--paper); }
-.standort-panel {
-  max-width: var(--container); margin-inline: auto;
-  background: var(--navy-strong); color: var(--ivory);
-  border-top: 1px solid var(--champagne);
-  padding: clamp(2.8rem, 5vw, 4.5rem) clamp(2rem, 4vw, 4rem);
-  display: grid; grid-template-columns: 1.15fr .85fr;
-  gap: clamp(2.5rem, 5vw, 5rem);
+/* ==========================================================================
+   13 · STANDORT — tiefblaue Gesamtfläche, Headline immer frei
+   ========================================================================== */
+.standort { background: var(--blue-deep); }
+.st-grid {
+  display: grid; grid-template-columns: 1.35fr .65fr;
+  gap: clamp(2.5rem, 5vw, 5rem); align-items: start;
 }
-.standort-panel .kicker { color: var(--champagne-bright); }
-.standort-panel .kicker::before { background: var(--champagne-bright); }
-.standort-panel h2 { color: var(--ivory); max-width: none; }
-.standort-lede {
-  margin-top: 1.4rem; color: var(--body-on-dark); max-width: 44ch;
+.standort h2 {
+  font-size: clamp(2.2rem, 4.6vw, 4rem); max-width: none;
+  letter-spacing: -.04em;
 }
-.standort-info {
-  border-left: 1px solid var(--line-on-dark);
-  padding-left: clamp(1.6rem, 3vw, 2.8rem);
-  display: flex; flex-direction: column; gap: 1.5rem;
-  font-size: 1rem; line-height: 1.85;
+.st-lede { margin-top: 1.4rem; color: var(--body-on-dark); max-width: 46ch; }
+.st-info {
+  margin-top: 2.8rem; padding-top: 2rem;
+  border-top: 1px solid var(--rule-dark);
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 2rem; font-size: 1rem; line-height: 1.85;
 }
-.standort-info h3 {
+.st-info h3 {
   font-family: var(--sans); font-size: var(--t-label); font-weight: 600;
   letter-spacing: .2em; text-transform: uppercase;
-  color: var(--champagne-bright); margin-bottom: .4rem;
+  color: var(--champagne-light); margin-bottom: .5rem;
 }
 address { font-style: normal; color: var(--body-on-dark); }
-address strong {
-  font-family: var(--serif); font-weight: 430; font-size: 1.25rem;
-  color: var(--ivory);
-}
-.social-links { display: flex; flex-direction: column; gap: .7rem; }
+address strong { font-weight: 600; color: var(--on-dark); }
+
+/* Signature 4 — Social-Farbpunkt: die Icons behalten ihre Originalfarben
+   als bewusster moderner Kontrapunkt zur Markenwelt. */
+.social-links { display: flex; flex-direction: column; gap: .4rem; }
 .social-links a {
-  color: var(--ivory); text-decoration: none; width: fit-content;
-  display: inline-flex; align-items: center; gap: .8rem;
-  font-weight: 500; font-size: .95rem; letter-spacing: .03em;
-  min-height: 44px;
+  color: var(--on-dark); text-decoration: none; width: fit-content;
+  display: inline-flex; align-items: center; gap: .75rem;
+  font-weight: 500; font-size: .95rem;
+  min-height: 44px; padding-right: .5rem;
 }
 .soc-ic {
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 1px solid var(--line-on-dark);
-  display: grid; place-items: center; flex: none;
-  color: var(--champagne-bright);
-  transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+  width: 26px; height: 26px; flex: none; display: block;
+  transition: transform .25s ease;
 }
-.soc-ic svg { display: block; }
 .social-links a:hover .soc-ic, .social-links a:focus-visible .soc-ic {
-  background: var(--champagne); border-color: var(--champagne);
-  color: var(--navy-night);
+  transform: translateY(-2px);
 }
-.social-links a:hover, .social-links a:focus-visible { color: var(--champagne-bright); }
+.social-links a:hover, .social-links a:focus-visible { color: var(--champagne-light); }
 
-/* ---------- Footer ---------- */
-.f-main {
-  background: var(--navy-brand); color: var(--ivory);
-  padding: 4.5rem var(--pad) 3rem;
-  border-top: 1px solid rgba(215, 188, 134, .22);
-}
+/* ==========================================================================
+   14 · FOOTER
+   ========================================================================== */
+footer { background: var(--navy-night); color: var(--on-dark); }
+.f-main { padding: 4rem var(--pad) 2.8rem; }
 .f-claim {
-  font-family: var(--serif); font-weight: 380;
-  font-size: var(--t-claim); line-height: 1.2; max-width: 20ch;
-  letter-spacing: -.01em;
+  font-family: var(--serif); font-weight: 360;
+  font-size: var(--t-claim); line-height: 1.2; max-width: 18ch;
+  letter-spacing: -.015em; color: var(--champagne-light);
 }
-.f-claim em { font-style: italic; color: var(--champagne-bright); }
 .f-grid {
   display: grid; grid-template-columns: auto 1fr 1fr 1fr; gap: 3rem;
-  margin-top: 3.2rem; padding-top: 2.6rem;
-  border-top: 1px solid var(--line-on-dark);
+  margin-top: 3rem; padding-top: 2.4rem;
+  border-top: 1px solid var(--rule-hair);
   align-items: start;
   max-width: var(--container); margin-inline: auto;
 }
-.f-grid .f-logo img { width: 116px; height: auto; }
+.f-logo img { width: 108px; height: auto; }
 .f-grid h4 {
   font-size: var(--t-label); letter-spacing: .2em; text-transform: uppercase;
-  color: var(--champagne-bright); margin-bottom: 1rem; font-weight: 600;
+  color: var(--champagne-light); margin-bottom: 1rem; font-weight: 600;
 }
 .f-grid ul { list-style: none; font-size: .95rem; line-height: 2.1; color: var(--body-on-dark); }
-.f-grid a { color: var(--body-on-dark); text-decoration: none; }
-.f-grid a:hover { color: var(--champagne-bright); }
+/* Inline-Links hätten sonst nur die Höhe des Textkastens — zu klein zum Tippen. */
+.f-grid a {
+  color: var(--body-on-dark); text-decoration: none;
+  display: inline-block; padding: .3rem 0;
+}
+.f-grid a:hover { color: var(--champagne-light); }
 .f-base {
-  background: var(--navy-night); color: rgba(243, 237, 223, .5);
-  padding: 1.2rem var(--pad); font-size: .72rem;
+  border-top: 1px solid var(--rule-hair);
+  padding: 1.2rem var(--pad); font-size: .7rem;
   letter-spacing: .14em; text-transform: uppercase;
+  color: var(--dim-on-dark);
   display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
 }
-.f-base .seit {
-  font-family: var(--serif); font-style: italic; text-transform: none;
-  letter-spacing: .02em; color: var(--champagne-bright); font-size: .95rem;
-}
 
-/* ---------- Reveal (Signature-Interaktion 2) ---------- */
+/* ---------- Reveal ---------- */
 .reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
 .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
-  .site-nav a::after, .social-links a::after { transition: none; }
-  .spine-dot { transition: none; }
+  .site-nav a::after, .g-board figure, .g-board .ph::after,
+  .g-board .ph img, .soc-ic { transition: none; }
+  .g-board figure:hover { transform: none; }
   html { scroll-behavior: auto; }
 }
 
 /* ==========================================================================
-   Tablet / Mobil
+   TABLET — 1024 px abwärts
    ========================================================================== */
 @media (max-width: 1023px) {
-  .infobar .desktop-only { display: none; }
-  .infobar .mobile-only { display: inline; }
+  .infobar .d-only { display: none; }
+  .infobar .m-only { display: inline; }
 
-  .site-head { grid-template-columns: auto 1fr auto; height: 60px; }
+  .site-head { grid-template-columns: auto 1fr auto; height: 62px; }
+  .site-head::before, .site-head::after { display: none; }
   .site-nav { display: none; }
-  .logo img { width: 94px; }
+  .logo img { width: 84px; }
   .menu-btn {
-    display: flex; align-items: center; justify-content: flex-end; gap: .6rem;
+    display: flex; align-items: center; justify-content: flex-end; gap: .55rem;
     background: none; border: none; cursor: pointer;
     font-family: var(--sans); font-size: var(--t-nav); font-weight: 500;
-    letter-spacing: .14em; text-transform: uppercase; color: var(--text-dark);
+    letter-spacing: .14em; text-transform: uppercase; color: var(--on-dark);
     min-width: 44px; min-height: 44px;
   }
-  .menu-btn .bars { display: inline-block; width: 22px; }
-  .menu-btn .bars span { display: block; height: 1.5px; background: var(--text-dark); margin: 5px 0; }
+  .menu-btn .bars { display: inline-block; width: 20px; }
+  .menu-btn .bars span { display: block; height: 1.5px; background: var(--on-dark); margin: 5px 0; }
 
-  .hero picture img { height: min(64svh, 560px); min-height: 430px; }
-  .hero-panel {
-    margin: -3.8rem 1.25rem 0 0; max-width: none;
-    padding: 1.8rem 1.4rem 1.7rem;
+  /* Hero mobil: Bild zuerst, Text darunter — keine Überlagerung. */
+  .hero {
+    grid-template-columns: 1fr; gap: 0;
+    padding: 0 0 var(--section-pad);
   }
+  .hero-copy { order: 2; max-width: none; padding: 2.2rem var(--pad) 0; }
+  .hero-shot { order: 1; }
+  .hero-shot img { aspect-ratio: 4 / 5; }
   .hero-meta { gap: 1rem; row-gap: .5rem; font-size: .64rem; letter-spacing: .14em; }
 
-  .geschichte .inner, .pat-grid, .backstube .inner, .cat-head { grid-template-columns: 1fr; }
-  .pat-side { padding-top: 0; }
-  .pat-side figure, .backstube .text-col figure { max-width: 100%; }
-  .backstube .text-col { padding-top: 0; }
+  .geschichte .inner, .pat-grid, .backstube .inner, .cat-head, .st-grid {
+    grid-template-columns: 1fr;
+  }
+  .geschichte figure { max-width: 20rem; margin-left: 0; }
+  .cat-head figure { max-width: 15rem; margin-left: 0; }
+  .backstube .inner { align-items: start; }
 
-  .chrono li { grid-template-columns: 1fr; gap: .25rem; padding: 1.05rem 0; }
-  .chrono .year { font-size: 2rem; }
+  .chrono li { grid-template-columns: 1fr; gap: .3rem; padding: 1.05rem 0; }
+  .chrono .year { font-size: 1.9rem; }
 
-  /* Galerie mobil: kuratierte Paare mit wechselnden Breiten */
-  .g-board { display: grid; grid-template-columns: 5fr 4fr; gap: .8rem; margin-top: 2.6rem; }
-  .g-copper  { grid-column: 1 / -1; grid-row: 1; margin: 0; }
-  .g-copper img { aspect-ratio: 4 / 5; object-fit: cover; }
-  .g-almonds { grid-column: 1; grid-row: 2; margin: 0; }
-  .g-team    { grid-column: 2; grid-row: 2; margin: 0; }
-  .g-team img { aspect-ratio: 4 / 5; }
-  .g-outside { grid-column: 1; grid-row: 3; margin: 0; }
-  .g-piping  { grid-column: 2; grid-row: 3; margin: 0; }
-  .g-piping img { aspect-ratio: 3 / 4; object-fit: cover; }
-  .g-note    { grid-column: 1 / -1; grid-row: 4; max-width: none; margin: 0; padding: .6rem 0 0; }
+  .pat-grid { gap: 2.4rem; }
+  .pat-lead { max-width: 20rem; }
 
-  .cat-cols { grid-template-columns: 1fr; }
-  .cat-cols > div { padding: 1.6rem 0; border-left: none; border-top: 1px solid var(--line-on-dark); }
+  /* Galerie mobil: eigene Dramaturgie statt gestapelter Spuren —
+     Paar, Leitbild, versetztes Paar. */
+  .g-board {
+    grid-template-columns: 1fr 1fr; gap: .9rem;
+    margin-top: 2.2rem;
+  }
+  .g-track { display: contents; }
+  /* Das schmale Leitband ist eine Desktop-Geste — mobil würde 1:4 zu einem
+     endlosen Streifen. Hier ein ruhigeres Hochformat. */
+  .g-copper   { grid-column: 1; grid-row: 1; --ratio: 2/5 !important; }
+  .g-almonds  { grid-column: 2; grid-row: 1; margin-top: 2.5rem; }
+  .g-team     { grid-column: 1 / -1; grid-row: 2; margin-top: 1.4rem; }
+  .g-team .ph img { aspect-ratio: 5 / 4 !important; }
+  .g-cherries { grid-column: 1; grid-row: 3; margin-top: 1.4rem; }
+  .g-piping   { grid-column: 2; grid-row: 3; margin-top: 3.6rem; }
+
+  .cat-cols { grid-template-columns: 1fr; margin-top: 2.4rem; }
+  .cat-cols > div { padding: 1.5rem 0; border-left: none; border-top: 1px solid var(--rule-hair); }
   .cat-cols > div:first-child { border-top: none; padding-top: 0; }
 
-  .sam-grid { grid-template-columns: 1fr; grid-template-areas: "text" "claudia" "side"; row-gap: 2rem; }
-  .sam-claudia img { object-position: 22% center; }
-  .sam-side { max-width: 100%; margin-top: .5rem; }
+  /* Mobil trägt Claudia den Abschnitt über die volle Breite, das
+     Kaffeedetail folgt als schmaler, nach rechts versetzter Nachsatz. */
+  .sam-grid { grid-template-columns: 1fr; gap: 0; }
+  .sam-text { grid-column: 1; grid-row: 1; padding-top: 0; }
+  .sam-claudia { grid-column: 1; grid-row: 2; margin-top: 1.8rem; }
+  .sam-side { grid-column: 1; grid-row: 3; max-width: 58%; margin: 1.2rem 0 0 auto; }
 
-  .standort-panel { grid-template-columns: 1fr; gap: 2.2rem; }
-  .standort-info { border-left: none; border-top: 1px solid var(--line-on-dark); padding: 1.8rem 0 0; }
+  .st-info { grid-template-columns: 1fr 1fr; gap: 1.8rem; }
+  .st-photo { max-width: 20rem; margin-top: 1rem; }
 
-  .f-grid { grid-template-columns: 1fr; gap: 2.2rem; }
-  .f-grid .f-logo img { width: 100px; }
+  .f-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+  .f-logo { grid-column: 1 / -1; }
+  .f-logo img { width: 92px; }
 }
 
-@media (max-width: 559px) {
+/* ==========================================================================
+   MOBIL — 640 px abwärts
+   ========================================================================== */
+@media (max-width: 639px) {
   body { font-size: 1rem; }
-  .infobar { font-size: .6rem; letter-spacing: .14em; }
-  .intro .body { font-size: 1.3rem; }
+  .infobar { font-size: .58rem; letter-spacing: .14em; }
+  .k-num::after { width: 1rem; margin-left: .55rem; }
+
+  .geschichte figure, .cat-head figure, .st-photo, .pat-lead { max-width: none; }
+  .backstube .inner { gap: 2rem; }
+  .st-info { grid-template-columns: 1fr; gap: 1.6rem; }
+  .f-grid { grid-template-columns: 1fr; }
+  .f-base { font-size: .62rem; }
 }

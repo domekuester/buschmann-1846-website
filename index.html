@@ -16,9 +16,9 @@
   <meta property="og:locale" content="de_DE">
   <meta name="twitter:card" content="summary_large_image">
 
-  <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/instrument-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/main.css?v=3">
+  <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/main.css?v=4">
 
   <script type="application/ld+json">
   {
@@ -51,10 +51,11 @@
 
 <a class="skip-link" href="#main">Zum Inhalt springen</a>
 
-<div class="sticky-head">
+<!-- ================= MARKENKOPF (Navy) ================= -->
+<div class="brandhead">
   <div class="infobar">
-    <span class="desktop-only">Samstags 12–17 Uhr&nbsp;&nbsp;·&nbsp;&nbsp;Akademiestrasse 8&nbsp;&nbsp;·&nbsp;&nbsp;Düsseldorf</span>
-    <span class="mobile-only">SA · 12–17 Uhr · Akademiestrasse 8</span>
+    <span class="d-only">Samstags 12–17 Uhr&nbsp;&nbsp;·&nbsp;&nbsp;Akademiestrasse 8&nbsp;&nbsp;·&nbsp;&nbsp;Düsseldorf</span>
+    <span class="m-only">SA · 12–17 Uhr · Akademiestrasse 8</span>
   </div>
   <header class="site-head">
     <nav class="site-nav left" aria-label="Hauptnavigation links">
@@ -62,7 +63,7 @@
       <a href="#patisserie">Pâtisserie</a>
     </nav>
     <a class="logo" href="#top" aria-label="Buschmann 1846 – zum Seitenanfang">
-      <img src="assets/img/logo.png" alt="Buschmann 1846 – Pâtisserie Catering" width="374" height="346">
+      <img src="assets/img/logo-mark.png" alt="Buschmann 1846 – Pâtisserie Catering" width="374" height="346">
     </a>
     <nav class="site-nav right" aria-label="Hauptnavigation rechts">
       <a href="#catering">Catering</a>
@@ -90,67 +91,73 @@
   </div>
 </div>
 
-<div class="spine" aria-hidden="true"><div class="spine-dot" id="spinedot"></div></div>
+<div class="spine" aria-hidden="true"></div>
 
 <main id="main">
   <!-- ================= HERO ================= -->
-  <section class="hero" id="top" data-spine aria-label="Buschmann 1846 – Düsseldorfer Pâtisserie seit 1846">
-    <picture>
-      <source media="(max-width: 767px)" type="image/webp"
-              srcset="assets/img/hero-mobile-750.webp 750w, assets/img/hero-mobile-1400.webp 1400w"
-              sizes="100vw">
-      <source media="(max-width: 767px)" type="image/jpeg"
-              srcset="assets/img/hero-mobile-750.jpg 750w, assets/img/hero-mobile-1400.jpg 1400w"
-              sizes="100vw">
-      <source type="image/webp"
-              srcset="assets/img/hero-1200.webp 1200w, assets/img/hero-2000.webp 2000w"
-              sizes="100vw">
-      <img src="assets/img/hero-1200.jpg"
-           srcset="assets/img/hero-1200.jpg 1200w, assets/img/hero-2000.jpg 2000w"
-           sizes="100vw" width="1200" height="801" fetchpriority="high"
-           alt="Historische Fassade mit dem Schriftzug „Bäckerei von Aug. Buschmann“ an der Akademiestraße in Düsseldorf, davor Gäste unter Schirmen">
-    </picture>
-    <div class="hero-panel">
-      <h1>Düsseldorfer <em>Pâtisserie.</em><br>Seit 1846.</h1>
-      <p class="hero-sub">In der Akademiestraße wird unter der Woche für Gastronomie, Catering und besondere Anlässe gebacken. Samstags ist von 12 bis 17 Uhr die Tür für Kaffee und Kuchen offen.</p>
+  <section class="hero" id="top" aria-label="Buschmann 1846 – Düsseldorfer Pâtisserie seit 1846">
+    <div class="hero-copy">
+      <p class="hero-eyebrow">Altstadt Düsseldorf</p>
+      <h1>Düsseldorfer Pâtisserie.<span class="since">Seit 1846.</span></h1>
+      <p class="hero-sub">Unter der Woche wird an der Akademiestraße für Gastronomie und Catering gebacken. Samstags geht das Fenster auf.</p>
       <div class="hero-meta">
-        <span>Akademiestrasse 8, Altstadt</span>
+        <span>Akademiestrasse 8</span>
         <span>Samstags 12–17 Uhr</span>
-        <span>Gegr. 1846</span>
       </div>
     </div>
+    <!-- Fassade im Originalformat 3:2 — vollständig sichtbar, nichts liegt darüber. -->
+    <figure class="hero-shot">
+      <picture>
+        <source media="(max-width: 1023px)" type="image/webp"
+                srcset="assets/img/hero-mobile-750.webp 750w, assets/img/hero-mobile-1400.webp 1400w"
+                sizes="100vw">
+        <source media="(max-width: 1023px)" type="image/jpeg"
+                srcset="assets/img/hero-mobile-750.jpg 750w, assets/img/hero-mobile-1400.jpg 1400w"
+                sizes="100vw">
+        <source type="image/webp"
+                srcset="assets/img/hero-1200.webp 1200w, assets/img/hero-2000.webp 2000w"
+                sizes="66vw">
+        <img src="assets/img/hero-1200.jpg"
+             srcset="assets/img/hero-1200.jpg 1200w, assets/img/hero-2000.jpg 2000w"
+             sizes="66vw" width="1200" height="801" fetchpriority="high"
+             alt="Historische Fassade mit dem Schriftzug „Bäckerei von Aug. Buschmann“ an der Akademiestraße in Düsseldorf, davor Gäste unter Schirmen">
+      </picture>
+    </figure>
   </section>
 
-  <!-- ================= EINORDNUNG ================= -->
-  <section class="intro" id="intro" data-spine aria-labelledby="intro-k">
+  <!-- ================= EINORDNUNG (nur Text, kein Kicker) ================= -->
+  <section class="intro" id="intro" aria-labelledby="intro-h">
     <div class="inner reveal">
-      <p class="kicker" id="intro-k">Das Haus</p>
-      <p class="body"><strong>Buschmann 1846</strong> ist eine Backstube in der Düsseldorfer Altstadt. Unter der Woche entstehen hier Kuchen, Torten und Pâtisserie für Cafés, Gastronomie, Unternehmen und private Anlässe. Und einmal in der Woche, samstags, geht das Fenster zur Akademiestraße auf.</p>
+      <h2 id="intro-h"><strong>Buschmann 1846</strong> ist eine Backstube in der Düsseldorfer Altstadt.</h2>
+      <p class="lede">Unter der Woche entstehen hier Kuchen, Torten und Pâtisserie für Cafés, Gastronomie, Unternehmen und private Anlässe. Und einmal in der Woche, samstags, geht das Fenster zur Akademiestraße auf.</p>
     </div>
   </section>
 
   <!-- ================= GESCHICHTE ================= -->
-  <section class="geschichte" id="geschichte" data-spine aria-labelledby="geschichte-h">
+  <section class="geschichte" id="geschichte" aria-labelledby="geschichte-h">
     <div class="inner">
       <div class="reveal">
-        <p class="kicker">Geschichte</p>
+        <p class="kicker"><i class="k-mark" aria-hidden="true"></i><span class="k-num">01</span>Geschichte</p>
         <h2 id="geschichte-h">1846 fing alles in der Akademiestraße an.</h2>
         <p class="body">August Buschmann eröffnete hier seine Backstube — dieselben Räume, in denen heute wieder gebacken wird. Sechs Generationen haben den Betrieb durch zwei Weltkriege getragen, zeitweise mit rund 120 Beschäftigten und fünf Standorten in Düsseldorf.</p>
         <p class="body">Gregor Buschmann, direkter Nachfahre des Gründers, wuchs in der Altstadt auf und holte sich als Schüler der Maxschule nach dem Unterricht häufig ein Teilchen aus der Backstube. Nach Jahren als Koch, Küchenchef, Sous-Chef und Pâtissier in Düsseldorf und der Schweiz steht er seit Januar 2021 wieder dort, wo 1846 alles anfing.</p>
       </div>
-      <figure class="reveal">
-        <picture>
-          <source type="image/webp" srcset="assets/img/machine-800.webp 800w, assets/img/machine-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 480px">
-          <img src="assets/img/machine-800.jpg" srcset="assets/img/machine-800.jpg 800w, assets/img/machine-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 480px" width="800" height="1198" loading="lazy" alt="Historische cremefarbene Anschlagmaschine der Marke Rego mit Schneebesen und heller Masse im Kessel">
-        </picture>
+      <!-- REGO-Anschlagmaschine: Korpus und Kessel gemeinsam im Fenster. -->
+      <figure class="reveal" style="--ratio: 3/4; --fy: 45%">
+        <span class="ph ph-edge">
+          <picture>
+            <source type="image/webp" srcset="assets/img/machine-800.webp 800w, assets/img/machine-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 384px">
+            <img src="assets/img/machine-800.jpg" srcset="assets/img/machine-800.jpg 800w, assets/img/machine-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 384px" width="800" height="1198" loading="lazy" alt="Historische cremefarbene Anschlagmaschine der Marke Rego mit Schneebesen und heller Masse im Kessel">
+          </picture>
+        </span>
       </figure>
     </div>
   </section>
 
   <!-- ================= CHRONOLOGIE ================= -->
-  <section class="chrono on-dark" id="chronologie" data-spine aria-labelledby="chrono-k">
+  <section class="chrono on-dark" id="chronologie" aria-labelledby="chrono-h">
     <div class="inner">
-      <p class="kicker" id="chrono-k">Chronologie</p>
+      <h2 class="serif" id="chrono-h">Sechs Generationen.</h2>
       <ol>
         <li class="reveal"><span class="year">1846</span><p>August Buschmann gründet die Bäckerei und Backstube an der Akademiestraße.</p></li>
         <li class="reveal"><span class="year">1950</span><p>Das Café an der Flinger Straße öffnet nach dem Krieg wieder.</p></li>
@@ -163,107 +170,139 @@
   </section>
 
   <!-- ================= PÂTISSERIE ================= -->
-  <section class="patisserie" id="patisserie" data-spine aria-labelledby="patisserie-h">
+  <section class="patisserie" id="patisserie" aria-labelledby="patisserie-h">
     <div class="inner">
-      <p class="kicker">Pâtisserie</p>
-      <h2 id="patisserie-h">Kuchen, Torten, Pâtisserie.</h2>
       <div class="pat-grid">
-        <figure class="reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/cake-800.webp 800w, assets/img/cake-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 560px">
-            <img src="assets/img/cake-800.jpg" srcset="assets/img/cake-800.jpg 800w, assets/img/cake-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 560px" width="800" height="1200" loading="lazy" alt="Tortenstück mit Karamelldecke auf grün-goldenem historischem Porzellanteller">
-          </picture>
-        </figure>
-        <div class="pat-side">
-          <p class="body reveal">Gebacken wird, was eine Backstube mit über hundertsiebzig Jahren Übung eben backt: Käsekuchen mit Karamelldecke, Torten mit Kirschfüllung, Sahne aus dem Kupferkessel. Serviert wird samstags auf altem Porzellan — manches davon ist länger im Haus als die meisten Rezepte.</p>
-          <blockquote class="reveal">„Esst mehr Sahnetorte!“<cite>Gregor Buschmann, im Porträt von THE DORF</cite></blockquote>
-          <figure class="reveal">
+        <!-- Tortenstück und Porzellanteller mittig im Hochformat. -->
+        <figure class="pat-lead reveal" style="--ratio: 4/5; --fy: 62%">
+          <span class="ph ph-edge">
             <picture>
-              <source type="image/webp" srcset="assets/img/cherries-800.webp 800w, assets/img/cherries-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 420px">
-              <img src="assets/img/cherries-800.jpg" srcset="assets/img/cherries-800.jpg 800w, assets/img/cherries-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 420px" width="800" height="1198" loading="lazy" alt="Hand über glänzender Kirschfüllung in einem Tortenrahmen">
+              <source type="image/webp" srcset="assets/img/cake-800.webp 800w, assets/img/cake-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 340px">
+              <img src="assets/img/cake-800.jpg" srcset="assets/img/cake-800.jpg 800w, assets/img/cake-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 340px" width="800" height="1200" loading="lazy" alt="Tortenstück mit Karamelldecke auf grün-goldenem historischem Porzellanteller">
             </picture>
+          </span>
+        </figure>
+        <div class="pat-side reveal">
+          <p class="kicker"><i class="k-mark" aria-hidden="true"></i><span class="k-num">02</span>Pâtisserie</p>
+          <h2 id="patisserie-h">Kuchen, Torten, Pâtisserie.</h2>
+          <p class="body body-lg">Gebacken wird, was eine Backstube mit über hundertsiebzig Jahren Übung eben backt: Käsekuchen mit Karamelldecke, Torten mit Kirschfüllung, Sahne aus dem Kupferkessel. Serviert wird samstags auf altem Porzellan — manches davon ist länger im Haus als die meisten Rezepte.</p>
+          <blockquote>„Esst mehr Sahnetorte!“<cite>Gregor Buschmann, im Porträt von THE DORF</cite></blockquote>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= BACKSTUBE (Markenblau) ================= -->
+  <section class="backstube on-dark" id="backstube" aria-labelledby="backstube-h">
+    <div class="inner">
+      <div class="text-col">
+        <p class="kicker"><i class="k-mark" aria-hidden="true"></i><span class="k-num">03</span>Die Backstube</p>
+        <h2 id="backstube-h">Angerührt, gegossen, gestrichen, gebacken.</h2>
+        <p class="body">Hinter dem Fenster zur Akademiestraße wird unter der Woche produziert — mit Maschinen, die seit Jahrzehnten ihren Dienst tun, und Handgriffen, die man keiner Maschine überlässt.</p>
+      </div>
+      <div class="bs-pair">
+        <!-- Handgriff: Palette, Teig und Form bleiben gemeinsam lesbar. -->
+        <figure class="reveal" style="--ratio: 3/4; --fy: 45%">
+          <span class="ph">
+            <picture>
+              <source type="image/webp" srcset="assets/img/hands-800.webp 800w, assets/img/hands-1200.webp 1200w" sizes="(max-width: 1023px) 45vw, 300px">
+              <img src="assets/img/hands-800.jpg" srcset="assets/img/hands-800.jpg 800w, assets/img/hands-1200.jpg 1200w" sizes="(max-width: 1023px) 45vw, 300px" width="800" height="1198" loading="lazy" alt="Hände streichen Teig mit einer Winkelpalette in eine Backform">
+            </picture>
+          </span>
+        </figure>
+        <!-- Leitbild: Gesicht, Guss und Kupferschüssel im vollen Hochformat. -->
+        <figure class="reveal" style="--ratio: 2/3">
+          <span class="ph ph-edge">
+            <picture>
+              <source type="image/webp" srcset="assets/img/pour-800.webp 800w, assets/img/pour-1200.webp 1200w" sizes="(max-width: 1023px) 45vw, 300px">
+              <img src="assets/img/pour-800.jpg" srcset="assets/img/pour-800.jpg 800w, assets/img/pour-1200.jpg 1200w" sizes="(max-width: 1023px) 45vw, 300px" width="800" height="1198" loading="lazy" alt="Bäcker gießt helle Masse aus einem Kessel in eine Kupferschüssel">
+            </picture>
+          </span>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= GALERIE — vier vertikale Spuren ================= -->
+  <section class="galerie" id="galerie" aria-labelledby="galerie-h">
+    <div class="inner-wide">
+      <div class="g-head">
+        <p class="kicker"><i class="k-mark" aria-hidden="true"></i><span class="k-num">04</span>Bildstrecke</p>
+        <h2 class="g-line" id="galerie-h">Eine Woche in der Akademiestraße.</h2>
+      </div>
+      <div class="g-board">
+        <!-- Spur 1 — sehr schmales, langes Leitbild, startet oben. -->
+        <div class="g-track g-t1">
+          <figure class="g-copper reveal" style="--ratio: 1/4; --fx: 55%">
+            <span class="ph ph-edge">
+              <picture>
+                <source type="image/webp" srcset="assets/img/copper-800.webp 800w, assets/img/copper-1200.webp 1200w" sizes="(max-width: 1023px) 46vw, 250px">
+                <img src="assets/img/copper-800.jpg" srcset="assets/img/copper-800.jpg 800w, assets/img/copper-1200.jpg 1200w" sizes="(max-width: 1023px) 46vw, 250px" width="800" height="1198" loading="lazy" alt="Großer Schneebesen in einem Kupferkessel mit geschlagener heller Masse">
+              </picture>
+            </span>
+          </figure>
+        </div>
+        <!-- Spur 2 — zwei versetzte Motive, startet deutlich tiefer. -->
+        <div class="g-track g-t2">
+          <figure class="g-almonds reveal" style="--ratio: 1/2">
+            <span class="ph">
+              <picture>
+                <source type="image/webp" srcset="assets/img/almonds-600.webp 600w, assets/img/almonds-1200.webp 1200w" sizes="(max-width: 1023px) 46vw, 320px">
+                <img src="assets/img/almonds-600.jpg" srcset="assets/img/almonds-600.jpg 600w, assets/img/almonds-1200.jpg 1200w" sizes="(max-width: 1023px) 46vw, 320px" width="600" height="898" loading="lazy" alt="Mandelblättchen in Nahaufnahme">
+              </picture>
+            </span>
+          </figure>
+          <figure class="g-cherries reveal" style="--ratio: 2/3">
+            <span class="ph">
+              <picture>
+                <source type="image/webp" srcset="assets/img/cherries-800.webp 800w, assets/img/cherries-1200.webp 1200w" sizes="(max-width: 1023px) 46vw, 320px">
+                <img src="assets/img/cherries-800.jpg" srcset="assets/img/cherries-800.jpg 800w, assets/img/cherries-1200.jpg 1200w" sizes="(max-width: 1023px) 46vw, 320px" width="800" height="1198" loading="lazy" alt="Hand über glänzender Kirschfüllung in einem Tortenrahmen">
+              </picture>
+            </span>
+          </figure>
+        </div>
+        <!-- Spur 3 — Menschen, eigener Startpunkt. -->
+        <div class="g-track g-t3">
+          <figure class="g-team reveal" style="--ratio: 1/2; --fy: 48%">
+            <span class="ph ph-edge">
+              <picture>
+                <source type="image/webp" srcset="assets/img/window-team-600.webp 600w, assets/img/window-team-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 280px">
+                <img src="assets/img/window-team-600.jpg" srcset="assets/img/window-team-600.jpg 600w, assets/img/window-team-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 280px" width="600" height="900" loading="lazy" alt="Zwei lächelnde Frauen hinter dem Verkaufsfenster">
+              </picture>
+            </span>
+          </figure>
+        </div>
+        <!-- Spur 4 — breiteres vertikales Leitbild, startet am tiefsten. -->
+        <div class="g-track g-t4">
+          <figure class="g-piping reveal" style="--ratio: 4/7; --fx: 46%">
+            <span class="ph">
+              <picture>
+                <source type="image/webp" srcset="assets/img/piping-600.webp 600w, assets/img/piping-1200.webp 1200w" sizes="(max-width: 1023px) 46vw, 370px">
+                <img src="assets/img/piping-600.jpg" srcset="assets/img/piping-600.jpg 600w, assets/img/piping-1200.jpg 1200w" sizes="(max-width: 1023px) 46vw, 370px" width="600" height="898" loading="lazy" alt="Bäcker füllt einen Spritzbeutel mit heller Masse">
+              </picture>
+            </span>
           </figure>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- ================= BACKSTUBE ================= -->
-  <section class="backstube on-dark" id="backstube" data-spine aria-labelledby="backstube-h">
-    <div class="inner">
-      <div class="text-col">
-        <p class="kicker">Die Backstube</p>
-        <h2 id="backstube-h">Angerührt, gegossen, gestrichen, gebacken.</h2>
-        <p class="body reveal">Hinter dem Fenster zur Akademiestraße wird unter der Woche produziert — mit Maschinen, die seit Jahrzehnten ihren Dienst tun, und Handgriffen, die man keiner Maschine überlässt.</p>
-        <figure class="reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/hands-800.webp 800w, assets/img/hands-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 420px">
-            <img src="assets/img/hands-800.jpg" srcset="assets/img/hands-800.jpg 800w, assets/img/hands-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 420px" width="800" height="1198" loading="lazy" alt="Hände streichen Teig mit einer Winkelpalette in eine Backform">
-          </picture>
-        </figure>
-      </div>
-      <figure class="lead-img reveal">
-        <picture>
-          <source type="image/webp" srcset="assets/img/pour-800.webp 800w, assets/img/pour-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 640px">
-          <img src="assets/img/pour-800.jpg" srcset="assets/img/pour-800.jpg 800w, assets/img/pour-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 640px" width="800" height="1198" loading="lazy" alt="Bäcker gießt helle Masse aus einem Kessel in eine Kupferschüssel">
-        </picture>
-      </figure>
-    </div>
-  </section>
-
-  <!-- ================= REDAKTIONELLE GALERIE ================= -->
-  <section class="galerie" id="galerie" data-spine aria-labelledby="galerie-k">
-    <div class="inner-wide">
-      <p class="kicker" id="galerie-k">Aus der Akademiestraße</p>
-      <div class="g-board">
-        <figure class="g-copper reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/copper-800.webp 800w, assets/img/copper-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 440px">
-            <img src="assets/img/copper-800.jpg" srcset="assets/img/copper-800.jpg 800w, assets/img/copper-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 440px" width="800" height="1198" loading="lazy" alt="Großer Schneebesen in einem Kupferkessel mit geschlagener heller Masse">
-          </picture>
-        </figure>
-        <figure class="g-almonds reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/almonds-600.webp 600w, assets/img/almonds-1200.webp 1200w" sizes="(max-width: 1023px) 50vw, 320px">
-            <img src="assets/img/almonds-600.jpg" srcset="assets/img/almonds-600.jpg 600w, assets/img/almonds-1200.jpg 1200w" sizes="(max-width: 1023px) 50vw, 320px" width="600" height="898" loading="lazy" alt="Mandelblättchen in Nahaufnahme">
-          </picture>
-        </figure>
-        <figure class="g-team reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/window-team-600.webp 600w, assets/img/window-team-1200.webp 1200w" sizes="(max-width: 1023px) 42vw, 560px">
-            <img src="assets/img/window-team-600.jpg" srcset="assets/img/window-team-600.jpg 600w, assets/img/window-team-1200.jpg 1200w" sizes="(max-width: 1023px) 42vw, 560px" width="600" height="543" loading="lazy" alt="Zwei lächelnde Frauen hinter dem Verkaufsfenster">
-          </picture>
-        </figure>
-        <figure class="g-piping reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/piping-600.webp 600w, assets/img/piping-1200.webp 1200w" sizes="(max-width: 1023px) 42vw, 320px">
-            <img src="assets/img/piping-600.jpg" srcset="assets/img/piping-600.jpg 600w, assets/img/piping-1200.jpg 1200w" sizes="(max-width: 1023px) 42vw, 320px" width="600" height="898" loading="lazy" alt="Bäcker füllt einen Spritzbeutel mit heller Masse">
-          </picture>
-        </figure>
-        <figure class="g-outside reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/window-outside-600.webp 600w, assets/img/window-outside-1200.webp 1200w" sizes="(max-width: 1023px) 50vw, 300px">
-            <img src="assets/img/window-outside-600.jpg" srcset="assets/img/window-outside-600.jpg 600w, assets/img/window-outside-1200.jpg 1200w" sizes="(max-width: 1023px) 50vw, 300px" width="600" height="898" loading="lazy" alt="Frau bestellt am Verkaufsfenster, daneben eine Kreidetafel mit Kaffeekarte">
-          </picture>
-        </figure>
-        <p class="g-note reveal">Eine Woche an der Akademiestraße: Ort, Handwerk, Menschen, Samstag.</p>
-      </div>
-    </div>
-  </section>
-
   <!-- ================= CATERING ================= -->
-  <section class="catering on-dark" id="catering" data-spine aria-labelledby="catering-h">
+  <section class="catering on-dark" id="catering" aria-labelledby="catering-h">
     <div class="inner">
       <div class="cat-head">
         <div>
-          <p class="kicker">Catering</p>
+          <p class="kicker"><i class="k-mark" aria-hidden="true"></i><span class="k-num">05</span>Catering</p>
           <h2 id="catering-h">Für Cafés, Unternehmen und private Anlässe.</h2>
         </div>
-        <figure class="reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/butter-600.webp 600w, assets/img/butter-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 460px">
-            <img src="assets/img/butter-600.jpg" srcset="assets/img/butter-600.jpg 600w, assets/img/butter-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 460px" width="600" height="898" loading="lazy" alt="Butter auf dunklen Schokoladenstücken in einem Edelstahlkessel">
-          </picture>
+        <!-- Materialbild: Butter auf Schokolade, mittig im Hochformat. -->
+        <figure class="reveal" style="--ratio: 3/4; --fy: 60%">
+          <span class="ph">
+            <picture>
+              <source type="image/webp" srcset="assets/img/butter-600.webp 600w, assets/img/butter-1200.webp 1200w" sizes="(max-width: 1023px) 60vw, 272px">
+              <img src="assets/img/butter-600.jpg" srcset="assets/img/butter-600.jpg 600w, assets/img/butter-1200.jpg 1200w" sizes="(max-width: 1023px) 60vw, 272px" width="600" height="898" loading="lazy" alt="Butter auf dunklen Schokoladenstücken in einem Edelstahlkessel">
+            </picture>
+          </span>
         </figure>
       </div>
       <div class="cat-cols">
@@ -288,68 +327,97 @@
   </section>
 
   <!-- ================= SAMSTAGSFENSTER ================= -->
-  <section class="samstag on-dark" id="samstag" data-spine aria-labelledby="samstag-h">
+  <section class="samstag on-dark" id="samstag" aria-labelledby="samstag-h">
     <div class="inner">
       <div class="sam-grid">
         <div class="sam-text">
-          <p class="kicker">Das Samstagsfenster</p>
-          <h2 id="samstag-h">Samstags ist die Tür offen.</h2>
-          <p class="body reveal">Unter der Woche wird in der Backstube produziert. Am Samstag gibt es von 12 bis 17 Uhr Kaffee und Kuchen — und meistens noch ein kurzes Gespräch über die Theke.</p>
-          <div class="sam-facts reveal">
+          <p class="kicker"><i class="k-mark" aria-hidden="true"></i><span class="k-num">06</span>Das Samstagsfenster</p>
+          <h2 class="serif" id="samstag-h">Samstags ist die Tür offen.</h2>
+          <p class="body">Unter der Woche wird in der Backstube produziert. Am Samstag gibt es von 12 bis 17 Uhr Kaffee und Kuchen — und meistens noch ein kurzes Gespräch über die Theke.</p>
+          <p class="sam-facts">
             Samstag · 12–17 Uhr
             <span>Akademiestrasse 8, Altstadt</span>
-          </div>
+          </p>
         </div>
-        <figure class="sam-claudia reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/claudia-800.webp 800w, assets/img/claudia-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 560px">
-            <img src="assets/img/claudia-800.jpg" srcset="assets/img/claudia-800.jpg 800w, assets/img/claudia-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 560px" width="800" height="1000" loading="lazy" alt="Mitarbeiterin lacht hinter dem geöffneten Verkaufsfenster, davor ein Gast">
-          </picture>
+        <!-- Claudia bleibt das Hauptmotiv; der Gast gibt nur Kontext. -->
+        <figure class="sam-claudia reveal" style="--ratio: 2/3; --fx: 52%">
+          <span class="ph ph-edge">
+            <picture>
+              <source type="image/webp" srcset="assets/img/claudia-800.webp 800w, assets/img/claudia-1200.webp 1200w" sizes="(max-width: 1023px) 46vw, 400px">
+              <img src="assets/img/claudia-800.jpg" srcset="assets/img/claudia-800.jpg 800w, assets/img/claudia-1200.jpg 1200w" sizes="(max-width: 1023px) 46vw, 400px" width="800" height="1000" loading="lazy" alt="Mitarbeiterin lacht hinter dem geöffneten Verkaufsfenster, davor ein Gast">
+            </picture>
+          </span>
         </figure>
-        <figure class="sam-side reveal">
-          <picture>
-            <source type="image/webp" srcset="assets/img/barista-800.webp 800w, assets/img/barista-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 380px">
-            <img src="assets/img/barista-800.jpg" srcset="assets/img/barista-800.jpg 800w, assets/img/barista-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 380px" width="800" height="1198" loading="lazy" alt="Espressomaschine mit Tassen, dahinter eine Person bei der Kaffeezubereitung">
-          </picture>
+        <!-- Zweites, schmales Detail: Person und Espressomaschine zusammen. -->
+        <figure class="sam-side reveal" style="--ratio: 1/2; --fx: 30%">
+          <span class="ph">
+            <picture>
+              <source type="image/webp" srcset="assets/img/barista-800.webp 800w, assets/img/barista-1200.webp 1200w" sizes="(max-width: 1023px) 46vw, 260px">
+              <img src="assets/img/barista-800.jpg" srcset="assets/img/barista-800.jpg 800w, assets/img/barista-1200.jpg 1200w" sizes="(max-width: 1023px) 46vw, 260px" width="800" height="1198" loading="lazy" alt="Person bereitet an der Espressomaschine Kaffee zu">
+            </picture>
+          </span>
         </figure>
       </div>
     </div>
   </section>
 
   <!-- ================= STANDORT ================= -->
-  <section class="standort" id="standort" data-spine aria-labelledby="standort-h">
-    <div class="standort-panel reveal">
-      <div>
-        <p class="kicker">Standort</p>
-        <h2 id="standort-h">Akademiestraße 8.</h2>
-        <p class="standort-lede">In der Düsseldorfer Altstadt, dort, wo 1846 die erste Backstube eröffnete. Unter der Woche wird hier produziert und ausgeliefert — samstags ist die Tür für Gäste offen.</p>
-      </div>
-      <div class="standort-info">
-        <div>
-          <h3>Adresse</h3>
-          <address>
-            <strong>Buschmann 1846</strong><br>
-            Akademiestraße 8<br>
-            40213 Düsseldorf
-          </address>
-        </div>
-        <div>
-          <h3>Für Gäste</h3>
-          Samstags 12–17 Uhr — Kaffee und Kuchen.
-        </div>
-        <div>
-          <h3>Folgen</h3>
-          <div class="social-links">
-            <a href="https://www.instagram.com/buschmann1846/" target="_blank" rel="noopener noreferrer" aria-label="Instagram von Buschmann 1846, öffnet in neuem Tab">
-              <span class="soc-ic" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5"/><circle cx="12" cy="12" r="4.6"/><circle cx="17.6" cy="6.4" r="1.25" fill="currentColor" stroke="none"/></svg></span>
-              <span>@buschmann1846</span>
-            </a>
-            <a href="https://www.facebook.com/Buschmannduesseldorf" target="_blank" rel="noopener noreferrer" aria-label="Facebook von Buschmann 1846, öffnet in neuem Tab">
-              <span class="soc-ic" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M13.6 21v-7.6h2.55l.38-2.96H13.6V8.55c0-.86.24-1.44 1.47-1.44h1.57V4.46c-.27-.04-1.2-.12-2.29-.12-2.27 0-3.82 1.39-3.82 3.93v2.17H8v2.96h2.53V21h3.07z"/></svg></span>
-              <span>Buschmann Düsseldorf</span>
-            </a>
+  <section class="standort on-dark" id="standort" aria-labelledby="standort-h">
+    <div class="inner">
+      <div class="st-grid">
+        <div class="reveal">
+          <p class="kicker"><i class="k-mark" aria-hidden="true"></i><span class="k-num">07</span>Standort</p>
+          <h2 id="standort-h">Akademiestraße 8.</h2>
+          <p class="st-lede">In der Düsseldorfer Altstadt, dort, wo 1846 die erste Backstube eröffnete. Unter der Woche wird hier produziert und ausgeliefert — samstags ist die Tür für Gäste offen.</p>
+          <div class="st-info">
+            <div>
+              <h3>Adresse</h3>
+              <address>
+                <strong>Buschmann 1846</strong><br>
+                Akademiestraße 8<br>
+                40213 Düsseldorf
+              </address>
+            </div>
+            <div>
+              <h3>Für Gäste</h3>
+              Samstags 12–17 Uhr<br>Kaffee und Kuchen.
+            </div>
+            <div>
+              <h3>Folgen</h3>
+              <div class="social-links">
+                <a href="https://www.instagram.com/buschmann1846/" target="_blank" rel="noopener noreferrer" aria-label="Buschmann 1846 auf Instagram, öffnet in neuem Tab">
+                  <svg class="soc-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <defs><linearGradient id="ig-grad" x1="0" y1="1" x2="1" y2="0">
+                      <stop offset="0" stop-color="#FEDA75"/><stop offset=".35" stop-color="#FA7E1E"/>
+                      <stop offset=".65" stop-color="#D62976"/><stop offset="1" stop-color="#4F5BD5"/>
+                    </linearGradient></defs>
+                    <rect width="24" height="24" rx="6.5" fill="url(#ig-grad)"/>
+                    <rect x="5.3" y="5.3" width="13.4" height="13.4" rx="4.2" fill="none" stroke="#fff" stroke-width="1.6"/>
+                    <circle cx="12" cy="12" r="3.3" fill="none" stroke="#fff" stroke-width="1.6"/>
+                    <circle cx="17" cy="7" r="1.05" fill="#fff"/>
+                  </svg>
+                  <span>@buschmann1846</span>
+                </a>
+                <a href="https://www.facebook.com/Buschmannduesseldorf" target="_blank" rel="noopener noreferrer" aria-label="Buschmann 1846 auf Facebook, öffnet in neuem Tab">
+                  <svg class="soc-ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <rect width="24" height="24" rx="6.5" fill="#1877F2"/>
+                    <path fill="#fff" d="M15.9 12.6h-2.3V20h-3.1v-7.4H8.6v-2.7h1.9V8.2c0-2.2 1.3-3.4 3.6-3.4h2v2.7h-1.4c-.8 0-1.1.3-1.1 1v1.4h2.6l-.3 2.7z"/>
+                  </svg>
+                  <span>Buschmann Düsseldorf</span>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
+        <!-- Ortsbild: Gast am Verkaufsfenster, Kreidetafel als Kontext. -->
+        <figure class="st-photo reveal" style="--ratio: 2/3; --fx: 56%">
+          <span class="ph ph-edge">
+            <picture>
+              <source type="image/webp" srcset="assets/img/window-outside-600.webp 600w, assets/img/window-outside-1200.webp 1200w" sizes="(max-width: 1023px) 92vw, 320px">
+              <img src="assets/img/window-outside-600.jpg" srcset="assets/img/window-outside-600.jpg 600w, assets/img/window-outside-1200.jpg 1200w" sizes="(max-width: 1023px) 92vw, 320px" width="600" height="898" loading="lazy" alt="Gast bestellt am Verkaufsfenster an der Akademiestraße, daneben eine Kreidetafel mit der Kaffeekarte">
+            </picture>
+          </span>
+        </figure>
       </div>
     </div>
   </section>
@@ -359,10 +427,10 @@
 <footer>
   <div class="f-main">
     <div class="inner">
-      <p class="f-claim">Seit 1846 an der <em>Akademiestraße.</em></p>
+      <p class="f-claim">Seit 1846 an der Akademiestraße.</p>
       <div class="f-grid">
         <div class="f-logo">
-          <img src="assets/img/logo.png" alt="Buschmann 1846 – Pâtisserie Catering" width="374" height="346">
+          <img src="assets/img/logo-mark.png" alt="Buschmann 1846 – Pâtisserie Catering" width="374" height="346" loading="lazy">
         </div>
         <div>
           <h4>Besuch</h4>
@@ -395,10 +463,10 @@
   </div>
   <div class="f-base">
     <span>Buschmann 1846 · Pâtisserie &amp; Catering · Düsseldorf</span>
-    <span class="seit">Seit 1846</span>
+    <span>Düsseldorfer Altstadt</span>
   </div>
 </footer>
 
-<script src="assets/js/main.js?v=3" defer></script>
+<script src="assets/js/main.js?v=4" defer></script>
 </body>
 </html>

@@ -18,9 +18,13 @@ OUT.mkdir(parents=True, exist_ok=True)
 # crop-box = (left, top, right, bottom) im Original
 JOBS = {
     "hero":           ("P1360101.jpg", None,                    [1200, 2000]),
-    "hero-mobile":    ("P1360101.jpg", (1120, 0, 2870, 2665),   [750, 1400]),
+    # Mobil 4:5 um die Gebäudeachse: Schriftzug, Tür und die Gäste bleiben drin.
+    "hero-mobile":    ("P1360101.jpg", (929, 0, 3061, 2665),    [750, 1400]),
     "claudia":        ("Claudia.jpg",  (950, 400, 2630, 2500),  [800, 1200]),
-    "window-team":    ("P1360788.jpg", (0, 250, 2651, 2650),    [600, 1200]),
+    # Vertikal 2:3 eng auf die obere Scheibe: beide Gesichter liegen bei rund
+    # 48 % Höhe, der Leuchtpfeil bleibt als Kontext, die untere
+    # Spiegelungsscheibe ist weg (Kuratierungsregel 4).
+    "window-team":    ("P1360788.jpg", (527, 750, 1674, 2470),  [600, 1200]),
     "machine":        ("P1360191.jpg", None, [800, 1200]),
     "copper":         ("P1360329.jpg", None, [800, 1200]),
     "cake":           ("P1360096.jpg", None, [800, 1200]),
@@ -58,6 +62,26 @@ im.crop((0, 285, 3990, 2380)).resize((1200, 630), Image.LANCZOS).save(
 # Logo (bereinigte transparente Fassung) + Favicons
 logo = Image.open(ROOT / "04-logo" / "buschmann-logo-transparent.png")
 logo.save(OUT / "logo.png")
+
+# Markenzeichen für Navy-Flächen: Das Original ist eine navyfarbene Scheibe mit
+# hellen Linien. Auf Navy gesetzt wirkt es als aufgeklebte Plakette. Deshalb
+# wird die Scheibe transparent gerechnet und nur die Linienzeichnung in
+# Elfenbein behalten — so sitzt die Marke in der Fläche statt darauf.
+DISC_L, LINE_L = 30.0, 205.0          # Luminanz der Scheibe bzw. der Linien
+INK = (243, 237, 223)                 # --ivory
+src = logo.convert("RGBA")
+mark = Image.new("RGBA", src.size, INK + (0,))
+sp, mp = src.load(), mark.load()
+for y in range(src.height):
+    for x in range(src.width):
+        r, g, b, a = sp[x, y]
+        if not a:
+            continue
+        lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+        t = (lum - DISC_L) / (LINE_L - DISC_L)
+        t = 0.0 if t < 0 else (1.0 if t > 1 else t)
+        mp[x, y] = INK + (round(a * t),)
+mark.save(OUT / "logo-mark.png")
 for size, name in ((180, "apple-touch-icon.png"), (48, "favicon-48.png")):
     fav = logo.copy()
     fav.thumbnail((size, size), Image.LANCZOS)
