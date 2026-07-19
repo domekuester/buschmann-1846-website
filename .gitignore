@@ -9,3 +9,4 @@ tmp/
 .cache/
 playwright-report/
 test-results/
+.playwright-mcp/
