@@ -3,6 +3,15 @@
 Alle Texte folgen BRAND-VOICE.md und verwenden ausschließlich Fakten aus
 FACTS.md. Reihenfolge = Seitenstruktur.
 
+> **Status 20.07.2026 — dieses Dokument ist NICHT der Live-Stand.**
+> Es hält den GATE-1-Entwurf fest. Die veröffentlichten Texte in `index.html`
+> sind seither überarbeitet worden (Wiederholungen reduziert, wärmerer Ton).
+> In diesem Dokument wurden nur zwei **sachliche Fehler** nachgezogen, damit
+> sie nicht aus dem Entwurf zurück in die Website wandern:
+> das Produkt heißt **Zitronen-Cheesecake mit Zitronenglasur** (nicht
+> „Karamelldecke"), und es gibt **keinen bestätigten Kontaktweg** über
+> Social Media. Maßgeblich für den aktuellen Wortlaut ist `index.html`.
+
 ## 1. Informationszeile
 
 > SAMSTAGS 12–17 UHR · AKADEMIESTRASSE 8 · DÜSSELDORF
@@ -67,15 +76,15 @@ Rego mit Schneebesen und heller Masse im Kessel.
 **Headline:** Kuchen, Torten, Pâtisserie.
 
 **Text:** Gebacken wird, was eine Backstube mit über hundertsiebzig Jahren
-Übung eben backt: Käsekuchen mit Karamelldecke, Torten mit Kirschfüllung,
-Sahne aus dem Kupferkessel. Serviert wird samstags auf altem Porzellan —
+Übung eben backt: Zitronen-Cheesecake mit Zitronenglasur, Torten mit
+Kirschfüllung, Sahne aus dem Kupferkessel. Serviert wird auf altem Porzellan —
 manches davon ist länger im Haus als die meisten Rezepte.
 
 **Zitat (dezent, am Rand):** „Esst mehr Sahnetorte!" — Gregor Buschmann
 
-**Bild-Alts:** Tortenstück mit Karamelldecke auf grün-goldenem historischem
-Porzellanteller (P1360096) · Hand über glänzender Kirschfüllung in einem
-Tortenrahmen (P1360370).
+**Bild-Alts:** Zitronen-Cheesecake mit heller Zitronenglasur auf grün-goldenem
+historischem Porzellanteller (P1360096) · Hand über glänzender Kirschfüllung in
+einem Tortenrahmen (P1360370).
 
 ## 8. Backstube und Menschen
 
@@ -112,7 +121,8 @@ Absprache, geliefert wird pünktlich.
 **Private Anlässe:** Für Geburtstage und Feiern — nach Absprache und passend
 zum Anlass.
 
-**Hinweis:** Anfragen derzeit über Instagram oder Facebook.
+**Hinweis:** Kein Kontaktweg bestätigt — Instagram und Facebook stehen NUR als
+Social-Media-Links, nicht als Anfrage- oder Bestellkanal (Korrektur 20.07.2026).
 *(TODO intern: Kontaktweg bestätigen — nicht auf die Website, solange offen.)*
 
 ## 11. Samstagsfenster

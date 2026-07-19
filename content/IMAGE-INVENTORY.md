@@ -48,9 +48,10 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 
 ## P1360096.jpg — L (Pâtisserie)
 - 2566 × 3849, Hochformat
-- Motiv: Käsekuchen-/Tortenstück mit Karamelldecke und Mandelkante auf
+- Motiv: Zitronen-Cheesecake mit Zitronenglasur und Mandelkante auf
   historischem grün-goldenem Porzellanteller; Stapel Zwiebelmuster-Teller
   im Hintergrund, dunkle Steinplatte
+  (Korrektur 20.07.2026: zuvor fälschlich als „Karamelldecke" beschrieben)
 - Tätigkeit: — (Stillleben)
 - Qualität: sehr scharf, stimmungsvoll dunkel-warm, klare Komposition
 - Rolle: dominantes Produktbild Pâtisserie; historisches Porzellan ✓
