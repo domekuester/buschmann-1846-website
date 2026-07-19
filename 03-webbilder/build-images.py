@@ -21,10 +21,11 @@ JOBS = {
     # Mobil 4:5 um die Gebäudeachse: Schriftzug, Tür und die Gäste bleiben drin.
     "hero-mobile":    ("P1360101.jpg", (929, 0, 3061, 2665),    [750, 1400]),
     "claudia":        ("Claudia.jpg",  (950, 400, 2630, 2500),  [800, 1200]),
-    # Vertikal 2:3 eng auf die obere Scheibe: beide Gesichter liegen bei rund
-    # 48 % Höhe, der Leuchtpfeil bleibt als Kontext, die untere
-    # Spiegelungsscheibe ist weg (Kuratierungsregel 4).
-    "window-team":    ("P1360788.jpg", (527, 750, 1674, 2470),  [600, 1200]),
+    # Eng auf die Begegnung: beide Gesichter liegen bei rund 45 % Höhe, die
+    # tote Fläche über den Köpfen ist weg, vom Leuchtpfeil bleibt nur noch
+    # ein Rest als Kontext. Untere Spiegelungsscheibe weg (Regel 4).
+    # Seitenverhältnis 0,62 — entspricht dem Anzeigefenster in der Galerie.
+    "window-team":    ("P1360788.jpg", (629, 950, 1571, 2470),  [600, 1200]),
     "machine":        ("P1360191.jpg", None, [800, 1200]),
     "copper":         ("P1360329.jpg", None, [800, 1200]),
     "cake":           ("P1360096.jpg", None, [800, 1200]),
@@ -33,7 +34,9 @@ JOBS = {
     "hands":          ("P1360346.jpg", None, [800, 1200]),
     "barista":        ("P1360057.jpg", None, [800, 1200]),
     "almonds":        ("P1360218.jpg", None, [600, 1200]),
-    "piping":         ("P1360326.jpg", None, [600, 1200]),
+    # Enger auf die Tätigkeit: Kopf, Hände und Kanne bleiben zusammen im
+    # Bild, die leere Kachelwand links und der dunkle Boden fallen weg.
+    "piping":         ("P1360326.jpg", (321, 0, 2538, 3600), [600, 1200]),
     "window-outside": ("P1360109.jpg", None, [600, 1200]),
     "butter":         ("P1360381.jpg", None, [600, 1200]),
 }
