@@ -14,6 +14,7 @@ Reihenfolge = Seitenstruktur. Jedes Bild genau einmal.
 | 10 | Catering | P1360381* (Zutaten) | quer angeschnittenes Band oder 4:5 | 4:5 kompakt |
 | 11 | Samstagsfenster | Claudia.jpg = Claudia Fourmont, belegt; Name als Text direkt unter dem Bild, keine Caption (groß vertikal) + P1360057 (ergänzend) | Claudia 55–60 % oberer Bildteil · 057 fast Vollbild | Claudia enger 4:5, Kopf komplett · 057 4:5 |
 | 8b | Backstube, Menschen-Zone | Tyll-final.jpg = Tyll Schulte, belegt | 2:3 ab x=0, 210 px, Text daneben | 4:5 ab x=0, 192 px, Bild über Text |
+| 9b | Bildstrecke, Materialdetail | Kaffemaschine.jpg | 2:3, 244 px, Spur 4 oben, rechte Achse | 1:2, 106 px, Paar mit dem Fensterteam |
 | 12 | Standort | — (Typografie) | — | — |
 | 13 | Footer | Logo | natürliche Proportion ≤ 140 px | ≤ 110 px |
 

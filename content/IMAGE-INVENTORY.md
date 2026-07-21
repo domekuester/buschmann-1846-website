@@ -182,12 +182,26 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 - Mobil-Crop: 4:5 um Gesicht + Kessel + Schüssel
 - Probleme: keine
 
-## Kaffemaschine.jpg — ABLEHNEN (Reserve-Detail)
-- 1401 × 2101, Hochformat (kleinste Auflösung der Serie)
-- Motiv: Chrom-Detail der Espressomaschine, dunkel
-- Qualität: ok, aber „dunkler Maschinenausschnitt" — laut Bildregie nicht
-  als Hauptmotiv; zudem ähnlich zu P1360057 (Maschine bereits gezeigt)
-- Rolle: höchstens Mini-Detail; standardmäßig nicht verwenden
+## Kaffemaschine.jpg — L (Bildstrecke, Materialdetail) — VERWENDET
+- 1401 × 2101, Hochformat, nativ bereits 2:3
+- Motiv: Chrom-Brühgruppe der Espressomaschine mit Dampflanze, Typenschild
+  und Abtropfgitter; warmes Streiflicht auf dem Metall
+- Person: keine
+- Qualität: scharf auf der Brühgruppe, dunkel aber materialstark
+- Desktop-Crop: (60, 180, 1341, 2101) = 1281 × 1921, 2:3 — der obere Rand ist
+  unscharfes, dunkles Gehäuse und fällt weg; Brühgruppe, Lanze, Typenschild
+  und Gitter bleiben vollständig
+- Mobil-Crop: (300, 500, 1100, 2101) = 800 × 1601, 1:2 — enger auf Brühgruppe
+  und Lanze, damit das Chrom auch in einer 106-px-Spalte trägt
+- Anzeige: 244 × 366 px Desktop (20 % der Boardbreite), 106 × 212 px mobil
+- Keine Bildunterschrift, kein Rahmen — Einbettung über Position und Achse
+
+> Frühere Einschätzung war „ablehnen: dunkler Chrom-Maschinenausschnitt ohne
+> Person, nur Reserve für Mini-Detail". Genau als solches Mini-Detail ist es
+> jetzt eingesetzt: klein, in der Bildstrecke, als technischer Kontrapunkt zu
+> den warmen Materialbildern. Die Warnung vor „doppelten Kaffeemaschinen"
+> bleibt beachtet — P1360057 (Maschine mit Person) steht im Samstagsabschnitt,
+> also weit entfernt und mit anderem Motivgewicht.
 
 ## P1360326.jpg — E (Backstube, zweite Reihe)
 - 2672 × 4000, Hochformat
@@ -275,7 +289,7 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 | Tyll Schulte bei der Arbeit (Name belegt) | — (Till.jpg abgelehnt: Qualität) |
 | Menschen und Begegnungen | P1360788, (Reserve: P1360109) |
 | Pâtisserie und Produkte | P1360096, P1360370 |
-| Kaffee und Samstag | P1360057, (Reserve: Kaffemaschine.jpg) |
+| Kaffee und Samstag | P1360057 · Kaffemaschine.jpg (Materialdetail in der Bildstrecke) |
 | Werkzeuge, Zutaten und Details | P1360218, P1360346, P1360381 |
 | Produktion und Catering | P1360381, P1360346 (Doppelnutzung möglich) |
-| Nicht verwenden | P1360200, Till.jpg, P1360445, (Kaffemaschine.jpg) |
+| Nicht verwenden | P1360200, Till.jpg, P1360445 |

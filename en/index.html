@@ -28,7 +28,7 @@
 
   <link rel="preload" href="../assets/fonts/instrument-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../assets/css/main.css?v=32">
+  <link rel="stylesheet" href="../assets/css/main.css?v=35">
   <!-- Marks a live JS environment before the first paint. Only then may the
        reveal hide content. -->
   <script>document.documentElement.classList.add('js');</script>
@@ -318,8 +318,8 @@
           <figure class="g-team reveal">
             <span class="ph">
               <picture>
-                <source type="image/webp" srcset="../assets/img/window-team-600.webp 600w, ../assets/img/window-team-1200.webp 1200w" sizes="(max-width: 639px) 76vw, (max-width: 1023px) 92vw, 310px">
-                <img src="../assets/img/window-team-600.jpg" srcset="../assets/img/window-team-600.jpg 600w, ../assets/img/window-team-1200.jpg 1200w" sizes="(max-width: 639px) 76vw, (max-width: 1023px) 92vw, 310px" width="600" height="968" loading="lazy" alt="Two smiling women behind the serving window">
+                <source type="image/webp" srcset="../assets/img/window-team-600.webp 600w, ../assets/img/window-team-1200.webp 1200w" sizes="(max-width: 639px) 66vw, (max-width: 1023px) 92vw, 310px">
+                <img src="../assets/img/window-team-600.jpg" srcset="../assets/img/window-team-600.jpg 600w, ../assets/img/window-team-1200.jpg 1200w" sizes="(max-width: 639px) 66vw, (max-width: 1023px) 92vw, 310px" width="600" height="968" loading="lazy" alt="Two smiling women behind the serving window">
               </picture>
             </span>
           </figure>
@@ -334,6 +334,19 @@
         </div>
         <!-- Track 4 — wider vertical lead image, starts lowest. -->
         <div class="g-track g-t4">
+          <!-- Materialdetail: schliesst die freie Flaeche oben rechts und
+               teilt die rechte Achse mit dem Bild darunter. Kein Rahmen,
+               keine Caption — nur Position, Crop und Porzellanflaeche. -->
+          <figure class="g-coffee reveal">
+            <span class="ph">
+              <picture>
+                <source media="(max-width: 1023px)" type="image/webp" srcset="../assets/img/coffee-m-300.webp 300w, ../assets/img/coffee-m-600.webp 600w" sizes="(max-width: 639px) 31vw, 24vw">
+                <source media="(max-width: 1023px)" type="image/jpeg" srcset="../assets/img/coffee-m-300.jpg 300w, ../assets/img/coffee-m-600.jpg 600w" sizes="(max-width: 639px) 31vw, 24vw">
+                <source type="image/webp" srcset="../assets/img/coffee-400.webp 400w, ../assets/img/coffee-800.webp 800w" sizes="245px">
+                <img src="../assets/img/coffee-400.jpg" srcset="../assets/img/coffee-400.jpg 400w, ../assets/img/coffee-800.jpg 800w" sizes="(max-width: 639px) 31vw, (max-width: 1023px) 24vw, 245px" width="400" height="600" loading="lazy" alt="Detail of the coffee machine in the bakery: chrome group head, steam arm and drip tray">
+              </picture>
+            </span>
+          </figure>
           <figure class="g-piping reveal">
             <span class="ph">
               <picture>

@@ -827,3 +827,92 @@ Höhe, Markenzeile ausgeblendet, Infobar sichtbar, `body`-Padding 0.
 0 Fehler und 0 Warnungen auf beiden Sprachseiten. Je 24 Referenzen mit
 Status 200. Keine neue Bibliothek, kein zusätzliches Bild — das Logo ist
 dasselbe `logo-mark.png` wie bisher. `main.js` liegt bei 4,5 kB.
+
+---
+
+# NACHTRAG — Kaffeemaschinen-Detail in der Bildstrecke
+
+Stand: 21.07.2026 · Branch `rebuild/flagship-recovery`
+
+## A · Datei und Ausgangslage
+
+`01-originalfotos/Kaffemaschine.jpg` — 1401 × 2101, nativ bereits 2:3. Es ist
+die einzige Datei im Projekt mit passendem Namensbestandteil. (Der Dateiname
+trägt einen Tippfehler, „Kaffemaschine" statt „Kaffeemaschine"; ich habe ihn
+nicht angetastet, um die Dokumentverweise nicht erneut zu drehen.)
+
+Die freie Fläche im Desktop-Layout war exakt vermessen: **x 891–1240,
+y 0–328** — die obere rechte Ecke über dem Spritzbeutel-Bild.
+
+## B · Desktop
+
+Das Detail sitzt jetzt als erstes Bild in Spur 4, über dem Spritzbeutel.
+
+| | Wert |
+|---|---|
+| Crop | (60, 180, 1341, 2101) = 1281 × 1921, **2:3** |
+| Anzeige bei 1440 px | 244 × 366 px = **20 %** der Boardbreite |
+| Position im Board | x 996–1240, y 32–398 |
+| Achse | rechtsbündig, teilt die rechte Kante mit dem Bild darunter |
+| Einsatzhöhe | y 32 — eigener Startpunkt neben 0 / 88 / 176 |
+
+Es ist schmaler als seine Spur (70 %) und rechtsbündig: dadurch steht es
+nicht mittig wie ein Poster, sondern bildet mit dem Spritzbeutel darunter
+eine gemeinsame vertikale Achse. Das Board wächst nur von 1009 auf 1034 px;
+der Spritzbeutel endet 25 px tiefer als die Kirschfüllung, die Unterkanten
+bleiben also gestaffelt.
+
+Gegengeprüft bei 1024 (20 %), 1920 (19 %) — Anteil und Achse konstant.
+
+## C · Mobil
+
+Reihe 2 der Bildstrecke war bisher ein alleinstehendes Leitbild. Jetzt ist
+sie ein Paar nach Muster C: das Fensterteam trägt die Reihe, das
+Kaffeedetail steht schmal daneben und setzt tiefer ein.
+
+| | Wert |
+|---|---|
+| Crop | (300, 500, 1100, 2101) = 800 × 1601, **1:2** |
+| Spalten | 1–5 von 12 (Detail) neben 5–12 (Leitbild) |
+| Anzeige 390 px | 106 × 212 px (25 svh) |
+| Anzeige 320 px | 83 × 165 px · 430 px: 119 × 239 px · 768 px: 179 × 357 px |
+
+Der Mobil-Crop ist **nicht** der verkleinerte Desktop-Ausschnitt: er rückt
+enger an Brühgruppe und Dampflanze, damit das Chrom auch in einer 106-px-
+Spalte trägt. Typenschild und Abtropfgitter bleiben erkennbar.
+
+## D · Rhythmus
+
+Die mobile Bildstrecke hat jetzt drei Paare statt Duo · Leitbild · Duo,
+und jede Reihe mischt zwei Gattungen:
+
+| Reihe | links | rechts |
+|---|---|---|
+| 1 | Kupferkessel (Material) | Kirschfüllung (Produkt), höher |
+| 2 | **Kaffeemaschine (Technik)**, tiefer | Fensterteam (Menschen) |
+| 3 | Spritzbeutel (Handwerk) | Mandelblättchen (Material), tiefer |
+
+Das Detail bringt den einzigen technisch-metallischen Ton in eine sonst
+warm-braune Bildfolge. Die beiden Kaffeemotive stehen weit auseinander:
+P1360057 (Maschine mit Person) im Samstagsabschnitt, das Materialdetail in
+der Bildstrecke — unterschiedliche Motivgewichte, keine Dopplung nebeneinander.
+
+## E · Geprüfte Viewports
+
+320 × 568 · 390 × 844 · 430 × 932 · 768 × 1024 · 1024 × 768 · 1440 × 900 ·
+1920 × 1080, beide Sprachfassungen. Überall: kein horizontaler Overflow,
+keine Kollision mit Nachbarbildern, Anteil an der Boardbreite 19–20 %,
+mobile Höhe 165–239 px.
+
+## F · Technik und Performance
+
+Vier neue Derivate (WebP + JPG in je zwei Breiten). Bei 390 px lädt mit
+kaltem Cache `coffee-m-300.webp` mit **26,6 kB** — im selben Durchlauf
+gegengeprüft, dass auch das Fensterteam nach der Spaltenänderung korrekt die
+600er statt der 1200er Variante wählt. Beide Seiten: je 94 Referenzen mit
+Status 200, **0 Konsolenfehler**, HTML valide, keine Bildunterschrift, kein
+Rahmen, `loading="lazy"`, `width`/`height` gesetzt.
+
+Alt-Text Deutsch: „Detail der Kaffeemaschine in der Backstube: Brühgruppe,
+Dampflanze und Abtropfgitter aus Chrom" · Englisch: „Detail of the coffee
+machine in the bakery: chrome group head, steam arm and drip tray".

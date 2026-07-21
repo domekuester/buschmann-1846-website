@@ -560,6 +560,7 @@ figure { margin: 0; }
 .g-team      { --ratio: 5/8; }
 .g-cherries  { --ratio: 3/4; --fy: 45%; }
 .g-piping    { --ratio: 4/7; --fx: 46%; }
+.g-coffee    { --ratio: 2/3; }   /* Kaffeemaschine, entspricht coffee-*.webp */
 
 /* ==========================================================================
    5 · EINORDNUNG
@@ -732,7 +733,13 @@ blockquote cite {
 .g-t1 { margin-top: 0; }
 .g-t2 { margin-top: 11rem; }
 .g-t3 { margin-top: 5.5rem; }
-.g-t4 { margin-top: 20.5rem; }
+/* Spur 4 startet jetzt oben: das Kaffeemaschinendetail schliesst die freie
+   Flaeche rechts oben, der Spritzbeutel folgt darunter auf derselben Spur. */
+.g-t4 { margin-top: 2rem; }
+/* Das Detail ist schmaler als seine Spur und rechtsbuendig — dadurch teilt
+   es die rechte Achse mit dem Bild darunter, steht aber nicht mittig wie ein
+   Poster. 70 % von 349 px sind rund 245 px, also knapp 20 % der Boardbreite. */
+.g-coffee { width: 70%; margin-left: auto; }
 
 /* Hochwertige Haptik: 6 px Versatz, dezentes Abdunkeln, Champagnerlinie. */
 .g-board figure { transition: transform .4s ease; }
@@ -1130,9 +1137,20 @@ footer { background: var(--navy-night); color: var(--on-dark); }
      Kirschfüllung setzt daneben einen roten Produktakzent. */
   .g-copper   { grid-column: 1 / 8;  grid-row: 1; --ratio: 3/5; --fx: 56%; }
   .g-cherries { grid-column: 8 / -1; grid-row: 1; --ratio: 3/4; --fy: 45%; margin-top: 2.2rem; }
-  /* Reihe 2 — Leitbild: die Begegnung am Fenster, rechts angeschlagen. */
+  /* Reihe 2 — Leitbild mit Detail (Muster C): die Begegnung am Fenster trägt
+     die Reihe, das Kaffeemaschinendetail steht schmal daneben und setzt
+     tiefer ein. Damit bekommt auch die mittlere Reihe ein Paar, ohne dem
+     Leitbild seine Wirkung zu nehmen. */
+  .g-coffee   {
+    grid-column: 1 / 5; grid-row: 2;
+    --ratio: 1/2;                      /* entspricht coffee-m-*.webp */
+    margin-top: calc(var(--sp-lg) + 3.2rem);
+    /* Die Desktop-Regel (70 % Breite, rechtsbündig) gilt hier nicht: mobil
+       trägt das Detail seine ganze Spalte, sonst schrumpft es auf 74 px. */
+    width: 100%; margin-left: 0;
+  }
   .g-team     {
-    grid-column: 4 / -1; grid-row: 2;
+    grid-column: 5 / -1; grid-row: 2;
     margin-top: var(--sp-lg); max-width: 26rem; margin-left: auto;
   }
   .g-team { --ratio: 4/5; --fy: 32%; }

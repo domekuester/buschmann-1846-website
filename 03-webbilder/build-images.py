@@ -61,6 +61,15 @@ JOBS = {
     # Maschinenfläche sind raus — keine reine Gerätefläche mehr.
     "barista-m":      ("P1360057.jpg", (100, 336, 1336, 2400),   [300, 600]),
 
+    # Kaffeemaschine — Materialdetail für die Bildstrecke. Das Original ist
+    # bereits 2:3 (1401 × 2101). Der obere Rand ist unscharfes, dunkles
+    # Maschinengehäuse und fällt weg; Brühgruppe, Dampflanze, Typenschild und
+    # Abtropfgitter bleiben vollständig.
+    "coffee":         ("Kaffemaschine.jpg", (60, 180, 1341, 2101),  [400, 800]),
+    # Mobil steht das Bild in einer schmalen Spalte neben dem Fensterteam.
+    # Enger auf Brühgruppe und Lanze, damit das Chrom auch auf 106 px trägt.
+    "coffee-m":       ("Kaffemaschine.jpg", (300, 500, 1100, 2101), [300, 600]),
+
     # Tyll Schulte in der Backstube.
     # Gemessen am Original (2672 × 4000): Haaransatz y≈280, Kinn y≈1500,
     # Nasenspitze x≈300, Schürzenlatz ab y≈2100. Er blickt nach links, also
