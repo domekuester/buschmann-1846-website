@@ -52,7 +52,7 @@ in denen heute wieder gebacken wird. Sechs Generationen haben den Betrieb
 durch zwei Weltkriege getragen, zeitweise mit rund 120 Beschäftigten und
 fünf Standorten in Düsseldorf.
 
-**Text 2 (Gregor, ohne unbestätigte Bildzuordnung):** Gregor Buschmann,
+**Text 2 (Gregor, ohne unbestätigte Bildzuordnung):** Gregor August Buschmann,
 direkter Nachfahre des Gründers, wuchs in der Altstadt auf und holte sich
 als Schüler der Maxschule nach dem Unterricht häufig ein Teilchen aus der
 Backstube. Nach Jahren als Koch, Küchenchef, Sous-Chef und Pâtissier in

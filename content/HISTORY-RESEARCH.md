@@ -19,7 +19,8 @@ Alle Jahreszahlen müssen auf Desktop UND Mobil sichtbar sein.
 
 - Sechs Generationen Familienbetrieb, zwei Weltkriege überstanden.
 - Die Backstube steht dort, wo 1846 alles anfing: Akademiestraße.
-- Gregor wuchs in der Altstadt auf, ging zur Maxschule in der Carlstadt
+- Gregor August Buschmann (vollständiger Name) wuchs in der Altstadt auf,
+  ging zur Maxschule in der Carlstadt
   und holte sich nach dem Unterricht häufig ein Teilchen aus der Backstube.
 - Sein Weg: Koch, Küchenchef, Sous-Chef, Pâtissier — Düsseldorf und Schweiz.
 - Januar 2021: Rückkehr in die historische Backstube.

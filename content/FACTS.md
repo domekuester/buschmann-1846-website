@@ -37,7 +37,8 @@ Nur diese Fakten dürfen auf der Website erscheinen.
 - 1950 Wiedereröffnung des Cafés an der Flinger Straße
 - 1970er: zeitweise rund 120 Beschäftigte
 - bis Mitte der 1980er: fünf Düsseldorfer Standorte
-- Gregor Buschmann: direkter Nachfahre des Gründers, aufgewachsen in der
+- Gregor August Buschmann (vollständiger Name; Kurzform „Gregor Buschmann“
+  in Folgeerwähnungen zulässig): direkter Nachfahre des Gründers, aufgewachsen in der
   Düsseldorfer Altstadt, Maxschule (Carlstadt); holte sich als Junge nach dem
   Unterricht häufig ein Teilchen aus der Backstube
 - beruflicher Weg: Koch, Küchenchef, Sous-Chef, Pâtissier; Stationen in
