@@ -307,3 +307,190 @@ wieder deklarieren (Newsreader italic wiegt 147 kB).
 5. **Bildrechte** für die Originalfotos sind nicht dokumentiert.
 6. Geprüft wurde ausschließlich in Chromium. Safari und Firefox wurden in
    dieser Umgebung nicht getestet.
+
+---
+
+# NACHTRAG — Mobile-Editorial-Masterpass
+
+Stand: 20./21.07.2026 · Branch `rebuild/flagship-recovery`
+Geprüft im Browser (Chromium über Playwright) unter `http://localhost:8899/`.
+Alle Zahlen sind gemessen, nicht geschätzt.
+
+## A · Ausgangsproblem der Mobilversion
+
+Bei 390 × 844 gemessen — sechs Motive belegten mehr als die Hälfte des
+Bildschirms, die Seite las sich als Fotostream statt als Komposition:
+
+| Motiv | Breite | Höhe | Anteil Viewport |
+|---|---|---|---|
+| Claudia (Samstag) | 100 % | 570 px | **68 svh** |
+| Ortsbild (Standort) | 100 % | 513 px | **61 svh** |
+| Fassade (Hero) | 100 % | 478 px | 57 svh |
+| Anschlagmaschine | 100 % | 456 px | 54 svh |
+| Butter (Catering) | 100 % | 456 px | 54 svh |
+| Cheesecake | 100 % | 428 px | 51 svh |
+| Kupferkessel (Galerie) | 48 % | 409 px | 49 svh |
+
+Nur zwei Bilder standen je nebeneinander (Backstube). Gesamthöhe 11 401 px.
+
+## B · Neues mobiles Bildsystem
+
+Grundlage ist ein **12-Spalten-Raster** ab 1023 px abwärts. Es erlaubt echte
+42/58- und 58/42-Teilungen, statt zwei gleich breite Kacheln zu erzeugen.
+
+**Vertikale Bildpaare (bei 390 und 430 messtechnisch als gleichzeitig
+sichtbar bestätigt — vertikale Überlappung > 60 px):**
+
+| Abschnitt | linke Spalte | rechte Spalte | Muster |
+|---|---|---|---|
+| Backstube | Handgriff, 5/12, tiefer | Guss mit Gesicht, 7/12 | B (Mensch führt) |
+| Galerie 1 | Mandelblättchen, 5/12 | Kupferkessel, 7/12, tiefer | A |
+| Galerie 3 | Kirschfüllung, 7/12 | Spritzbeutel, 5/12, tiefer | B (gegenläufig) |
+| Samstag | Claudia, 7/12 | Kaffeemoment, 5/12, tiefer | C (Leitbild + Detail) |
+
+**Einzelbilder als Fenster mit wechselnder Kante** — kein Bild läuft mehr
+über die volle Spaltenbreite:
+
+| Motiv | Breite | Kante | Höhe bei 390 |
+|---|---|---|---|
+| Anschlagmaschine | 66 % | links | 36 svh |
+| Cheesecake | 68 % | rechts | 34 svh |
+| Butter | 58 % | links | 31 svh |
+| Ortsbild | 62 % | rechts | 38 svh |
+| Fensterteam (Galerie-Leitbild) | 76 % | rechts | 38 svh |
+
+**Galerie-Dramaturgie mobil:** Duo → Leitbild → gegenläufiges Duo.
+
+## C · Individuell gerechnete Mobilcrops
+
+Zwei Motive ließen sich mit `object-position` **nicht** retten: ist das
+Anzeigefenster schmaler als die Quelle, beschneidet `object-fit` nur seitlich
+und lässt die volle Bildhöhe stehen — genau die toten Zonen, die mobil weg
+sollten. Beide bekamen daher einen echten Ausschnitt in der Bildpipeline
+(`03-webbilder/build-images.py`), die Originale blieben unangetastet:
+
+- **`claudia-m`** (Crop 1450,780→2060,1800 · 610 × 1020 · 3:5)
+  Gesicht auf 39 % Höhe. Der Lederrücken des Gastes bleibt nur als schmaler
+  Kontextstreifen links, der helle Pfeiler schließt rechts ab; Fensterbank
+  und Hose des Gastes fallen weg. Erfüllt die Bildregel „Vollbild nie
+  verwenden" aus IMAGE-REJECTIONS.md.
+- **`barista-m`** (Crop 100,336→1336,2400 · 1236 × 2064 · 3:5)
+  Kopf, Schulter, Hand mit Kanne und die linke Maschinenhälfte bleiben
+  zusammen. Der dunkle Boden und die leere rechte Gerätefläche sind raus —
+  keine „unverständliche dunkle Maschinenfläche" mehr.
+
+Beide greifen nur bis 1023 px (`<source media>`); Desktop lädt weiterhin die
+Originalausschnitte — im Browser verifiziert.
+
+Weitere Crop-Korrektur: **Kupferkessel und Mandelblättchen wurden getauscht.**
+Bei 136 px zerfielen Stäbe, Kesselwand und geschlagene Masse zu einer Textur
+ohne Motiv; die Mandelblättchen sind reine Wiederholung und bleiben auch
+schmal lesbar.
+
+## D · Typografie
+
+Mobil ist keine verkleinerte Desktopskala mehr, sondern eigene Werte:
+
+| Rolle | 320 px | 390 px | 430 px | Zielkorridor |
+|---|---|---|---|---|
+| Hero-H1 | 41,6 px | 44,5 px | 49,0 px | 42–58 ✓ |
+| Section-H2 | 32,0 px | 32,0 px | 35,3 px | 31–44 ✓ |
+| Body Large | — | 19,5 px | 21,5 px | 19–23 ✓ |
+| Body | 17 px | 17 px | 17 px | 16–18 ✓ |
+
+Weiter: Kicker-Laufweite mobil von .2em auf .15em (bei 11 px las sich .2em
+als Lücke), `text-wrap: pretty` auf Fließtexten, Zeilenlänge im Body durch
+Viewport auf ~38 Zeichen begrenzt.
+
+**Abschnittsnummern 01–07 entfernt.** Durchnummerierte Kicker über *jedem*
+Abschnitt sind Gerüst, keine Aussage; die Marke trägt der Medaillon-Ring.
+Der Kicker im Samstagsabschnitt entfiel ganz — dort ist die H2 die Aussage.
+
+## E · Farbe und Champagner
+
+- **Neu `--linen: #EBE0C9`** für die Geschichte. Vorher folgten mit Porzellan
+  (#FCF9F3) und Elfenbein (#F3EDDF) zwei fast gleiche Beigeflächen
+  aufeinander; jetzt ist der Schritt sichtbar.
+- **Standort auf `--blue-bright: #17527F`** — die hellste Blaustufe der
+  Palette, klarer Kontrapunkt zwischen Schokolade und Navy-Footer.
+- **`--champagne-ink` von #855D26 auf #7E5722.** Auf dem neuen, dunkleren
+  Leinen erreichte der alte Wert als 11-px-Versalie nur **4,47:1** und fiel
+  damit unter die Grenze. Neu: Leinen 4,90 · Elfenbein 5,50 · Porzellan 6,10.
+- **Samstags-Akzent:** Die Öffnungszeit trägt jetzt die einzige volle
+  Champagnerlinie der Seite plus die Medaillon-Marke aus dem Kicker-System.
+- **Zitat ohne Seitenstreifen:** Der 2-px-Balken links wich einer kurzen
+  Champagnerlinie darüber — dieselbe Liniensprache wie Header und Timeline.
+
+Farbfolge gemessen: Navy → Porzellan → Leinen → Navy-Night → Porzellan →
+Markenblau → Porzellan → Schokolade → Navy → Hellblau → Navy-Night.
+Keine zwei benachbarten Flächen mehr nah beieinander.
+
+## F · Gefundene und behobene Fehler
+
+1. **Reveal koppelte Sichtbarkeit an JavaScript.** `.reveal { opacity: 0 }`
+   galt unbedingt — bei JS-Fehler, in Suchmaschinen-Renderern oder in
+   Screenshot-Tools wäre die halbe Bildstrecke dauerhaft leer geblieben.
+   Der Ausgangszustand ist jetzt sichtbar; erst eine `.js`-Klasse, die vor
+   dem ersten Pixel gesetzt wird, aktiviert das Ausblenden.
+2. **Tablet-Bildhöhen liefen aus dem Ruder.** Prozentbreiten wachsen mit dem
+   Viewport, die Bildschirmhöhe nicht: bei 768 px maß der Hero **87 svh**,
+   Kupferkessel und Claudia je 66 svh. Eigener Tablet-Block (640–1023 px)
+   mit Deckelung der Duo-Container auf 35rem und Hero im Querformat 16:10 →
+   höchstes Fenster jetzt **52 svh**.
+3. **Quellenzeile am Zitat brach nach zwei Wörtern um** — die `max-width` des
+   Zitats schnürte auch die `cite` ein. Entfernt, `cite` ist einzeilig.
+4. **Zwei Touchflächen unter 44 px:** „Zum Standort" (29 px) und die
+   Footer-Links (42 px). Beide auf `min-height: 44px` gesetzt.
+
+## G · Geprüfte Viewports
+
+| Viewport | Overflow | höchstes Bild | Ergebnis |
+|---|---|---|---|
+| 320 × 568 | 0 px | — | H1 41,6 px, kein Element breiter als Viewport |
+| 390 × 844 | 0 px | 53 svh (Hero) | 4 Bildpaare, alle übrigen ≤ 38 svh |
+| 430 × 932 | 0 px | 53 svh (Hero) | 4 Bildpaare bestätigt |
+| 768 × 1024 | 0 px | 52 svh | nach Tablet-Deckelung |
+| 1440 × 900 | 0 px | — | 4 Galerie-Spuren, 4 eigene Breiten/Startpunkte |
+
+## H · Funktion, Accessibility, Konsole, Netzwerk
+
+- **Mobilmenü:** `aria-expanded` schaltet false→true→false, Fokus wandert auf
+  „Schliessen", Escape schließt und gibt den Fokus an den Button zurück,
+  `body`-Scroll wird gesperrt und wieder freigegeben. ✓
+- **Links:** keine toten internen Anker, keine doppelten IDs. Instagram und
+  Facebook je genau einmal, mit `target="_blank"`, `rel="noopener noreferrer"`
+  und zugänglichem Namen. ✓
+- **Struktur:** genau eine H1, Reihenfolge `1222222233322333444` ohne
+  Ebenensprung, 16 Bilder mit nicht-leerem Alt-Text, alle mit `width`/`height`
+  (kein Layoutsprung), 14 davon `loading="lazy"`. ✓
+- **Touchflächen:** nach Korrektur kein interaktives Element unter 44 × 44 px. ✓
+- **Konsole:** 0 Fehler. Zwei Warnungen zum Font-Preload — **vorbestehend**
+  (auch in den Logs vom 19.07.) und **gegenstandslos**: beide Schriften werden
+  je genau einmal geladen (`initiatorType: link`) und sind aktiv
+  (`document.fonts.check` = true). Es ist eine Chrome-Timing-Heuristik, kein
+  doppelter Download.
+- **Netzwerk:** alle 76 referenzierten Assets antworten mit 200, keine
+  fehlgeschlagenen Requests, keine doppelten Bilddownloads.
+
+## I · Performance
+
+Alle `sizes`-Attribute wurden auf die tatsächlichen neuen Spaltenbreiten
+korrigiert (statt pauschal 92vw). Mit kaltem Cache verifiziert: die Auswahl
+greift korrekt — z. B. Fensterteam und Ortsbild laden die 600er statt der
+1200er Variante.
+
+> Zwischenzeitlich zeigten diese beiden Bilder im Test die 1200er Variante.
+> Ursache war Cache-Wiederverwendung aus dem vorangegangenen Desktop-Durchlauf,
+> nicht die Seite; mit eindeutigen URLs erzwungen wählte der Browser beide Male
+> die 600er Variante.
+
+| | Bilder | gesamt |
+|---|---|---|
+| Mobile Seitenlast (390 px) | 979 kB | **1 205 kB** |
+| mit den alten Claudia-/Barista-Varianten | 1 099 kB | 1 325 kB |
+
+Die eigenen Mobilcrops **sparen 119 kB** und verbessern gleichzeitig die
+Bildaussage.
+
+Gesamthöhe der Mobilseite: **11 401 → 10 575 px (−7,2 %)** — und das trotz
+durchgehend größerer Schrift.
