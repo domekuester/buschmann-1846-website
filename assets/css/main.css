@@ -40,11 +40,14 @@
   --navy-night:  #061729;
   --navy-brand:  #0A2139;
   --blue-brand:  #123F66;   /* kräftiges Markenblau — echte Fläche */
+  --blue-bright: #17527F;   /* leuchtendes Tiefblau — hellste Blaustufe */
   --blue-deep:   #0B2D4A;
 
-  /* Heller Gegenpol */
+  /* Heller Gegenpol — drei Stufen statt zwei, damit Einordnung und
+     Geschichte nicht als zwei fast gleiche Beigeflächen aufeinanderfolgen. */
   --porcelain: #FCF9F3;
   --ivory:     #F3EDDF;
+  --linen:     #EBE0C9;
 
   /* Wärme */
   --choc: #21120D;
@@ -53,17 +56,19 @@
   --champagne:       #C59A52;
   --champagne-light: #DDBF83;
   --champagne-dark:  #9A6E30;
-  /* Textvariante: --champagne-dark erreicht als 11-px-Versalie auf Porzellan
-     nur 4.3:1 und auf Elfenbein 3.9:1. Diese Abtönung liegt bei 5.6 bzw.
-     5.0:1 und bleibt tonal im Champagnerbereich. */
-  --champagne-ink:   #855D26;
+  /* Textvariante für Champagner auf hellem Grund. Sie muss den dunkelsten
+     hellen Grund tragen, und das ist seit der neuen Farbfolge Leinen:
+     der bisherige Wert #855D26 lag dort bei 4.47:1 und damit knapp unter
+     der Grenze. #7E5722 erreicht Leinen 4.9, Elfenbein 5.5 und Porzellan
+     6.1:1 und bleibt tonal im Champagnerbereich. */
+  --champagne-ink:   #7E5722;
 
   /* Text */
   --text-dark:      #101923;
   --text-warm:      #3F3932;
   --text-secondary: #746D64;
   --on-dark:        #F3EDDF;
-  --body-on-dark:   rgba(243, 237, 223, .82);
+  --body-on-dark:   rgba(243, 237, 223, .86);
   --dim-on-dark:    rgba(243, 237, 223, .58);
 
   --serif: 'Newsreader', Georgia, serif;
@@ -88,6 +93,16 @@
   --pad: clamp(1.25rem, 4vw, 3rem);
   --spine-w: 12px;
   --section-pad: clamp(4.5rem, 10vh, 8rem);
+
+  /* ---- Mobiles Spacing-System -----------------------------------------
+     Ein einziger Satz Werte für die gesamte Mobilseite, damit Bildpaare,
+     Bild-Text-Abstände und Abschnittswechsel nicht pro Section neu
+     erfunden werden. Die Werte gelten ab 639 px abwärts. */
+  --sp-xs: 8px;    /* Innenabstand eines Bildduos, engste Stufe */
+  --sp-sm: 12px;   /* Standardabstand zwischen Bildern */
+  --sp-md: 22px;   /* Bild ↔ Text */
+  --sp-lg: 34px;   /* Gruppenwechsel innerhalb einer Section */
+  --sp-section: clamp(3.5rem, 13vw, 5.5rem);
 
   /* ---- Header-Geometrie ----------------------------------------------
      Alles leitet sich aus der Logogröße ab, damit Logo, Medaillon-Linie,
@@ -419,7 +434,7 @@ figure { margin: 0; }
 /* ==========================================================================
    6 · GESCHICHTE
    ========================================================================== */
-.geschichte { background: var(--ivory); }
+.geschichte { background: var(--linen); }
 .geschichte .inner {
   display: grid; grid-template-columns: 1.15fr .85fr;
   gap: clamp(3rem, 6vw, 6rem); align-items: center;
@@ -463,11 +478,21 @@ figure { margin: 0; }
   gap: clamp(2.5rem, 5vw, 5rem); align-items: center; margin-top: 3rem;
 }
 .pat-side { max-width: 42rem; }
+/* Das Zitat sitzt unter einer kurzen Champagnerlinie statt hinter einem
+   farbigen Seitenstreifen — dieselbe Liniensprache wie Header und Timeline,
+   und die Zeile bleibt auf der Achse aller anderen Absätze. */
 blockquote {
-  margin-top: 2.4rem;
+  margin-top: 2.4rem; padding-top: 1.4rem;
   font-family: var(--serif); font-size: var(--t-sub); font-weight: 400;
   color: var(--blue-brand); line-height: 1.4;
-  border-left: 2px solid var(--champagne); padding-left: 1.5rem;
+  position: relative;
+}
+/* Keine Breitenbegrenzung am Zitat: sie würde auch die Quellenzeile
+   einschnüren, die dann nach zwei Wörtern umbricht. Das Zitat ist kurz
+   genug, um von allein eine Zeile zu bleiben. */
+blockquote::before {
+  content: ""; position: absolute; left: 0; top: 0;
+  width: 2.4rem; height: 1px; background: var(--champagne);
 }
 blockquote cite {
   display: block; font-family: var(--sans); font-style: normal;
@@ -558,7 +583,8 @@ blockquote cite {
 }
 .cat-note a {
   color: var(--champagne-light); text-decoration: none;
-  display: inline-flex; align-items: center; gap: .45rem; padding: .3rem 0;
+  display: inline-flex; align-items: center; gap: .45rem;
+  min-height: 44px;   /* Textzeile allein ergäbe nur 29 px Tippfläche */
 }
 .cat-note a:hover { color: var(--on-dark); }
 .cat-note svg { flex: none; }
@@ -579,12 +605,21 @@ blockquote cite {
 .sam-claudia { grid-column: 2; grid-row: 1 / 3; }
 /* Der emotionale Moment des Abschnitts — deshalb Newsreader. */
 .samstag h2 { max-width: 14ch; }
+/* Die Öffnungszeit ist die wichtigste Auskunft des Abschnitts und bekommt
+   deshalb die einzige volle Champagnerlinie der Seite plus die Medaillon-
+   Marke aus dem Kicker-System — dieselbe Zeichnung, andere Aufgabe. */
 .sam-facts {
   margin-top: 2rem; padding: 1.4rem 0;
-  border-top: 1px solid var(--rule-dark);
+  border-top: 1px solid var(--champagne);
   border-bottom: 1px solid var(--rule-dark);
   font-family: var(--sans); font-size: 1.4rem; font-weight: 500;
   letter-spacing: -.02em; color: var(--champagne-light);
+}
+.sam-facts::before {
+  content: ""; display: inline-block; width: 11px; height: 11px;
+  margin-right: .75rem; vertical-align: .04em; border-radius: 50%;
+  border: 1px solid var(--champagne);
+  background: radial-gradient(circle, var(--champagne) 0 2.6px, transparent 2.6px);
 }
 .sam-facts span {
   display: block; font-size: var(--t-label); font-weight: 500;
@@ -600,7 +635,7 @@ blockquote cite {
 /* ==========================================================================
    13 · STANDORT — tiefblaue Gesamtfläche, Headline immer frei
    ========================================================================== */
-.standort { background: var(--blue-deep); }
+.standort { background: var(--blue-bright); }
 .st-grid {
   display: grid; grid-template-columns: 1.35fr .65fr;
   gap: clamp(2.5rem, 5vw, 5rem); align-items: start;
@@ -665,10 +700,12 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   color: var(--champagne-light); margin-bottom: 1rem; font-weight: 600;
 }
 .f-grid ul { list-style: none; font-size: .95rem; line-height: 2.1; color: var(--body-on-dark); }
-/* Inline-Links hätten sonst nur die Höhe des Textkastens — zu klein zum Tippen. */
+/* Inline-Links hätten sonst nur die Höhe des Textkastens — zu klein zum
+   Tippen. Mit Zeilenhöhe und Polsterung kamen sie auf 42 px und blieben
+   damit knapp unter der Mindestgröße; min-height setzt sie sicher auf 44. */
 .f-grid a {
   color: var(--body-on-dark); text-decoration: none;
-  display: inline-block; padding: .3rem 0;
+  display: inline-flex; align-items: center; min-height: 44px;
 }
 .f-grid a:hover { color: var(--champagne-light); }
 .f-base {
@@ -679,11 +716,15 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
 }
 
-/* ---------- Reveal ---------- */
-.reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
-.reveal.in { opacity: 1; transform: none; }
+/* ---------- Reveal ----------
+   Der Startzustand ist sichtbar. Nur wenn JavaScript wirklich läuft, setzt
+   die .js-Klasse den Ausgangszustand auf transparent — sonst wäre die halbe
+   Bildstrecke bei JS-Fehler, in Suchmaschinen-Renderern oder in Screenshot-
+   Tools dauerhaft leer, weil der Observer nie feuert. */
+.js .reveal { opacity: 0; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease; }
+.js .reveal.in { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
-  .reveal { opacity: 1; transform: none; transition: none; }
+  .js .reveal, .js .reveal.in { opacity: 1; transform: none; transition: none; }
   .site-nav a::after, .g-board figure, .g-board .ph::after,
   .g-board .ph img, .soc-ic { transition: none; }
   .g-board figure:hover { transform: none; }
@@ -691,7 +732,12 @@ footer { background: var(--navy-night); color: var(--on-dark); }
 }
 
 /* ==========================================================================
-   TABLET — 1024 px abwärts
+   TABLET UND MOBIL — 1023 px abwärts
+
+   Ab hier gilt eine eigene Art Direction, keine gestapelte Desktopseite.
+   Kern ist ein 12-Spalten-Bildraster: Einzelaufnahmen werden zu schmaleren
+   Fenstern mit wechselnder Kante, und dort, wo eine Section zwei Motive
+   besitzt, stehen sie als vertikales Duo nebeneinander statt untereinander.
    ========================================================================== */
 @media (max-width: 1023px) {
   .infobar .d-only { display: none; }
@@ -713,60 +759,103 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   .menu-btn .bars { display: inline-block; width: 20px; }
   .menu-btn .bars span { display: block; height: 1.5px; background: var(--on-dark); margin: 5px 0; }
 
-  /* Hero mobil: Bild zuerst, Text darunter — keine Überlagerung. */
+  /* ---------- Hero: Fassade zuerst, aber nicht bildschirmfüllend ----------
+     6:7 statt 4:5 nimmt rund 55 svh statt 60 — der Schriftzug und die obere
+     Fensterreihe bleiben im Ausschnitt, die Headline ist schneller erreicht. */
   .hero {
     grid-template-columns: 1fr; gap: 0;
-    padding: 0 0 var(--section-pad);
+    padding: 0 0 var(--sp-section);
   }
-  .hero-copy { order: 2; max-width: none; padding: 2.2rem var(--pad) 0; }
+  .hero-copy { order: 2; max-width: none; padding: var(--sp-lg) var(--pad) 0; }
   .hero-shot { order: 1; }
-  .hero-shot img { aspect-ratio: 4 / 5; }
+  .hero-shot img { aspect-ratio: 6 / 7; object-position: 50% 40%; }
+  .hero-sub { margin-top: var(--sp-md); max-width: 36ch; }
   .hero-meta { gap: 1rem; row-gap: .5rem; font-size: .64rem; letter-spacing: .14em; }
 
   .geschichte .inner, .pat-grid, .backstube .inner, .cat-head, .st-grid {
     grid-template-columns: 1fr;
   }
-  .geschichte figure { max-width: 20rem; margin-left: 0; }
-  .cat-head figure { max-width: 15rem; margin-left: 0; }
   .backstube .inner { align-items: start; }
 
+  /* ---------- Einzelbilder: Fenster mit eigener Breite und Kante ----------
+     Vier verschiedene Breiten, abwechselnd links und rechts angeschlagen.
+     Kein Bild läuft mehr über die volle Spaltenbreite. */
+  .geschichte figure  { width: 66%; max-width: 22rem; margin-left: 0; }
+  .pat-lead           { width: 68%; max-width: 22rem; margin-left: auto; order: 2; }
+  .cat-head figure    { width: 58%; max-width: 19rem; margin-left: 0; }
+  .st-photo           { width: 62%; max-width: 21rem; margin-left: auto; margin-top: var(--sp-lg); }
+
+  /* Die Pâtisserie-Section eröffnet mobil mit Kicker und Headline, das
+     Produktbild folgt als Beleg — nicht umgekehrt. */
+  .pat-grid { gap: var(--sp-lg); }
+  .pat-side { order: 1; }
+
   .chrono li { grid-template-columns: 1fr; gap: .3rem; padding: 1.05rem 0; }
-  .chrono .year { font-size: 1.9rem; }
+  .chrono ol { margin-top: var(--sp-lg); }
 
-  .pat-grid { gap: 2.4rem; }
-  .pat-lead { max-width: 20rem; }
+  /* ---------- Backstube: vertikales Duo, Mensch führt ----------
+     Der Guss mit Gesicht bekommt die breitere Spalte, der Handgriff steht
+     schmaler und tiefer daneben (Muster B, umgekehrtes Duo). */
+  .bs-pair {
+    grid-template-columns: repeat(12, 1fr); gap: var(--sp-sm);
+    align-items: start;
+  }
+  .bs-pair > figure:first-child { grid-column: 1 / 6; margin-top: 2.6rem; }
+  .bs-pair > figure:last-child  { grid-column: 6 / -1; --ratio: 2/3; }
 
-  /* Galerie mobil: eigene Dramaturgie statt gestapelter Spuren —
-     Paar, Leitbild, versetztes Paar. */
+  /* ---------- Galerie: Duo · Leitbild · umgekehrtes Duo ----------
+     Ein 12-Spalten-Raster erlaubt echte 42/58- und 58/42-Teilungen; die
+     beiden Duos sind dadurch nicht spiegelgleich, sondern gegenläufig. */
   .g-board {
-    grid-template-columns: 1fr 1fr; gap: .9rem;
-    margin-top: 2.2rem;
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--sp-sm);
+    margin-top: var(--sp-lg);
   }
   .g-track { display: contents; }
-  /* Das schmale Leitband ist eine Desktop-Geste — mobil würde 1:4 zu einem
-     endlosen Streifen. Hier ein ruhigeres Hochformat. Die beiden Bilder des
-     Paares behalten bewusst verschiedene Höhen, sonst läse sich die Zeile
-     als zwei gleiche Kacheln. */
-  .g-copper   { grid-column: 1; grid-row: 1; --ratio: 2/5 !important; }
-  .g-almonds  { grid-column: 2; grid-row: 1; margin-top: 2.5rem; --ratio: 1/2 !important; }
-  .g-team     { grid-column: 1 / -1; grid-row: 2; margin-top: 1.4rem; }
-  .g-team .ph img { aspect-ratio: 5 / 4 !important; }
-  .g-cherries { grid-column: 1; grid-row: 3; margin-top: 1.4rem; }
-  .g-piping   { grid-column: 2; grid-row: 3; margin-top: 3.6rem; }
 
-  .cat-cols { grid-template-columns: 1fr; margin-top: 2.4rem; }
+  /* Reihe 1 — Material und Textur (Muster A: schmal links, breit rechts).
+     Das Desktop-Leitband (1:4) würde mobil zu einem endlosen Streifen, hier
+     stehen zwei ruhige Hochformate. Der Kupferkessel bekommt die breitere
+     Spalte: Stäbe, Kesselwand und geschlagene Masse zerfallen in 136 px zu
+     einer Textur ohne Motiv. Die Mandelblättchen sind reine Wiederholung und
+     bleiben auch schmal lesbar. */
+  .g-almonds  { grid-column: 1 / 6;  grid-row: 1; --ratio: 5/8 !important; }
+  .g-copper   { grid-column: 6 / -1; grid-row: 1; --ratio: 3/5 !important; --fx: 56%; margin-top: 1.7rem; }
+  /* Reihe 2 — Leitbild: die Begegnung am Fenster, rechts angeschlagen. */
+  .g-team     {
+    grid-column: 4 / -1; grid-row: 2;
+    margin-top: var(--sp-lg); max-width: 26rem; margin-left: auto;
+  }
+  .g-team .ph img { aspect-ratio: 4 / 5 !important; object-position: 50% 32%; }
+  /* Reihe 3 — gegenläufiges Duo: breite Spalte jetzt links. */
+  .g-cherries { grid-column: 1 / 8;  grid-row: 3; margin-top: var(--sp-lg); }
+  .g-piping   { grid-column: 8 / -1; grid-row: 3; margin-top: calc(var(--sp-lg) + 2.6rem); }
+
+  .cat-cols { grid-template-columns: 1fr; margin-top: var(--sp-lg); }
   .cat-cols > div { padding: 1.5rem 0; border-left: none; border-top: 1px solid var(--rule-hair); }
   .cat-cols > div:first-child { border-top: none; padding-top: 0; }
 
-  /* Mobil trägt Claudia den Abschnitt über die volle Breite, das
-     Kaffeedetail folgt als schmaler, nach rechts versetzter Nachsatz. */
-  .sam-grid { grid-template-columns: 1fr; gap: 0; }
-  .sam-text { grid-column: 1; grid-row: 1; padding-top: 0; }
-  .sam-claudia { grid-column: 1; grid-row: 2; margin-top: 1.8rem; }
-  .sam-side { grid-column: 1; grid-row: 3; max-width: 58%; margin: 1.2rem 0 0 auto; }
+  /* ---------- Samstag: Claudia führt, das Kaffeedetail antwortet ----------
+     Statt eines 68-svh-Vollbreitenbildes ein Duo (Muster C): Claudia breiter
+     und höher, die Espressomaschine schmal und tiefer eingesetzt. */
+  .sam-grid {
+    grid-template-columns: repeat(12, 1fr);
+    gap: var(--sp-sm); align-items: start;
+  }
+  .sam-text    { grid-column: 1 / -1; grid-row: 1; padding-top: 0; }
+  /* Beide Motive laden mobil ihren eigenen Ausschnitt (claudia-m, barista-m).
+     Das Anzeigefenster übernimmt exakt dessen Seitenverhältnis 3:5, damit
+     object-fit nichts mehr wegschneidet, was der Crop bewusst behalten hat. */
+  .sam-claudia {
+    grid-column: 1 / 8; grid-row: 2;
+    margin-top: var(--sp-lg); --ratio: 3/5; --fx: 50%; --fy: 50%;
+  }
+  .sam-side    {
+    grid-column: 8 / -1; grid-row: 2; max-width: none;
+    margin: calc(var(--sp-lg) + 3rem) 0 0 0; --ratio: 3/5; --fx: 50%;
+  }
 
-  .st-info { grid-template-columns: 1fr 1fr; gap: 1.8rem; }
-  .st-photo { max-width: 20rem; margin-top: 1rem; }
+  .st-info { grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-top: var(--sp-lg); }
 
   .f-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
   .f-logo { grid-column: 1 / -1; }
@@ -774,16 +863,58 @@ footer { background: var(--navy-night); color: var(--on-dark); }
 }
 
 /* ==========================================================================
-   MOBIL — 640 px abwärts
+   TABLET — 640 bis 1023 px
+
+   Die Bildspalten sind prozentual definiert, die Bildschirmhöhe wächst aber
+   nicht mit: bei 768 px Breite wurde aus demselben 3:5-Fenster plötzlich ein
+   66-svh-Block. Deshalb bekommen die drei Duo-Container hier eine Obergrenze,
+   die das höchste Fenster (3:5 in der breiten Spalte) bei rund 50 svh hält,
+   und der Hero wechselt ins Querformat, das zu einem breiten Gerät passt.
+   ========================================================================== */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .hero-shot img { aspect-ratio: 16 / 10; object-position: 50% 46%; }
+  .g-board, .bs-pair, .sam-grid { max-width: 35rem; }
+  .st-info { max-width: 35rem; }
+}
+
+/* ==========================================================================
+   MOBIL — 639 px abwärts
+   Eigene Typo-Kalibrierung: die Displaygrößen sind hier nicht verkleinerte
+   Desktopwerte, sondern für Zeilenumbruch und Daumendistanz gerechnet.
    ========================================================================== */
 @media (max-width: 639px) {
-  body { font-size: 1rem; }
-  .infobar { font-size: .58rem; letter-spacing: .14em; }
-  .k-num::after { width: 1rem; margin-left: .55rem; }
+  :root {
+    --section-pad: var(--sp-section);
+    --t-hero:      clamp(2.6rem, 11.4vw, 3.5rem);
+    --t-hero-ser:  clamp(2.35rem, 10.2vw, 3.15rem);
+    --t-display:   clamp(2rem, 8.2vw, 2.6rem);
+    --t-serif-dsp: clamp(2.05rem, 8.4vw, 2.65rem);
+    --t-intro:     clamp(1.3rem, 5.6vw, 1.55rem);
+    --t-year:      clamp(1.85rem, 7.4vw, 2.3rem);
+    --t-body-lg:   clamp(1.2rem, 5vw, 1.4rem);
+    --t-sub:       clamp(1.25rem, 5.2vw, 1.45rem);
+    --t-claim:     clamp(1.75rem, 7.6vw, 2.2rem);
+    --t-label:     .72rem;
+  }
 
-  .geschichte figure, .cat-head figure, .st-photo, .pat-lead { max-width: none; }
-  .backstube .inner { gap: 2rem; }
+  .infobar { font-size: .58rem; letter-spacing: .14em; }
+  /* Weniger gesperrt als auf Desktop — bei 11 px liest sich .2em als Lücke. */
+  .kicker { letter-spacing: .15em; margin-bottom: 1.1rem; gap: .65rem; }
+
+  h1 { margin-top: 1.2rem; line-height: 1.03; }
+  .hero-sub { font-size: 1.0625rem; }
+  h2 { max-width: 17ch; }
+  .body, .st-lede, .chrono p, .cat-cols p { text-wrap: pretty; }
+  .body { margin-top: var(--sp-md); }
+  .intro h2 { max-width: 24ch; line-height: 1.4; }
+  .intro .lede { margin-top: var(--sp-md); max-width: 38ch; }
+
+  .backstube .inner { gap: var(--sp-lg); }
   .st-info { grid-template-columns: 1fr; gap: 1.6rem; }
   .f-grid { grid-template-columns: 1fr; }
   .f-base { font-size: .62rem; }
+
+  .sam-facts { font-size: 1.3rem; }
+  section { padding-block: var(--sp-section); }
+  .intro { padding-block: var(--sp-section); }
 }
