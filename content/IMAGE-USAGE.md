@@ -12,7 +12,7 @@ Reihenfolge = Seitenstruktur. Jedes Bild genau einmal.
 | 8 | Backstube & Menschen | P1360272 (Leitbild) + P1360346 (Detail) | 272 Vollbild vertikal · 346 kleiner | 272 4:5 · 346 quadratisch |
 | 9 | Redaktionelle Galerie | P1360329, P1360218, P1360326, P1360788, P1360109 (optional), P1360381* | 3 vertikale Spuren, versetzte Starts | 6 Bilder, kontrollierte Paare, unterschiedliche Höhen |
 | 10 | Catering | P1360381* (Zutaten) | quer angeschnittenes Band oder 4:5 | 4:5 kompakt |
-| 11 | Samstagsfenster | Claudia.jpg (groß vertikal) + P1360057 (ergänzend) | Claudia 55–60 % oberer Bildteil · 057 fast Vollbild | Claudia enger 4:5, Kopf komplett · 057 4:5 |
+| 11 | Samstagsfenster | Claudia.jpg = Claudia Fourmont, belegt (groß vertikal) + P1360057 (ergänzend) | Claudia 55–60 % oberer Bildteil · 057 fast Vollbild | Claudia enger 4:5, Kopf komplett · 057 4:5 |
 | 12 | Standort | — (Typografie) | — | — |
 | 13 | Footer | Logo | natürliche Proportion ≤ 140 px | ≤ 110 px |
 

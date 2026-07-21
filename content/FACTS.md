@@ -46,6 +46,19 @@ Nur diese Fakten dürfen auf der Website erscheinen.
 - Januar 2021: Wiederaufnahme der Arbeit in der historischen Backstube
 - heute: Produktion, Gastronomiebelieferung, Catering, Samstagsverkauf
 
+## Menschen im heutigen Betrieb (bestätigt)
+
+- **Claudia Fourmont**: Bestellungen und Organisation; liefert Kuchen und
+  Pâtisserie an Cafés und weitere Besteller aus; samstags häufig an der
+  Ausgabe. Keine bestätigte Berufsbezeichnung oder Funktion — nicht als
+  Position formulieren. Nicht behaupten, sie sei jeden Samstag anwesend.
+- **Tyll Schulte** (Schreibweise mit Y, zwei L): gelernter Koch und
+  gelernter Konditor; stellt gemeinsam mit Gregor Buschmann Kuchen, Torten
+  und Pâtisserie fertig und macht sie lieferbereit. Kein Titel, keine
+  Hierarchie, keine früheren Arbeitgeber, keine Spezialgebiete belegt.
+  Bild: `01-originalfotos/Tyll.jpg` zeigt ihn (per Dateiname belegt), ist
+  aber aus Qualitätsgründen abgelehnt — er steht deshalb nur im Text.
+
 ## Belegtes Zitat (einmalige, dezente Verwendung erlaubt)
 
 „Esst mehr Sahnetorte!" — Gregor Buschmann, THE-DORF-Porträt (2021)

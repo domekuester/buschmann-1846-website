@@ -19,7 +19,10 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 - 2664 × 3988, Hochformat
 - Motiv: Claudia lacht hinter dem geöffneten Verkaufsfenster; davor Gast mit
   rosa Haaren, Lederjacke und Glitzerhose, Rücken zur Kamera
-- Person: **Claudia (eindeutig per Dateiname)**; Gast unbekannt
+- Person: **Claudia Fourmont (eindeutig per Dateiname)**; Gast unbekannt.
+  Der Name darf im Fließtext genannt werden — eine sichtbare Bildunterschrift
+  ist dafür nicht nötig und bleibt bewusst weg (Auftraggeber-Vorgabe: keine
+  Captions).
 - Tätigkeit: Gespräch über die Theke, Verkaufssituation
 - Qualität: scharf auf Claudia, gute Belichtung im Fensterausschnitt, starker
   Hell-dunkel-Kontrast; Rücken des Gastes dominiert im Vollbild
@@ -114,14 +117,21 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 - Mobil-Crop: quadratisch/4:5 Zentrum
 - Probleme: monochrome Wirkung — sparsam einsetzen
 
-## P1360233.jpg — ABLEHNEN
+## Tyll.jpg — ABLEHNEN
 - 2672 × 4000, Hochformat
 - Motiv: Mann (schwarzes Polo, Schürze) hinter Rührkessel-Bügel; im
   Vordergrund Küchenrolle, Topf, viel Gerät
-- Person: unbestätigt (evtl. „Till" — nicht belegt)
+- Person: **Tyll Schulte (eindeutig per Dateiname)** — die Datei wurde am
+  2026-07-21 von `Tyll.jpg` zu `Tyll.jpg` umbenannt, derselbe Belegstandard
+  wie bei `Claudia.jpg`. Die Identität ist damit dokumentiert.
+- Verwendung trotzdem **nein**: Die Ablehnung betraf nie die Person, sondern
+  die Bildqualität (unruhiger Vordergrund, Bügel schneidet durchs Bild,
+  irritierter Blick, keine klare Tätigkeit). Tyll Schulte steht deshalb
+  namentlich im Text der Backstube, aber ohne Foto. Sobald eine bessere
+  Aufnahme von ihm vorliegt, kann sie die Menschen-Zone ergänzen.
 - Qualität: Blick irritiert an der Kamera vorbei, Vordergrund unruhig,
   Bügel schneidet durchs Bild — keine klare Tätigkeit
-- Rolle: keine — Bildregie verlangt für Till „klare Tätigkeit und sinnvolle
+- Rolle: keine — Bildregie verlangt für Tyll „klare Tätigkeit und sinnvolle
   Bildqualität"
 
 ## P1360272.jpg — L (Backstube/Handwerk)
@@ -227,10 +237,10 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 | Gregor und Backstube (Name unbestätigt) | P1360272, P1360326 |
 | Claudia am Fenster | Claudia.jpg |
 | Louis an der Kaffeemaschine (Name unbestätigt) | P1360057 |
-| Till bei der Arbeit (Name unbestätigt) | — (P1360233 abgelehnt) |
+| Tyll Schulte bei der Arbeit (Name belegt) | — (Tyll.jpg abgelehnt: Qualität) |
 | Menschen und Begegnungen | P1360788, (Reserve: P1360109) |
 | Pâtisserie und Produkte | P1360096, P1360370 |
 | Kaffee und Samstag | P1360057, (Reserve: P1360316-2) |
 | Werkzeuge, Zutaten und Details | P1360218, P1360346, P1360381 |
 | Produktion und Catering | P1360381, P1360346 (Doppelnutzung möglich) |
-| Nicht verwenden | P1360200, P1360233, P1360445, (P1360316-2) |
+| Nicht verwenden | P1360200, Tyll.jpg, P1360445, (P1360316-2) |

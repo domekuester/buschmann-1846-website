@@ -59,7 +59,7 @@ CSS ein File < 40 KB, JS < 6 KB, Lighthouse-Durchlauf lokal.
 
 ## Offene Entscheidungen für den Auftraggeber (vor/nach GATE 2)
 
-1. Personennamen auf der Website (Claudia belegt; Louis/Till/Gregor an
+1. Personennamen auf der Website (Claudia belegt; Louis/Tyll/Gregor an
    Bildern erst nach Bestätigung)
 2. Kontaktweg Catering (bis dahin: Verweis auf Instagram/Facebook)
 3. Impressum/Datenschutz-Inhalte

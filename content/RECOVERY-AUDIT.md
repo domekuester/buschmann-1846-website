@@ -72,7 +72,7 @@ von Hand wieder eingefügt.
    Backstubenbilder). Zu respektieren, nicht zusätzlich tonen.
 4. **Zwei sehr dunkle/abstrakte Fotos** sind nicht verwendbar (siehe
    IMAGE-REJECTIONS.md) — der Bildpool ist kleiner als die Dateizahl.
-5. **Personenzuordnung** nur bei Claudia eindeutig (Dateiname). Louis, Till,
+5. **Personenzuordnung** nur bei Claudia eindeutig (Dateiname). Louis, Tyll,
    Gregor: nicht durch Dateinamen belegt → Namen nur nach Bestätigung.
 
 ## 8. Mögliche Pfadprobleme

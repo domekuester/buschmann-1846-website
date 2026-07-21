@@ -5,8 +5,17 @@
 - [ ] Bildrechte aller 18 Fotos bestätigen (Fotograf, Nutzungsrecht Web)
 - [ ] Einverständnis der abgebildeten Personen (Claudia, Team, Gäste) bestätigen
 - [ ] Personenzuordnung bestätigen: Wer ist auf P1360057 (Kaffeemaschine),
-      P1360233 (schwarzes Polo), P1360272/P1360326/P1360445 (Bart, Kappe),
+      P1360272/P1360326/P1360445 (Bart, Kappe),
       P1360788 (zwei Frauen am Fenster)? Namen erst danach verwenden.
+- [ ] **Foto von Tyll Schulte fehlt (nicht die Zuordnung).** Die Identität
+      ist seit dem Rename `P1360233.jpg` → `Tyll.jpg` belegt, das Bild bleibt
+      aber aus Qualitätsgründen abgelehnt (unruhiger Vordergrund, Bügel im
+      Bild, keine klare Tätigkeit). Tyll Schulte steht deshalb namentlich im
+      Text der Backstube, aber ohne Foto. Bessere Aufnahme nachliefern, dann
+      kann die Menschen-Zone ein Bild bekommen.
+- [ ] Einverständnis für die **namentliche** Nennung von Claudia Fourmont
+      und Tyll Schulte auf der Website bestätigen (bisher war nur die
+      Abbildung, nicht die Namensnennung Thema).
 - [ ] Logo in höherer Auflösung beschaffen (aktuell nur 374 px PNG)
 - [ ] Kontaktweg für Catering-Anfragen festlegen (Telefon? E-Mail? Instagram-DM?)
       — bis dahin verweist die Website nur auf Instagram/Facebook

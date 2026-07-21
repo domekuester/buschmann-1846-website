@@ -98,6 +98,26 @@ tun, und Handgriffen, die man keiner Maschine überlässt.
 Kupferschüssel (P1360272) · Hände streichen Teig mit einer Winkelpalette in
 eine Backform (P1360346).
 
+**Menschen-Zone** (zwei kurze Absätze unter einer Champagner-Haarlinie,
+Namen als `<strong>`, keine Rollentitel, keine Porträts):
+
+Claudia Fourmont behält Bestellungen und Organisation im Blick und bringt die
+fertigen Kuchen dorthin, wo sie gebraucht werden. Samstags gehört sie meist zu
+den vertrauten Gesichtern an der Ausgabe.
+
+Tyll Schulte ist gelernter Koch und Konditor. Gemeinsam mit Gregor Buschmann
+sorgt er dafür, dass Kuchen, Torten und Pâtisserie fertig und lieferbereit sind.
+
+Wortwahl bewusst gesetzt:
+
+- „an der Ausgabe“ statt „am Fenster“ — „Fenster“ bleibt allein der
+  Samstags-Headline vorbehalten (sichtbar genau 1×).
+- „dorthin, wo sie gebraucht werden“ statt „ausgeliefert“ — das steht
+  bereits im Catering-Abschnitt.
+- „meist“ statt „immer“ — Claudias Anwesenheit ist häufig, nicht zugesichert.
+- Im Tyll-Text steht **Gregor Buschmann**, nicht „Gregor August Buschmann“;
+  die vollständige Form bleibt der Erstvorstellung in der Geschichte.
+
 ## 9. Redaktionelle Galerie
 
 Captions (klein, direkt am Bild, nicht überall):

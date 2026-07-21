@@ -506,10 +506,30 @@ blockquote cite {
 .backstube { background: var(--blue-brand); }
 .backstube .inner {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: clamp(2.5rem, 5vw, 5rem); align-items: end;
+  /* Spalten brauchen Luft, Zeilen nicht: seit die Menschen-Zone eine zweite
+     Rasterzeile bildet, würde derselbe Wert (72 px) zusammen mit ihrem
+     eigenen Abstand eine 123-px-Lücke unter den Bildern aufreißen. */
+  column-gap: clamp(2.5rem, 5vw, 5rem);
+  row-gap: clamp(1.6rem, 2.6vw, 2.4rem);
+  align-items: end;
 }
 .backstube .text-col { padding-bottom: 1rem; }
 .bs-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; align-items: end; }
+
+/* Menschen-Zone — läuft über beide Spalten und schließt den Abschnitt ab.
+   Die Champagner-Haarlinie ist dieselbe wie in Timeline und Catering; die
+   volle Champagnerlinie bleibt der Öffnungszeit im Samstagsabschnitt
+   vorbehalten. Keine Karten, keine Rahmen, kein Rollentitel — die Namen
+   heben sich allein über Gewicht und volle Textfarbe ab. */
+.crew {
+  grid-column: 1 / -1;
+  padding-top: 1.5rem;   /* der Zeilenabstand des Rasters trägt den Rest */
+  border-top: 1px solid var(--rule-dark);
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: clamp(2rem, 4vw, 4rem);
+}
+.crew p { max-width: 44ch; font-size: .95rem; color: var(--body-on-dark); }
+.crew strong { color: var(--on-dark); font-weight: 600; }
 
 /* ==========================================================================
    10 · GALERIE — vier vertikale Spuren, keine Rahmen, keine Captions
@@ -830,6 +850,14 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   /* Reihe 3 — gegenläufiges Duo: breite Spalte jetzt links. */
   .g-cherries { grid-column: 1 / 8;  grid-row: 3; margin-top: var(--sp-lg); }
   .g-piping   { grid-column: 8 / -1; grid-row: 3; margin-top: calc(var(--sp-lg) + 2.6rem); }
+
+  /* Mobil untereinander: die beiden Absätze bleiben eng beieinander, damit
+     die Zone nicht zu einer eigenen Scrollstrecke wird. */
+  .crew {
+    grid-template-columns: 1fr; gap: var(--sp-md);
+    margin-top: var(--sp-lg); padding-top: var(--sp-md);
+  }
+  .crew p { max-width: none; }
 
   .cat-cols { grid-template-columns: 1fr; margin-top: var(--sp-lg); }
   .cat-cols > div { padding: 1.5rem 0; border-left: none; border-top: 1px solid var(--rule-hair); }
