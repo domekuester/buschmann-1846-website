@@ -525,11 +525,15 @@ blockquote cite {
   grid-column: 1 / -1;
   padding-top: 1.5rem;   /* der Zeilenabstand des Rasters trägt den Rest */
   border-top: 1px solid var(--rule-dark);
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: clamp(2rem, 4vw, 4rem);
+  display: grid; grid-template-columns: 210px 1fr;
+  gap: clamp(1.6rem, 3vw, 2.6rem); align-items: start;
 }
-.crew p { max-width: 44ch; font-size: .95rem; color: var(--body-on-dark); }
-.crew strong { color: var(--on-dark); font-weight: 600; }
+/* Kein Rahmen, kein Hintergrund, keine runde Maske: dasselbe nackte
+   Bildfenster wie überall auf der Seite — nur kleiner. So bleibt es ein
+   Bild-Text-Paar und wird nicht zum Personenkärtchen. */
+.crew-photo { width: 100%; }
+.crew p { max-width: 52ch; font-size: .95rem; color: var(--body-on-dark); }
+.crew strong, .sam-person strong { color: var(--on-dark); font-weight: 600; }
 
 /* ==========================================================================
    10 · GALERIE — vier vertikale Spuren, keine Rahmen, keine Captions
@@ -618,7 +622,12 @@ blockquote cite {
    unten aufgefangen statt in leerer Fläche auszulaufen. */
 .sam-grid {
   display: grid; grid-template-columns: 1fr .78fr;
-  gap: clamp(2rem, 4vw, 3.5rem); align-items: start;
+  /* Zeilenabstand knapp halten: Claudias Vorstellung steht in ihrer eigenen
+     Spalte direkt unter ihrem Bild und soll als Einheit damit gelesen werden,
+     nicht als abgesetzter Block. Die Spalten brauchen dagegen Luft. */
+  column-gap: clamp(2rem, 4vw, 3.5rem);
+  row-gap: 1rem;
+  align-items: start;
 }
 .sam-text { grid-column: 1; grid-row: 1; padding-top: 1rem; }
 .sam-side { grid-column: 1; grid-row: 2; }
@@ -647,6 +656,16 @@ blockquote cite {
   color: var(--dim-on-dark); margin-top: .5rem;
 }
 .sam-claudia { margin-top: 2.5rem; }
+/* Claudias Vorstellung sitzt in derselben Spalte wie ihr Bild und direkt
+   darunter — dadurch ist die Zuordnung eindeutig, ohne dass das Foto eine
+   sichtbare Bildunterschrift bekommt (Auftraggeber-Vorgabe: keine Captions).
+   Die Champagner-Haarlinie bindet Name und Bild als eine Einheit zusammen. */
+.sam-person {
+  grid-column: 2; grid-row: 3;
+  padding-top: 1.1rem;   /* der Zeilenabstand des Rasters trägt den Rest */
+  border-top: 1px solid var(--rule-dark);
+}
+.sam-person p { font-size: .92rem; line-height: 1.6; color: var(--body-on-dark); }
 /* Das Kaffeedetail sitzt auf derselben linken Achse wie der Text, statt auf
    einem freien Rechtsversatz zu schweben — dadurch schließt die Spalte
    unten sauber ab und der Rest der Fläche liest sich als Bundsteg. */
@@ -851,13 +870,15 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   .g-cherries { grid-column: 1 / 8;  grid-row: 3; margin-top: var(--sp-lg); }
   .g-piping   { grid-column: 8 / -1; grid-row: 3; margin-top: calc(var(--sp-lg) + 2.6rem); }
 
-  /* Mobil untereinander: die beiden Absätze bleiben eng beieinander, damit
-     die Zone nicht zu einer eigenen Scrollstrecke wird. */
+  /* Mobil bleibt es ein Paar: schmales Hochformat links, Text rechts daneben.
+     Nebeneinander statt untereinander spart Scrollstrecke und hält Gesicht
+     und Name in einem Blickfeld. */
   .crew {
-    grid-template-columns: 1fr; gap: var(--sp-md);
-    margin-top: var(--sp-lg); padding-top: var(--sp-md);
+    grid-template-columns: 38% 1fr; gap: var(--sp-sm);
+    padding-top: var(--sp-md); align-items: start;
   }
-  .crew p { max-width: none; }
+  .crew-photo { --ratio: 3/4; }
+  .crew p { max-width: none; font-size: .92rem; line-height: 1.6; }
 
   .cat-cols { grid-template-columns: 1fr; margin-top: var(--sp-lg); }
   .cat-cols > div { padding: 1.5rem 0; border-left: none; border-top: 1px solid var(--rule-hair); }
@@ -881,6 +902,12 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   .sam-side    {
     grid-column: 8 / -1; grid-row: 2; max-width: none;
     margin: calc(var(--sp-lg) + 3rem) 0 0 0; --ratio: 3/5; --fx: 50%;
+  }
+  /* Mobil läuft Claudias Vorstellung über die volle Breite direkt unter dem
+     Bildpaar — Name und Gesicht bleiben in einem Blickfeld. */
+  .sam-person {
+    grid-column: 1 / -1; grid-row: 3;
+    margin-top: var(--sp-md); padding-top: var(--sp-md);
   }
 
   .st-info { grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-top: var(--sp-lg); }

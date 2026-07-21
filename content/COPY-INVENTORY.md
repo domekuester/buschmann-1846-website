@@ -98,25 +98,17 @@ tun, und Handgriffen, die man keiner Maschine überlässt.
 Kupferschüssel (P1360272) · Hände streichen Teig mit einer Winkelpalette in
 eine Backform (P1360346).
 
-**Menschen-Zone** (zwei kurze Absätze unter einer Champagner-Haarlinie,
-Namen als `<strong>`, keine Rollentitel, keine Porträts):
-
-Claudia Fourmont behält Bestellungen und Organisation im Blick und bringt die
-fertigen Kuchen dorthin, wo sie gebraucht werden. Samstags gehört sie meist zu
-den vertrauten Gesichtern an der Ausgabe.
+**Tyll Schulte** (kurzer Absatz unter einer Champagner-Haarlinie, Name als
+`<strong>`, kein Rollentitel, keine Porträtkarte) — steht bewusst hier, weil
+er die Arbeit mit Gregor Buschmann teilt:
 
 Tyll Schulte ist gelernter Koch und Konditor. Gemeinsam mit Gregor Buschmann
 sorgt er dafür, dass Kuchen, Torten und Pâtisserie fertig und lieferbereit sind.
 
-Wortwahl bewusst gesetzt:
-
-- „an der Ausgabe“ statt „am Fenster“ — „Fenster“ bleibt allein der
-  Samstags-Headline vorbehalten (sichtbar genau 1×).
-- „dorthin, wo sie gebraucht werden“ statt „ausgeliefert“ — das steht
-  bereits im Catering-Abschnitt.
-- „meist“ statt „immer“ — Claudias Anwesenheit ist häufig, nicht zugesichert.
-- Im Tyll-Text steht **Gregor Buschmann**, nicht „Gregor August Buschmann“;
-  die vollständige Form bleibt der Erstvorstellung in der Geschichte.
+> Im Tyll-Text steht **Gregor Buschmann**, nicht „Gregor August Buschmann“;
+> die vollständige Form bleibt der Erstvorstellung in der Geschichte.
+> Bild: `Tyll-final.jpg`, klein als Bild-Text-Paar neben dem Absatz.
+> Keine Bildunterschrift — der Name steht im Text daneben.
 
 ## 9. Redaktionelle Galerie
 
@@ -147,11 +139,30 @@ Social-Media-Links, nicht als Anfrage- oder Bestellkanal (Korrektur 20.07.2026).
 
 ## 11. Samstagsfenster
 
-**Headline:** Samstags ist die Tür offen.
+**Claudia Fourmont** (kurzer Absatz direkt unter ihrem Foto, durch eine
+Champagner-Haarlinie damit verbunden; Name als `<strong>`, keine sichtbare
+Bildunterschrift):
 
-**Text:** Unter der Woche wird in der Backstube produziert. Am Samstag gibt
-es von 12 bis 17 Uhr Kaffee und Kuchen — und meistens noch ein kurzes
-Gespräch über die Theke.
+Claudia Fourmont behält Bestellungen und Organisation im Blick und bringt die
+fertigen Kuchen dorthin, wo sie gebraucht werden. Samstags gehört sie meist zu
+den vertrauten Gesichtern an der Ausgabe.
+
+> „an der Ausgabe“ statt „am Fenster“ — „Fenster“ bleibt sichtbar 1× und
+> gehört allein der Headline dieses Abschnitts. „dorthin, wo sie gebraucht
+> werden“ statt „ausgeliefert“ (steht im Catering). „meist“ statt „immer“:
+> Claudia ist häufig, aber nicht zugesichert jeden Samstag da.
+
+**Headline:** Samstags ist das Fenster offen.
+
+> Sachliche Korrektur (21.07.2026): Der Entwurf sagte „Samstags ist die Tür
+> offen." Das legt einen Café-Innenbetrieb nahe, den es nicht gibt —
+> Buschmann ist eine Backstube, die Ausgabe erfolgt am Fenster, Tische und
+> Stühle stehen draußen. Hier nachgezogen, damit die Formulierung nicht aus
+> dem Entwurf zurück in die Website wandert.
+
+**Text:** Samstags gibt es von 12 bis 17 Uhr Kaffee und Kuchen. Draußen
+stehen Tische und Stühle bereit. Die Backstube selbst bleibt, was sie ist:
+Backstube.
 
 **Fakten-Block:** Samstag · 12–17 Uhr · Akademiestraße 8, Altstadt
 

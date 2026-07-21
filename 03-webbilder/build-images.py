@@ -56,6 +56,14 @@ JOBS = {
     # Maschine bleiben zusammen. Der dunkle Boden und die leere rechte
     # Maschinenfläche sind raus — keine reine Gerätefläche mehr.
     "barista-m":      ("P1360057.jpg", (100, 336, 1336, 2400),   [300, 600]),
+
+    # Tyll Schulte in der Backstube. Desktop 2:3 wie die übrigen Hochformate:
+    # Luft über dem Kopf, Blickrichtung nach links bleibt frei, die Schürze
+    # ankert unten, die Werkzeugwand gibt Kontext ohne zu dominieren.
+    "tyll":           ("Tyll-final.jpg", (150, 60, 2350, 3360),  [600, 1200]),
+    # Mobil enger auf Kopf und Schultern — bei rund 150 px Spaltenbreite muss
+    # das Gesicht die Fläche tragen, nicht die Schürze.
+    "tyll-m":         ("Tyll-final.jpg", (330, 130, 2200, 2650), [400, 800]),
 }
 
 def export(im: Image.Image, stem: str, width: int) -> None:

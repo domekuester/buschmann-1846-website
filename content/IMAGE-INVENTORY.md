@@ -15,6 +15,31 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 - Qualität: sauber, aber geringe Auflösung → Darstellung ≤ ~170 px Breite
 - Verwendung: Header, Footer, Favicon-Basis
 
+## Tyll-final.jpg — L (Backstube, Menschen-Zone) — VERWENDET
+- 2672 × 4000, Hochformat
+- Motiv: Tyll Schulte in Schürze, Profil, Blick auf die Arbeit gerichtet;
+  im Hintergrund die Werkzeugwand der Backstube
+- Person: **Tyll Schulte (eindeutig per Dateiname)**
+- Qualität: scharf, warmes Licht, vollständiger Kopf mit Luft darüber
+- Desktop-Crop: (150, 60, 2350, 3360) = 2200 × 3300, 2:3 — dasselbe
+  Hochformat wie die übrigen Bildfenster; die Blickrichtung nach links
+  bleibt frei, die Schürze ankert unten
+- Mobil-Crop: (330, 130, 2200, 2650) = 1870 × 2520, ca. 3:4 — enger auf Kopf
+  und Schultern, weil die Spalte dort nur rund 130 px breit ist
+- Anzeige: 210 × 315 px Desktop, 130 × 195 px mobil (23 svh) — bewusst klein,
+  es ist ein Bild-Text-Paar, kein Porträt-Aufmacher
+- Keine Bildunterschrift: Der Name steht als `<strong>` im Text daneben
+
+## Tyll-kessel.jpg — Reserve (nicht verwendet)
+- 2672 × 4000, Hochformat
+- Motiv: Tyll Schulte lachend über einem großen Edelstahlkessel, gibt etwas
+  hinein; Werkzeugwand und Waage als Kontext
+- Person: **Tyll Schulte (eindeutig per Dateiname)**
+- Qualität: scharf, warm, klar lesbare Tätigkeit, sehr sympathischer Ausdruck
+- Warum Reserve: Für die schmale Spalte der Menschen-Zone ist die Szene zu
+  breit — der Kessel dominiert jeden vertikalen Ausschnitt. Als größeres
+  Bild (Galerie oder Backstuben-Paar) wäre es ein starker Kandidat.
+
 ## Claudia.jpg — L (Samstagsfenster)
 - 2664 × 3988, Hochformat
 - Motiv: Claudia lacht hinter dem geöffneten Verkaufsfenster; davor Gast mit
@@ -117,18 +142,28 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 - Mobil-Crop: quadratisch/4:5 Zentrum
 - Probleme: monochrome Wirkung — sparsam einsetzen
 
-## Tyll.jpg — ABLEHNEN
+## Till.jpg — ABLEHNEN
 - 2672 × 4000, Hochformat
 - Motiv: Mann (schwarzes Polo, Schürze) hinter Rührkessel-Bügel; im
   Vordergrund Küchenrolle, Topf, viel Gerät
-- Person: **Tyll Schulte (eindeutig per Dateiname)** — die Datei wurde am
-  2026-07-21 von `Tyll.jpg` zu `Tyll.jpg` umbenannt, derselbe Belegstandard
-  wie bei `Claudia.jpg`. Die Identität ist damit dokumentiert.
-- Verwendung trotzdem **nein**: Die Ablehnung betraf nie die Person, sondern
-  die Bildqualität (unruhiger Vordergrund, Bügel schneidet durchs Bild,
-  irritierter Blick, keine klare Tätigkeit). Tyll Schulte steht deshalb
-  namentlich im Text der Backstube, aber ohne Foto. Sobald eine bessere
-  Aufnahme von ihm vorliegt, kann sie die Menschen-Zone ergänzen.
+- Person: **Tyll Schulte (eindeutig per Dateiname)** — Datei zuletzt
+  `Till.jpg` (vorher `Tyll.jpg`, ursprünglich `P1360233.jpg`), alle drei
+  byte-identisch (SHA b9fd7bbd…). Der Dateiname trägt die Variante „Till“;
+  öffentlich heißt er immer **Tyll Schulte**.
+- Verwendung: **nein, technisch nicht möglich.** Geprüft am 2026-07-21 in
+  den tatsächlichen Anzeigegrößen (230 px Desktop, 150 px mobil) auf
+  Markenblau, dazu drei Crop-Varianten in Vollauflösung:
+  1. **Der Scheitel ist bereits im Original angeschnitten** — die Pixel
+     existieren nicht, kein Crop kann das beheben. Verstößt gegen die
+     Bildregel „kein abgeschnittener Kopf“.
+  2. Der Blick wirkt erschrocken/abgelenkt, nicht herzlich.
+  3. Die Tätigkeit ist unlesbar: Die Hände liegen hinter einer unscharfen
+     Kesselkante, die das untere Drittel beherrscht.
+  4. Starkes Rauschen, weiche Zeichnung (Available Light, unterbelichtet).
+  Ein Crop, der den Anschnitt vermeidet, zeigt nur noch dunkle Schürze und
+  Hintergrund — dann ist Tyll nicht mehr erkennbar. Beides zusammen ist
+  nicht lösbar. Sobald eine brauchbare Aufnahme vorliegt, kann sie ohne
+  Layoutänderung in die Menschen-Zone der Backstube einziehen.
 - Qualität: Blick irritiert an der Kamera vorbei, Vordergrund unruhig,
   Bügel schneidet durchs Bild — keine klare Tätigkeit
 - Rolle: keine — Bildregie verlangt für Tyll „klare Tätigkeit und sinnvolle
@@ -237,10 +272,10 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 | Gregor und Backstube (Name unbestätigt) | P1360272, P1360326 |
 | Claudia am Fenster | Claudia.jpg |
 | Louis an der Kaffeemaschine (Name unbestätigt) | P1360057 |
-| Tyll Schulte bei der Arbeit (Name belegt) | — (Tyll.jpg abgelehnt: Qualität) |
+| Tyll Schulte bei der Arbeit (Name belegt) | — (Till.jpg abgelehnt: Qualität) |
 | Menschen und Begegnungen | P1360788, (Reserve: P1360109) |
 | Pâtisserie und Produkte | P1360096, P1360370 |
 | Kaffee und Samstag | P1360057, (Reserve: P1360316-2) |
 | Werkzeuge, Zutaten und Details | P1360218, P1360346, P1360381 |
 | Produktion und Catering | P1360381, P1360346 (Doppelnutzung möglich) |
-| Nicht verwenden | P1360200, Tyll.jpg, P1360445, (P1360316-2) |
+| Nicht verwenden | P1360200, Till.jpg, P1360445, (P1360316-2) |

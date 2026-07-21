@@ -18,7 +18,7 @@
 
   <link rel="preload" href="assets/fonts/instrument-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/main.css?v=15">
+  <link rel="stylesheet" href="assets/css/main.css?v=18">
   <!-- Markiert eine laufende JS-Umgebung, bevor das erste Pixel gezeichnet
        wird. Erst dann darf das Reveal Inhalte ausblenden. -->
   <script>document.documentElement.classList.add('js');</script>
@@ -227,8 +227,22 @@
            durch eine feine Champagnerlinie. Bewusst keine Karten, keine
            Porträtrahmen, keine Rollentitel — die Namen tragen sich über
            Gewicht und Farbe, die Tätigkeit erzählt den Rest. -->
+      <!-- Tyll Schulte steht hier, weil er die Arbeit mit Gregor teilt: Bild
+           und Text bilden ein Paar, kein Personenkärtchen. Der Ausschnitt
+           lässt die Blickrichtung nach links frei; mobil rückt er enger an
+           Kopf und Schultern (tyll-m). Datei heisst „Tyll-final“ — der
+           öffentliche Name ist immer „Tyll Schulte“. -->
       <div class="crew reveal">
-        <p><strong>Claudia Fourmont</strong> behält Bestellungen und Organisation im Blick und bringt die fertigen Kuchen dorthin, wo sie gebraucht werden. Samstags gehört sie meist zu den vertrauten Gesichtern an der Ausgabe.</p>
+        <figure class="crew-photo" style="--ratio: 2/3; --fx: 46%">
+          <span class="ph">
+            <picture>
+              <source media="(max-width: 1023px)" type="image/webp" srcset="assets/img/tyll-m-400.webp 400w, assets/img/tyll-m-800.webp 800w" sizes="(max-width: 639px) 38vw, 30vw">
+              <source media="(max-width: 1023px)" type="image/jpeg" srcset="assets/img/tyll-m-400.jpg 400w, assets/img/tyll-m-800.jpg 800w" sizes="(max-width: 639px) 38vw, 30vw">
+              <source type="image/webp" srcset="assets/img/tyll-600.webp 600w, assets/img/tyll-1200.webp 1200w" sizes="210px">
+              <img src="assets/img/tyll-600.jpg" srcset="assets/img/tyll-600.jpg 600w, assets/img/tyll-1200.jpg 1200w" sizes="(max-width: 639px) 38vw, (max-width: 1023px) 30vw, 210px" width="600" height="900" loading="lazy" alt="Konditor in Schürze in der Backstube, den Blick auf die Arbeit gerichtet">
+            </picture>
+          </span>
+        </figure>
         <p><strong>Tyll Schulte</strong> ist gelernter Koch und Konditor. Gemeinsam mit Gregor Buschmann sorgt er dafür, dass Kuchen, Torten und Pâtisserie fertig und lieferbereit sind.</p>
       </div>
     </div>
@@ -376,6 +390,13 @@
             </picture>
           </span>
         </figure>
+        <!-- Claudia steht direkt unter ihrem eigenen Bild — der Name gehört
+             zum Gesicht darüber, deshalb keine Bildunterschrift nötig.
+             „an der Ausgabe“ statt „am Fenster“: das Wort bleibt der
+             Headline dieses Abschnitts vorbehalten. -->
+        <div class="sam-person reveal">
+          <p><strong>Claudia Fourmont</strong> behält Bestellungen und Organisation im Blick und bringt die fertigen Kuchen dorthin, wo sie gebraucht werden. Samstags gehört sie meist zu den vertrauten Gesichtern an der Ausgabe.</p>
+        </div>
       </div>
     </div>
   </section>

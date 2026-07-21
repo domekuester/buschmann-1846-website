@@ -56,8 +56,10 @@ Nur diese Fakten dürfen auf der Website erscheinen.
   gelernter Konditor; stellt gemeinsam mit Gregor Buschmann Kuchen, Torten
   und Pâtisserie fertig und macht sie lieferbereit. Kein Titel, keine
   Hierarchie, keine früheren Arbeitgeber, keine Spezialgebiete belegt.
-  Bild: `01-originalfotos/Tyll.jpg` zeigt ihn (per Dateiname belegt), ist
-  aber aus Qualitätsgründen abgelehnt — er steht deshalb nur im Text.
+  Bilder (alle per Dateiname belegt): `Tyll-final.jpg` (verwendet),
+  `Tyll-kessel.jpg` (Reserve), `Till.jpg` (nicht verwendet, siehe
+  IMAGE-INVENTORY.md). Die Dateinamen tragen teils die Variante „Till“ —
+  öffentlich heißt er immer **Tyll Schulte**.
 
 ## Belegtes Zitat (einmalige, dezente Verwendung erlaubt)
 
