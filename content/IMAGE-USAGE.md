@@ -12,8 +12,8 @@ Reihenfolge = Seitenstruktur. Jedes Bild genau einmal.
 | 8 | Backstube & Menschen | P1360272 (Leitbild) + P1360346 (Detail) | 272 Vollbild vertikal · 346 kleiner | 272 4:5 · 346 quadratisch |
 | 9 | Redaktionelle Galerie | P1360329, P1360218, P1360326, P1360788, P1360109 (optional), P1360381* | 3 vertikale Spuren, versetzte Starts | 6 Bilder, kontrollierte Paare, unterschiedliche Höhen |
 | 10 | Catering | P1360381* (Zutaten) | quer angeschnittenes Band oder 4:5 | 4:5 kompakt |
-| 11 | Samstagsfenster | Claudia.jpg = Claudia Fourmont, belegt; Name steht als Text direkt unter dem Bild, keine Caption (groß vertikal) + P1360057 (ergänzend) | Claudia 55–60 % oberer Bildteil · 057 fast Vollbild | Claudia enger 4:5, Kopf komplett · 057 4:5 |
-| 8b | Backstube, Menschen-Zone | Tyll-final.jpg = Tyll Schulte, belegt | 2:3, 210 px klein, Text daneben | 3:4 enger, 130 px, Bild-Text-Paar |
+| 11 | Samstagsfenster | Claudia.jpg = Claudia Fourmont, belegt; Name als Text direkt unter dem Bild, keine Caption (groß vertikal) + P1360057 (ergänzend) | Claudia 55–60 % oberer Bildteil · 057 fast Vollbild | Claudia enger 4:5, Kopf komplett · 057 4:5 |
+| 8b | Backstube, Menschen-Zone | Tyll-final.jpg = Tyll Schulte, belegt | 2:3 ab x=0, 210 px, Text daneben | 4:5 ab x=0, 192 px, Bild über Text |
 | 12 | Standort | — (Typografie) | — | — |
 | 13 | Footer | Logo | natürliche Proportion ≤ 140 px | ≤ 110 px |
 
@@ -49,3 +49,16 @@ Captions (2–5 Wörter, nicht überall):
 - Hero: eigene Desktop- (quer) und Mobil-Datei (hochkant beschnitten)
 - Claudia + P1360788: beschnittene Master-Crops als eigene Dateien
   (Rückendominanz bzw. Spiegelung dürfen nie ins Web gelangen)
+
+
+## Nachtrag 21.07.2026 — korrigierte Personen-Crops
+
+| Bild | vorher | jetzt | Grund |
+|---|---|---|---|
+| `tyll` (Desktop) | Crop ab x=150, 2:3 | **Crop ab x=0**, 2:3 (2200 × 3300) | Das Profil begann 150 px vom Rand, das Gesicht klebte an der linken Kante. Er blickt nach links — der Ausschnitt startet jetzt am Dateirand, damit vor dem Gesicht Luft steht statt dahinter. |
+| `tyll-m` (Mobil) | Crop (330,130,2200,2650), 0,742 | **(0,150,1960,2600) = 1960 × 2450, 4:5** | Weiter gefasst: vollständiger Kopf mit Abstand nach oben und links, Schulter und Schürzenlatz als Arbeitskontext. |
+| `claudia-m` (Mobil) | (1450,780,2060,1800) = 610 × 1020, 0,598 | **(1120,690,2110,1928) = 990 × 1238, 4:5** | War eine sehr enge Gesichtsaufnahme. Jetzt Kopf, Oberkörper und Fenstersituation gemeinsam; vom Gast bleibt links ein schmaler Streifen als Gesprächskontext. |
+
+Anzeigegrößen bei 390 px: Tyll 192 × 239 (28 svh), Claudia 224 × 280 (33 svh).
+Beide Anzeigefenster übernehmen exakt das Verhältnis ihres Derivats, es wird
+also nichts nachbeschnitten.

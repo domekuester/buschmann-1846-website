@@ -48,22 +48,32 @@ JOBS = {
     # mobil nicht gezeigt werden dürfen. Deshalb bekommen die beiden Motive
     # mit Menschen einen echten, eng gerechneten Ausschnitt.
 
-    # Claudia: Gesicht auf 39 % Höhe, der Lederrücken bleibt nur als schmaler
-    # Kontextstreifen links, der helle Pfeiler schließt rechts ab. Die
-    # Fensterbank und die Hose des Gastes fallen weg.
-    "claudia-m":      ("Claudia.jpg",  (1450, 780, 2060, 1800),  [400, 800]),
+    # Claudia: bewusst weiter gefasst als zuvor (war 610 × 1020 im Verhältnis
+    # 0,598 — eine sehr enge Gesichtsaufnahme). Gemessen am Original
+    # (2664 × 3988): ihr Kopf liegt bei y 880–1150, das Gesicht bei x≈1620,
+    # der Fensterpfosten bei x 1900–2050. Der neue 4:5-Ausschnitt zeigt Kopf,
+    # Oberkörper und Fenstersituation gemeinsam; vom Gast bleibt links ein
+    # schmaler Streifen als Gesprächskontext, ohne zu dominieren. Die
+    # Glitzerhose unterhalb y 2000 bleibt draußen.
+    "claudia-m":      ("Claudia.jpg",  (1120, 690, 2110, 1928),  [400, 800]),
     # Louis am Kaffee: Kopf, Schulter, Hand mit Kanne und die linke Hälfte der
     # Maschine bleiben zusammen. Der dunkle Boden und die leere rechte
     # Maschinenfläche sind raus — keine reine Gerätefläche mehr.
     "barista-m":      ("P1360057.jpg", (100, 336, 1336, 2400),   [300, 600]),
 
-    # Tyll Schulte in der Backstube. Desktop 2:3 wie die übrigen Hochformate:
-    # Luft über dem Kopf, Blickrichtung nach links bleibt frei, die Schürze
-    # ankert unten, die Werkzeugwand gibt Kontext ohne zu dominieren.
-    "tyll":           ("Tyll-final.jpg", (150, 60, 2350, 3360),  [600, 1200]),
-    # Mobil enger auf Kopf und Schultern — bei rund 150 px Spaltenbreite muss
-    # das Gesicht die Fläche tragen, nicht die Schürze.
-    "tyll-m":         ("Tyll-final.jpg", (330, 130, 2200, 2650), [400, 800]),
+    # Tyll Schulte in der Backstube.
+    # Gemessen am Original (2672 × 4000): Haaransatz y≈280, Kinn y≈1500,
+    # Nasenspitze x≈300, Schürzenlatz ab y≈2100. Er blickt nach links, also
+    # beginnen beide Ausschnitte bei x=0 — nur so bleibt vor dem Gesicht Luft
+    # statt dahinter. Der frühere Ausschnitt startete bei x=150 bzw. x=330 und
+    # drückte das Profil an die linke Kante.
+    # Desktop 2:3 wie die übrigen Hochformate: Kopf im oberen Viertel,
+    # Schürze als Anker, Werkzeugwand als Kontext.
+    "tyll":           ("Tyll-final.jpg", (0, 100, 2200, 3400),  [600, 1200]),
+    # Mobil 4:5 statt schmalem Hochformat: In der halben Spaltenbreite muss der
+    # Kopf vollständig mit Abstand zum Rand stehen, Schulter und Schürzenlatz
+    # geben den Arbeitskontext.
+    "tyll-m":         ("Tyll-final.jpg", (0, 150, 1960, 2600),  [400, 800]),
 }
 
 def export(im: Image.Image, stem: str, width: int) -> None:

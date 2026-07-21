@@ -494,3 +494,107 @@ Bildaussage.
 
 Gesamthöhe der Mobilseite: **11 401 → 10 575 px (−7,2 %)** — und das trotz
 durchgehend größerer Schrift.
+
+---
+
+# NACHTRAG — Responsive Flagship-Masterpass (Personen-Crops)
+
+Stand: 21.07.2026 · Branch `rebuild/flagship-recovery`
+Geprüft im Browser (Chromium über Playwright) unter `http://localhost:8899/`.
+
+## A · Ursache des abgeschnittenen Tyll-Gesichts
+
+Die Seitenverhältnisse standen als `style="--ratio: …"` am `<figure>`. Eine
+**Inline-Custom-Property gewinnt gegen jede Media Query** — der mobile
+Ausschnitt griff deshalb nie. Gemessen bei 390 px:
+
+| | Soll | Ist |
+|---|---|---|
+| Anzeigefenster | 3:4 = 0,750 | **2:3 = 0,667** |
+| beschnittene Breite | 0 % | **10 %** |
+| Fokus | zentriert | `--fx: 46%` schob zusätzlich nach links |
+
+Zusammen drückte das sein Profil an die linke Kante. Dieselbe Falle traf das
+Kaffeedetail (`.sam-side`): gerendert im 1:2 statt im vorgesehenen 3:5, also
+17 % Breitenverlust. Die Galerie hatte das Problem mit vier `!important`
+übertüncht.
+
+**Behoben strukturell**, nicht per Feinjustierung: Alle zwölf Inline-Ratios
+sind raus, jedes Bildfenster hat eine Klasse und seine Werte stehen regulär
+in der Kaskade (`.gesch-photo`, `.bs-pour`, `.g-copper`, …). Tyll und Claudia
+nutzen benannte Tokens (`--tyll-ratio`, `--tyll-focus-x`, `--claudia-ratio`,
+…). Die `!important`-Hacks konnten entfallen — im Stylesheet steht noch genau
+eines, in einer fremden Regel.
+
+## B · Neue Crops
+
+Gemessen am Original `Tyll-final.jpg` (2672 × 4000): Haaransatz y≈280,
+Kinn y≈1500, Nasenspitze x≈300, Schürzenlatz ab y≈2100. Er blickt nach links,
+also beginnen **beide** Ausschnitte bei x=0 — nur so steht die Luft vor dem
+Gesicht statt dahinter.
+
+- **Desktop `tyll`**: (0, 100, 2200, 3400) = 2200 × 3300, 2:3 → 210 × 315 px
+- **Mobil `tyll-m`**: (0, 150, 1960, 2600) = 1960 × 2450, 4:5 → 192 × 239 px (28 svh)
+
+`Claudia.jpg` (2664 × 3988): Kopf y 880–1150, Gesicht x≈1620, Fensterpfosten
+x 1900–2050.
+
+- **Mobil `claudia-m`**: (1120, 690, 2110, 1928) = 990 × 1238, 4:5 → 224 × 280 px (33 svh).
+  Vorher 610 × 1020 im Verhältnis 0,598 — eine enge Gesichtsaufnahme.
+
+## C · Mobile Komposition
+
+**Tyll-Block gestapelt statt nebeneinander.** Nebeneinander blieben bei 390 px
+nur 200 px für den Absatz — rund 24 Zeichen pro Zeile. Gestapelt bekommt der
+Text die volle Achse (342 px, ~40 Zeichen, 4 statt 7 Zeilen) und das Bild darf
+ein richtiges Hochformat sein. Ab 640 px (Tablet) steht das Duo wieder
+nebeneinander, dort hat der Text 447 px.
+
+**Galerie-Abfolge nach Gattung sortiert.** Vorher standen Mandelblättchen und
+Kupferkessel als zwei braun-orange Texturen nebeneinander. Jetzt:
+
+| Reihe | links | rechts | Muster |
+|---|---|---|---|
+| 1 | Kupferkessel (Material) 58 % | Kirschfüllung (Produkt) 42 %, tiefer | B |
+| 2 | Fensterteam (Menschen), rechts angeschlagen, 76 % | — | Leitbild |
+| 3 | Spritzbeutel (Handwerk) 42 % | Mandelblättchen (Material) 58 %, tiefer | A |
+
+Vier Bildpaare geometrisch bestätigt (seitlich nebeneinander, vertikale
+Überlappung 199–228 px): Backstube, Galerie 1, Galerie 3, Samstag.
+
+**Hero auf kurzen Geräten gedeckelt.** Das feste 6:7 rechnet nur aus der
+Breite; bei 320 × 568 ergab das 64 svh. `max-height: 57svh` greift nur dort,
+der Schriftzug bleibt über die 40-%-Achse im Ausschnitt.
+
+## D · Geprüfte Viewports
+
+| Viewport | Overflow | höchstes Bild | Anmerkung |
+|---|---|---|---|
+| 320 × 568 | 0 | 57 svh (Hero) | vorher 64 svh |
+| 360 × 800 | 0 | 51 svh | |
+| 375 × 667 | 0 | 57 svh | |
+| 390 × 844 | 0 | 53 svh | 4 Bildpaare, alle übrigen ≤ 38 svh |
+| 430 × 932 | 0 | 53 svh | 4 Bildpaare bestätigt |
+| 768 × 1024 | 0 | 52 svh | Crew-Duo 220 px Bild + 447 px Text |
+| 1440 × 900 | 0 | — | 4 Galeriespuren, 4 eigene Breiten und Startpunkte |
+
+## E · Accessibility, Konsole, Netzwerk, Performance
+
+- Eine H1, keine Ebenensprünge, keine doppelten IDs, keine toten Anker.
+- 17 Bilder, alle mit Alt-Text; **kein Personenname in einem Alt-Text** —
+  die Namen stehen semantisch im Fließtext daneben.
+- Keine Touchfläche unter 44 × 44 px. Mobilmenü: `aria-expanded` schaltet,
+  Escape schließt und gibt den Fokus zurück.
+- Instagram und Facebook je einmal, `rel="noopener noreferrer"`.
+- 28/28 Reveals feuern; der Ausgangszustand bleibt ohne JavaScript sichtbar.
+- Konsole: **0 Fehler, 0 Warnungen.**
+- Alle **84** referenzierten Assets antworten mit 200.
+- Mobile Seitenlast bei 390 px: 995 kB Bilder + 235 kB übrige = **1 230 kB**.
+
+## F · Begründete Abweichung
+
+Auf Mobil steht Tylls Bild **über** dem Text statt daneben, obwohl der Auftrag
+für breitere Mobilgeräte ein Duo vorsah. Bei 430 px hätte der Absatz in der
+Nebenspalte nur rund 28 Zeichen pro Zeile — genau der eingequetschte Textblock,
+den derselbe Auftrag ausschließt. Lesbarkeit hat hier Vorrang bekommen; ab
+640 px steht das Duo wieder nebeneinander.

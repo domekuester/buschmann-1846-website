@@ -412,6 +412,29 @@ figure { margin: 0; }
   width: 100%; height: 2px; background: var(--champagne);
 }
 
+/* --------------------------------------------------------------------------
+   Bildfenster — Seitenverhältnis und Fokus je Motiv
+
+   Diese Werte standen früher als style-Attribut am <figure>. Das war eine
+   Falle: Eine Inline-Custom-Property gewinnt gegen jede Media Query, deshalb
+   griffen mobile Ausschnitte teils nicht (Tyll blieb im Desktop-2:3, das
+   Kaffeedetail im 1:2 statt 3:5) und die Galerie musste mit !important
+   dagegenhalten. Hier stehen sie regulär in der Kaskade und lassen sich pro
+   Breakpoint sauber überschreiben.
+   -------------------------------------------------------------------------- */
+.gesch-photo { --ratio: 3/4; --fy: 45%; }   /* Anschlagmaschine: Kessel mittig */
+.pat-lead    { --ratio: 4/5; --fy: 62%; }   /* Tortenstück auf dem Teller */
+.bs-hands    { --ratio: 3/4; --fy: 45%; }   /* Palette, Teig und Form zusammen */
+.bs-pour     { --ratio: 2/3; }              /* Gesicht, Guss und Kupferschüssel */
+.cat-photo   { --ratio: 3/4; --fy: 60%; }   /* Butter auf Schokolade */
+.st-photo    { --ratio: 2/3; --fx: 56%; }   /* Gast am Verkaufsfenster */
+.sam-side    { --ratio: 3/5; --fx: 34%; }   /* Kaffeemoment: Person + Maschine */
+.g-copper    { --ratio: 1/4; --fx: 55%; }   /* schmales Leitband der Bildstrecke */
+.g-almonds   { --ratio: 2/5; }
+.g-team      { --ratio: 5/8; }
+.g-cherries  { --ratio: 3/4; --fy: 45%; }
+.g-piping    { --ratio: 4/7; --fx: 46%; }
+
 /* ==========================================================================
    5 · EINORDNUNG
    ========================================================================== */
@@ -530,8 +553,24 @@ blockquote cite {
 }
 /* Kein Rahmen, kein Hintergrund, keine runde Maske: dasselbe nackte
    Bildfenster wie überall auf der Seite — nur kleiner. So bleibt es ein
-   Bild-Text-Paar und wird nicht zum Personenkärtchen. */
-.crew-photo { width: 100%; }
+   Bild-Text-Paar und wird nicht zum Personenkärtchen.
+
+   Die Werte stehen als benannte Tokens hier und NICHT als style-Attribut im
+   HTML: Eine Inline-Custom-Property schlägt jede Media Query, dadurch griff
+   der mobile Ausschnitt zuvor nicht und das Fenster blieb im 2:3 des
+   Desktops — 10 % der Breite wurden abgeschnitten und das Profil klebte an
+   der linken Kante. Desktop und Mobil laden ohnehin verschiedene Dateien
+   (tyll / tyll-m); das Anzeigefenster übernimmt jeweils exakt deren
+   Verhältnis, damit object-fit nichts mehr wegschneidet. */
+.crew-photo {
+  --tyll-ratio: 2/3;          /* entspricht tyll-*.webp (2200 × 3300) */
+  --tyll-focus-x: 50%;
+  --tyll-focus-y: 50%;
+  width: 100%;
+  --ratio: var(--tyll-ratio);
+  --fx: var(--tyll-focus-x);
+  --fy: var(--tyll-focus-y);
+}
 .crew p { max-width: 52ch; font-size: .95rem; color: var(--body-on-dark); }
 .crew strong, .sam-person strong { color: var(--on-dark); font-weight: 600; }
 
@@ -655,7 +694,18 @@ blockquote cite {
   letter-spacing: .18em; text-transform: uppercase;
   color: var(--dim-on-dark); margin-top: .5rem;
 }
-.sam-claudia { margin-top: 2.5rem; }
+/* Claudia: Tokens statt style-Attribut, damit Desktop und Mobil getrennt
+   steuerbar bleiben. Desktop nutzt den grossen Master (claudia-*), der mobil
+   geladene claudia-m-* ist ein eigener, weiter gefasster 4:5-Ausschnitt. */
+.sam-claudia {
+  margin-top: 2.5rem;
+  --claudia-ratio: 3/5;
+  --claudia-focus-x: 52%;
+  --claudia-focus-y: 50%;
+  --ratio: var(--claudia-ratio);
+  --fx: var(--claudia-focus-x);
+  --fy: var(--claudia-focus-y);
+}
 /* Claudias Vorstellung sitzt in derselben Spalte wie ihr Bild und direkt
    darunter — dadurch ist die Zuordnung eindeutig, ohne dass das Foto eine
    sichtbare Bildunterschrift bekommt (Auftraggeber-Vorgabe: keine Captions).
@@ -807,7 +857,15 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   }
   .hero-copy { order: 2; max-width: none; padding: var(--sp-lg) var(--pad) 0; }
   .hero-shot { order: 1; }
-  .hero-shot img { aspect-ratio: 6 / 7; object-position: 50% 40%; }
+  /* Das feste 6:7 rechnet sich nur aus der Breite. Auf kurzen Geräten
+     (320 × 568) ergab das 64 svh — die Fassade blockierte fast den ganzen
+     Bildschirm. Die Deckelung greift erst dort und beschneidet über
+     object-fit sanft die Höhe; der Schriftzug bleibt durch die 40-%-Achse
+     im Ausschnitt. */
+  .hero-shot img {
+    aspect-ratio: 6 / 7; object-position: 50% 40%;
+    max-height: 57svh;
+  }
   .hero-sub { margin-top: var(--sp-md); max-width: 36ch; }
   .hero-meta { gap: 1rem; row-gap: .5rem; font-size: .64rem; letter-spacing: .14em; }
 
@@ -852,33 +910,43 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   }
   .g-track { display: contents; }
 
-  /* Reihe 1 — Material und Textur (Muster A: schmal links, breit rechts).
-     Das Desktop-Leitband (1:4) würde mobil zu einem endlosen Streifen, hier
-     stehen zwei ruhige Hochformate. Der Kupferkessel bekommt die breitere
-     Spalte: Stäbe, Kesselwand und geschlagene Masse zerfallen in 136 px zu
-     einer Textur ohne Motiv. Die Mandelblättchen sind reine Wiederholung und
-     bleiben auch schmal lesbar. */
-  .g-almonds  { grid-column: 1 / 6;  grid-row: 1; --ratio: 5/8 !important; }
-  .g-copper   { grid-column: 6 / -1; grid-row: 1; --ratio: 3/5 !important; --fx: 56%; margin-top: 1.7rem; }
+  /* Die Motivfolge wechselt jetzt bewusst die Gattung, statt zweimal
+     hintereinander Material zu zeigen: vorher standen Mandelblättchen und
+     Kupferkessel als zwei braun-orange Texturen nebeneinander in Reihe 1.
+     Neu: Material + Produkt · Menschen · Handwerk + Material.
+
+     Reihe 1 — Muster B (breit links, schmal rechts): der Kupferkessel braucht
+     Breite, sonst zerfallen Stäbe und Masse zu einer Textur ohne Motiv; die
+     Kirschfüllung setzt daneben einen roten Produktakzent. */
+  .g-copper   { grid-column: 1 / 8;  grid-row: 1; --ratio: 3/5; --fx: 56%; }
+  .g-cherries { grid-column: 8 / -1; grid-row: 1; --ratio: 3/4; --fy: 45%; margin-top: 2.2rem; }
   /* Reihe 2 — Leitbild: die Begegnung am Fenster, rechts angeschlagen. */
   .g-team     {
     grid-column: 4 / -1; grid-row: 2;
     margin-top: var(--sp-lg); max-width: 26rem; margin-left: auto;
   }
-  .g-team .ph img { aspect-ratio: 4 / 5 !important; object-position: 50% 32%; }
-  /* Reihe 3 — gegenläufiges Duo: breite Spalte jetzt links. */
-  .g-cherries { grid-column: 1 / 8;  grid-row: 3; margin-top: var(--sp-lg); }
-  .g-piping   { grid-column: 8 / -1; grid-row: 3; margin-top: calc(var(--sp-lg) + 2.6rem); }
+  .g-team { --ratio: 4/5; --fy: 32%; }
+  /* Reihe 3 — Muster A und damit gegenläufig zu Reihe 1: schmale Spalte links.
+     Handwerk (Spritzbeutel) trifft auf Material (Mandeln). */
+  .g-piping   { grid-column: 1 / 6;  grid-row: 3; --ratio: 4/7; margin-top: var(--sp-lg); }
+  .g-almonds  { grid-column: 6 / -1; grid-row: 3; --ratio: 5/8; margin-top: calc(var(--sp-lg) + 2.4rem); }
 
-  /* Mobil bleibt es ein Paar: schmales Hochformat links, Text rechts daneben.
-     Nebeneinander statt untereinander spart Scrollstrecke und hält Gesicht
-     und Name in einem Blickfeld. */
+  /* Mobil steht das Porträt über dem Text statt daneben. Nebeneinander blieben
+     bei 390 px nur 200 px für den Absatz — rund 24 Zeichen pro Zeile, also
+     genau der eingequetschte Textblock, den es zu vermeiden gilt. Gestapelt
+     bekommt der Text die volle Achse (~40 Zeichen) und das Bild darf ein
+     richtiges Hochformat sein statt eines Ausschnitts davon. */
   .crew {
-    grid-template-columns: 38% 1fr; gap: var(--sp-sm);
-    padding-top: var(--sp-md); align-items: start;
+    grid-template-columns: 1fr;
+    row-gap: var(--sp-md);
+    padding-top: var(--sp-md);
   }
-  .crew-photo { --ratio: 3/4; }
-  .crew p { max-width: none; font-size: .92rem; line-height: 1.6; }
+  .crew-photo {
+    --tyll-ratio: 4/5;        /* entspricht tyll-m-*.webp (1960 × 2450) */
+    --tyll-focus-y: 50%;
+    width: 56%; max-width: 15rem;
+  }
+  .crew p { max-width: none; font-size: .95rem; line-height: 1.62; }
 
   .cat-cols { grid-template-columns: 1fr; margin-top: var(--sp-lg); }
   .cat-cols > div { padding: 1.5rem 0; border-left: none; border-top: 1px solid var(--rule-hair); }
@@ -893,15 +961,22 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   }
   .sam-text    { grid-column: 1 / -1; grid-row: 1; padding-top: 0; }
   /* Beide Motive laden mobil ihren eigenen Ausschnitt (claudia-m, barista-m).
-     Das Anzeigefenster übernimmt exakt dessen Seitenverhältnis 3:5, damit
-     object-fit nichts mehr wegschneidet, was der Crop bewusst behalten hat. */
+     Das Anzeigefenster übernimmt exakt dessen Seitenverhältnis, damit
+     object-fit nichts mehr wegschneidet, was der Crop bewusst behalten hat.
+     Claudia steht jetzt im ruhigeren 4:5 statt im schmalen 3:5 — Kopf,
+     Oberkörper und Fenstersituation zusammen statt einer engen
+     Gesichtsaufnahme. Weil 4:5 breiter baut, bekommt sie eine Spalte mehr. */
   .sam-claudia {
-    grid-column: 1 / 8; grid-row: 2;
-    margin-top: var(--sp-lg); --ratio: 3/5; --fx: 50%; --fy: 50%;
+    grid-column: 1 / 9; grid-row: 2;
+    margin-top: var(--sp-lg);
+    --claudia-ratio: 4/5; --claudia-focus-x: 50%; --claudia-focus-y: 50%;
   }
   .sam-side    {
-    grid-column: 8 / -1; grid-row: 2; max-width: none;
-    margin: calc(var(--sp-lg) + 3rem) 0 0 0; --ratio: 3/5; --fx: 50%;
+    grid-column: 9 / -1; grid-row: 2; max-width: none;
+    margin: calc(var(--sp-lg) + 3.4rem) 0 0 0;
+    /* mobil liegt der eigene Ausschnitt barista-m (3:5) vor — das Fenster
+       übernimmt ihn unverändert, damit nichts nachbeschnitten wird */
+    --ratio: 3/5; --fx: 50%;
   }
   /* Mobil läuft Claudias Vorstellung über die volle Breite direkt unter dem
      Bildpaar — Name und Gesicht bleiben in einem Blickfeld. */
@@ -927,9 +1002,14 @@ footer { background: var(--navy-night); color: var(--on-dark); }
    und der Hero wechselt ins Querformat, das zu einem breiten Gerät passt.
    ========================================================================== */
 @media (min-width: 640px) and (max-width: 1023px) {
-  .hero-shot img { aspect-ratio: 16 / 10; object-position: 50% 46%; }
+  .hero-shot img { aspect-ratio: 16 / 10; object-position: 50% 46%; max-height: none; }
   .g-board, .bs-pair, .sam-grid { max-width: 35rem; }
   .st-info { max-width: 35rem; }
+  /* Auf Tablet ist genug Breite für das Bild-Text-Duo: der Absatz bekommt
+     rund 460 px statt der 200 px, an denen die Anordnung auf dem Handy
+     gescheitert ist. Deshalb hier nebeneinander statt gestapelt. */
+  .crew { grid-template-columns: 220px 1fr; column-gap: 2rem; align-items: start; }
+  .crew-photo { width: 100%; max-width: none; --tyll-ratio: 4/5; }
 }
 
 /* ==========================================================================
