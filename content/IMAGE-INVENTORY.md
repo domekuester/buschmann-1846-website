@@ -182,7 +182,7 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 - Mobil-Crop: 4:5 um Gesicht + Kessel + Schüssel
 - Probleme: keine
 
-## P1360316-2.jpg — ABLEHNEN (Reserve-Detail)
+## Kaffemaschine.jpg — ABLEHNEN (Reserve-Detail)
 - 1401 × 2101, Hochformat (kleinste Auflösung der Serie)
 - Motiv: Chrom-Detail der Espressomaschine, dunkel
 - Qualität: ok, aber „dunkler Maschinenausschnitt" — laut Bildregie nicht
@@ -275,7 +275,7 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 | Tyll Schulte bei der Arbeit (Name belegt) | — (Till.jpg abgelehnt: Qualität) |
 | Menschen und Begegnungen | P1360788, (Reserve: P1360109) |
 | Pâtisserie und Produkte | P1360096, P1360370 |
-| Kaffee und Samstag | P1360057, (Reserve: P1360316-2) |
+| Kaffee und Samstag | P1360057, (Reserve: Kaffemaschine.jpg) |
 | Werkzeuge, Zutaten und Details | P1360218, P1360346, P1360381 |
 | Produktion und Catering | P1360381, P1360346 (Doppelnutzung möglich) |
-| Nicht verwenden | P1360200, Till.jpg, P1360445, (P1360316-2) |
+| Nicht verwenden | P1360200, Till.jpg, P1360445, (Kaffemaschine.jpg) |

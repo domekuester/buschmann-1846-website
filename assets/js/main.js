@@ -13,6 +13,11 @@
   function setMenu(open) {
     menu.classList.toggle('open', open);
     btn.setAttribute('aria-expanded', String(open));
+    /* Das Label wandert mit dem Zustand. Die Texte stehen als data-Attribute
+       im HTML, damit hier keine deutschen Strings hart kodiert sind und die
+       englische Seite dieselbe Datei nutzen kann. */
+    var label = open ? btn.dataset.labelClose : btn.dataset.labelOpen;
+    if (label) btn.setAttribute('aria-label', label);
     document.body.style.overflow = open ? 'hidden' : '';
     if (open) {
       closeBtn.focus();
@@ -63,6 +68,27 @@
       }
     });
   });
+
+  /* ---------- Kompakter Header beim Scrollen ----------
+     Eine Klasse, zwei Zustände, sonst nichts: Höhe und Logogröße stehen im
+     Stylesheet. Der Listener ist passiv und rechnet nur in einem
+     requestAnimationFrame — kein Layout-Lesen pro Scrollereignis. Die
+     Hysterese (32 px rein, 12 px raus) verhindert Flackern, wenn man genau
+     auf der Schwelle stehen bleibt. */
+  var brandhead = document.querySelector('.brandhead');
+  if (brandhead) {
+    var kompakt = false, tickt = false;
+    var pruefen = function () {
+      var y = window.scrollY;
+      if (!kompakt && y > 32) { kompakt = true; brandhead.classList.add('is-scrolled'); }
+      else if (kompakt && y < 12) { kompakt = false; brandhead.classList.remove('is-scrolled'); }
+      tickt = false;
+    };
+    window.addEventListener('scroll', function () {
+      if (!tickt) { tickt = true; window.requestAnimationFrame(pruefen); }
+    }, { passive: true });
+    pruefen();
+  }
 
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 

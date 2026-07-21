@@ -33,7 +33,7 @@
 ## Reserve (nur bei Bedarf)
 
 - P1360109 — Bestellen am Fenster von außen (Rückansicht, aber verständlich)
-- P1360316-2 — Chrom-Detail Espressomaschine (klein, dunkel)
+- Kaffemaschine.jpg — Chrom-Detail Espressomaschine (klein, dunkel)
 
 ## Abgelehnt
 

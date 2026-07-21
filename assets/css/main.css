@@ -141,6 +141,20 @@
   :root {
     --spine-w: 8px; --section-pad: 4rem;
     --head-logo-w: 62px; --head-pad-y: 8px; --infobar-h: 26px;
+
+    /* ---- Mobile Headergeometrie ---------------------------------------
+       Der Header ist mobil ein eigenes Markenobjekt mit zwei Zuständen:
+       oben Bedienzeile + Markenzeile, gescrollt nur die Bedienzeile.
+       Beide Höhen sind Tokens, weil Wirbelsäule, Sprungmarken und der
+       Abstand des Heros davon abhängen — sonst driften vier Werte
+       auseinander. Die Notch-Höhe kommt oben drauf, nie als Magic Number. */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --mhead-row:  60px;                       /* Bedienzeile */
+    --mhead-mark: 26px;                       /* Markenzeile mit Linie */
+    --mhead-logo:    54px;                    /* Zustand A */
+    --mhead-logo-sm: 40px;                    /* Zustand B */
+    --head-h:    calc(var(--safe-top) + var(--mhead-row) + var(--mhead-mark));
+    --head-h-sm: calc(var(--safe-top) + var(--mhead-row));
   }
 }
 
@@ -254,6 +268,9 @@ main, footer { padding-left: var(--spine-w); }
 }
 .logo img { width: var(--head-logo-w); height: auto; }
 .menu-btn { display: none; }
+/* Die Markenzeile ist ein rein mobiles Element — auf Desktop tragen
+   Infobar und die beiden Medaillonlinien im Header dieselbe Aufgabe. */
+.head-mark { display: none; }
 
 /* ---------- Sprachwahl DE · EN ----------
    Sie sitzt absolut am rechten Headerrand und belegt deshalb keine
@@ -292,30 +309,102 @@ main, footer { padding-left: var(--spine-w); }
   border-radius: 50%; background: var(--champagne);
 }
 
+/* ---------- Menü- und Schliessen-Marke ----------
+   Zwei präzise Linien statt der üblichen drei Hamburgerbalken: die untere
+   ist kürzer und nimmt damit dieselbe asymmetrische Geste auf wie die
+   Medaillonlinie im Header. Im Overlay kreuzen sich dieselben zwei Linien
+   zum Schliessen-Zeichen — gleiche Geometrie, andere Aufgabe. */
+.mb-lines {
+  display: inline-block; width: 22px; height: 12px;
+  position: relative; flex: none;
+}
+.mb-lines span {
+  position: absolute; left: 0; height: 1.5px; background: var(--on-dark);
+  transition: transform .2s cubic-bezier(.22,.61,.36,1), width .2s ease-out;
+}
+.mb-lines span:first-child { top: 2px;  width: 22px; }
+.mb-lines span:last-child  { top: 9px;  width: 13px; }
+.menu-btn:hover .mb-lines span:last-child { width: 22px; }
+.mb-lines.is-x span { top: 5px; width: 20px; }
+.mb-lines.is-x span:first-child { transform: rotate(45deg); }
+.mb-lines.is-x span:last-child  { transform: rotate(-45deg); }
+
 /* ---------- Mobiles Menü ---------- */
 .m-menu {
   position: fixed; inset: 0; background: var(--navy-brand); z-index: 100;
-  padding: 5rem var(--pad) 3rem; flex-direction: column; display: none;
+  padding: calc(env(safe-area-inset-top, 0px) + 1rem) var(--pad)
+           calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  flex-direction: column; display: none;
+  overflow-y: auto;
 }
 .m-menu.open { display: flex; }
 .m-close {
-  position: absolute; top: 1.1rem; right: var(--pad);
+  align-self: flex-end;
+  display: inline-flex; align-items: center; gap: .6rem;
   background: none; border: none; color: var(--on-dark); cursor: pointer;
-  font-family: var(--sans); font-size: var(--t-nav);
+  font-family: var(--sans); font-size: var(--t-nav); font-weight: 600;
   letter-spacing: .14em; text-transform: uppercase;
   min-width: 44px; min-height: 44px;
 }
-.m-menu nav { display: flex; flex-direction: column; gap: 1.4rem; }
-.m-menu nav a {
-  font-family: var(--sans); font-size: 1.75rem; font-weight: 500;
-  letter-spacing: -.02em;
+/* Kleines Markenzeichen im Overlay — dieselbe Linienzeichnung wie im
+   Header, damit das Menü als Teil desselben Objekts liest. */
+.m-sign {
+  width: 46px; height: auto; margin: 1.4rem 0 2.2rem;
+  opacity: .9;
+}
+/* Nur die direkte Kind-Navigation: .m-lang ist ebenfalls ein <nav>, liegt
+   aber verschachtelt in .m-sec und darf diese Displaygroessen nicht erben. */
+.m-menu > nav { display: flex; flex-direction: column; }
+.m-menu > nav a {
+  font-family: var(--sans); font-size: clamp(1.6rem, 7.4vw, 2.1rem);
+  font-weight: 500; letter-spacing: -.025em;
   color: var(--on-dark); text-decoration: none; line-height: 1.1;
-  display: flex; align-items: center; min-height: 44px;
+  display: flex; align-items: center; gap: .85rem;
+  min-height: 56px; padding: .35rem 0;
+  border-top: 1px solid var(--rule-hair);
+  transition: color .2s ease-out;
+}
+.m-menu > nav a:last-child { border-bottom: 1px solid var(--rule-hair); }
+/* Champagner-Medaillonmarke je Eintrag — sie füllt sich beim Antippen und
+   ist damit die einzige Bewegung im Menü. */
+.mn-mark {
+  width: 7px; height: 7px; flex: none; border-radius: 50%;
+  border: 1px solid var(--champagne); opacity: .55;
+  transition: opacity .2s ease-out, background-color .2s ease-out;
+}
+.m-menu > nav a:hover, .m-menu > nav a:focus-visible { color: var(--champagne-light); }
+.m-menu > nav a:hover .mn-mark, .m-menu > nav a:focus-visible .mn-mark {
+  opacity: 1; background: var(--champagne);
 }
 .m-sec {
-  margin-top: auto; padding-top: 1.4rem;
+  margin-top: auto; padding-top: 1.6rem;
   border-top: 1px solid var(--rule-dark);
-  color: var(--dim-on-dark); font-size: .9rem; line-height: 1.9;
+  color: var(--dim-on-dark); font-size: .88rem; line-height: 1.8;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem;
+}
+.m-sec p { min-width: 0; }
+/* Sprachwechsel auch im geöffneten Menü erreichbar.
+   flex: none ist nötig — sonst schrumpft der Schalter unter die Breite
+   seiner beiden 44-px-Flächen und bricht zweizeilig um. */
+.m-lang { display: flex; align-items: center; flex: none; }
+.m-lang a {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px;
+  color: var(--dim-on-dark); text-decoration: none;
+  font-size: .74rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.m-lang a + a::before {
+  content: ""; position: absolute; left: 0; top: 50%;
+  width: 1px; height: 11px; margin-top: -5.5px; background: var(--rule-dark);
+}
+.m-lang a[aria-current] { color: var(--on-dark); }
+.m-lang a[aria-current]::after {
+  content: ""; position: absolute; left: 50%; bottom: 9px;
+  width: 4px; height: 4px; margin-left: -2px;
+  border-radius: 50%; background: var(--champagne);
 }
 
 /* ==========================================================================
@@ -852,7 +941,8 @@ footer { background: var(--navy-night); color: var(--on-dark); }
 @media (prefers-reduced-motion: reduce) {
   .js .reveal, .js .reveal.in { opacity: 1; transform: none; transition: none; }
   .site-nav a::after, .g-board figure, .g-board .ph::after,
-  .g-board .ph img, .soc-ic { transition: none; }
+  .g-board .ph img, .soc-ic,
+  .site-head, .logo img, .head-mark, .mb-lines span, .mn-mark { transition: none; }
   .g-board figure:hover { transform: none; }
   html { scroll-behavior: auto; }
 }
@@ -871,29 +961,102 @@ footer { background: var(--navy-night); color: var(--on-dark); }
 
   /* Mobil trägt der Header keine Medaillon-Linien — eine halbe, an der
      Navigation abgeschnittene Linie wäre schlechter als gar keine. */
-  /* Mobil steht die Sprachwahl im Fluss zwischen Logo und Menübutton, statt
-     absolut über beidem zu liegen: Logo · Luft · DE/EN · Menü. */
-  .site-head { grid-template-columns: auto 1fr auto auto; }
+  /* ==========================================================================
+     MOBILER MARKENKOPF
+
+     Vorher stand das Logo hart links, die Medaillonlinie fehlte ganz und die
+     Öffnungszeit lief als eigener technischer Streifen darüber — drei
+     unabhängig positionierte Teile statt einer Markenfläche.
+
+     Jetzt: eine durchgehende Navy-Fläche, drei gleich gewichtete Zonen
+     (Sprache · Logo · Menü) in einem 1fr auto 1fr-Raster, damit das Signet
+     exakt auf der Mittelachse steht wie auf dem Desktop. Darunter die
+     Markenzeile mit der Champagner-Medaillonlinie und der Öffnungsangabe.
+     ========================================================================== */
+  .brandhead {
+    position: fixed; top: 0; left: 0; right: 0;
+    padding-top: var(--safe-top);          /* Notch / Dynamic Island */
+    border-bottom: 1px solid var(--rule-hair);
+  }
+  /* Fest statt klebend: So ändert der Höhenwechsel beim Scrollen nichts am
+     Dokumentfluss. Ein schrumpfender sticky Header würde den Inhalt darunter
+     um die Differenz nach oben reißen. */
+  body { padding-top: var(--head-h); }
+  .infobar { display: none; }              /* geht in der Markenzeile auf */
+
+  .site-head {
+    height: var(--mhead-row);
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    border-bottom: none;
+    transition: height .22s cubic-bezier(.22,.61,.36,1);
+  }
   .site-head::before, .site-head::after { display: none; }
   .site-nav { display: none; }
-  .logo { margin-inline: 0; grid-column: 1; }
+
+  /* Alle drei Zonen ausdrücklich in Zeile 1: .lang steht im DOM hinter dem
+     Logo, bekommt aber Spalte 1 — ohne grid-row legt die Auto-Platzierung
+     dafür eine zweite Rasterzeile an und der Header bricht um. */
+  .logo { margin-inline: 0; grid-column: 2; grid-row: 1; justify-self: center; }
+  .logo img {
+    width: var(--mhead-logo);
+    transition: width .22s cubic-bezier(.22,.61,.36,1);
+  }
+
   .lang {
     position: static; transform: none;
-    grid-column: 3; justify-self: end; margin-right: .35rem;
+    grid-column: 1; grid-row: 1; justify-self: start;
   }
-  /* 44 × 44 bleibt auch mobil die Untergrenze — bei 320 px passen Logo,
-     Sprachwahl und Menübutton mit rund 55 px Luft nebeneinander. */
+  /* 44 × 44 bleibt die Untergrenze — bei 320 px tragen die drei Zonen
+     nebeneinander ohne Gedränge. */
   .lang a { min-width: 44px; font-size: .74rem; letter-spacing: .1em; }
+
+  /* ---------- Markenzeile: Medaillonlinie + Öffnungsangabe ----------
+     Die Linie läuft symmetrisch links und rechts vom Champagnerpunkt aus,
+     durchschneidet keinen Text und endet nicht an den Displaykanten. */
+  .head-mark {
+    height: var(--mhead-mark);
+    display: flex; align-items: center; justify-content: center;
+    gap: .6rem; overflow: hidden;
+    transition: height .22s cubic-bezier(.22,.61,.36,1),
+                opacity .18s ease-out;
+  }
+  .hm-rule {
+    flex: 0 1 4.5rem; height: 1px; min-width: 1.2rem;
+    background: linear-gradient(90deg, transparent, var(--rule-light));
+  }
+  .hm-rule:last-child { background: linear-gradient(90deg, var(--rule-light), transparent); }
+  .hm-dot {
+    width: 9px; height: 9px; flex: none; border-radius: 50%;
+    border: 1px solid var(--champagne);
+    background: radial-gradient(circle, var(--champagne) 0 2px, transparent 2px);
+  }
+  .hm-txt {
+    font-size: .6rem; font-weight: 600; letter-spacing: .2em;
+    text-transform: uppercase; color: var(--champagne-light);
+    white-space: nowrap;
+  }
+
+  /* ---------- Zustand B: gescrollt ----------
+     Die Bedienzeile behält ihre Höhe — es bewegen sich nur Markenzeile und
+     Logo. Zwei Bewegungen statt drei lesen sich deutlich ruhiger, und der
+     Header bleibt mit 61 px klar über der Grenze, ab der Menübutton und
+     Sprachwahl gedrängt wirken. */
+  .brandhead.is-scrolled .logo img { width: var(--mhead-logo-sm); }
+  .brandhead.is-scrolled .head-mark { height: 0; opacity: 0; }
+
+  /* Wirbelsäule und Sprungmarken hängen an der kompakten Höhe: Anker sollen
+     nicht unter dem Header landen, aber auch keine große Lücke lassen. */
+  .spine { top: var(--head-h-sm); }
+  section[id] { scroll-margin-top: calc(var(--head-h-sm) + 14px); }
   .menu-btn {
-    grid-column: 4;
-    display: flex; align-items: center; justify-content: flex-end; gap: .55rem;
+    grid-column: 3; grid-row: 1; justify-self: end;
+    display: flex; align-items: center; justify-content: flex-end; gap: .6rem;
     background: none; border: none; cursor: pointer;
-    font-family: var(--sans); font-size: var(--t-nav); font-weight: 500;
+    font-family: var(--sans); font-size: var(--t-nav); font-weight: 600;
     letter-spacing: .14em; text-transform: uppercase; color: var(--on-dark);
     min-width: 44px; min-height: 44px;
   }
-  .menu-btn .bars { display: inline-block; width: 20px; }
-  .menu-btn .bars span { display: block; height: 1.5px; background: var(--on-dark); margin: 5px 0; }
 
   /* ---------- Hero: Fassade zuerst, aber nicht bildschirmfüllend ----------
      6:7 statt 4:5 nimmt rund 55 svh statt 60 — der Schriftzug und die obere

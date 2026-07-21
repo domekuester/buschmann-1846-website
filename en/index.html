@@ -28,7 +28,7 @@
 
   <link rel="preload" href="../assets/fonts/instrument-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../assets/css/main.css?v=26">
+  <link rel="stylesheet" href="../assets/css/main.css?v=32">
   <!-- Marks a live JS environment before the first paint. Only then may the
        reveal hide content. -->
   <script>document.documentElement.classList.add('js');</script>
@@ -90,24 +90,40 @@
       <a href="../" lang="de" hreflang="de" aria-label="Deutsche Version">DE</a>
       <a href="./" aria-current="page" lang="en" hreflang="en" aria-label="English version">EN</a>
     </nav>
-    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mmenu">
-      Menu <span class="bars" aria-hidden="true"><span></span><span></span><span></span></span>
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="mmenu" aria-label="Open menu" data-label-open="Open menu" data-label-close="Close menu">
+      <span class="mb-word">Menu</span>
+      <span class="mb-lines" aria-hidden="true"><span></span><span></span></span>
     </button>
   </header>
+  <!-- Markenzeile: traegt mobil die Medaillonlinie aus dem Desktop-Header
+       und die einzige Oeffnungsangabe. Sie klappt beim Scrollen weg. -->
+  <p class="head-mark">
+    <span class="hm-rule" aria-hidden="true"></span>
+    <span class="hm-dot" aria-hidden="true"></span>
+    <span class="hm-txt">Saturdays 12 noon–5 pm</span>
+    <span class="hm-rule" aria-hidden="true"></span>
+  </p>
 </div>
 
 <div class="m-menu" id="mmenu">
-  <button class="m-close" type="button">Close ✕</button>
+  <button class="m-close" type="button" aria-label="Close menu">
+    <span class="mb-word">Close</span>
+    <span class="mb-lines is-x" aria-hidden="true"><span></span><span></span></span>
+  </button>
+  <img class="m-sign" src="../assets/img/logo-mark.png" alt="" width="374" height="346" aria-hidden="true">
   <nav aria-label="Mobile menu">
-    <a href="#history">History</a>
-    <a href="#patisserie">Patisserie</a>
-    <a href="#catering">Catering</a>
-    <a href="#saturday">Saturday</a>
-    <a href="#location">Location</a>
+    <a href="#history"><span class="mn-mark" aria-hidden="true"></span>History</a>
+    <a href="#patisserie"><span class="mn-mark" aria-hidden="true"></span>Patisserie</a>
+    <a href="#catering"><span class="mn-mark" aria-hidden="true"></span>Catering</a>
+    <a href="#saturday"><span class="mn-mark" aria-hidden="true"></span>Saturday</a>
+    <a href="#location"><span class="mn-mark" aria-hidden="true"></span>Location</a>
   </nav>
   <div class="m-sec">
-    Akademiestraße 8 · 40213 Düsseldorf<br>
-    Saturdays 12 noon–5 pm — coffee and cake
+    <p>Akademiestraße 8 · 40213 Düsseldorf<br>Saturdays 12 noon–5 pm — coffee and cake</p>
+    <nav class="m-lang" aria-label="Language">
+      <a href="../" lang="de" hreflang="de" aria-label="Deutsche Version">DE</a>
+      <a href="./" aria-current="page" lang="en" hreflang="en" aria-label="English version">EN</a>
+    </nav>
   </div>
 </div>
 
@@ -524,6 +540,6 @@
   </div>
 </footer>
 
-<script src="../assets/js/main.js?v=7" defer></script>
+<script src="../assets/js/main.js?v=9" defer></script>
 </body>
 </html>

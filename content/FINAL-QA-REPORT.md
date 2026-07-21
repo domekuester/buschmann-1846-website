@@ -701,3 +701,129 @@ Die englische Seite lädt dieselben Bilder, Fonts, CSS und JS wie die
 deutsche — keine zusätzlichen Assets, kein zweiter Font-Satz, keine
 Übersetzungsbibliothek. Zusätzliches Gewicht der EN-Fassung: die HTML-Datei
 selbst.
+
+---
+
+# NACHTRAG — Mobiler Flagship-Header
+
+Stand: 21.07.2026 · Branch `rebuild/flagship-recovery`
+
+## A · Ausgangsprobleme (gemessen bei 390 × 844)
+
+| Befund | Wert |
+|---|---|
+| Logo **nicht zentriert** | Logomitte 51 px bei Viewportmitte 195 px — es klebte am linken Rand |
+| Medaillonlinie | `display: none` — die Desktop-Signatur fehlte mobil vollständig |
+| Öffnungszeit | eigener Streifen über dem Header, las sich als technisches Band |
+| Zustände | keine — konstant 99 px, kein Scrollverhalten |
+| Safe Area | nicht behandelt |
+| Sprungmarken | `scroll-margin-top` 111 px aus den Desktop-Tokens, passte nicht zur echten Mobilhöhe |
+
+Drei unabhängig positionierte Teile statt einer Markenfläche.
+
+## B · Neue Architektur
+
+Eine durchgehende Navy-Fläche, drei gleich gewichtete Zonen in einem
+`1fr auto 1fr`-Raster — dadurch steht das Signet exakt auf der Mittelachse
+wie auf dem Desktop:
+
+```
+DE · EN        [Signet]        MENÜ ═
+      ── ◉ SAMSTAGS 12–17 UHR ──
+```
+
+Alle drei Zonen liegen ausdrücklich in `grid-row: 1`. Ohne das legt die
+Auto-Platzierung eine zweite Rasterzeile an, weil `.lang` im DOM hinter dem
+Logo steht, aber Spalte 1 beansprucht — der Header brach dabei um.
+
+**Position `fixed` statt `sticky`** mit `body { padding-top: var(--head-h) }`.
+Ein schrumpfender sticky Header hätte den Inhalt darunter beim Zustandswechsel
+um die Höhendifferenz nach oben gerissen; fixed entkoppelt ihn vom Fluss.
+
+## C · Zustände
+
+| | Höhe | Logo | Markenzeile |
+|---|---|---|---|
+| A — oben | **87 px** | 54 px | sichtbar (26 px) |
+| B — gescrollt | **61 px** | 40 px | eingeklappt |
+
+Die Bedienzeile behält ihre Höhe; es bewegen sich nur Markenzeile und Logo.
+Zwei Bewegungen statt drei lesen sich ruhiger, und der Header bleibt klar
+über der Grenze, ab der Menübutton und Sprachwahl gedrängt wirken. Übergang
+220 ms, `cubic-bezier(.22,.61,.36,1)`. Nach dem Zurückscrollen exakt wieder
+87 px — keine Drift.
+
+Umschaltung über eine Klasse aus `main.js`: passiver Listener, Rechnung im
+`requestAnimationFrame`, Hysterese 32 px rein / 12 px raus gegen Flackern an
+der Schwelle. Kein Layout-Lesen pro Scrollereignis.
+
+## D · Details (drei, alle mit Funktion)
+
+1. **Medaillonlinie** — Champagner-Haarlinien laufen symmetrisch links und
+   rechts vom Medaillonpunkt aus (gemessen 72 px / 72 px bei 320 px und
+   393 px), durchschneiden keinen Text und enden nicht an den Displaykanten.
+2. **Samstagsmarke** — der Champagnerpunkt vor der Öffnungsangabe greift die
+   Logo-Scheibe auf; die Angabe ist mobil ihre einzige Nennung im Header.
+3. **Menümarke** — zwei präzise Linien statt drei Hamburgerbalken, die untere
+   kürzer. Dieselben zwei Linien kreuzen sich im Overlay zum Schliessen-
+   Zeichen: gleiche Geometrie, andere Aufgabe.
+
+## E · Safe Area und Sprungmarken
+
+```css
+--safe-top: env(safe-area-inset-top, 0px);
+--head-h:    calc(var(--safe-top) + 60px + 26px);
+--head-h-sm: calc(var(--safe-top) + 60px);
+```
+
+Wirbelsäule und `scroll-margin-top` hängen an der kompakten Höhe. Alle fünf
+Sprungziele landen mit exakt **13 px** unter dem Header, keine Überschrift
+wird verdeckt.
+
+## F · Overlay
+
+Navy-Fläche mit Schliessen-Marke, kleinem Buschmann-Signet, fünf großen
+Navigationszeilen mit Champagner-Medaillonring und Haarlinien, darunter
+Adresse, Öffnungszeit und der DE/EN-Wechsel.
+
+Zwei Fehler gefunden und behoben: `.m-lang` durfte unter die Breite seiner
+beiden 44-px-Flächen schrumpfen und brach zweizeilig um (`flex: none`), und
+der Selektor `.m-menu nav a` griff auch auf den Sprachschalter, weil `.m-lang`
+ebenfalls ein `<nav>` ist — er erbte dadurch 56 px Mindesthöhe, Rahmen und
+Displaygröße. Jetzt `.m-menu > nav a`.
+
+Auf eine bewusst weggelassene Idee sei hingewiesen: Der Header-Button
+verwandelt sich **nicht** selbst in das Schliessen-Zeichen. Das hätte den
+geprüften Fokus-Trap umbauen müssen; Header- und Overlay-Marke teilen
+stattdessen dieselbe Liniengeometrie.
+
+## G · Interaktion und Accessibility
+
+`aria-expanded` schaltet, `aria-controls` zeigt auf das Overlay, das
+`aria-label` wechselt lokalisiert zwischen „Menü öffnen/schliessen" bzw.
+„Open/Close menu" — die Texte stehen als `data`-Attribute im HTML, damit im
+gemeinsamen JavaScript keine deutschen Strings hart kodiert sind.
+
+Fokus springt ins Menü, Fokusfalle greift **in beide Richtungen**, Escape
+schliesst mit Fokusrückgabe, Body-Scroll wird gesperrt und wieder
+freigegeben, Navigationsklick schliesst. Aktive Sprache mit `aria-current`
+**und** Champagnerpunkt — nicht allein farblich. Keine Touchfläche unter
+44 × 44 px, weder im Header noch im Overlay. Reduced Motion deaktiviert
+Header-, Logo-, Markenzeilen-, Menülinien- und Medaillonübergänge.
+
+## H · Geprüfte Viewports
+
+320 × 568 · 360 × 800 · 375 × 667 · 390 × 844 · 393 × 852 · 430 × 932 ·
+768 × 1024 — Logo auf allen Breiten exakt zentriert, keine Kollision
+zwischen Sprachwahl, Logo und Menübutton, Markenzeile einzeilig, kein
+horizontaler Overflow.
+
+Desktop 1440 × 900 gegengeprüft: `position: sticky` unverändert, Header
+125 px, Logo zentriert, beide Medaillonlinien exakt 37,44 px auf gleicher
+Höhe, Markenzeile ausgeblendet, Infobar sichtbar, `body`-Padding 0.
+
+## I · Konsole, Netzwerk, Performance
+
+0 Fehler und 0 Warnungen auf beiden Sprachseiten. Je 24 Referenzen mit
+Status 200. Keine neue Bibliothek, kein zusätzliches Bild — das Logo ist
+dasselbe `logo-mark.png` wie bisher. `main.js` liegt bei 4,5 kB.
