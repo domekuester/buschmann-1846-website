@@ -598,3 +598,106 @@ für breitere Mobilgeräte ein Duo vorsah. Bei 430 px hätte der Absatz in der
 Nebenspalte nur rund 28 Zeichen pro Zeile — genau der eingequetschte Textblock,
 den derselbe Auftrag ausschließt. Lesbarkeit hat hier Vorrang bekommen; ab
 640 px steht das Duo wieder nebeneinander.
+
+---
+
+# NACHTRAG — Zweisprachige Fassung (DE / EN)
+
+Stand: 21.07.2026 · Branch `rebuild/flagship-recovery`
+
+## A · Spracharchitektur
+
+Zwei eigenständige HTML-Seiten mit gemeinsamen Assets — keine
+JavaScript-Umschaltung, keine doppelten Sprachtexte im selben DOM.
+
+| | Datei | URL | `lang` | Canonical |
+|---|---|---|---|---|
+| Deutsch | `index.html` | `…/buschmann-1846-website/` | `de` | eigene |
+| Englisch | `en/index.html` | `…/buschmann-1846-website/en/` | `en` | eigene |
+
+Aus `en/` laufen alle Referenzen über `../assets/…`. Geprüft: **0** root-
+relative und **0** root-absolute Assetpfade in `en/index.html`; die drei
+`og-image`-Nennungen sind absolute URLs.
+
+`hreflang` de/en/x-default auf beiden Seiten, `og:locale` de_DE bzw. en_GB
+mit `og:locale:alternate`, `og:url` je Seite, strukturierte Daten um `url`,
+`inLanguage` und `image` ergänzt. `sitemap.xml` (valides XML, beide Seiten
+mit xhtml:link) und `robots.txt` neu.
+
+## B · Sprachwahl
+
+`DE · EN` im Navy-Header, keine Flaggen, keine Pille, kein Dropdown.
+Desktop **absolut positioniert** am rechten Rand — sie belegt damit keine
+Rasterspalte, das Logo bleibt exakt mittig (gemessen: Logomitte 720 px bei
+1440 px Viewport, Abstand zur Navigation 181 px). Mobil steht sie im Fluss
+zwischen Logo und Menübutton (Logo · Luft · DE/EN · Menü), Headerhöhe
+unverändert 73 px, bei 320 px bleiben 51 px Luft.
+
+Aktive Sprache: volle Textfarbe **und** ein Champagnerpunkt darunter — der
+Zustand hängt nicht allein an der Farbe. Dazu `aria-current="page"`,
+`hreflang`, `lang` und zugängliche Namen („Deutsche Version" / „English
+version"). Touchflächen 44 × 44 px auf allen Breiten.
+
+Die Sprachlinks (`en/` bzw. `../`) funktionieren ohne JavaScript. Mit JS
+hängt `SECTION_MAP` in `main.js` den passenden Zielanker an — im Browser
+verifiziert: `/#samstag` → `/en/#saturday` → zurück `/#samstag`.
+
+## C · Englische Fassung
+
+Keine Satz-für-Satz-Übersetzung. Bewusste Abweichungen und die verbindliche
+Begriffsliste stehen in `content/TRANSLATION-GUIDE.md`. Kernentscheidungen:
+
+- Hero: „Düsseldorf patisserie. / Since 1846."
+- Geschichte: „It all began in Akademiestraße in 1846."
+- Samstag: „On Saturdays, the window opens." — die Bewegung des deutschen
+  Originals bleibt erhalten, „the window is open" wäre statisch.
+- Claudia: „…one of the familiar faces **serving guests**" statt „at the
+  window", weil „window" sonst direkt nach der Headline stünde. Sichtbare
+  „window"-Nennungen auf der EN-Seite: **1**.
+- Tyll: „…he gets the cakes, tarts and patisserie **ready to go**" —
+  „ready for delivery" klingt nach Logistik statt nach Backstube.
+- „Gastronomie" wird kontextabhängig zu „cafés and restaurants", nie zu
+  „gastronomy".
+
+91 Textersetzungen plus 28 übersetzte Redaktionskommentare, damit die
+EN-Datei eigenständig wartbar bleibt. Kein deutscher UI-Text verblieben.
+
+## D · Inhaltliche Hard Stops (EN, gerendert geprüft)
+
+| Prüfung | Ergebnis |
+|---|---|
+| „lemon cheesecake with lemon glaze" vorhanden | ✅ |
+| „caramel" nirgends | ✅ |
+| „doors are open" / „come inside" / „indoor seating" / „dine in" | ✅ keine |
+| „Tyll Schulte" korrekt, „Till" nirgends sichtbar | ✅ |
+| „Together with Gregor Buschmann" im Tyll-Text | ✅ |
+| „Gregor August Buschmann" genau 1× (Erstvorstellung) | ✅ |
+| Social nur zum Folgen, kein Anfrageweg | ✅ |
+
+Der Zitronen-Cheesecake bleibt vollständig erhalten — Bild, Abschnitt und
+Bezeichnung unverändert. Der spätere Fototausch ist in `content/TODO.md`
+vermerkt und erscheint nicht öffentlich.
+
+## E · Geprüfte Viewports
+
+Beide Sprachen: 320 × 568, 390 × 844, 1440 × 900 vollständig; Sprachwahl
+zusätzlich bei 320 und 390 vermessen. Auf allen Breiten **0 px** horizontaler
+Overflow, höchstes Bild 53 svh, 28/28 Reveals, keine defekten Bilder.
+
+## F · Funktion, Accessibility, Konsole, Netzwerk
+
+- Keine toten Anker, keine doppelten IDs, keine leeren Links — auf **beiden**
+  Seiten geprüft. Je 17 Bilder, alle mit Alt-Text, keiner mit Personennamen.
+- Mobilmenü auf der EN-Seite: `aria-expanded` schaltet, Fokus wandert auf
+  „Close", Escape schließt und gibt den Fokus zurück.
+- Keine Touchfläche unter 44 × 44 px.
+- Konsole: **0 Fehler, 0 Warnungen** auf beiden Seiten.
+- Kaltstart: je **86** Referenzen geprüft, alle 200. `sitemap.xml`,
+  `robots.txt` und `/en/` liefern 200.
+
+## G · Performance
+
+Die englische Seite lädt dieselben Bilder, Fonts, CSS und JS wie die
+deutsche — keine zusätzlichen Assets, kein zweiter Font-Satz, keine
+Übersetzungsbibliothek. Zusätzliches Gewicht der EN-Fassung: die HTML-Datei
+selbst.

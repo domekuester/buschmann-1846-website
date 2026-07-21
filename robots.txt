@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://domekuester.github.io/buschmann-1846-website/sitemap.xml

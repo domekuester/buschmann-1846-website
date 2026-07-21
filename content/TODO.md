@@ -7,6 +7,10 @@
 - [ ] Personenzuordnung bestätigen: Wer ist auf P1360057 (Kaffeemaschine),
       P1360272/P1360326/P1360445 (Bart, Kappe),
       P1360788 (zwei Frauen am Fenster)? Namen erst danach verwenden.
+- [ ] Zitronen-Cheesecake-Foto später durch neues Originalfoto ersetzen.
+      Produktbezeichnung („Zitronen-Cheesecake mit Zitronenglasur" / „lemon
+      cheesecake with lemon glaze") und der Pâtisserie-Abschnitt bleiben bis
+      dahin unverändert — nicht entfernen, kein Platzhalter.
 - [ ] Einverständnis für die **namentliche** Nennung von Claudia Fourmont
       und Tyll Schulte auf der Website bestätigen (bisher war nur die
       Abbildung, nicht die Namensnennung Thema).

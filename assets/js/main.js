@@ -39,6 +39,31 @@
     }
   });
 
+  /* ---------- Sprachwechsel: Abschnitt mitnehmen ----------
+     Die Sprachlinks funktionieren ohne JavaScript vollständig — sie zeigen
+     auf / bzw. /en/. Läuft JS, hängen wir zusätzlich den passenden Anker
+     der Zielsprache an, damit man nach dem Wechsel nicht wieder oben landet.
+     Die Sektions-IDs unterscheiden sich pro Sprache; alles, was hier nicht
+     steht (etwa #patisserie oder #catering), heißt in beiden Sprachen gleich
+     und wird unverändert übernommen. */
+  var SECTION_MAP = {
+    geschichte: 'history', chronologie: 'timeline', backstube: 'bakery',
+    galerie: 'pictures', samstag: 'saturday', standort: 'location'
+  };
+  var REVERSE = {};
+  Object.keys(SECTION_MAP).forEach(function (de) { REVERSE[SECTION_MAP[de]] = de; });
+
+  document.querySelectorAll('.lang a:not([aria-current])').forEach(function (link) {
+    link.addEventListener('click', function () {
+      var id = window.location.hash.replace('#', '');
+      if (!id) return;
+      var ziel = SECTION_MAP[id] || REVERSE[id] || id;
+      if (document.getElementById(id) || SECTION_MAP[id] || REVERSE[id]) {
+        link.href = link.getAttribute('href') + '#' + ziel;
+      }
+    });
+  });
+
   var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* ---------- Bild-Reveal, einmalig ---------- */

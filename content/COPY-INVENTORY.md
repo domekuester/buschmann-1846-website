@@ -8,6 +8,8 @@ FACTS.md. Reihenfolge = Seitenstruktur.
 > sind seither überarbeitet worden (Wiederholungen reduziert, wärmerer Ton).
 > In diesem Dokument wurden nur zwei **sachliche Fehler** nachgezogen, damit
 > sie nicht aus dem Entwurf zurück in die Website wandern:
+> Seit 21.07.2026 gibt es zusätzlich eine englische Fassung unter `en/`;
+> ihr Wortlaut steht in `en/index.html`, die Regeln in TRANSLATION-GUIDE.md.
 > das Produkt heißt **Zitronen-Cheesecake mit Zitronenglasur** (nicht
 > „Karamelldecke"), und es gibt **keinen bestätigten Kontaktweg** über
 > Social Media. Maßgeblich für den aktuellen Wortlaut ist `index.html`.

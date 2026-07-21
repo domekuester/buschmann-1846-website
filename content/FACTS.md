@@ -70,3 +70,13 @@ Nur diese Fakten dürfen auf der Website erscheinen.
 - Preise, Telefonnummern, E-Mail-Adressen (nicht bestätigt)
 - Kunden-/Partnernamen (Artikel von 2021 → nicht als heutige Kunden nennen)
 - erfundene Produkte, Veranstaltungen, Testimonials, Bewertungen
+
+## Sprachfassungen
+
+- Deutsch (Standard): `index.html` → `…/buschmann-1846-website/`
+- Englisch: `en/index.html` → `…/buschmann-1846-website/en/`
+
+Beide Fassungen enthalten dieselben bestätigten Fakten. Verbindliche
+englische Produktbezeichnung: **lemon cheesecake with lemon glaze**
+(niemals caramel). Begriffe, Namen und Tonalität: siehe
+TRANSLATION-GUIDE.md.
