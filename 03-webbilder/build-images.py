@@ -39,6 +39,23 @@ JOBS = {
     "piping":         ("P1360326.jpg", (321, 0, 2538, 3600), [600, 1200]),
     "window-outside": ("P1360109.jpg", None, [600, 1200]),
     "butter":         ("P1360381.jpg", None, [600, 1200]),
+
+    # ---- Eigene Mobilcrops -------------------------------------------------
+    # Auf schmalen Displays steht jedes dieser Motive in einer halbbreiten
+    # Spalte. Das Anzeigefenster ist dort schmaler als das Quellformat, also
+    # beschneidet object-fit nur seitlich und lässt die volle Bildhöhe stehen —
+    # genau die toten Zonen (Fensterbank, Boden, dunkle Maschinenfläche), die
+    # mobil nicht gezeigt werden dürfen. Deshalb bekommen die beiden Motive
+    # mit Menschen einen echten, eng gerechneten Ausschnitt.
+
+    # Claudia: Gesicht auf 39 % Höhe, der Lederrücken bleibt nur als schmaler
+    # Kontextstreifen links, der helle Pfeiler schließt rechts ab. Die
+    # Fensterbank und die Hose des Gastes fallen weg.
+    "claudia-m":      ("Claudia.jpg",  (1450, 780, 2060, 1800),  [400, 800]),
+    # Louis am Kaffee: Kopf, Schulter, Hand mit Kanne und die linke Hälfte der
+    # Maschine bleiben zusammen. Der dunkle Boden und die leere rechte
+    # Maschinenfläche sind raus — keine reine Gerätefläche mehr.
+    "barista-m":      ("P1360057.jpg", (100, 336, 1336, 2400),   [300, 600]),
 }
 
 def export(im: Image.Image, stem: str, width: int) -> None:
