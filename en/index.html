@@ -28,7 +28,7 @@
 
   <link rel="preload" href="../assets/fonts/instrument-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="../assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="../assets/css/main.css?v=35">
+  <link rel="stylesheet" href="../assets/css/main.css?v=41">
   <!-- Marks a live JS environment before the first paint. Only then may the
        reveal hide content. -->
   <script>document.documentElement.classList.add('js');</script>
@@ -237,21 +237,29 @@
         <p class="body">Machines that have done their work for decades, and the steps nobody hands to a machine. Plenty of it could be quicker — but not better.</p>
       </div>
       <div class="bs-pair">
-        <!-- The hand move: spatula, batter and tin stay readable together. -->
-        <figure class="bs-hands reveal">
+        <!-- The process: hand, palette knife, dough and tin readable together.
+             Narrower and shorter than Gregor — deliberately not a twin.
+             Mobile gets its own tighter crop (palette-m). -->
+        <figure class="bs-palette reveal">
           <span class="ph">
             <picture>
-              <source type="image/webp" srcset="../assets/img/hands-800.webp 800w, ../assets/img/hands-1200.webp 1200w" sizes="(max-width: 639px) 46vw, (max-width: 1023px) 45vw, 300px">
-              <img src="../assets/img/hands-800.jpg" srcset="../assets/img/hands-800.jpg 800w, ../assets/img/hands-1200.jpg 1200w" sizes="(max-width: 639px) 46vw, (max-width: 1023px) 45vw, 300px" width="800" height="1198" loading="lazy" alt="Hands spreading batter into a baking tin with an offset spatula">
+              <source media="(max-width: 1023px)" type="image/webp" srcset="../assets/img/palette-m-400.webp 400w, ../assets/img/palette-m-800.webp 800w" sizes="(max-width: 639px) 40vw, 226px">
+              <source media="(max-width: 1023px)" type="image/jpeg" srcset="../assets/img/palette-m-400.jpg 400w, ../assets/img/palette-m-800.jpg 800w" sizes="(max-width: 639px) 40vw, 226px">
+              <source type="image/webp" srcset="../assets/img/palette-600.webp 600w, ../assets/img/palette-1200.webp 1200w" sizes="235px">
+              <img src="../assets/img/palette-600.jpg" srcset="../assets/img/palette-600.jpg 600w, ../assets/img/palette-1200.jpg 1200w" sizes="(max-width: 639px) 40vw, (max-width: 1023px) 226px, 235px" width="600" height="750" loading="lazy" decoding="async" alt="A hand spreading dough into a baking tin with a palette knife">
             </picture>
           </span>
         </figure>
-        <!-- Lead image: face, pour and copper bowl in the full portrait. -->
-        <figure class="bs-pour reveal">
+        <!-- The person behind it: lead image of the section, larger and set
+             lower than the hand move. Mobile is framed wider (gregor-m) so
+             the cap keeps its air. -->
+        <figure class="bs-gregor reveal">
           <span class="ph">
             <picture>
-              <source type="image/webp" srcset="../assets/img/pour-800.webp 800w, ../assets/img/pour-1200.webp 1200w" sizes="(max-width: 639px) 44vw, (max-width: 1023px) 45vw, 300px">
-              <img src="../assets/img/pour-800.jpg" srcset="../assets/img/pour-800.jpg 800w, ../assets/img/pour-1200.jpg 1200w" sizes="(max-width: 639px) 44vw, (max-width: 1023px) 45vw, 300px" width="800" height="1198" loading="lazy" alt="Baker pouring a pale mixture from a pot into a copper bowl">
+              <source media="(max-width: 1023px)" type="image/webp" srcset="../assets/img/gregor-m-500.webp 500w, ../assets/img/gregor-m-1000.webp 1000w" sizes="(max-width: 639px) 57vw, 322px">
+              <source media="(max-width: 1023px)" type="image/jpeg" srcset="../assets/img/gregor-m-500.jpg 500w, ../assets/img/gregor-m-1000.jpg 1000w" sizes="(max-width: 639px) 57vw, 322px">
+              <source type="image/webp" srcset="../assets/img/gregor-800.webp 800w, ../assets/img/gregor-1400.webp 1400w" sizes="333px">
+              <img src="../assets/img/gregor-800.jpg" srcset="../assets/img/gregor-800.jpg 800w, ../assets/img/gregor-1400.jpg 1400w" sizes="(max-width: 639px) 57vw, (max-width: 1023px) 322px, 333px" width="800" height="1200" loading="lazy" decoding="async" alt="Gregor Buschmann pouring a pale mixture from a pot into a large bowl">
             </picture>
           </span>
         </figure>
@@ -262,17 +270,17 @@
            the work tells the rest. -->
       <!-- Tyll Schulte sits here because he shares the work with Gregor: image
            and text form a pair, not a staff card. The crop leaves room in his
-           direction of gaze; on mobile it moves closer to head and shoulders
-           (tyll-m). The file is named "Tyll-final" — the public name is
-           always "Tyll Schulte". -->
+           direction of gaze; on mobile it opens out to head, shoulder and
+           apron (tyll-m). The file is named "Tyll-final2" — the public name
+           is always "Tyll Schulte". -->
       <div class="crew reveal">
         <figure class="crew-photo">
           <span class="ph">
             <picture>
-              <source media="(max-width: 1023px)" type="image/webp" srcset="../assets/img/tyll-m-400.webp 400w, ../assets/img/tyll-m-800.webp 800w" sizes="(max-width: 639px) 56vw, 30vw">
-              <source media="(max-width: 1023px)" type="image/jpeg" srcset="../assets/img/tyll-m-400.jpg 400w, ../assets/img/tyll-m-800.jpg 800w" sizes="(max-width: 639px) 56vw, 30vw">
-              <source type="image/webp" srcset="../assets/img/tyll-600.webp 600w, ../assets/img/tyll-1200.webp 1200w" sizes="210px">
-              <img src="../assets/img/tyll-600.jpg" srcset="../assets/img/tyll-600.jpg 600w, ../assets/img/tyll-1200.jpg 1200w" sizes="(max-width: 639px) 56vw, (max-width: 1023px) 30vw, 210px" width="600" height="900" loading="lazy" alt="Pastry chef in an apron in the bakery, his eyes on the work">
+              <source media="(max-width: 1023px)" type="image/webp" srcset="../assets/img/tyll-m-450.webp 450w, ../assets/img/tyll-m-900.webp 900w" sizes="(max-width: 639px) 56vw, 30vw">
+              <source media="(max-width: 1023px)" type="image/jpeg" srcset="../assets/img/tyll-m-450.jpg 450w, ../assets/img/tyll-m-900.jpg 900w" sizes="(max-width: 639px) 56vw, 30vw">
+              <source type="image/webp" srcset="../assets/img/tyll-500.webp 500w, ../assets/img/tyll-1000.webp 1000w" sizes="180px">
+              <img src="../assets/img/tyll-500.jpg" srcset="../assets/img/tyll-500.jpg 500w, ../assets/img/tyll-1000.jpg 1000w" sizes="(max-width: 639px) 56vw, (max-width: 1023px) 30vw, 180px" width="500" height="750" loading="lazy" decoding="async" alt="Tyll Schulte in an apron at work in the bakery">
             </picture>
           </span>
         </figure>

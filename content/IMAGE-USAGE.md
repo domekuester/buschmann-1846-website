@@ -63,3 +63,52 @@ Captions (2–5 Wörter, nicht überall):
 Anzeigegrößen bei 390 px: Tyll 192 × 239 (28 svh), Claudia 224 × 280 (33 svh).
 Beide Anzeigefenster übernehmen exakt das Verhältnis ihres Derivats, es wird
 also nichts nachbeschnitten.
+
+
+## Nachtrag 22.07.2026 — die drei Schlussfassungen
+
+Der Auftraggeber hat drei bereits verwendete Aufnahmen neu entwickelt. Sie
+ersetzen ihre Vorgänger vollständig; die alten Derivate wurden entfernt, die
+alten Originale bleiben als Archiv in `01-originalfotos/`.
+
+| Position | vorher | jetzt | Desktop | Mobil |
+|---|---|---|---|---|
+| Backstube, Handwerksdetail | `hands` (P1360346) | **`palette`** (palette.jpg) | (0,0,2672,3340) 4:5 · 235 px | (0,200,2100,2825) 4:5 · 136 px |
+| Backstube, Leitbild | `pour` (P1360272) | **`gregor`** (Gregor-final.jpg) | (0,0,2666,3999) 2:3 · 333 px | (0,0,2670,3560) 3:4 · 195 px |
+| Backstube, Menschen-Zone | `tyll` (Tyll-final.jpg) | **`tyll`** (Tyll-final2.jpg) | (0,0,1900,2850) 2:3 · 180 px | (0,0,2000,2500) 4:5 · 192 px |
+
+Die CSS-Klassen heißen jetzt `.bs-palette` und `.bs-gregor` (vorher
+`.bs-hands` / `.bs-pour`), damit Datei, Token und Klasse dasselbe Motiv
+benennen.
+
+### Neue Komposition des Abschnitts
+
+Vorher stand die Menschen-Zone als eigene, volle Breite unter dem Satz aus
+Text und Bildern. Bei 1440 px blieben rechts neben Tylls Absatz rund 600 px
+Navy ohne Aufgabe; der Abschnitt war 981 px hoch und unten zur Hälfte leer.
+Außerdem waren Handgriff und Leitbild fast gleich breit und unten bündig —
+als Paar gerahmter Blätter lesbar, nicht als Komposition.
+
+Jetzt trägt die **linke Spalte** die Sprache und darunter, durch die
+Champagner-Haarlinie abgesetzt, den Menschen (Tyll); die **rechte Spalte**
+trägt die Arbeit (Gregor groß und oben, Palette schmaler und tiefer). Die
+Bildspur läuft über beide Rasterzeilen durch. Ergebnis: **981 px → 738 px**,
+beide Spalten laufen auf dieselbe Höhe aus.
+
+Zwei bewusste Bezüge liegen quer über die Spalten, beide über `align-self`
+an den Satzspiegel gehängt statt über feste Randabstände — dadurch treffen
+sie bei jeder Fensterbreite exakt (gemessen bei 1024/1280/1366/1440/1680/1920):
+
+- Gregors **Oberkante** = Oberkante der Textspalte
+- Unterkante der **Palette** = Unterkante von Tylls Porträt
+
+Innerhalb des Paares fluchtet dagegen nichts: Gregor 2:3 / 333 px, Palette
+4:5 / 235 px, Unterkanten 54 px auseinander.
+
+Mobil wird die Unterkanten-Aufhängung zurückgenommen (die viel kleinere
+Palette würde sonst zwangsläufig auf Gregors Unterkante fluchten): Gregor
+führt oben und breiter, die Palette setzt 3,4 rem tiefer ein.
+
+Tylls Bildspalte ist `clamp(130px, 13vw, 180px)` statt fest 180 px — bei
+1024 px blieben dem Absatz sonst nur 233 px (27 Zeichen). So liegt die
+Textbreite überall zwischen 282 px und 494 px.

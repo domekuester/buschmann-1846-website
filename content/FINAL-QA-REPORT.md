@@ -916,3 +916,113 @@ Rahmen, `loading="lazy"`, `width`/`height` gesetzt.
 Alt-Text Deutsch: „Detail der Kaffeemaschine in der Backstube: Brühgruppe,
 Dampflanze und Abtropfgitter aus Chrom" · Englisch: „Detail of the coffee
 machine in the bakery: chrome group head, steam arm and drip tray".
+
+---
+
+# Nachtrag 22.07.2026 — die drei Schlussfassungen
+
+`palette.jpg`, `Gregor-final.jpg` und `Tyll-final2.jpg` ersetzen `hands`
+(P1360346), `pour` (P1360272) und `tyll` (Tyll-final.jpg). Alle Zahlen
+gemessen unter `http://localhost:8765/`, beide Sprachfassungen.
+
+## A · Serie statt Einzelbilder
+
+Alle drei Master: 2672 × 4000, sRGB IEC61966-2.1 — identisches
+Ausgangsformat. Gegenüber den alten Derivaten ist der Grünstich weg, der
+Kontrast zurückgenommen, das Korn gleichmäßig. Die Zusammengehörigkeit
+steckt damit in den Dateien; **es liegt bewusst kein CSS-Farbfilter auf den
+Bildern**, weil jeder Filter auf einem der drei Motive die gemeinsame
+Gradation wieder auseinandertreiben würde.
+
+## B · Crops — jeder einzeln vermessen, keiner zentriert
+
+| | Desktop | Mobil |
+|---|---|---|
+| palette | (0,0,2672,3340) 4:5 | (0,200,2100,2825) 4:5 |
+| gregor | (0,0,2666,3999) 2:3 | (0,0,2670,3560) 3:4 |
+| tyll | (0,0,1900,2850) 2:3 | (0,0,2000,2500) 4:5 |
+
+Zwei harte Randbedingungen aus der Vermessung: Über Gregors Mütze stehen nur
+**55 px**, über Tylls Haaransatz **90 px** — beide Motive müssen zwingend bei
+y=0 einsteigen, sonst wird angeschnitten. Tyll blickt nach links und hat vor
+der Nase 235 px; beide Tyll-Ausschnitte beginnen deshalb bei x=0 und enden
+früh (1900 bzw. 2000 statt 2672), damit der Anteil des Freiraums **vor** dem
+Gesicht wächst statt hinter dem Kopf tote Wand mitzulaufen.
+
+Jedes Anzeigefenster übernimmt exakt das Verhältnis seines Derivats —
+`object-fit` beschneidet nichts nach, die `--*-focus-*`-Tokens stehen auf
+50 % und sind reine Reserve.
+
+## C · Komposition
+
+Abschnittshöhe bei 1440 px: **981 px → 738 px**. Die tote Navy-Fläche neben
+und unter Tylls Absatz (rund 600 px breit) ist ersatzlos verschwunden, ohne
+dass ein einziger Inhalt hinzugekommen ist — die Menschen-Zone sitzt jetzt in
+der linken Spalte, die Bildspur läuft über beide Rasterzeilen durch.
+
+Zwei Bezüge liegen quer über die Spalten und wurden bei 1024 / 1280 / 1366 /
+1440 / 1680 / 1920 px gemessen — sie treffen überall auf 0–1 px:
+
+| vw | Textspalte oben | Gregor oben | Palette unten | Tyll unten |
+|---|---|---|---|---|
+| 1024 | 77 | 77 | 564 | 564 |
+| 1280 | 80 | 80 | 630 | 630 |
+| 1366 | 77 | 77 | 624 | 624 |
+| 1440 | 90 | 90 | 648 | 648 |
+| 1680 | 105 | 105 | 696 | 696 |
+| 1920 | 108 | 108 | 699 | 699 |
+
+Sie sind über `align-self` an den Satzspiegel gehängt, nicht über feste
+Randabstände — ein fester Wert hätte nur bei 1440 px gepasst und sonst um
+rund 12 px danebengelegen, was schlechter aussieht als ein klarer Versatz.
+
+Innerhalb des Paares fluchtet nichts: Gregor 333 × 500 px, Palette
+235 × 295 px, Unterkanten 54 px auseinander.
+
+## D · Textbreite
+
+Tylls Bildspalte ist `clamp(130px, 13vw, 180px)`. Mit den ursprünglich festen
+180 px blieben dem Absatz bei 1024 px nur **233 px = 27 Zeichen** — derselbe
+eingequetschte Block, der mobil schon einmal zum Stapeln gezwungen hat.
+Gemessene Textbreiten jetzt: 272 px (320) · 312 px (360) · 342 px (390) ·
+382 px (430) · 447 px (768) · 494 px (820) · 282 px (1024) · 357 px (1280) ·
+365 px (1440+). Nirgends unter 32 Zeichen.
+
+## E · Geprüfte Viewports
+
+320 × 568 · 360 × 800 · 390 × 844 · 430 × 932 · 768 × 1024 · 820 × 1180 ·
+1024 × 768 · 1280 × 800 · 1366 × 768 · 1440 × 900 · 1680 × 1050 ·
+1920 × 1080 — Deutsch und Englisch. Überall: **kein horizontaler Overflow**
+(`scrollWidth - innerWidth = 0`), korrekte Derivatwahl (mobil greifen
+`palette-m` / `gregor-m` / `tyll-m`, ab 1024 die Desktopfassungen), keine
+Bildunterschrift, kein Rahmen, keine verzerrte Kachel.
+
+## F · Technik und Performance
+
+Beide Seiten: **je 202 Referenzen mit Status 200, 0 Konsolenfehler,
+0 fehlgeschlagene Requests** (kalter Cache, Chromium über Playwright). Alle
+drei `<img>` mit `loading="lazy"`, `decoding="async"`, `width`/`height`.
+
+Ausgelieferte Bytes für die drei Motive (WebP):
+
+- Desktop 1440: 26,8 + 57,6 + 29,4 kB = **114 kB** (vorher 124 + 101 + 54 =
+  279 kB) — die Derivatbreiten entsprechen jetzt den tatsächlichen
+  Anzeigebreiten statt deutlich darüber zu liegen
+- Mobil 390: 11,9 + 18,1 + 18,0 kB = **48 kB**
+
+16 überholte Derivate (`hands-*`, `pour-*`, `tyll-600/1200`,
+`tyll-m-400/800`) wurden entfernt, nachdem projektweit geprüft war, dass sie
+nirgends mehr referenziert sind — sie hätten sonst die alten Fassungen
+konserviert. Die alten Originale bleiben als Archiv erhalten.
+
+## G · Alt-Texte
+
+| | Deutsch | Englisch |
+|---|---|---|
+| palette | Hand streicht Teig mit einer Winkelpalette in eine Backform | A hand spreading dough into a baking tin with a palette knife |
+| gregor | Gregor Buschmann gießt helle Masse aus einem Kessel in eine große Schüssel | Gregor Buschmann pouring a pale mixture from a pot into a large bowl |
+| tyll | Tyll Schulte in Schürze bei der Arbeit in der Backstube | Tyll Schulte in an apron at work in the bakery |
+
+Öffentliche Schreibweise durchgehend **Tyll Schulte** (0 Treffer für „Till
+Schulte" in beiden Fassungen), obwohl eine ältere interne Datei `Till.jpg`
+heißt.

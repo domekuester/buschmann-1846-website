@@ -550,8 +550,36 @@ figure { margin: 0; }
    -------------------------------------------------------------------------- */
 .gesch-photo { --ratio: 3/4; --fy: 45%; }   /* Anschlagmaschine: Kessel mittig */
 .pat-lead    { --ratio: 4/5; --fy: 62%; }   /* Tortenstück auf dem Teller */
-.bs-hands    { --ratio: 3/4; --fy: 45%; }   /* Palette, Teig und Form zusammen */
-.bs-pour     { --ratio: 2/3; }              /* Gesicht, Guss und Kupferschüssel */
+/* Die drei Schlussfassungen der Backstube — palette, Gregor, Tyll — sind eine
+   gemeinsam entwickelte Serie: gleiches Format, gleiches warme Bernstein,
+   offene Schatten, feines Korn. Ihre Zusammengehörigkeit steckt bereits in den
+   Dateien. Deshalb liegt hier bewusst KEIN Farbfilter auf den Bildern
+   (brightness/contrast/sepia/saturate): Jeder Filter, der nur eines der drei
+   Motive trifft, würde genau die gemeinsame Gradation wieder auseinander-
+   treiben. Unterschieden werden sie allein über Ausschnitt, Größe, Höhe und
+   Position.
+
+   Jedes Verhältnis entspricht exakt dem ausgelieferten Derivat — was hier
+   steht, ist der Ausschnitt, der in 03-webbilder/build-images.py gerechnet
+   wurde. object-fit beschneidet dadurch nichts nach; die --*-focus-Werte
+   bleiben bei 50 % und sind die Reserve für den Fall, dass ein Anzeige-
+   fenster doch einmal vom Derivat abweicht. */
+.bs-palette {
+  --palette-ratio: 4/5;              /* palette-*.webp — 2672 × 3340 */
+  --palette-focus-x: 50%;
+  --palette-focus-y: 50%;
+  --ratio: var(--palette-ratio);
+  --fx: var(--palette-focus-x);
+  --fy: var(--palette-focus-y);
+}
+.bs-gregor {
+  --gregor-ratio: 2/3;               /* gregor-*.webp — 2666 × 3999 */
+  --gregor-focus-x: 50%;
+  --gregor-focus-y: 50%;
+  --ratio: var(--gregor-ratio);
+  --fx: var(--gregor-focus-x);
+  --fy: var(--gregor-focus-y);
+}
 .cat-photo   { --ratio: 3/4; --fy: 60%; }   /* Butter auf Schokolade */
 .st-photo    { --ratio: 2/3; --fx: 56%; }   /* Gast am Verkaufsfenster */
 .sam-side    { --ratio: 3/5; --fx: 34%; }   /* Kaffeemoment: Person + Maschine */
@@ -654,29 +682,78 @@ blockquote cite {
    9 · BACKSTUBE — kräftiges Markenblau als echte Fläche
    ========================================================================== */
 .backstube { background: var(--blue-brand); }
+/* Zwei Spalten, zwei Zeilen — aber die Bildspur läuft über beide Zeilen durch.
+   Vorher stand die Menschen-Zone als eigene, volle Breite unter dem Satz aus
+   Text und Bildern: Bei 1440 px blieben rechts neben Tylls Absatz rund 600 px
+   Navy ohne Aufgabe, und darunter noch einmal die Resthöhe des Porträts. Der
+   Abschnitt war dadurch fast 1000 px hoch und unten zur Hälfte leer.
+
+   Jetzt trägt die linke Spalte die Sprache (Kicker, Headline, Absatz) und
+   darunter — durch eine Haarlinie abgesetzt — den Menschen, der die Arbeit
+   teilt. Die rechte Spalte trägt die Arbeit selbst. Beide Spalten laufen
+   dadurch auf annähernd gleiche Höhe aus, die tote Zone verschwindet ohne
+   einen einzigen zusätzlichen Inhalt. */
 .backstube .inner {
   display: grid; grid-template-columns: 1fr 1fr;
-  /* Spalten brauchen Luft, Zeilen nicht: seit die Menschen-Zone eine zweite
-     Rasterzeile bildet, würde derselbe Wert (72 px) zusammen mit ihrem
-     eigenen Abstand eine 123-px-Lücke unter den Bildern aufreißen. */
   column-gap: clamp(2.5rem, 5vw, 5rem);
-  row-gap: clamp(1.6rem, 2.6vw, 2.4rem);
-  align-items: end;
+  row-gap: clamp(2rem, 3.4vw, 3.2rem);
+  align-items: start;
 }
-.backstube .text-col { padding-bottom: 1rem; }
-.bs-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; align-items: end; }
+.backstube .text-col { grid-column: 1; grid-row: 1; }
+.backstube .bs-pair  { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; }
+.backstube .crew     { grid-column: 1; grid-row: 2; }
+
+/* Vorgang und Mensch, nicht zwei gleiche Poster.
+   Vorher: zwei fast gleich breite Fenster mit bündiger Unterkante — als Paar
+   gerahmter Blätter lesbar, nicht als Komposition. Jetzt führt Gregor als
+   deutlich größeres Hochformat (7 von 12 Spalten, 2:3), die Palette antwortet
+   schmaler und gedrungener daneben (5 Spalten, 4:5).
+
+   Der Versatz ist an den Unterkanten aufgehängt, nicht an den Oberkanten:
+   Gregor steht oben an und schließt früher, die Palette hängt tiefer und
+   endet unten. Das setzt zwei bewusste Bezüge quer über beide Spalten —
+   Gregors Oberkante liegt auf der Oberkante der Textspalte, die Unterkante
+   der Palette auf der Unterkante von Tylls Porträt — während innerhalb des
+   Paares weder Ober- noch Unterkanten fluchten.
+
+   Entscheidend ist, wohin der freie Navy-Raum fällt: Er liegt jetzt OBEN
+   neben der Headline und fließt mit deren Luft und dem Spaltenabstand
+   zusammen. Hing die Palette oben, saß derselbe Raum unten zwischen Tylls
+   Porträt und Gregor — links und rechts von Inhalt eingefasst und damit als
+   Loch lesbar statt als Atem.
+
+   Beide Kanten sind an den Satzspiegel gehängt, nicht an einen Zahlenwert:
+   Die Bildspur wird über beide Rasterzeilen gestreckt, Gregor hängt an ihrer
+   Oberkante, die Palette an ihrer Unterkante. Dadurch treffen die Bezüge bei
+   jeder Fensterbreite und jeder Textumbruchlänge exakt — ein fester
+   Randabstand hätte sie nur bei 1440 px zur Deckung gebracht und sonst um
+   ein Dutzend Pixel danebengelegt, was schlechter aussieht als ein klarer
+   Versatz. */
+.bs-pair {
+  display: grid; grid-template-columns: repeat(12, 1fr);
+  gap: var(--sp-sm);
+}
+.bs-palette { grid-column: 1 / 6; align-self: end; }
+.bs-gregor  { grid-column: 6 / -1; align-self: start; }
 
 /* Menschen-Zone — läuft über beide Spalten und schließt den Abschnitt ab.
    Die Champagner-Haarlinie ist dieselbe wie in Timeline und Catering; die
    volle Champagnerlinie bleibt der Öffnungszeit im Samstagsabschnitt
    vorbehalten. Keine Karten, keine Rahmen, kein Rollentitel — die Namen
    heben sich allein über Gewicht und volle Textfarbe ab. */
+/* Die Bildbreite wandert mit der Spalte, statt fest zu stehen: Seit die
+   Menschen-Zone in der linken Spalte sitzt, teilen sich Porträt und Absatz
+   rund 440 px (bei 1024) bis 580 px (ab 1240). Ein festes 180-px-Bild ließ
+   dem Text bei 1024 nur 233 px — 27 Zeichen pro Zeile, also derselbe
+   eingequetschte Block, der auf dem Handy schon einmal zum Stapeln gezwungen
+   hat. Mit dem clamp bleibt der Absatz überall bei mindestens rund 33
+   Zeichen, ohne dass das Porträt auf großen Schirmen schrumpft. */
 .crew {
-  grid-column: 1 / -1;
   padding-top: 1.5rem;   /* der Zeilenabstand des Rasters trägt den Rest */
   border-top: 1px solid var(--rule-dark);
-  display: grid; grid-template-columns: 210px 1fr;
-  gap: clamp(1.6rem, 3vw, 2.6rem); align-items: start;
+  display: grid;
+  grid-template-columns: clamp(130px, 13vw, 180px) minmax(0, 1fr);
+  gap: clamp(1.2rem, 2.4vw, 2.2rem); align-items: start;
 }
 /* Kein Rahmen, kein Hintergrund, keine runde Maske: dasselbe nackte
    Bildfenster wie überall auf der Seite — nur kleiner. So bleibt es ein
@@ -690,7 +767,7 @@ blockquote cite {
    (tyll / tyll-m); das Anzeigefenster übernimmt jeweils exakt deren
    Verhältnis, damit object-fit nichts mehr wegschneidet. */
 .crew-photo {
-  --tyll-ratio: 2/3;          /* entspricht tyll-*.webp (2200 × 3300) */
+  --tyll-ratio: 2/3;          /* entspricht tyll-*.webp (1900 × 2850) */
   --tyll-focus-x: 50%;
   --tyll-focus-y: 50%;
   width: 100%;
@@ -1089,7 +1166,15 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   .geschichte .inner, .pat-grid, .backstube .inner, .cat-head, .st-grid {
     grid-template-columns: 1fr;
   }
+  /* Der Desktop stellt Text, Bildspur und Menschen-Zone über explizite
+     Rasterplätze zu einem zweispaltigen Satz zusammen. Unterhalb von 1024 px
+     gibt es nur eine Spalte — die Plätze müssen deshalb zurückgenommen
+     werden, sonst legt der Browser für `grid-column: 2` eine zweite,
+     implizite Spalte an und die Bilder rutschen aus dem Satzspiegel. */
   .backstube .inner { align-items: start; }
+  .backstube .text-col,
+  .backstube .bs-pair,
+  .backstube .crew { grid-column: auto; grid-row: auto; align-self: auto; }
 
   /* ---------- Einzelbilder: Fenster mit eigener Breite und Kante ----------
      Vier verschiedene Breiten, abwechselnd links und rechts angeschlagen.
@@ -1108,14 +1193,28 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   .chrono ol { margin-top: var(--sp-lg); }
 
   /* ---------- Backstube: vertikales Duo, Mensch führt ----------
-     Der Guss mit Gesicht bekommt die breitere Spalte, der Handgriff steht
-     schmaler und tiefer daneben (Muster B, umgekehrtes Duo). */
-  .bs-pair {
-    grid-template-columns: repeat(12, 1fr); gap: var(--sp-sm);
-    align-items: start;
+     Gregor bekommt die breitere Spalte und ein eigenes, weiter gefasstes
+     Derivat (gregor-m, 3:4): Auf dem Handy muss die Kappe Luft behalten und
+     das Gesicht groß genug bleiben, ohne dass daraus ein Zoom wird. Die
+     Palette steht schmaler, gedrungener (4:5) und tiefer daneben — mit
+     eigenem Ausschnitt (palette-m), der eng auf Hand, Blatt und Teig sitzt
+     statt auf der leeren Formwand. Zwei verschiedene Breiten, zwei
+     verschiedene Höhen, ein gemeinsamer Vorgang.
+
+     Die Unterkanten-Aufhängung des Desktops wird hier zurückgenommen: In der
+     schmalen Spalte ist die Palette so viel kleiner, dass sie unten angeschlagen
+     zwangsläufig auf Gregors Unterkante fluchten würde — genau das Poster-Paar,
+     das der Abschnitt vermeiden soll. Mobil hängt sie deshalb oben und setzt
+     versetzt tiefer ein. */
+  .bs-pair { align-items: start; }
+  .bs-palette {
+    grid-column: 1 / 6; align-self: start; margin-top: 3.4rem;
+    --palette-ratio: 4/5;                 /* palette-m-*.webp — 2100 × 2625 */
   }
-  .bs-pair > figure:first-child { grid-column: 1 / 6; margin-top: 2.6rem; }
-  .bs-pair > figure:last-child  { grid-column: 6 / -1; --ratio: 2/3; }
+  .bs-gregor {
+    grid-column: 6 / -1; align-self: start;
+    --gregor-ratio: 3/4;                  /* gregor-m-*.webp  — 2670 × 3560 */
+  }
 
   /* ---------- Galerie: Duo · Leitbild · umgekehrtes Duo ----------
      Ein 12-Spalten-Raster erlaubt echte 42/58- und 58/42-Teilungen; die
@@ -1170,7 +1269,7 @@ footer { background: var(--navy-night); color: var(--on-dark); }
     padding-top: var(--sp-md);
   }
   .crew-photo {
-    --tyll-ratio: 4/5;        /* entspricht tyll-m-*.webp (1960 × 2450) */
+    --tyll-ratio: 4/5;        /* entspricht tyll-m-*.webp (2000 × 2500) */
     --tyll-focus-y: 50%;
     width: 56%; max-width: 15rem;
   }

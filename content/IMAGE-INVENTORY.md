@@ -1,8 +1,10 @@
 # IMAGE-INVENTORY — Vollständige Bildanalyse
 
-Quelle: `01-originalfotos/` · 18 Fotos + 1 Logo · analysiert am 19.07.2026
+Quelle: `01-originalfotos/` · 21 Fotos + 1 Logo · analysiert am 19.07.2026,
+ergänzt am 22.07.2026 um die drei Schlussfassungen.
 Bildrechte: für ALLE Bilder noch zu prüfen (siehe TODO.md).
-Personennamen: nur Claudia per Dateiname eindeutig; alles andere unbestätigt.
+Personennamen: Claudia, Tyll und Gregor per Dateiname belegt; alles andere
+unbestätigt.
 
 Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 
@@ -15,7 +17,67 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 - Qualität: sauber, aber geringe Auflösung → Darstellung ≤ ~170 px Breite
 - Verwendung: Header, Footer, Favicon-Basis
 
-## Tyll-final.jpg — L (Backstube, Menschen-Zone) — VERWENDET
+## Die drei Schlussfassungen (22.07.2026) — VERWENDET
+
+`palette.jpg`, `Gregor-final.jpg` und `Tyll-final2.jpg` sind vom Auftraggeber
+neu entwickelte Fassungen bereits vorhandener Aufnahmen. Sie ersetzen die
+bisherigen Web-Derivate vollständig. Alle drei: **2672 × 4000, Hochformat,
+sRGB IEC61966-2.1, JPEG** — also ein identisches Ausgangsformat.
+
+Sie sind bewusst als **eine Serie** entwickelt: warmes Bernstein, offene
+Schatten statt harter Schwarzwerte, feines gleichmäßiges Korn, gedämpfte
+Sättigung. Gegenüber den alten Derivaten ist der Grünstich verschwunden und
+der Kontrast zurückgenommen. **Deshalb liegt auf diesen Bildern kein
+CSS-Farbfilter** — die Zusammengehörigkeit steckt in den Dateien selbst, jeder
+zusätzliche `brightness()`/`contrast()`/`sepia()`/`saturate()` würde sie
+wieder auseinandertreiben. Unterschieden werden sie allein über Ausschnitt,
+Größe, Höhe und Position.
+
+### palette.jpg — D (Backstube, Handwerksdetail) — ersetzt P1360346 (`hands`)
+- 2672 × 4000 · 11,5 MB
+- Motiv: Hand mit Winkelpalette über einer mit Teig gefüllten Kastenform,
+  Backpapier, Holztisch; rechts oben die Schürze des Arbeitenden
+- Vermessung: Hand x 0–720 / y 100–1300 · Palettenblatt x 200 → Spitze 2200,
+  y 1300–1620 · Teig y 1900–2350 · Formwand y 2350–3300 · Holztisch ab 3400
+- Desktop-Crop: **(0, 0, 2672, 3340) = 2672 × 3340, 4:5** — gedrungener als
+  Gregors 2:3, damit die beiden nebeneinander kein Rechteckpaar bilden
+- Mobil-Crop: **(0, 200, 2100, 2825) = 2100 × 2625, 4:5** — enger auf Hand,
+  Blatt und Teig; der Einstieg bei y 200 gibt unten die Formkante frei
+- Derivate: `palette-600/1200` · `palette-m-400/800` (WebP + JPG)
+
+### Gregor-final.jpg — L (Backstube, Leitbild) — ersetzt P1360272 (`pour`)
+- 2672 × 4000 · 13,7 MB
+- Motiv: Gregor Buschmann mit Kappe gießt helle Masse aus einem Kessel in
+  eine große Rührschüssel; Blick nach links unten auf den Guss
+- Vermessung: Mützenkante y≈55 (!) · Augen y≈750 · Bart y≈1150 · Hand am
+  Kessel ab y 330 · Guss x 950–1250 / y 1750–2600 · Schüssel y 2650–3820
+- **Über der Mütze stehen nur 55 px** — jeder Ausschnitt muss bei y=0 beginnen,
+  sonst wird die Kappe angeschnitten
+- Desktop-Crop: **(0, 0, 2666, 3999) = 2:3** — praktisch die volle Aufnahme;
+  Gesicht und Tätigkeit bleiben gleichzeitig lesbar, die Schüssel ganz
+- Mobil-Crop: **(0, 0, 2670, 3560) = 3:4** — weiter gefasst statt näher heran;
+  die Schüssel wird unten angeschnitten, die Kappe behält ihre Luft
+- Derivate: `gregor-800/1400` · `gregor-m-500/1000` (WebP + JPG)
+
+### Tyll-final2.jpg — L (Backstube, Menschen-Zone) — ersetzt Tyll-final.jpg
+- 2672 × 4000 · 14,0 MB
+- Motiv: Tyll Schulte im Profil, schwarze Kochjacke, taupefarbene Schürze,
+  Blick nach links unten; Werkzeugwand und Topfgriff als Kontext
+- Person: **Tyll Schulte (per Dateiname des Auftraggebers belegt)**
+- Vermessung: Haaransatz y≈90 · Ohr x 1180–1330 · Nasenspitze x≈235 / y≈1400 ·
+  Kinn y≈1560 · Schürzenlatz y 2150–3400 · Topfgriff ab y 3550
+- Er blickt nach links; vor der Nase stehen 235 px, hinter dem Kopf liegt ab
+  x≈1900 nur dunkle Wand. Beide Ausschnitte beginnen deshalb bei x=0 und enden
+  früh — so wächst der Anteil des Freiraums **vor** dem Gesicht
+- Desktop-Crop: **(0, 0, 1900, 2850) = 2:3** — Kopf, Schulter, oberer Latz
+- Mobil-Crop: **(0, 0, 2000, 2500) = 4:5** — vollständiger Kopf mit Luft über
+  dem Haar und vor dem Profil; bewusst kein engerer Gesichtsausschnitt
+- Derivate: `tyll-500/1000` · `tyll-m-450/900` (WebP + JPG)
+- Keine Bildunterschrift: Der Name steht als `<strong>` im Text daneben
+
+---
+
+## Tyll-final.jpg — ARCHIV (ersetzt durch Tyll-final2.jpg)
 - 2672 × 4000, Hochformat
 - Motiv: Tyll Schulte in Schürze, Profil, Blick auf die Arbeit gerichtet;
   im Hintergrund die Werkzeugwand der Backstube
@@ -283,13 +345,14 @@ Legende Rolle: **L** = Leitbild · **E** = Erzählbild · **D** = Detailbild
 |---|---|
 | Fassade und Akademiestraße | P1360101 |
 | Geschichte und historische Räume | P1360191, P1360329 |
-| Gregor und Backstube (Name unbestätigt) | P1360272, P1360326 |
+| Gregor Buschmann, Backstube (Name belegt) | Gregor-final.jpg (aus P1360272) |
+| Backstube, Name noch unbestätigt | P1360326 |
 | Claudia am Fenster | Claudia.jpg |
 | Louis an der Kaffeemaschine (Name unbestätigt) | P1360057 |
 | Tyll Schulte bei der Arbeit (Name belegt) | — (Till.jpg abgelehnt: Qualität) |
 | Menschen und Begegnungen | P1360788, (Reserve: P1360109) |
 | Pâtisserie und Produkte | P1360096, P1360370 |
 | Kaffee und Samstag | P1360057 · Kaffemaschine.jpg (Materialdetail in der Bildstrecke) |
-| Werkzeuge, Zutaten und Details | P1360218, P1360346, P1360381 |
-| Produktion und Catering | P1360381, P1360346 (Doppelnutzung möglich) |
+| Werkzeuge, Zutaten und Details | P1360218, palette.jpg (aus P1360346), P1360381 |
+| Produktion und Catering | P1360381 |
 | Nicht verwenden | P1360200, Till.jpg, P1360445 |

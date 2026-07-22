@@ -25,7 +25,7 @@
 
   <link rel="preload" href="assets/fonts/instrument-sans-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/newsreader-normal-latin.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="stylesheet" href="assets/css/main.css?v=35">
+  <link rel="stylesheet" href="assets/css/main.css?v=41">
   <!-- Markiert eine laufende JS-Umgebung, bevor das erste Pixel gezeichnet
        wird. Erst dann darf das Reveal Inhalte ausblenden. -->
   <script>document.documentElement.classList.add('js');</script>
@@ -234,21 +234,29 @@
         <p class="body">Maschinen, die seit Jahrzehnten ihren Dienst tun, und Handgriffe, die man keiner Maschine überlässt. Vieles davon geht schneller — aber nicht besser.</p>
       </div>
       <div class="bs-pair">
-        <!-- Handgriff: Palette, Teig und Form bleiben gemeinsam lesbar. -->
-        <figure class="bs-hands reveal">
+        <!-- Der Vorgang: Hand, Winkelpalette, Teig und Form gemeinsam lesbar.
+             Steht schmaler und höher als Gregor — bewusst kein Zwilling.
+             Mobil ein eigener, engerer Ausschnitt (palette-m). -->
+        <figure class="bs-palette reveal">
           <span class="ph">
             <picture>
-              <source type="image/webp" srcset="assets/img/hands-800.webp 800w, assets/img/hands-1200.webp 1200w" sizes="(max-width: 639px) 46vw, (max-width: 1023px) 45vw, 300px">
-              <img src="assets/img/hands-800.jpg" srcset="assets/img/hands-800.jpg 800w, assets/img/hands-1200.jpg 1200w" sizes="(max-width: 639px) 46vw, (max-width: 1023px) 45vw, 300px" width="800" height="1198" loading="lazy" alt="Hände streichen Teig mit einer Winkelpalette in eine Backform">
+              <source media="(max-width: 1023px)" type="image/webp" srcset="assets/img/palette-m-400.webp 400w, assets/img/palette-m-800.webp 800w" sizes="(max-width: 639px) 40vw, 226px">
+              <source media="(max-width: 1023px)" type="image/jpeg" srcset="assets/img/palette-m-400.jpg 400w, assets/img/palette-m-800.jpg 800w" sizes="(max-width: 639px) 40vw, 226px">
+              <source type="image/webp" srcset="assets/img/palette-600.webp 600w, assets/img/palette-1200.webp 1200w" sizes="235px">
+              <img src="assets/img/palette-600.jpg" srcset="assets/img/palette-600.jpg 600w, assets/img/palette-1200.jpg 1200w" sizes="(max-width: 639px) 40vw, (max-width: 1023px) 226px, 235px" width="600" height="750" loading="lazy" decoding="async" alt="Hand streicht Teig mit einer Winkelpalette in eine Backform">
             </picture>
           </span>
         </figure>
-        <!-- Leitbild: Gesicht, Guss und Kupferschüssel im vollen Hochformat. -->
-        <figure class="bs-pour reveal">
+        <!-- Der Mensch dahinter: Leitbild der Sektion, größer und tiefer
+             eingesetzt als der Handgriff. Mobil weiter gefasst (gregor-m),
+             damit die Kappe Luft behält. -->
+        <figure class="bs-gregor reveal">
           <span class="ph">
             <picture>
-              <source type="image/webp" srcset="assets/img/pour-800.webp 800w, assets/img/pour-1200.webp 1200w" sizes="(max-width: 639px) 44vw, (max-width: 1023px) 45vw, 300px">
-              <img src="assets/img/pour-800.jpg" srcset="assets/img/pour-800.jpg 800w, assets/img/pour-1200.jpg 1200w" sizes="(max-width: 639px) 44vw, (max-width: 1023px) 45vw, 300px" width="800" height="1198" loading="lazy" alt="Bäcker gießt helle Masse aus einem Kessel in eine Kupferschüssel">
+              <source media="(max-width: 1023px)" type="image/webp" srcset="assets/img/gregor-m-500.webp 500w, assets/img/gregor-m-1000.webp 1000w" sizes="(max-width: 639px) 57vw, 322px">
+              <source media="(max-width: 1023px)" type="image/jpeg" srcset="assets/img/gregor-m-500.jpg 500w, assets/img/gregor-m-1000.jpg 1000w" sizes="(max-width: 639px) 57vw, 322px">
+              <source type="image/webp" srcset="assets/img/gregor-800.webp 800w, assets/img/gregor-1400.webp 1400w" sizes="333px">
+              <img src="assets/img/gregor-800.jpg" srcset="assets/img/gregor-800.jpg 800w, assets/img/gregor-1400.jpg 1400w" sizes="(max-width: 639px) 57vw, (max-width: 1023px) 322px, 333px" width="800" height="1200" loading="lazy" decoding="async" alt="Gregor Buschmann gießt helle Masse aus einem Kessel in eine große Schüssel">
             </picture>
           </span>
         </figure>
@@ -259,17 +267,17 @@
            Gewicht und Farbe, die Tätigkeit erzählt den Rest. -->
       <!-- Tyll Schulte steht hier, weil er die Arbeit mit Gregor teilt: Bild
            und Text bilden ein Paar, kein Personenkärtchen. Der Ausschnitt
-           lässt die Blickrichtung nach links frei; mobil rückt er enger an
-           Kopf und Schultern (tyll-m). Datei heisst „Tyll-final“ — der
-           öffentliche Name ist immer „Tyll Schulte“. -->
+           lässt die Blickrichtung nach links frei; mobil rückt er weiter auf
+           Kopf, Schulter und Schürze (tyll-m). Datei heisst „Tyll-final2“ —
+           der öffentliche Name ist immer „Tyll Schulte“. -->
       <div class="crew reveal">
         <figure class="crew-photo">
           <span class="ph">
             <picture>
-              <source media="(max-width: 1023px)" type="image/webp" srcset="assets/img/tyll-m-400.webp 400w, assets/img/tyll-m-800.webp 800w" sizes="(max-width: 639px) 56vw, 30vw">
-              <source media="(max-width: 1023px)" type="image/jpeg" srcset="assets/img/tyll-m-400.jpg 400w, assets/img/tyll-m-800.jpg 800w" sizes="(max-width: 639px) 56vw, 30vw">
-              <source type="image/webp" srcset="assets/img/tyll-600.webp 600w, assets/img/tyll-1200.webp 1200w" sizes="210px">
-              <img src="assets/img/tyll-600.jpg" srcset="assets/img/tyll-600.jpg 600w, assets/img/tyll-1200.jpg 1200w" sizes="(max-width: 639px) 56vw, (max-width: 1023px) 30vw, 210px" width="600" height="900" loading="lazy" alt="Konditor in Schürze in der Backstube, den Blick auf die Arbeit gerichtet">
+              <source media="(max-width: 1023px)" type="image/webp" srcset="assets/img/tyll-m-450.webp 450w, assets/img/tyll-m-900.webp 900w" sizes="(max-width: 639px) 56vw, 30vw">
+              <source media="(max-width: 1023px)" type="image/jpeg" srcset="assets/img/tyll-m-450.jpg 450w, assets/img/tyll-m-900.jpg 900w" sizes="(max-width: 639px) 56vw, 30vw">
+              <source type="image/webp" srcset="assets/img/tyll-500.webp 500w, assets/img/tyll-1000.webp 1000w" sizes="180px">
+              <img src="assets/img/tyll-500.jpg" srcset="assets/img/tyll-500.jpg 500w, assets/img/tyll-1000.jpg 1000w" sizes="(max-width: 639px) 56vw, (max-width: 1023px) 30vw, 180px" width="500" height="750" loading="lazy" decoding="async" alt="Tyll Schulte in Schürze bei der Arbeit in der Backstube">
             </picture>
           </span>
         </figure>

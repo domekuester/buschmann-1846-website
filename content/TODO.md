@@ -5,8 +5,11 @@
 - [ ] Bildrechte aller 18 Fotos bestätigen (Fotograf, Nutzungsrecht Web)
 - [ ] Einverständnis der abgebildeten Personen (Claudia, Team, Gäste) bestätigen
 - [ ] Personenzuordnung bestätigen: Wer ist auf P1360057 (Kaffeemaschine),
-      P1360272/P1360326/P1360445 (Bart, Kappe),
+      P1360326/P1360445 (Bart, Kappe),
       P1360788 (zwei Frauen am Fenster)? Namen erst danach verwenden.
+      — P1360272 ist geklärt: Der Auftraggeber hat die neu entwickelte
+      Fassung `Gregor-final.jpg` genannt; der Name wird seit 22.07.2026
+      im Alt-Text verwendet.
 - [ ] Zitronen-Cheesecake-Foto später durch neues Originalfoto ersetzen.
       Produktbezeichnung („Zitronen-Cheesecake mit Zitronenglasur" / „lemon
       cheesecake with lemon glaze") und der Pâtisserie-Abschnitt bleiben bis

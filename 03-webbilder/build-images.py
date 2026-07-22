@@ -30,8 +30,6 @@ JOBS = {
     "copper":         ("P1360329.jpg", None, [800, 1200]),
     "cake":           ("P1360096.jpg", None, [800, 1200]),
     "cherries":       ("P1360370.jpg", None, [800, 1200]),
-    "pour":           ("P1360272.jpg", None, [800, 1200]),
-    "hands":          ("P1360346.jpg", None, [800, 1200]),
     "barista":        ("P1360057.jpg", None, [800, 1200]),
     "almonds":        ("P1360218.jpg", None, [600, 1200]),
     # Enger auf die Tätigkeit: Kopf, Hände und Kanne bleiben zusammen im
@@ -70,19 +68,57 @@ JOBS = {
     # Enger auf Brühgruppe und Lanze, damit das Chrom auch auf 106 px trägt.
     "coffee-m":       ("Kaffemaschine.jpg", (300, 500, 1100, 2101), [300, 600]),
 
-    # Tyll Schulte in der Backstube.
-    # Gemessen am Original (2672 × 4000): Haaransatz y≈280, Kinn y≈1500,
-    # Nasenspitze x≈300, Schürzenlatz ab y≈2100. Er blickt nach links, also
-    # beginnen beide Ausschnitte bei x=0 — nur so bleibt vor dem Gesicht Luft
-    # statt dahinter. Der frühere Ausschnitt startete bei x=150 bzw. x=330 und
-    # drückte das Profil an die linke Kante.
-    # Desktop 2:3 wie die übrigen Hochformate: Kopf im oberen Viertel,
-    # Schürze als Anker, Werkzeugwand als Kontext.
-    "tyll":           ("Tyll-final.jpg", (0, 100, 2200, 3400),  [600, 1200]),
-    # Mobil 4:5 statt schmalem Hochformat: In der halben Spaltenbreite muss der
-    # Kopf vollständig mit Abstand zum Rand stehen, Schulter und Schürzenlatz
-    # geben den Arbeitskontext.
-    "tyll-m":         ("Tyll-final.jpg", (0, 150, 1960, 2600),  [400, 800]),
+    # ---- Die drei Schlussfassungen (22.07.2026) ----------------------------
+    # `palette.jpg`, `Gregor-final.jpg` und `Tyll-final2.jpg` sind eine bewusst
+    # gemeinsam entwickelte Serie: gleiche Kamera, gleiches Format (2672 × 4000),
+    # gleiche Gradation — warmes Bernstein, offene Schatten, feines Korn. Ihre
+    # Zusammengehörigkeit trägt sich über die Entwicklung selbst; es liegt
+    # deshalb bewusst KEIN CSS-Farbfilter über diesen Bildern. Was sie hier
+    # unterscheidet, ist allein der Ausschnitt — jeder einzeln vermessen.
+
+    # Handwerksdetail: Hand, Winkelpalette, Teig und Form.
+    # Gemessen am Original: Hand x 0–720 / y 100–1300, Palettenblatt von
+    # x 200 bis zur Spitze x 2200 (y 1300–1620), Teig y 1900–2350, Formwand
+    # y 2350–3300, Holztisch ab y 3400.
+    # Desktop 4:5 — bewusst gedrungener als Gregors 2:3, damit die beiden
+    # Bilder nebeneinander nicht als Paar gleicher Rechtecke lesen. Der Schnitt
+    # bei y 3340 nimmt die Form als Materialfläche mit und lässt den Tisch weg.
+    "palette":        ("palette.jpg", (0, 0, 2672, 3340),  [600, 1200]),
+    # Mobil enger auf den Vorgang: In der schmalen Spalte muss der Teig tragen,
+    # nicht die leere Formwand. Schnitt bei x 2100 verkürzt nur die Blattspitze,
+    # der Griff bleibt vollständig. Der Einstieg bei y 200 nimmt oben etwas vom
+    # Handrücken (der ohnehin am Bildrand endet) und gibt dafür unten die Kante
+    # der Backform frei — sonst säße der Teig direkt auf der Unterkante.
+    "palette-m":      ("palette.jpg", (0, 200, 2100, 2825),  [400, 800]),
+
+    # Gregor Buschmann beim Angießen.
+    # Gemessen am Original: Mützenkante y≈55, Augen y≈750, Bart y≈1150,
+    # Hand am Kessel ab y 330, Guss x 950–1250 / y 1750–2600, Kupferschüssel
+    # y 2650–3820. Über der Mütze stehen nur 55 px — der Ausschnitt beginnt
+    # deshalb zwingend bei y=0, sonst wird die Kappe angeschnitten.
+    # Er blickt nach links unten auf den Guss, also bleibt die linke Bildhälfte
+    # als Blickraum stehen. Desktop 2:3, praktisch die volle Aufnahme: Gesicht
+    # und Tätigkeit sind gleichzeitig lesbar, die Schüssel bleibt ganz.
+    "gregor":         ("Gregor-final.jpg", (0, 0, 2666, 3999),  [800, 1400]),
+    # Mobil 3:4 — weiter gefasst statt näher heran. Die Kappe behält Luft, der
+    # Guss bleibt vollständig, die Schüssel wird unten am Rand angeschnitten
+    # (die einzige Kante, die man opfern darf, ohne dass etwas unverständlich
+    # wird). Kein stärkerer Zoom: das Gesicht ist hier ohnehin schon groß.
+    "gregor-m":       ("Gregor-final.jpg", (0, 0, 2670, 3560),  [500, 1000]),
+
+    # Tyll Schulte in der Backstube — verbindliche Fassung (Tyll-final2).
+    # Gemessen am Original: Haaransatz y≈90, Ohr x 1180–1330, Nasenspitze
+    # x≈235 / y≈1400, Kinn y≈1560, Schürzenlatz y 2150–3400, Topfgriff ab
+    # y 3550. Er blickt nach links unten; vor der Nase stehen 235 px, dahinter
+    # liegt ab x≈1900 nur noch dunkle Wand. Beide Ausschnitte beginnen deshalb
+    # bei x=0 und enden früh — so wächst der Anteil des Freiraums VOR dem
+    # Gesicht, statt hinter dem Kopf tote Fläche mitzuschleppen.
+    # Desktop 2:3: Kopf, Schulter und der obere Schürzenlatz als Arbeitsanker.
+    "tyll":           ("Tyll-final2.jpg", (0, 0, 1900, 2850),  [500, 1000]),
+    # Mobil 4:5: derselbe Gedanke, nur weiter — der Kopf steht vollständig mit
+    # Luft über dem Haar und vor dem Profil, Schulter und Latz bleiben als
+    # Kontext. Bewusst kein engerer Gesichtsausschnitt.
+    "tyll-m":         ("Tyll-final2.jpg", (0, 0, 2000, 2500),  [450, 900]),
 }
 
 def export(im: Image.Image, stem: str, width: int) -> None:
