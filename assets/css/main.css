@@ -1330,10 +1330,31 @@ footer { background: var(--navy-night); color: var(--on-dark); }
    ========================================================================== */
 @media (min-width: 640px) and (max-width: 1023px) {
   .hero-shot img { aspect-ratio: 16 / 10; object-position: 50% 46%; max-height: none; }
-  .g-board, .bs-pair, .sam-grid { max-width: 35rem; }
+  .g-board, .sam-grid { max-width: 35rem; }
   .st-info { max-width: 35rem; }
+
+  /* Die Backstube braucht auf Tablet ein eigenes, weiteres Maß.
+     Mit den 35 rem der Galerie hatte der Abschnitt drei verschiedene rechte
+     Kanten: Bildspur 599 px, Fließtext 673 px, Menschen-Zone 737 px. Die
+     Bildspur war damit die schmalste — und ausgerechnet das strukturelle
+     Element wirkte eingerückt gegenüber dem Inhalt, zu dem es gehört.
+
+     Die Kappung ganz zu entfernen wäre der falsche Schluss gewesen: Sie
+     leistet am oberen Ende der Spanne echte Arbeit. Ohne sie wäre Gregor bei
+     1023 px 539 px breit und bei 1024 px — eine Pixelbreite weiter, wo der
+     Abschnitt zweispaltig wird — nur noch 251 px; ein Sprung auf das
+     Doppelte. Tylls Absatz liefe bei 1023 px zudem auf 681 px, rund 90
+     Zeichen pro Zeile.
+
+     Deshalb bleibt die Kappung, wird aber auf 40 rem geöffnet und gilt jetzt
+     für Bildspur UND Menschen-Zone gemeinsam. 40 rem ist kein runder Wert,
+     sondern der des Fließtextes: Dessen 56ch messen hier rund 634 px. Damit
+     enden Bilder, Trennlinie, Tylls Absatz und der Fließtext auf 673–679 px
+     — praktisch eine Kante über den gesamten Bereich 640–1023 px. */
+  .bs-pair, .crew { max-width: 40rem; }
+
   /* Auf Tablet ist genug Breite für das Bild-Text-Duo: der Absatz bekommt
-     rund 460 px statt der 200 px, an denen die Anordnung auf dem Handy
+     rund 390 px statt der 200 px, an denen die Anordnung auf dem Handy
      gescheitert ist. Deshalb hier nebeneinander statt gestapelt. */
   .crew { grid-template-columns: 220px 1fr; column-gap: 2rem; align-items: start; }
   .crew-photo { width: 100%; max-width: none; --tyll-ratio: 4/5; }

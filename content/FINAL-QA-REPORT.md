@@ -1015,7 +1015,47 @@ Ausgelieferte Bytes für die drei Motive (WebP):
 nirgends mehr referenziert sind — sie hätten sonst die alten Fassungen
 konserviert. Die alten Originale bleiben als Archiv erhalten.
 
-## G · Alt-Texte
+## G · Nachtrag Tablet (640–1023 px) — Satzspiegel der Bildspur
+
+Die Backstube hatte auf Tablet drei verschiedene rechte Kanten: Bildspur
+599 px (gekappt auf 35 rem, gemeinsam mit Galerie und Samstagsraster),
+Fließtext 673 px, Menschen-Zone 737 px (ungekappt). Ausgerechnet das
+strukturelle Element war das schmalste.
+
+Die Kappung zu entfernen wäre der falsche Schluss gewesen — gemessen:
+
+| | mit 35 rem | ohne Kappung | ab 1024 px |
+|---|---|---|---|
+| Gregor bei 1023 px | 322 px | **539 px** | 251 px |
+| Tylls Absatz bei 1023 px | 681 px (≈90 Zeichen) | 681 px | 282 px |
+
+Ohne Kappung hätte Gregor über die Breakpoint-Grenze auf das Doppelte
+gesprungen. Die Kappung bleibt deshalb, wird auf **40 rem** geöffnet und gilt
+jetzt für Bildspur **und** Menschen-Zone gemeinsam. 40 rem ist der Wert des
+Fließtextes: dessen 56ch messen hier rund 634 px.
+
+Gemessene rechte Kanten (Bildspur / Menschen-Zone / Fließtext):
+
+| vw | Bildspur | Tyll-Block | Fließtext | Gregor | Overflow |
+|---|---|---|---|---|---|
+| 639 | 613 | 613 | 613 | 333 px | 0 |
+| 640 | 614 | 614 | 614 | 334 px | 0 |
+| 767 | 679 | 679 | 673 | 368 px | 0 |
+| 768 | 679 | 679 | 673 | 368 px | 0 |
+| 820 | 681 | 681 | 675 | 368 px | 0 |
+| 821 | 681 | 681 | 675 | 368 px | 0 |
+| 1023 | 689 | 689 | 683 | 368 px | 0 |
+| 1024 | 983 | 492 | 492 | 251 px | 0 |
+
+Bildspur und Menschen-Zone liegen über die gesamte Spanne exakt aufeinander,
+der Fließtext 6 px daneben. Galerie und Samstagsraster behalten ihre 35 rem
+(560 px) — sie haben keinen nebenstehenden Text, auf den sie sich beziehen.
+Desktop ab 1024 px und Mobil unter 640 px sind unverändert; die
+`sizes`-Angaben für den Tablet-Bereich wurden auf die neuen Anzeigebreiten
+nachgezogen (226→260 px, 322→368 px). Beide Sprachfassungen geprüft, je 202
+Referenzen mit Status 200, 0 Konsolenfehler.
+
+## H · Alt-Texte
 
 | | Deutsch | Englisch |
 |---|---|---|
