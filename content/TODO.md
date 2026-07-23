@@ -14,6 +14,10 @@
       Produktbezeichnung („Zitronen-Cheesecake mit Zitronenglasur" / „lemon
       cheesecake with lemon glaze") und der Pâtisserie-Abschnitt bleiben bis
       dahin unverändert — nicht entfernen, kein Platzhalter.
+      — Zwischenstand 23.07.2026: Das vorhandene Foto wurde neu geschnitten
+      (Teller fast randlos statt 55 % dunkler Arbeitsplatte) und aufgehellt;
+      der Anteil zulaufender Schatten fiel von 8,69 % auf 0. Es trägt damit
+      vorerst, ersetzt aber kein neues Originalfoto.
 - [ ] Einverständnis für die **namentliche** Nennung von Claudia Fourmont
       und Tyll Schulte auf der Website bestätigen (bisher war nur die
       Abbildung, nicht die Namensnennung Thema).

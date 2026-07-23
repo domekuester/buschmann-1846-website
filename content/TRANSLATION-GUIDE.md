@@ -78,3 +78,20 @@ Nicht wörtlich übersetzen. Beispiele für bewusste Abweichungen:
 
 Das Foto des Zitronen-Cheesecakes wird später durch ein neues Originalfoto
 ersetzt. Produktbezeichnung und Abschnitt bleiben bis dahin unverändert.
+
+---
+
+## Nachtrag 23.07.2026 — Humor
+
+Die englische Fassung bekommt Humor **nicht** durch Übersetzung. Beispiel aus
+dem Catering-Abschnitt:
+
+- Deutsch: „auch für runde Zahlen, die man lieber nicht laut sagt"
+- Englisch: „including the milestone ones nobody wants said out loud"
+
+Dieselbe Beobachtung, zwei eigenständige Formulierungen. Wörtlich übersetzt
+wäre der deutsche Satz im Englischen schwerfällig geworden.
+
+Regel: Ein Witz wird im Englischen neu gedacht oder er entfällt dort. Ein
+übersetzter Scherz klingt immer nach Übersetzung. Der englische Ton bleibt
+understated — die Pointe steht in einem Nebensatz, nie in der Hauptaussage.

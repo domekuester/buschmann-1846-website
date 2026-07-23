@@ -201,3 +201,47 @@ Facebook → https://www.facebook.com/Buschmannduesseldorf
 **Description:** Buschmann 1846 steht für Pâtisserie und Catering aus der
 Düsseldorfer Altstadt. Samstags gibt es an der Akademiestraße Kaffee und
 Kuchen.
+
+---
+
+# Nachtrag 23.07.2026 — Copy-Polish
+
+Behutsam, nicht überarbeitet: Die Texte waren bereits konkret und ohne
+Werbefloskeln. Vier Eingriffe je Sprache, jeweils mit einem Grund.
+
+## Deutsch
+
+| Stelle | vorher | nachher | Grund |
+|---|---|---|---|
+| Chronologie „Heute" | Gebacken wird wieder an der Akademiestraße — für Düsseldorfer Cafés, für Gastronomie und für Gäste. | Gebacken wird wieder an der Akademiestraße — in denselben Räumen wie 1846. | Die Kundenliste stand wörtlich schon in der Einordnung. Der Raumbezug ist belegt („dieselben Räume") und schließt die Zeitleiste, statt sie zu wiederholen. |
+| Catering · Unternehmen | Bestellt wird nach Absprache, geliefert wird pünktlich. | Besprochen wird vorher, geliefert wird pünktlich. | „nach Absprache" stand dreimal auf der Seite. Die Parallelform bleibt erhalten. |
+| Catering · Private Anlässe | Für Geburtstage und Feiern — nach Absprache und passend zum Anlass. | Für Geburtstage und Feiern — auch für runde Zahlen, die man lieber nicht laut sagt. | Der schwächste Absatz der Seite, reine Floskel. Jetzt der einzige echte Witz der Website — trocken, auf Kosten von niemandem, und er behauptet keine Leistung. |
+| Samstag · Fließtext | Samstags gibt es von 12 bis 17 Uhr … | Von 12 bis 17 Uhr gibt es … | „Samstags" steht direkt darüber in der Headline. |
+
+## Englisch — eigenständig adaptiert, nicht übersetzt
+
+| Stelle | nachher |
+|---|---|
+| Timeline „Today" | The baking happens in Akademiestraße again — in the same rooms as in 1846. |
+| Companies | Agreed beforehand, delivered on time. |
+| Private occasions | For birthdays and celebrations — including the milestone ones nobody wants said out loud. |
+
+Der englische Witz ist keine Übersetzung des deutschen: „runde Zahlen, die
+man lieber nicht laut sagt" wäre wörtlich schwerfällig. „the milestone ones
+nobody wants said out loud" ist dieselbe Beobachtung in britischem Understatement.
+
+Die Samstags-Zeile brauchte im Englischen keine Korrektur — dort stand das
+Wort ohnehin nicht doppelt.
+
+## Geprüft und bewusst unverändert
+
+- Alle bestätigten Fakten: Adresse, Samstag 12–17 Uhr, Kaffee und Kuchen,
+  Ausgabe am Fenster, Tische und Stühle draußen, kein Café-Gastraum.
+- Alle Namen und ihre Regeln (Gregor August Buschmann nur bei der
+  Erstvorstellung, danach Gregor Buschmann; Tyll immer mit Y).
+- Zitronen-Cheesecake mit Zitronenglasur / lemon cheesecake with lemon glaze,
+  kein Karamell.
+- Personentexte: Rollen von Claudia Fourmont und Tyll Schulte wörtlich
+  erhalten. Keine Lobhudelei ergänzt.
+- Social Media bleibt reiner Folgen-Kanal, kein Kontaktweg.
+- Verbotene Floskeln: 0 Treffer in beiden Fassungen.

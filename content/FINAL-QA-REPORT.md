@@ -1066,3 +1066,114 @@ Referenzen mit Status 200, 0 Konsolenfehler.
 Öffentliche Schreibweise durchgehend **Tyll Schulte** (0 Treffer für „Till
 Schulte" in beiden Fassungen), obwohl eine ältere interne Datei `Till.jpg`
 heißt.
+
+---
+
+# I · Flagship Desire Pass — 23.07.2026
+
+## I.1 Fotografische Handschrift
+
+Grading-Manifest in `03-webbilder/build-images.py` (`GRADES`), vier Familien,
+Referenz ist die abgestimmte Serie palette / gregor / tyll. Details in
+`IMAGE-INVENTORY.md`. Kein CSS-Filter über Bildern; die einzigen `filter:`-
+Regeln der Seite sind der Hover der Bildstrecke (`brightness(.93)`) — eine
+Mikrointeraktion, kein Ersatz für Bildbearbeitung.
+
+| Motiv | Befund vorher | Eingriff |
+|---|---|---|
+| claudia / claudia-m | p01 1,0 bzw. 0,0 · 9,75 % / 17,51 % zugelaufen · heller Fensterpfosten zog den Blick | neuer Ausschnitt + Schatten geöffnet |
+| cake | p01 2,8 · 8,69 % zugelaufen · Produkt unter 30 % der Fläche | neuer Ausschnitt + Belichtung +28 % |
+| hero / hero-mobile | 5,3 % zugelaufen · Himmel R 59 / G 182 / B 199 = Cyan, Fassade R−B +47 = lupenreiner Teal-and-Orange | Schatten geöffnet + farbtonselektiver Cyanabzug |
+| copper | Sättigung 0,93 · reine orange Fläche, Stäbe und Masse verschmolzen | Sättigung auf 0,70, leicht gekühlt, Klarheit hoch |
+| almonds, butter, cherries | Sättigung 0,61–0,73, alle sehr warm — zusammen braune Gleichförmigkeit | Sättigung gezielt zurück |
+| piping | Mittelwert 43,9 · Tätigkeit nicht lesbar | Belichtung +34 % |
+| barista, window-team | Gegenlicht bzw. Median 44 | Lichter abgerollt, Belichtung hoch |
+| machine, coffee | zu dunkel bzw. Chrom ohne Zeichnung | Belichtung und lokaler Kontrast; coffee bewusst ohne Wärme |
+| **gregor, tyll, palette** | Referenz | **nicht gegradet** |
+
+### Zwei eigene Korrekturen im Verlauf
+
+**Schwarzpunkt.** Der erste Ansatz setzte `black` und `shadow` gleichzeitig
+hoch. Beide heben den Fußpunkt; addiert ergaben sie ein 1. Perzentil von 39
+bis 57 statt 29 — die ganze Seite war milchig und in den Schatten entsättigt
+(window-team fiel von 0,304 auf 0,239). Danach wurden `black`, `shadow`,
+`highlight` und `sat` je Motiv **gegen Zielwerte gerechnet** statt geschätzt:
+p01 = 29, ausgefressene Lichter < 0,12 %, Sättigung = Ausgangssättigung ×
+dokumentierte Absicht. `shadow` trägt drei Viertel der Hebung, `black` ein
+Viertel.
+
+**Sättigungsdeckel.** Der Löser trieb claudia und cake auf den Faktor 2,2, um
+ihre Ausgangssättigung zu halten — das hätte unnatürliche Hauttöne ergeben.
+Deckel bei 1,40. Kein Motiv liegt über seiner Ausgangssättigung; angehoben
+wird nur, was die Schattenhebung vorher weggenommen hat.
+
+## I.2 Messwerte, alle 23 ausgelieferten Derivate
+
+| | vorher | nachher |
+|---|---|---|
+| 1. Perzentil | 0,0 – 34,8 | 27,4 – 34,8 |
+| zulaufende Schatten | bis 17,51 % | **0,00 % überall** |
+| ausgefressene Lichter | bis 0,14 % | ≤ 0,04 % |
+
+## I.3 Layout
+
+- Samstagsabschnitt: Kaffeedetail hängt an der Unterkante statt an einem
+  Randabstand. 148 px tote Navyfläche bei 1440 px entfallen. Abweichung zu
+  Claudias Unterkante: 1280 / 1440 / 1920 je 0 px.
+- Backstube: bestehende Kantenbezüge unverändert und weiterhin exakt
+  (1024 / 1440 / 1920 je 0 px).
+- Logo-Tippfläche mobil von 40 × 37 auf 44 × 44 gebracht, ohne das Signet
+  zu vergrößern.
+
+## I.4 Performance
+
+Ausgelieferte Bildbytes (WebP, kalt):
+
+| | vorher | nachher |
+|---|---|---|
+| Desktop 1440 | 1192 kB | **1165 kB** (−2 %) |
+| Mobil 390 | 833 kB | 875 kB (+5 %) |
+
+Zwischenstand war +15 % / +24 %: Offene Schatten enthalten Zeichnung, die
+vorher schwarz war, und die erste Ausgabeschärfung stand mit 42 % zu hoch.
+Zurückgeholt über Schärfung 42 % → 22 % (an fünf Motiven gemessen: 1971 kB →
+1703 kB) und WebP-Qualität 78 → 75 (1002 kB → 845 kB bei einer mittleren
+Abweichung von 3,4–4,6 von 255, im 1:1-Vergleich nicht auszumachen; bei 68
+wird das Korn in ruhigen Flächen sichtbar fleckig).
+
+Sechs verwaiste Derivate (`claudia-800/1200`, `claudia-m-800`) entfernt.
+Keine ungenutzten und keine fehlenden Dateien.
+
+## I.5 Geprüfte Viewports
+
+320 · 390 · 430 · 768 · 1024 · 1280 · 1440 · 1920, deutsch und englisch.
+
+| Prüfung | Ergebnis |
+|---|---|
+| horizontaler Überlauf | keiner, auf keiner Breite |
+| Elemente außerhalb des Viewports | nur `.skip-link` (beabsichtigt) |
+| Konsolenfehler / -warnungen | 0 |
+| fehlgeschlagene Requests | 0 |
+| nicht geladene Bilder | 0 von 19 |
+| korrekte Mobilderivate | palette-m, gregor-m, tyll-m, claudia-m, barista-m, coffee-m |
+
+## I.6 Accessibility
+
+| | Ergebnis |
+|---|---|
+| Kontrast, 23 Textrollen | alle ≥ AA; engste: `blockquote cite` 4,86 · `.kicker` 4,90 |
+| Überschriftenhierarchie | 1-2-2-2-2-2-2-2-3-3-3-2-2-3-3-3-4-4-4, kein Sprung, ein h1 |
+| doppelte IDs | keine |
+| Bilder ohne alt-Attribut | keine |
+| Skip-Link | vorhanden, Ziel existiert |
+| Mobilmenü | öffnet, Fokus auf Schliessen, Body-Scroll gesperrt, Escape schliesst, Fokus kehrt zum Button zurück, aria-expanded und aria-label wechseln |
+| Sprachwahl | `aria-current="page"` auf der aktiven Sprache |
+| Tippflächen < 44 px | keine mehr |
+
+## I.7 Typografie
+
+Zeilenlängen bei 1440 px zwischen 32 und 75 Zeichen — durchgehend im
+lesbaren Bereich. `.crew p` fiel zunächst mit 26 Zeichen auf; die Messung
+zählte `<strong>` als eigene Zeile. Über eindeutige Zeilenoberkanten
+nachgemessen: 4 Zeilen à 39 Zeichen. Kein Eingriff nötig, keine Änderung an
+Schriftgrößen oder -rollen.
