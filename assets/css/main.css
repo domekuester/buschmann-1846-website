@@ -928,8 +928,21 @@ blockquote cite {
 .sam-person p { font-size: .92rem; line-height: 1.6; color: var(--body-on-dark); }
 /* Das Kaffeedetail sitzt auf derselben linken Achse wie der Text, statt auf
    einem freien Rechtsversatz zu schweben — dadurch schließt die Spalte
-   unten sauber ab und der Rest der Fläche liest sich als Bundsteg. */
-.sam-side { margin-top: 2.5rem; max-width: 16rem; }
+   unten sauber ab und der Rest der Fläche liest sich als Bundsteg.
+
+   Es hängt an seiner Unterkante, nicht an einem Randabstand: Mit einem festen
+   margin-top endete die linke Spalte bei 1440 px 43 px über Claudias
+   Unterkante und darunter standen 148 px Navy ohne Aufgabe — ein Loch, und
+   dazu ein Beinahe-Treffer, der schlechter aussieht als ein klarer Versatz.
+
+   Gemessen mit align-self: end liegen beide Unterkanten ab 1280 px exakt
+   aufeinander (1280 / 1440 / 1920: je 0 px). Bei 1024 px kehrt sich das
+   Verhältnis um — dort ist das Kaffeedetail selbst das höhere Element und
+   bestimmt die Rasterzeile, es endet 90 px unter Claudia. Das ist kein Loch,
+   sondern ein Ineinandergreifen: Auf dieser Höhe steht rechts Claudias
+   Vorstellung. Ein Loch entstünde nur andersherum, und genau das verhindert
+   die Regel. Derselbe Kunstgriff trägt schon die Backstube. */
+.sam-side { align-self: end; max-width: 16rem; }
 
 /* ==========================================================================
    13 · STANDORT — tiefblaue Gesamtfläche, Headline immer frei
@@ -1081,7 +1094,16 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   /* Alle drei Zonen ausdrücklich in Zeile 1: .lang steht im DOM hinter dem
      Logo, bekommt aber Spalte 1 — ohne grid-row legt die Auto-Platzierung
      dafür eine zweite Rasterzeile an und der Header bricht um. */
-  .logo { margin-inline: 0; grid-column: 2; grid-row: 1; justify-self: center; }
+  /* Die Tippfläche muss 44 × 44 erreichen, das Signet selbst darf das nicht.
+     Im gescrollten Zustand schrumpft das Logo auf 40 × 37 px — als Bild
+     richtig, als Ziel für einen Daumen zu klein. Der Flexkasten legt die
+     Mindestfläche um die Grafik, ohne sie zu vergrößern; in der 60 px hohen
+     Bedienzeile ist dafür Platz. */
+  .logo {
+    margin-inline: 0; grid-column: 2; grid-row: 1; justify-self: center;
+    display: flex; align-items: center; justify-content: center;
+    min-width: 44px; min-height: 44px;
+  }
   .logo img {
     width: var(--mhead-logo);
     transition: width .22s cubic-bezier(.22,.61,.36,1);
@@ -1300,6 +1322,12 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   }
   .sam-side    {
     grid-column: 9 / -1; grid-row: 2; max-width: none;
+    /* Die Unterkanten-Aufhängung des Desktops wird hier zurückgenommen: In
+       der schmalen Spalte würde das Kaffeedetail sonst auf Claudias Unter-
+       kante fluchten und die beiden zum Posterpaar machen. Mobil hängt es
+       oben und setzt versetzt tiefer ein — dieselbe Entscheidung wie bei
+       Palette und Gregor in der Backstube. */
+    align-self: start;
     margin: calc(var(--sp-lg) + 3.4rem) 0 0 0;
     /* mobil liegt der eigene Ausschnitt barista-m (3:5) vor — das Fenster
        übernimmt ihn unverändert, damit nichts nachbeschnitten wird */

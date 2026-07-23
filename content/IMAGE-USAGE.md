@@ -112,3 +112,60 @@ führt oben und breiter, die Palette setzt 3,4 rem tiefer ein.
 Tylls Bildspalte ist `clamp(130px, 13vw, 180px)` statt fest 180 px — bei
 1024 px blieben dem Absatz sonst nur 233 px (27 Zeichen). So liegt die
 Textbreite überall zwischen 282 px und 494 px.
+
+---
+
+# Nachtrag 23.07.2026 — Neue Ausschnitte und Bildeinbettung
+
+## Zwei Ausschnitte neu gerechnet
+
+**Zitronen-Cheesecake** (`P1360096.jpg`, 2566 × 3849). Über ein
+Helligkeitsprofil vermessen: Teller x 90–2420, y 1620–3040. Der alte
+Ausschnitt nutzte das volle Bild; im 4:5-Fenster blieben davon rund 55 %
+dunkle Stahlplatte, das Produkt füllte keine 30 % der Fläche. Neu
+`(155, 790, 2355, 3540)` = 2200 × 2750, also exakt 4:5 wie das
+Anzeigefenster — `object-fit` schneidet nichts mehr nach. Der Teller bleibt
+vollständig (sein grün-goldener Rand trägt die Porzellangeschichte des
+Textes), oben links bleibt ein Rest des blau-weißen Tellerstapels.
+
+**Claudia Fourmont** (`Claudia.jpg`, 2664 × 3988). Das Profil zeigte rechts
+ab x ≈ 2020 den weißen Fensterpfosten mit einer Luminanz von 177–228 — das
+hellste Element des Bildes, und der alte Ausschnitt nahm es zu rund einem
+Viertel mit. Der Blick lief dorthin statt zu ihr. Neu endet der Schnitt bei
+x 1990, genau an der Kante:
+
+| | vorher | nachher |
+|---|---|---|
+| Desktop | (950, 400, 2630, 2500) → 4:5, per CSS auf 3:5 beschnitten | (1030, 430, 1990, 2030) = 960 × 1600, echtes 3:5 |
+| Mobil | (1120, 690, 2110, 1928) | (1200, 648, 1990, 1636) = 790 × 988, echtes 4:5 |
+| zulaufende Schatten mobil | 17,51 % | 0,00 % |
+
+Der Gast bleibt links als Gesprächskontext (rund 360 px dunkle Lederjacke),
+die Fensterbank unten als Ortsangabe. Beide Derivate entsprechen jetzt exakt
+ihrem Anzeigefenster; die Breiten wurden entsprechend auf 500/950 bzw.
+400/790 gesetzt und die sechs verwaisten Dateien entfernt.
+
+## Kanten und Bezüge
+
+Zum bestehenden Kantensystem der Backstube (Gregors Oberkante auf der
+Oberkante der Textspalte, Unterkante der Palette auf Tylls Porträt — beide
+weiterhin exakt bei 1024 / 1440 / 1920) kommt einer im Samstagsabschnitt:
+
+Das Kaffeedetail hing an einem festen `margin-top` und endete bei 1440 px
+43 px über Claudias Unterkante — darunter standen 148 px Navy ohne Aufgabe.
+Es hängt jetzt über `align-self: end` an der Unterkante seiner Rasterzeile.
+Gemessen: 1280 / 1440 / 1920 je 0 px Abweichung. Bei 1024 px kehrt sich das
+Verhältnis um — dort ist das Detail selbst das höhere Element und endet 90 px
+unter Claudia. Das ist kein Loch, sondern ein Ineinandergreifen: Auf dieser
+Höhe steht rechts Claudias Vorstellung.
+
+## Korrigierte Altlasten
+
+| | HTML sagte | Datei ist |
+|---|---|---|
+| piping-600 | 600 × 898 | 600 × 974 |
+| hero-1200 | 1200 × 801 | 1200 × 802 |
+
+Bei `piping` waren das 76 px falsches Seitenverhältnis und damit eine
+Layoutverschiebung beim Laden. Beide Angaben sind in beiden Sprachfassungen
+korrigiert.
