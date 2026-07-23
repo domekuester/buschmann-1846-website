@@ -356,3 +356,68 @@ Größe, Höhe und Position.
 | Werkzeuge, Zutaten und Details | P1360218, palette.jpg (aus P1360346), P1360381 |
 | Produktion und Catering | P1360381 |
 | Nicht verwenden | P1360200, Till.jpg, P1360445 |
+
+---
+
+# Nachtrag 23.07.2026 — Fotografische Familien und Grading
+
+Alle öffentlich verwendeten Motive wurden vermessen (1. Perzentil der
+Luminanz, Sättigung, Wärme R−B, Anteil zulaufender und ausgefressener Pixel)
+und in vier Familien eingeordnet. Die Familien unterscheiden sich nach
+Aufgabe und Licht, **nicht** nach einem gemeinsamen Filter.
+
+| Familie | Motive | Ziel |
+|---|---|---|
+| A · Menschen und Backstube | gregor, tyll, claudia, window-team, barista, piping | natürliche Hauttöne, warme Schatten, Umgebung sichtbar |
+| B · Handwerk und Material | palette, copper, machine, coffee, almonds, butter | Material fühlbar, Metall differenziert, keine orange Farbsuppe |
+| C · Produkt und Pâtisserie | cake, cherries | appetitlich, hell genug, Glasur lesbar, glaubwürdig |
+| D · Ort und Geschichte | hero, hero-mobile, window-outside | natürliche Architekturfarben, kein Küchenfilter |
+
+## Stilreferenz
+
+`palette.jpg`, `Gregor-final.jpg`, `Tyll-final2.jpg` — die vom Auftraggeber
+abgestimmte Serie. Gemessen:
+
+| | p01 | Sättigung | Wärme R−B |
+|---|---|---|---|
+| palette | 29,8 | 0,59 | 100 |
+| gregor | 31,6 | 0,60 | 82 |
+| tyll | 27,4 | 0,43 | 41 |
+
+Die Serie teilt **nicht** eine Farbe (tyll ist deutlich kühler und flauer als
+gregor), sondern eine Tonwertdisziplin: ein 1. Perzentil um 29, keine
+zulaufenden Schatten, kontrolliertes Korn. Genau das wurde übertragen.
+
+**Diese drei Motive wurden nicht gegradet.** Sie sind die Referenz und
+werden unverändert ausgeliefert (nur Skalierung und Ausgabeschärfung).
+
+## Ergebnis über alle 23 ausgelieferten Derivate
+
+| | vorher | nachher |
+|---|---|---|
+| 1. Perzentil, Spanne | 0,0 – 34,8 | 27,4 – 34,8 |
+| zulaufende Schatten (Lum < 8) | bis 17,51 % | 0,00 % überall |
+| ausgefressene Lichter | bis 0,14 % | ≤ 0,04 % |
+| Sättigung, Ausreißer | copper 0,93 | copper 0,70 |
+
+Familienmittel nachher — die Familien liegen bewusst auseinander:
+
+| Familie | Mittel | Sättigung | Wärme |
+|---|---|---|---|
+| A · Menschen | 73,8 | 0,397 | 41,2 |
+| B · Handwerk | 96,1 | 0,532 | 76,3 |
+| C · Produkt | 94,8 | 0,526 | 79,0 |
+| D · Ort | 130,6 | 0,238 | 4,3 |
+
+Die Außenaufnahmen bleiben bei einer Wärme von 4,3 praktisch neutral. Das ist
+Absicht: Fassade und Straße sind Tageslicht, die Backstube ist Kunstlicht.
+Beide auf dieselbe Temperatur zu ziehen hieße, den Bildern ihr Licht zu
+nehmen.
+
+## Wo das Grading steht
+
+Vollständig in `03-webbilder/build-images.py`, Block `GRADES` — je Motiv eine
+Zeile mit dokumentierten Werten. Es gibt keine manuell überschriebenen
+Dateien in `assets/img/` und keinen CSS-Filter über den Bildern. Ein Durchlauf
+des Skripts erzeugt den ausgelieferten Stand vollständig neu. Die Originale in
+`01-originalfotos/` werden ausschließlich gelesen.
