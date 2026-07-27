@@ -24,10 +24,25 @@
 - [ ] Logo in höherer Auflösung beschaffen (aktuell nur 374 px PNG)
 - [ ] Kontaktweg für Catering-Anfragen festlegen (Telefon? E-Mail? Instagram-DM?)
       — bis dahin verweist die Website nur auf Instagram/Facebook
-- [ ] Impressum + Datenschutzerklärung (rechtlich nötig, Inhalte fehlen).
-      Bewusst NICHT im Footer verlinkt, solange die Seiten nicht existieren —
-      ein toter Link wäre schlechter als kein Link. Beim Anlegen zusätzlich
-      im Footer verlinken. Rechtstexte nicht erfinden lassen.
+- [x] Angaben für das Impressum verbindlich geklärt und zweisprachige
+      Rechtstextseiten angelegt:
+      - genaue rechtliche Geschäftsbezeichnung:
+        Buschmann 1846 Patisserie Catering
+      - Gregor August Buschmann ist Inhaber und Geschäftsführer
+      - keine Umsatzsteuer-Identifikationsnummer vorhanden
+      - am 31. Dezember des Vorjahres und zuvor niemals mehr als zehn
+        Beschäftigte
+- [ ] Existiert eine Wirtschafts-Identifikationsnummer?
+- [ ] Existiert irgendein Registereintrag?
+- [ ] Vor endgültigem Kundenlaunch vorsorglich bestätigen, dass keine besondere
+      gesetzliche oder freiwillig übernommene Verpflichtung zur Teilnahme an
+      einem Verbraucherschlichtungsverfahren besteht. Das Unternehmen hatte am
+      31. Dezember des Vorjahres höchstens zehn Beschäftigte.
+- [ ] Endgültigen Hostinganbieter und dessen Logfile-Speicherdauer bestätigen.
+- [ ] Endgültige Datenschutzerklärung erstellen.
+- [ ] Bei der finalen Domainumstellung sämtliche absoluten URLs auf
+      https://www.buschmann1846.de/ umstellen.
+- [ ] Einzelne Kundenfotos später ersetzen, insbesondere das Foto von Claudia.
 - [ ] GitHub Pages aktivieren (erst nach Freigabe, nach Merge-Entscheidung)
 - [ ] Nach Pages-Aktivierung: og:image-URL in index.html prüfen — sie ist auf
       https://domekuester.github.io/buschmann-1846-website/ vorausgesetzt;

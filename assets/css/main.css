@@ -1028,6 +1028,102 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
 }
 
+/* ==========================================================================
+   15 · RECHTSTEXTSEITEN
+   ========================================================================== */
+.legal-page {
+  background: var(--porcelain);
+  padding: clamp(4.5rem, 10vh, 7.5rem) var(--pad);
+}
+.legal-inner {
+  width: min(100%, 46rem);
+  margin-inline: auto;
+}
+.legal-head {
+  padding-bottom: clamp(2rem, 5vw, 3rem);
+  border-bottom: 1px solid var(--champagne);
+}
+.legal-head h1 {
+  color: var(--navy-brand);
+  font-family: var(--sans);
+  font-size: clamp(2.6rem, 6vw, 4.8rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -.035em;
+  text-wrap: balance;
+}
+.legal-intro {
+  margin-top: 1.25rem;
+  color: var(--champagne-ink);
+  font-family: var(--serif);
+  font-size: clamp(1.15rem, 2vw, 1.4rem);
+  line-height: 1.45;
+}
+.legal-section {
+  padding-block: clamp(2.25rem, 5vw, 3.5rem);
+  border-bottom: 1px solid rgba(154, 110, 48, .28);
+}
+.legal-section h2 {
+  color: var(--navy-brand);
+  font-family: var(--sans);
+  font-size: clamp(1.35rem, 2.5vw, 1.7rem);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -.015em;
+}
+.legal-section address,
+.legal-contact {
+  margin-top: 1.35rem;
+  color: var(--text-warm);
+  font-size: var(--t-body);
+  line-height: 1.75;
+}
+.legal-name {
+  display: block;
+  margin-bottom: 1.1rem;
+  color: var(--text-dark);
+  font-family: var(--serif);
+  font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+  font-weight: 450;
+  line-height: 1.35;
+}
+.legal-role { margin-bottom: 1.1rem; }
+.legal-contact {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: .55rem 1.5rem;
+}
+.legal-contact dt { font-weight: 600; color: var(--text-dark); }
+.legal-contact dd { min-width: 0; }
+.legal-contact a,
+.legal-back {
+  color: var(--blue-brand);
+  text-decoration-color: var(--champagne-dark);
+  text-decoration-thickness: 1px;
+  text-underline-offset: .2em;
+  overflow-wrap: anywhere;
+}
+.legal-contact a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.legal-contact a:hover,
+.legal-back:hover { color: var(--champagne-ink); }
+.legal-note {
+  margin-top: 2rem;
+  max-width: 62ch;
+  color: var(--text-secondary);
+  font-size: .95rem;
+}
+.legal-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-top: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 600;
+}
+
 /* ---------- Reveal ----------
    Der Startzustand ist sichtbar. Nur wenn JavaScript wirklich läuft, setzt
    die .js-Klasse den Ausgangszustand auf transparent — sonst wäre die halbe
@@ -1424,6 +1520,10 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   .st-info { grid-template-columns: 1fr; gap: 1.6rem; }
   .f-grid { grid-template-columns: 1fr; }
   .f-base { font-size: .62rem; }
+  .legal-page { padding-block: var(--sp-section); }
+  .legal-contact { grid-template-columns: 1fr; gap: .15rem; }
+  .legal-contact dd + dt { margin-top: .7rem; }
+  .legal-contact a { margin-left: -.25rem; padding-inline: .25rem; }
 
   .sam-facts { font-size: 1.3rem; }
   section { padding-block: var(--sp-section); }
