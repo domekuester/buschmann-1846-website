@@ -38,8 +38,23 @@
       gesetzliche oder freiwillig übernommene Verpflichtung zur Teilnahme an
       einem Verbraucherschlichtungsverfahren besteht. Das Unternehmen hatte am
       31. Dezember des Vorjahres höchstens zehn Beschäftigte.
-- [ ] Endgültigen Hostinganbieter und dessen Logfile-Speicherdauer bestätigen.
-- [ ] Endgültige Datenschutzerklärung erstellen.
+- [x] Vorgesehen: klassisches IONOS Linux-Webhosting bei der IONOS SE.
+- [x] Datenschutzentwurf auf IONOS-Webhosting vorbereitet; IONOS
+      WebAnalytics berücksichtigt. Beim heutigen technischen Stand ist kein
+      Cookie-Banner vorgesehen.
+- [ ] Vor dem finalen Launch bestätigen:
+      - tatsächlich gebuchtes IONOS-Produkt ist „Webhosting“
+      - kein MyWebsite- oder WordPress-Baukasten
+      - AV-Vertragsstatus im IONOS-Konto geprüft
+      - IONOS WebAnalytics tatsächlich aktiv beziehungsweise Tarifstandard
+      - finaler Domainpfad
+      - HTTPS aktiv
+      - www-/Nicht-www-Weiterleitung
+      - Angaben zu Server-Logfiles weiterhin aktuell
+      - Speicherdauer weiterhin acht Wochen
+      - finale technische Netzwerkprüfung nach Upload
+      - sämtliche absoluten URLs auf buschmann1846.de umgestellt
+- [ ] Datenschutzerklärung vor Kundenlaunch fachlich final prüfen und freigeben.
 - [ ] Bei der finalen Domainumstellung sämtliche absoluten URLs auf
       https://www.buschmann1846.de/ umstellen.
 - [ ] Einzelne Kundenfotos später ersetzen, insbesondere das Foto von Claudia.

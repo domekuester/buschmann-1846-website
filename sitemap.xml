@@ -25,4 +25,16 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://domekuester.github.io/buschmann-1846-website/en/legal-notice/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://domekuester.github.io/buschmann-1846-website/impressum/"/>
   </url>
+  <url>
+    <loc>https://domekuester.github.io/buschmann-1846-website/datenschutz/</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://domekuester.github.io/buschmann-1846-website/datenschutz/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://domekuester.github.io/buschmann-1846-website/en/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://domekuester.github.io/buschmann-1846-website/datenschutz/"/>
+  </url>
+  <url>
+    <loc>https://domekuester.github.io/buschmann-1846-website/en/privacy/</loc>
+    <xhtml:link rel="alternate" hreflang="de" href="https://domekuester.github.io/buschmann-1846-website/datenschutz/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://domekuester.github.io/buschmann-1846-website/en/privacy/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://domekuester.github.io/buschmann-1846-website/datenschutz/"/>
+  </url>
 </urlset>
