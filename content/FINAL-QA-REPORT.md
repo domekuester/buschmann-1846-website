@@ -21,8 +21,8 @@
 
 ## Behobene Funktionsfehler
 
-- THE-DORF-Quellennachweis in beiden Sprachfassungen als korrekten externen
-  Link mit sicherem neuen Tab umgesetzt.
+- THE-DORF-Quellennachweis in beiden Sprachfassungen mit der offiziellen
+  Produktseite von THE MAG No. 5 verknüpft.
 - Adresse in Header, Hero und Samstagsbereich durchgehend als
   „Akademiestraße 8“ vereinheitlicht.
 
@@ -58,14 +58,14 @@ fand nicht statt. Ein neues hochauflösendes Kundenfoto bleibt als Launch-TODO.
 - Historienabsatz auf die bestätigten Rollen Koch, Sous-Chef und Pâtissier
   präzisiert.
 - Offizielle Schreibweise „Akademiestraße“ vereinheitlicht.
-- THE-DORF-Quelle direkt erreichbar gemacht.
+- THE-DORF-Magazinausgabe direkt erreichbar gemacht.
 
 ## Englische Textverbesserungen
 
 - Rollenfolge entsprechend der deutschen Faktenbasis auf chef, sous-chef und
   pâtissier präzisiert.
 - Eigenname „Akademiestraße“ durchgehend korrekt geschrieben.
-- THE-DORF-Quelle direkt erreichbar gemacht.
+- THE-DORF-Magazinausgabe direkt erreichbar gemacht.
 
 ## Accessibility
 
@@ -106,16 +106,14 @@ Launch zu bestätigende Punkte formuliert.
 
 Beim kalten Laden aller sechs Seiten wurde keine fremde Domain kontaktiert.
 Instagram, Facebook, THE DORF, IONOS und die Aufsichtsbehörde sind ausschließlich
-nutzerausgelöste Links. Die vorgegebene THE-DORF-Adresse lieferte bei der
-externen Prüfung HTTP 404; ohne bestätigte Ersatzadresse blieb sie unverändert
-und wurde als offener Verlags-/Kundenpunkt dokumentiert.
+nutzerausgelöste Links. Der THE-DORF-Verweis führt zur offiziellen Produktseite
+von THE MAG No. 5, in der die Buschmann-Geschichte enthalten ist.
 
 ## Verbleibende offene Punkte
 
 Siehe `content/TODO.md`: Foto- und Namensfreigaben, neues Claudia-Foto, finale
 Kundenfotos, IONOS-Produkt/AVV/WebAnalytics/Logdauer, fachliche
 Datenschutzfreigabe, Domain/HTTPS/Weiterleitungen sowie finaler Live-Audit.
-Hinzu kommt die Bestätigung einer wieder erreichbaren THE-DORF-Zieladresse.
 
 ## Ergebnis
 

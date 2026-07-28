@@ -31,9 +31,6 @@ sein. Keine Zugangsdaten, Steuer- oder Vertragsnummern eintragen.
 ## Betriebliche Freigaben
 
 - [ ] Verbindlichen Kontaktweg für Catering-Anfragen festlegen.
-- [ ] Verfügbarkeit oder neue Zieladresse des vorgegebenen THE-DORF-Artikels
-      bestätigen; die angegebene URL lieferte beim Final-QA am 28.07.2026
-      HTTP 404 und wurde mangels bestätigter Ersatzadresse nicht erfunden.
 - [ ] Vor dem Launch bestätigen, ob eine Wirtschafts-Identifikationsnummer,
       ein Registereintrag oder eine besondere Verpflichtung zur Teilnahme an
       einem Verbraucherschlichtungsverfahren besteht. Nichts ergänzen, solange

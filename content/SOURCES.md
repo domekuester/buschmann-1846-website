@@ -2,11 +2,11 @@
 
 ## Hauptquelle
 
-**THE DORF — „Ein Tag mit Gregor Buschmann"** (2021)
-https://thedorf.de/gesichter/ein-tag-mit/gregor-buschmann/
+**THE DORF — THE MAG No. 5** (2021)
+https://shop.thedorf.de/products/the-mag-no-5
 
-- Basis für Historie, Personen-Hintergrund Gregor Buschmann und das Zitat
-  „Esst mehr Sahnetorte!"
+- Die Produktseite bestätigt, dass die Ausgabe einen Beitrag zur Geschichte
+  von Buschmann enthält; sie ist keine frei lesbare Onlinefassung des Beitrags.
 - Artikel stammt aus 2021 → dort genannte Cafés, Festivals, Veranstaltungen
   oder Geschäftspartner dürfen NICHT als heutige Kunden dargestellt werden.
 - Keine Textübernahme; alle Formulierungen eigenständig.
