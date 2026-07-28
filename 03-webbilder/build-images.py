@@ -19,6 +19,7 @@ keine manuell überschriebenen Dateien in assets/img/ und keine CSS-Filter
 Stand vollständig neu.
 """
 from pathlib import Path
+import sys
 from PIL import Image, ImageChops, ImageEnhance, ImageFilter, ImageOps
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -214,10 +215,13 @@ GRADES = {
     # unter Wolken, also bewusst nur eine kleine Wärmekorrektur: Der Schnitt
     # und der Schwarzpunkt leisten die Arbeit, nicht die Farbe. Stärkeres
     # Wärmen ließ ihre Haut rötlich und die graue Lederjacke braun werden.
-    "claudia":   dict(exposure=1.22, temp=.016, shadow=.096, highlight=.06,
-                      contrast=.06, black=.032, sat=1.40, clarity=.16, grain=1.4),
-    "claudia-m": dict(exposure=1.16, temp=.016, shadow=.092, highlight=.07,
-                      contrast=.06, black=.031, sat=1.40, clarity=.16, grain=1.4),
+    # Der frühere Sättigungswert 1.40 verstärkte genau diesen Rotstich. Die
+    # Schlussfassung kühlt minimal, nimmt Sättigung zurück und behält die
+    # bereits bewährte Schattenöffnung bei.
+    "claudia":   dict(exposure=1.22, temp=-.010, shadow=.096, highlight=.06,
+                      contrast=.06, black=.032, sat=.90, clarity=.12, grain=1.2),
+    "claudia-m": dict(exposure=1.16, temp=-.010, shadow=.092, highlight=.07,
+                      contrast=.06, black=.031, sat=.90, clarity=.12, grain=1.2),
     # Fensterteam: Median 44, das Motiv stand deutlich zu dunkel im hellen
     # Galerieumfeld. Beide Gesichter tragen die Aufnahme, also Belichtung hoch
     # und Sättigung leicht an — ohne die Hauttöne zu kippen.
@@ -436,14 +440,24 @@ def source(stem):
     return im.crop(box) if box else im
 
 
-def build():
-    for stem, (_, _, widths) in JOBS.items():
+def build(selected=None):
+    jobs = JOBS.items()
+    if selected:
+        unknown = sorted(set(selected) - set(JOBS))
+        if unknown:
+            raise SystemExit(f"Unbekannte Bildjobs: {', '.join(unknown)}")
+        jobs = ((stem, JOBS[stem]) for stem in selected)
+
+    for stem, (_, _, widths) in jobs:
         g = GRADES.get(stem, {})
         im = apply_grade(source(stem), g)
         for w in widths:
             export(im, stem, w, g.get("grain", 0))
         print(f"{stem}: {im.width}x{im.height} -> {widths} "
               f" [{'referenz' if not g else 'gegradet'}]")
+
+    if selected:
+        return
 
     # Social-Preview 1200x630 aus dem Fassadenfoto (Schriftzug im Bild).
     # Bekommt dieselbe Korrektur wie der Hero — sonst zeigt die Vorschau in
@@ -487,4 +501,4 @@ def build():
 
 
 if __name__ == "__main__":
-    build()
+    build(sys.argv[1:] or None)

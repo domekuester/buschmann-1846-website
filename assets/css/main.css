@@ -677,6 +677,12 @@ blockquote cite {
   font-size: .75rem; color: var(--text-secondary);
   margin-top: .8rem; letter-spacing: .08em; text-transform: uppercase;
 }
+blockquote cite a {
+  color: inherit;
+  text-decoration-thickness: 1px;
+  text-underline-offset: .22em;
+}
+blockquote cite a:hover { color: var(--text-dark); }
 
 /* ==========================================================================
    9 · BACKSTUBE — kräftiges Markenblau als echte Fläche

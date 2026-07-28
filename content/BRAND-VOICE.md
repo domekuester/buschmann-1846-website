@@ -7,7 +7,7 @@ Es erzählt, was es tut — konkret, warm, mit trockenem Humor, ohne Pose.
 
 ## Tonregeln
 
-- **direkt**: „Samstags ist die Tür offen." statt „Wir laden Sie ein…"
+- **direkt**: „Samstags ist das Fenster offen." statt „Wir laden Sie ein…"
 - **konkret**: Akademiestraße, Backstube, Kupferkessel, Theke, 12 bis 17 Uhr
 - **warm, nicht süßlich**: Menschen und Handgriffe statt Gefühlsvokabeln
 - **leicht trocken**: „…und meistens noch ein kurzes Gespräch über die Theke."
@@ -35,7 +35,7 @@ ausliefern · anrühren · backen · über die Theke reichen
 
 - Hero-Headline: „Düsseldorfer Pâtisserie. Seit 1846."
 - Geschichte: „1846 fing alles in der Akademiestraße an."
-- Samstag: „Samstags ist die Tür offen."
+- Samstag: „Samstags ist das Fenster offen."
 - Catering: „Für Cafés, Unternehmen und private Anlässe."
 - Zitat (einmalig, dezent, mit Zuordnung): „Esst mehr Sahnetorte!"
   — Gregor Buschmann
