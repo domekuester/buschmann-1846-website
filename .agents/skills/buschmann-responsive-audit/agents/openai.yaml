@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buschmann Responsive Audit"
+  short_description: "Audit Buschmann responsive behavior"
+  default_prompt: "Use $buschmann-responsive-audit to inspect every required viewport."

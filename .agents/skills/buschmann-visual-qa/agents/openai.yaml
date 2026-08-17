@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buschmann Visual QA"
+  short_description: "Audit Buschmann visual quality"
+  default_prompt: "Use $buschmann-visual-qa to audit the complete Buschmann website."

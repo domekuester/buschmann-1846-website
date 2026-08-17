@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buschmann SEO A11y"
+  short_description: "Audit Buschmann SEO and accessibility"
+  default_prompt: "Use $buschmann-seo-a11y to audit SEO and accessibility."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buschmann Release Check"
+  short_description: "Gate Buschmann release readiness"
+  default_prompt: "Use $buschmann-release-check as the final non-deploying gate."

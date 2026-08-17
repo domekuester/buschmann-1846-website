@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buschmann Brand Review"
+  short_description: "Protect Buschmann brand quality"
+  default_prompt: "Use $buschmann-brand-review to assess brand coherence."

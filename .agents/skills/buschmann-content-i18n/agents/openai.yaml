@@ -1,0 +1,4 @@
+interface:
+  display_name: "Buschmann Content I18n"
+  short_description: "Review Buschmann German and English"
+  default_prompt: "Use $buschmann-content-i18n to review DE and EN together."
