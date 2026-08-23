@@ -1,18 +1,28 @@
-import { defineWorkersConfig } from '@cloudflare/vitest-plugin/config';
+import { defineConfig } from 'vitest/config';
+import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
 
 /**
- * Zwei Projekte, weil zwei Testarten:
+ * Die Migrationen werden beim Start EINMAL von der Platte gelesen und den
+ * Worker-Tests als Binding übergeben. Jede Testdatei spielt sie danach in ihre
+ * eigene, leere D1 ein (tests/setup/apply-migrations.ts). Damit läuft das
+ * Schema in jedem Testlauf tatsächlich durch SQLite — es wird nicht bloß
+ * gelesen.
+ */
+const migrations = await readD1Migrations('./migrations');
+
+/**
+ * Zwei Projekte, weil es zwei Testarten gibt:
  *
  *   domain — reine TypeScript-Geschäftslogik. Läuft im normalen Node-Umfeld,
- *            startet keine Worker-Runtime, braucht keine Datenbank. Genau das
- *            ist die Probe darauf, dass die Domäne unabhängig ist: Würde sie
- *            HTTP oder D1 brauchen, liefen diese Tests nicht.
+ *            ohne Worker-Runtime, ohne Datenbank, ohne Netz. Das ist zugleich
+ *            die Probe darauf, dass die Domäne unabhängig ist: Hinge sie an
+ *            D1 oder HTTP, liefen diese Tests nicht.
  *
  *   worker — Integrationstests gegen die echte Workers-Runtime und eine echte
- *            lokale D1. Migrationen, Fremdschlüssel und Constraints werden hier
- *            tatsächlich ausgeführt, nicht statisch gelesen.
+ *            lokale D1. Fremdschlüssel, CHECK-Bedingungen und der atomare
+ *            Schreibvorgang werden hier ausgeführt, nicht behauptet.
  */
-export default defineWorkersConfig({
+export default defineConfig({
   test: {
     projects: [
       {
@@ -23,20 +33,18 @@ export default defineWorkersConfig({
         },
       },
       {
-        extends: true,
+        plugins: [
+          cloudflareTest({
+            wrangler: { configPath: './wrangler.jsonc' },
+            miniflare: {
+              bindings: { TEST_MIGRATIONS: migrations },
+            },
+          }),
+        ],
         test: {
           name: 'worker',
           include: ['tests/d1/**/*.test.ts', 'tests/http/**/*.test.ts'],
-          poolOptions: {
-            workers: {
-              singleWorker: true,
-              wrangler: { configPath: './wrangler.jsonc' },
-              miniflare: {
-                // Jede Testdatei bekommt ihre eigene, frisch migrierte D1.
-                d1Databases: ['DB'],
-              },
-            },
-          },
+          setupFiles: ['./tests/setup/apply-migrations.ts'],
         },
       },
     ],
