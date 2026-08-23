@@ -1,0 +1,10 @@
+# Kein direkter HTTP-Zugriff auf dieses Verzeichnis.
+# Zweite Verteidigungslinie: Im korrekten Deployment liegt nur public/
+# im Web-Root, dieses Verzeichnis also ohnehin darüber.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

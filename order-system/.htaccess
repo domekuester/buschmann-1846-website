@@ -1,0 +1,9 @@
+# Falls order-system/ versehentlich im Web-Root landet: nichts ausliefern.
+# Der Document Root muss auf order-system/public/ zeigen, nicht hierher.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
