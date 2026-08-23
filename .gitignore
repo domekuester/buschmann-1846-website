@@ -14,3 +14,13 @@ test-results/
 # Bestellsystem: Zugangsdaten und Laufzeitdaten
 order-system/config/config.php
 order-system/var/
+
+# Bestellsystem (Cloudflare Worker): Laufzeit- und Buildartefakte
+order-system/node_modules/
+order-system/.wrangler/
+order-system/.dev.vars
+order-system/.dev.vars.*
+
+# worker-configuration.d.ts wird von `wrangler types` erzeugt, aber bewusst
+# eingecheckt: Ohne die Datei schlägt `npm run typecheck` in einem frischen
+# Klon fehl, bevor irgendjemand Wrangler ausgeführt hat.
