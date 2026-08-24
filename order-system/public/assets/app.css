@@ -537,3 +537,85 @@ textarea[aria-invalid='true'] {
   .leiste, form { display: none !important; }
   body { background: #fff; padding: 0; }
 }
+
+/* ==========================================================================
+   Anmeldeseite
+
+   Dieselbe Marke, dieselben Werte, dasselbe Werkzeugverständnis wie die
+   Bestellseite — nur kürzer. Ein Café tippt hier zwei Felder und ist weg;
+   ein Admin ebenso. Alles, was länger dauert als das Tippen, gehört nicht
+   hierher.
+
+   Die Seite hat keine klebende Fußleiste. Der body-Abstand, den die
+   Bestellseite dafür braucht, wird deshalb zurückgenommen.
+   ========================================================================== */
+
+.anmeldeseite { padding-bottom: 0; }
+
+.kopf--schmal { padding-bottom: 1.25rem; }
+
+.anmeldung {
+  max-width: 26rem;
+  margin: 0 auto;
+  padding: 1.75rem var(--rand, 1rem) 3rem;
+}
+
+.anmeldung h1 {
+  margin: 0 0 .35rem;
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+.anmeldung__vorspann {
+  margin: 0 0 1.5rem;
+  color: var(--text-leise);
+}
+
+/* Der Fehlerbereich steht im Fluss und nicht in einer Leiste — auf dieser
+   Seite liegt der Blick nach einem Fehlversuch ohnehin oben. */
+.anmeldung .banner { margin-bottom: 1.25rem; }
+
+.anmeldung__formular {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+/* Die Bestellseite gestaltet input[type='date'] und textarea. Die
+   Anmeldeseite braucht dieselbe Form für Text- und Passwortfelder; die
+   Regeln stehen hier und nicht oben, damit die Bestellseite unverändert
+   bleibt. */
+.anmeldung input[type='text'],
+.anmeldung input[type='password'] {
+  width: 100%;
+  height: var(--tap);
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  padding: .7rem .75rem;
+}
+
+/* Über die volle Breite und mit der vollen Tippfläche: Auf einem Telefon ist
+   der Daumen unten, und eine Schaltfläche, die man suchen muss, ist eine
+   Schaltfläche zu viel. */
+.senden--breit {
+  width: 100%;
+  justify-content: center;
+  margin-top: .35rem;
+}
+
+.anmeldung__hilfe {
+  margin: 2rem 0 0;
+  padding-top: 1.25rem;
+  border-top: var(--spur);
+  font-size: .92rem;
+  color: var(--text-leise);
+}
+
+@media (min-width: 480px) {
+  .anmeldung { padding-top: 2.5rem; }
+}

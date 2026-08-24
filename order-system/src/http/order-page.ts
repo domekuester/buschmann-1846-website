@@ -3,7 +3,7 @@ import { businessDay, plusDays } from '../domain/clock';
 import { findCustomerByAccessToken } from '../infrastructure/d1/access-token-repository';
 import { loadCatalog } from '../infrastructure/d1/product-repository';
 import { renderInvalidLinkPage, renderOrderPage } from '../ui/order-page-html';
-import { orderPageHeaders } from './security';
+import { pageHeaders } from './security';
 
 /**
  * Die Bestellseite.
@@ -23,7 +23,7 @@ export async function orderPage(db: D1Database, token: string, now: Date): Promi
   const customer = await findCustomerByAccessToken(db, token);
 
   if (customer === null) {
-    return new Response(renderInvalidLinkPage(), { status: 404, headers: orderPageHeaders() });
+    return new Response(renderInvalidLinkPage(), { status: 404, headers: pageHeaders() });
   }
 
   const catalog = await loadCatalog(db);
@@ -52,5 +52,5 @@ export async function orderPage(db: D1Database, token: string, now: Date): Promi
     defaultDate: plusDays(today, 1),
   });
 
-  return new Response(html, { status: 200, headers: orderPageHeaders() });
+  return new Response(html, { status: 200, headers: pageHeaders() });
 }

@@ -1,9 +1,10 @@
 /**
  * Die Kopfzeilen, die jede tokenbezogene Antwort trägt.
  *
- * „Tokenbezogen" heißt: Der Inhalt hängt daran, WER fragt. Das gilt für die
- * Bestellseite und für die Bestell-API — nicht für /assets/*, die für alle
- * Cafés identisch sind und ihre Kopfzeilen aus public/_headers bekommen.
+ * „Sitzungsbezogen" heißt: Der Inhalt hängt daran, WER fragt. Das gilt für
+ * Login, Bestellseite, Adminbereich und alle authentifizierten APIs — nicht
+ * für /assets/*, die für alle identisch sind und ihre Kopfzeilen aus
+ * public/_headers bekommen.
  */
 export function privateHeaders(extra: Record<string, string> = {}): Record<string, string> {
   return {
@@ -16,10 +17,11 @@ export function privateHeaders(extra: Record<string, string> = {}): Record<strin
     'cache-control': 'no-store',
 
     /**
-     * Der Token steht in der URL. Ohne diese Zeile stünde er in der
-     * Referer-Kopfzeile jeder Anfrage, die die Seite auslöst. Die Seite löst
-     * bewusst keine an fremde Hosts aus — das hier ist die zweite
-     * Verteidigungslinie, nicht die erste.
+     * Seit Phase 3A steht kein Geheimnis mehr in der URL — der Token liegt im
+     * Cookie. Die Zeile bleibt trotzdem: Ein Referer verrät auch ohne
+     * Geheimnis, DASS jemand /bestellen oder /admin geöffnet hat, und diese
+     * Seiten lösen ohnehin keine Anfrage an einen fremden Host aus. Was
+     * nicht gesendet wird, kann nichts mitnehmen.
      */
     'referrer-policy': 'no-referrer',
 
@@ -28,7 +30,7 @@ export function privateHeaders(extra: Record<string, string> = {}): Record<strin
     /** Kein Einbetten. Zusammen mit frame-ancestors in der CSP. */
     'x-frame-options': 'DENY',
 
-    /** Ein indexierter /o/<token> wäre ein Sicherheitsvorfall. */
+    /** Angemeldete Seiten gehören in keinen Suchindex. */
     'x-robots-tag': 'noindex, nofollow',
 
     ...extra,
@@ -36,7 +38,7 @@ export function privateHeaders(extra: Record<string, string> = {}): Record<strin
 }
 
 /**
- * Die Richtlinie der Bestellseite.
+ * Die Richtlinie aller angemeldeten Seiten — Login, Bestellung, Adminbereich.
  *
  * Ausgangspunkt ist 'none': Alles, was nicht ausdrücklich erlaubt ist, ist
  * verboten — Bilder, Schriften, Frames, Medien, Verbindungen zu fremden
@@ -45,28 +47,43 @@ export function privateHeaders(extra: Record<string, string> = {}): Record<strin
  * Kein 'unsafe-inline' und kein Nonce, weil es nichts Inline gibt: CSS und JS
  * liegen als eigene Dateien unter /assets/.
  *
- * form-action 'none' ist Absicht und keine Härte um ihrer selbst willen: Das
- * Formular wird ausschließlich per fetch abgesendet. Eine native Absendung
- * wäre ein Fehler — sie würde die Seite verlassen und die eingegebenen Mengen
- * mitnehmen.
+ * FORM-ACTION 'SELF' STATT 'NONE' — die eine Änderung gegenüber Phase 2.
+ *
+ * Phase 2 kannte kein echtes Formular: Die Bestellung ging ausschließlich per
+ * fetch hinaus, eine native Absendung wäre ein Fehler gewesen, und 'none'
+ * hielt das fest. Mit der First-Party-Anmeldung gibt es echte Formulare —
+ * `POST /login` und `POST /logout` sind bewusst keine fetch-Aufrufe, damit
+ * die Anmeldung ohne JavaScript funktioniert.
+ *
+ * 'self' ist die kleinste Erlaubnis, die das zulässt: Ein Formular darf zum
+ * eigenen Ursprung absenden und zu keinem anderen. Ein untergeschobenes
+ * `action="https://angreifer.test/"` — der klassische Weg, ein Passwort aus
+ * einer XSS-Lücke herauszutragen — bleibt damit blockiert.
  */
-export const ORDER_PAGE_CSP = [
+export const APP_CSP = [
   "default-src 'none'",
   "script-src 'self'",
   "style-src 'self'",
   "connect-src 'self'",
-  "form-action 'none'",
+  "form-action 'self'",
   "base-uri 'none'",
   "frame-ancestors 'none'",
 ].join('; ');
 
-export const ORDER_PAGE_PERMISSIONS = 'geolocation=(), camera=(), microphone=(), payment=()';
+export const APP_PERMISSIONS = 'geolocation=(), camera=(), microphone=(), payment=()';
 
-/** Die Kopfzeilen einer HTML-Antwort der Bestelloberfläche. */
-export function orderPageHeaders(): Record<string, string> {
+/**
+ * Die Kopfzeilen jeder HTML-Antwort, deren Inhalt davon abhängt, WER fragt.
+ *
+ * Das sind inzwischen vier Seiten — Login, Bestellung, Adminbereich und die
+ * Ablehnungsseiten. Sie teilen sich eine Funktion und nicht vier ähnliche:
+ * Vier Fassungen wären vier Gelegenheiten, bei einer davon `no-store` zu
+ * vergessen.
+ */
+export function pageHeaders(): Record<string, string> {
   return privateHeaders({
     'content-type': 'text/html; charset=utf-8',
-    'content-security-policy': ORDER_PAGE_CSP,
-    'permissions-policy': ORDER_PAGE_PERMISSIONS,
+    'content-security-policy': APP_CSP,
+    'permissions-policy': APP_PERMISSIONS,
   });
 }
