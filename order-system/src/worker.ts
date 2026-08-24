@@ -1,3 +1,5 @@
+import { readAppConfig } from './config/app-config';
+import { loginPage, loginSubmit, logout } from './http/auth-routes';
 import { health } from './http/health';
 import { toSafeResponse } from './http/error-boundary';
 import { createOrder } from './http/order-api';
@@ -13,17 +15,28 @@ import { methodNotAllowed, notFound } from './http/responses';
  * ist ohne Request, Worker-Kontext und D1 testbar; genau das prüft das
  * Vitest-Projekt "domain", das ohne Worker-Runtime läuft.
  *
- * Drei Pfade, und jeder hat einen Grund:
+ * Die Pfade, und jeder hat einen Grund:
  *
- *   GET  /o/<token>    die Bestellseite. Token im Pfad, weil ein Café einen
- *                      Link bekommt, den es öffnet.
- *   POST /api/orders   die Bestellung. Token im Header, weil eine Kopfzeile
- *                      nicht in Zugriffsprotokollen landet und weil ein
- *                      fremdes Formular sie nicht setzen kann.
- *   GET  /api/health   unverändert aus Phase 1.
+ *   GET  /api/health   unverändert aus Phase 1. Braucht als einziger KEINE
+ *                      Auth-Konfiguration — sonst wäre nicht zu unterscheiden,
+ *                      ob der Worker läuft oder nur falsch eingerichtet ist.
+ *   GET  /login        die Loginseite. Ein echtes Formular, kein Skript.
+ *   POST /login        die Anmeldung.
+ *   POST /logout       die Abmeldung. Niemals GET — ein GET-Logout wird von
+ *                      Link-Prefetch und Virenscannern ausgelöst.
+ *   GET  /o/<token>    die Phase-2-Bestellseite. Noch da, bis der
+ *                      sitzungsbasierte Weg vollständig nachgewiesen ist.
+ *   POST /api/orders   die Bestellung.
  *
  * /assets/* taucht hier nicht auf: Diese Dateien liefert die Plattform aus,
  * bevor der Worker überhaupt erreicht wird (siehe wrangler.jsonc).
+ *
+ * DIE KONFIGURATION WIRD FRÜH GELESEN UND KANN WERFEN.
+ *
+ * readAppConfig prüft Pepper, Origin und Umgebung und bricht ab, wenn etwas
+ * fehlt oder sich widerspricht. Der Aufruf steht INNERHALB des try, damit
+ * daraus eine 500 ohne Details wird — und NACH /api/health, damit ein
+ * falsch konfigurierter Worker immer noch sagen kann, dass er läuft.
  *
  * Der try/catch ist die einzige Fehlergrenze des Systems. Was hier ankommt,
  * kann ein D1-Fehler mit SQL-Fragment oder ein Stacktrace mit Dateipfaden
@@ -40,6 +53,25 @@ export default {
           return methodNotAllowed('GET');
         }
         return await health(env.DB);
+      }
+
+      const config = readAppConfig(env);
+
+      if (pathname === '/login') {
+        if (request.method === 'GET' || request.method === 'HEAD') {
+          return await loginPage(env.DB, config, request, now);
+        }
+        if (request.method === 'POST') {
+          return await loginSubmit(env.DB, config, request, now);
+        }
+        return methodNotAllowed('GET, POST');
+      }
+
+      if (pathname === '/logout') {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST');
+        }
+        return await logout(env.DB, config, request, now);
       }
 
       if (pathname === '/api/orders') {

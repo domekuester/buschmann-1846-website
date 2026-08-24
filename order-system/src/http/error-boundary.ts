@@ -1,4 +1,5 @@
 import { AccessDeniedError, ValidationError } from '../domain/errors';
+import { UnsupportedMediaTypeError, unsupportedMediaType } from './auth-routes';
 import { ForbiddenError, UnauthenticatedError } from './guard';
 import { json } from './responses';
 import { privateHeaders } from './security';
@@ -16,6 +17,8 @@ import { privateHeaders } from './security';
  *   UnauthenticatedError  → 401. Es fehlt eine Sitzung.
  *   AccessDeniedError     → 401. Ohne Begründung, weil jede Begründung eine
  *                           Auskunft über die Existenz eines Zugangs wäre.
+ *   UnsupportedMediaType  → 415. Die Anfrageform passt nicht — eine Frage
+ *                           der Form, nicht der Berechtigung.
  *   ForbiddenError        → 403. Der Aufrufer ist angemeldet, darf aber
  *                           nicht — oder er hat Origin bzw. CSRF-Token nicht
  *                           beigebracht. WELCHE der drei Prüfungen
@@ -50,6 +53,10 @@ export function toSafeResponse(error: unknown): Response {
 
   if (error instanceof ForbiddenError) {
     return json({ error: 'forbidden' }, 403, privateHeaders());
+  }
+
+  if (error instanceof UnsupportedMediaTypeError) {
+    return unsupportedMediaType();
   }
 
   return json({ error: 'internal_error' }, 500, privateHeaders());

@@ -43,7 +43,28 @@ export default defineConfig({
           cloudflareTest({
             wrangler: { configPath: './wrangler.jsonc' },
             miniflare: {
-              bindings: { TEST_MIGRATIONS: migrations },
+              bindings: {
+                TEST_MIGRATIONS: migrations,
+
+                /**
+                 * Die Auth-Konfiguration der Tests — EXPLIZIT hier und nicht
+                 * aus .dev.vars.
+                 *
+                 * Der Unterschied ist keine Förmlichkeit: .dev.vars steht in
+                 * .gitignore. Hingen die Tests daran, liefe die Suite in
+                 * einem frischen Klon nicht — und zwar mit lauter
+                 * 500-Antworten, deren Ursache nirgends steht. Genau das ist
+                 * beim Umbau auf die Sitzungsanmeldung einmal passiert.
+                 *
+                 * DIESE WERTE SIND TESTWERTE UND KEINE GEHEIMNISSE. Sie
+                 * stehen im Klartext in Git und in jedem Klon. Der echte
+                 * Pepper kommt aus einem Cloudflare Secret und existiert
+                 * nirgendwo in diesem Repository.
+                 */
+                AUTH_PEPPER: 'TEST-PEPPER-nur-fuer-Tests-kein-Echtwert-0123456789',
+                APP_ORIGIN: 'http://127.0.0.1:8787',
+                ENVIRONMENT: 'development',
+              },
             },
           }),
         ],
