@@ -63,3 +63,40 @@ export function toBoolean(value: number): boolean {
 export function fromBoolean(value: boolean): number {
   return value ? 1 : 0;
 }
+
+/**
+ * Ein Anmeldekonto, wie D1 es zurückgibt.
+ *
+ * `credential_salt` und `credential_verifier` stehen hier als das, was sie
+ * sind: Hexzeichenketten. Der Klartext, aus dem sie entstanden sind, taucht in
+ * keinem Typ dieser Datei auf — weil er in keiner Spalte steht.
+ */
+export interface AuthAccountRow {
+  id: number;
+  login_identifier_normalized: string;
+  role: string;
+  customer_id: number | null;
+  credential_algorithm: string;
+  credential_iterations: number;
+  credential_salt: string;
+  credential_verifier: string;
+  is_active: number;
+  failed_attempts: number;
+  locked_until: string | null;
+}
+
+/**
+ * Eine Sitzung, wie D1 sie zurückgibt.
+ *
+ * `token_hash` und nicht `token`: Der Rohtoken existiert ausschließlich im
+ * Cookie des Browsers. Es gibt in dieser Datei keinen Typ, der ihn aufnähme.
+ */
+export interface AuthSessionRow {
+  id: number;
+  account_id: number;
+  token_hash: string;
+  csrf_token: string;
+  created_at: string;
+  expires_at: string;
+  revoked_at: string | null;
+}
