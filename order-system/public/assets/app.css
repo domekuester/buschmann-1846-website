@@ -1,0 +1,539 @@
+/* ==========================================================================
+   Buschmann 1846 — Bestelloberfläche
+
+   Die Seite gehört zur Marke, ist aber kein Auftritt, sondern ein Werkzeug.
+   Ein Stammcafé sieht sie zum fünfzigsten Mal und will in zwanzig Sekunden
+   fertig sein. Alles, was beim ersten Besuch beeindruckt und beim fünfzigsten
+   aufhält, gehört deshalb nicht hierher: keine Intro-Animation, keine
+   Scroll-Effekte, keine Übergänge auf dem Weg zum Ziel.
+
+   KEINE WEBFONTS. Instrument Sans (30 kB) und Newsreader (129 kB) liegen im
+   Repository der Website. Für eine Oberfläche, die viermal im Monat für
+   zwanzig Sekunden geöffnet wird, ist eine Schriftdatei Ballast — und ein
+   fremder Host wäre zusätzlich ein Weg, über den der Token als Referer
+   abfließen könnte. Die Marke trägt hier über Farbe, Fläche und
+   Zurückhaltung.
+   ========================================================================== */
+
+:root {
+  /* Aus assets/css/main.css der Website übernommen, damit dieselbe Marke
+     dieselben Werte hat. */
+  --navy: #0a2139;
+  --navy-tief: #061729;
+  --blau: #123f66;
+  --blau-hell: #17527f;
+  --porzellan: #fcf9f3;
+  --elfenbein: #f3eddf;
+  --leinen: #ebe0c9;
+  --champagner: #c59a52;
+  --champagner-text: #7e5722;
+  --text: #101923;
+  --text-leise: #5c6672;
+  --fehler: #8d2b1c;
+  --fehler-grund: #fdf1ef;
+  --erfolg: #1f5c3d;
+
+  --sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --serif: Georgia, 'Times New Roman', 'Nimbus Roman', serif;
+
+  --radius: 10px;
+  --spur: 1px solid var(--leinen);
+
+  /* 46px auf dem Telefon, 48px ab Tablet. Die WCAG-Grenze liegt bei 44px und
+     ist damit in beiden Fällen überschritten.
+     Warum nicht überall 48: Auf einem Telefon bleiben nach Abzug der
+     Mengensteuerung nur rund 170–200px für den Produktnamen. Jedes Pixel, das
+     die Steuerung abgibt, entscheidet darüber, ob „Beispiel Streuselblech" in
+     eine Zeile passt oder umbricht — und ein umbrechender Produktname macht
+     die Liste schwerer überfliegbar, als zwei Pixel Tippfläche es besser
+     machen. */
+  --tap: 46px;
+
+  --leiste-hoehe: 76px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  /* 16px Grundschrift ist auch eine Bedienungsentscheidung: Darunter zoomt
+     iOS beim Fokussieren eines Eingabefeldes das Layout weg. */
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--porzellan);
+
+  /* Die Fußleiste klebt. Ohne diesen Abstand verdeckte sie die Notiz. */
+  padding-bottom: calc(var(--leiste-hoehe) + env(safe-area-inset-bottom, 0px) + 1rem);
+}
+
+/* Kein horizontales Scrollen — auf keiner Breite. */
+body, main { overflow-x: hidden; }
+
+/* ---------- Kopf ---------- */
+
+.kopf {
+  background: var(--navy);
+  color: var(--elfenbein);
+  padding: 1.25rem var(--rand, 1rem) 1.5rem;
+}
+
+.marke {
+  margin: 0 0 .75rem;
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--champagner);
+}
+.marke span { color: var(--elfenbein); }
+
+.kopf h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.gruss {
+  margin: .4rem 0 0;
+  font-size: .95rem;
+  color: rgba(243, 237, 223, .78);
+}
+
+/* ---------- Aufbau ---------- */
+
+main { padding: 0 var(--rand, 1rem); }
+
+section { margin-top: 1.75rem; }
+
+h2 {
+  margin: 0 0 .75rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+/* ---------- Produktzeilen ---------- */
+
+.produkte {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--spur);
+}
+
+.produkt {
+  display: flex;
+  align-items: center;
+  gap: .55rem;
+  padding: .8rem .55rem;
+  border-bottom: var(--spur);
+  border-left: 3px solid transparent;
+  background: #fff;
+}
+
+/* Eine ausgewählte Zeile ist NICHT nur farblich markiert: Rahmen links,
+   fetter Name, hellerer Grund. Farbe allein wäre für einen Teil der
+   Nutzenden keine Information. */
+.produkt[data-selected] {
+  border-left-color: var(--champagner);
+  background: var(--elfenbein);
+}
+.produkt[data-selected] .produkt__name { font-weight: 700; }
+
+.produkt__text { flex: 1 1 auto; min-width: 0; }
+
+.produkt__name {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.produkt__preis {
+  margin: .1rem 0 0;
+  font-size: .9rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.produkt__beschreibung {
+  margin: .2rem 0 0;
+  font-size: .85rem;
+  color: var(--text-leise);
+}
+
+/* ---------- Mengensteuerung ---------- */
+
+.stepper {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: .2rem;
+}
+
+.stepper__taste {
+  width: var(--tap);
+  height: var(--tap);
+  flex: 0 0 auto;
+  font-size: 1.35rem;
+  line-height: 1;
+  color: var(--navy);
+  background: var(--porzellan);
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  cursor: pointer;
+  /* Ein Tap ist eine Aktion — kein Textmarkieren beim schnellen Doppeltippen. */
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.stepper__taste:hover:not(:disabled) { background: var(--elfenbein); }
+.stepper__taste:active:not(:disabled) { background: var(--leinen); }
+
+.stepper__taste:disabled {
+  opacity: .35;
+  cursor: default;
+}
+
+.stepper__zahl {
+  width: 2.9rem;
+  height: var(--tap);
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  /* Die Pfeilchen des Browsers wären zwei weitere, viel zu kleine Tippziele
+     direkt neben den richtigen. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.stepper__zahl::-webkit-outer-spin-button,
+.stepper__zahl::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+/* ---------- Felder ---------- */
+
+.feld { display: flex; flex-direction: column; gap: .4rem; }
+
+label {
+  font-size: .95rem;
+  font-weight: 500;
+}
+.optional { color: var(--text-leise); font-weight: 400; }
+
+input[type='date'],
+textarea {
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  padding: .7rem .75rem;
+}
+
+input[type='date'] { height: var(--tap); }
+textarea { resize: vertical; min-height: 5rem; }
+
+input[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--fehler);
+  background: var(--fehler-grund);
+}
+
+/* ---------- Meldungen ---------- */
+
+.feldfehler,
+.banner {
+  margin: 0;
+  font-size: .92rem;
+  color: var(--fehler);
+}
+
+.feldfehler::before,
+.banner::before {
+  /* Ein Zeichen zusätzlich zur Farbe — dieselbe Begründung wie bei der
+     ausgewählten Zeile. */
+  content: '⚠ ';
+  font-weight: 700;
+}
+
+.banner {
+  padding: .7rem .8rem;
+  background: var(--fehler-grund);
+  border: 1px solid var(--fehler);
+  border-radius: var(--radius);
+  font-weight: 500;
+  /* In der Fußleiste, also auf Navy: Der Fehlertext braucht seinen eigenen
+     hellen Grund, sonst trüge er das Rot auf Dunkelblau — und das ist weder
+     lesbar noch kontraststark genug. */
+  color: var(--fehler);
+}
+
+/* Der noscript-Hinweis steht weiterhin im Formular und ist kein Fehler,
+   sondern eine Auskunft. */
+.banner--statisch {
+  margin-top: 1.5rem;
+  color: var(--text);
+  border-color: var(--leinen);
+  background: var(--elfenbein);
+}
+.banner--statisch::before { content: ''; }
+
+[hidden] { display: none !important; }
+
+/* ---------- Fußleiste ---------- */
+
+.leiste {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  min-height: var(--leiste-hoehe);
+  padding: .7rem var(--rand, 1rem);
+  padding-bottom: calc(.7rem + env(safe-area-inset-bottom, 0px));
+  background: var(--navy);
+  color: var(--elfenbein);
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, .25);
+}
+
+.leiste__zeile {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.summe {
+  flex: 1 1 auto;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: .85rem;
+  color: rgba(243, 237, 223, .78);
+  min-width: 0;
+}
+.summe strong {
+  font-size: 1.15rem;
+  color: var(--elfenbein);
+  font-variant-numeric: tabular-nums;
+}
+
+.senden {
+  flex: 0 0 auto;
+  min-height: var(--tap);
+  padding: 0 1.15rem;
+  font: inherit;
+  font-weight: 600;
+  color: var(--navy-tief);
+  background: var(--champagner);
+  border: 1px solid var(--champagner);
+  border-radius: var(--radius);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.senden:hover:not(:disabled) { background: #d3ab63; }
+.senden:disabled { opacity: .6; cursor: progress; }
+
+.senden--zweit {
+  margin-top: 1.5rem;
+  color: var(--porzellan);
+  background: var(--navy);
+  border-color: var(--navy);
+}
+
+/* ---------- Bestätigung ---------- */
+
+.bestaetigung {
+  margin: 2rem 0;
+  padding: 1.5rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-left: 4px solid var(--erfolg);
+  border-radius: var(--radius);
+}
+
+.bestaetigung__ok {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--erfolg);
+}
+.bestaetigung__ok::before { content: '✓ '; }
+
+.bestaetigung__nummer {
+  margin: .6rem 0 1.25rem;
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  letter-spacing: .02em;
+  /* Die Nummer wird am Telefon vorgelesen und abgeglichen. */
+  user-select: all;
+  font-variant-numeric: tabular-nums;
+}
+
+.bestaetigung__label {
+  margin: 0;
+  font-size: .75rem;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.bestaetigung__tag {
+  margin: .1rem 0 1.25rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.bestaetigung__positionen {
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+  border-top: var(--spur);
+}
+.bestaetigung__positionen li {
+  padding: .45rem 0;
+  border-bottom: var(--spur);
+  font-variant-numeric: tabular-nums;
+}
+
+.bestaetigung__summe { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.bestaetigung__text { margin: .75rem 0 0; color: var(--text-leise); }
+
+/* ---------- Hinweisseite ---------- */
+
+.hinweisseite { max-width: 34rem; margin: 3rem auto; }
+.hinweisseite h1 { font-size: 1.35rem; margin: 0 0 .75rem; }
+.hinweisseite p { margin: 0; color: var(--text-leise); }
+
+/* ---------- Vorlesehilfe ---------- */
+
+/* Sichtbar für Screenreader, unsichtbar auf dem Bildschirm. display:none
+   würde die Meldung auch für Screenreader entfernen. */
+.hinweis {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Fokus ---------- */
+
+:focus-visible {
+  outline: 3px solid var(--blau-hell);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Auf dem Navy der Fußleiste trägt Blau nicht. */
+.leiste :focus-visible,
+.kopf :focus-visible { outline-color: var(--champagner); }
+
+[data-confirmation]:focus { outline: none; }
+[data-confirmation]:focus-visible { outline: 3px solid var(--blau-hell); }
+
+/* ---------- Bewegung ---------- */
+
+.produkt,
+.stepper__taste,
+.senden { transition: background-color 120ms ease, border-color 120ms ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ---------- Breiten ---------- */
+
+/* Die kompakte Mengensteuerung weiter oben ist die VOREINSTELLUNG, nicht die
+   Ausnahme für schmale Geräte: Auf jedem Telefon — 375px wie 430px —
+   entscheidet ihre Breite darüber, ob ein Produktname in eine Zeile passt.
+   Wäre sie nur unterhalb von 390px kompakt, bräche derselbe Name auf einem
+   etwas breiteren Telefon um. Ein Layout, das mit mehr Platz schlechter
+   aussieht, ist ein Fehler und keine Anpassung.
+
+   Bis 389px kommt lediglich ein engerer Seitenrand und eine kleinere
+   Fußleiste dazu: „Noch nichts ausgewählt" passt sonst nicht neben den
+   Absenden-Button. */
+@media (max-width: 389px) {
+  :root { --rand: .8rem; }
+
+  .leiste { gap: .6rem; padding-left: .8rem; padding-right: .8rem; }
+  .summe { font-size: .78rem; }
+  .summe strong { font-size: 1.05rem; }
+  .senden { padding: 0 .85rem; font-size: .95rem; }
+}
+
+/* Ab 390px etwas mehr Luft. */
+@media (min-width: 390px) {
+  :root { --rand: 1.15rem; }
+}
+
+/* Ab Tablet ist Platz im Überfluss. Erst hier bekommt die Mengensteuerung
+   ihre vollen 48px und die Produktzeile ihren großzügigen Abstand. */
+@media (min-width: 600px) {
+  :root { --rand: 1.5rem; --tap: 48px; }
+
+  .kopf h1 { font-size: 1.75rem; }
+
+  .produkt { gap: 1rem; padding: .85rem .75rem; }
+  .stepper { gap: .25rem; }
+  .stepper__zahl { width: 3.4rem; }
+}
+
+/* Desktop bekommt KEINE zweite Gestaltung, nur eine begrenzte Spalte: Es ist
+   dieselbe Aufgabe, und zwei Layouts wären zwei Dinge zu pflegen.
+   
+   Zentriert wird über padding-inline auf den drei Bändern, nicht über
+   margin:auto an ihren Kindern. Der Unterschied ist nicht kosmetisch: Kinder
+   mit eigenem margin-Kurzschreiber — .kopf h1 setzt margin: 0 — überschreiben
+   ein margin-left/right: auto je nach Spezifität, und dann steht die
+   Überschrift links, während der Rest der Kopfzeile mittig sitzt. Über das
+   Elternelement kann das nicht passieren.
+   
+   Kopf und Fußleiste bleiben dabei randlos durchgefärbt; nur ihr Inhalt
+   richtet sich an derselben Spalte aus wie die Produktliste. */
+@media (min-width: 780px) {
+  .kopf,
+  main,
+  .leiste { padding-inline: calc((100% - 44rem) / 2); }
+
+  body { padding-bottom: calc(var(--leiste-hoehe) + 2rem); }
+}
+
+/* ---------- Druck ---------- */
+
+/* Ein Café druckt gelegentlich die Bestätigung aus. Fußleiste und Formular
+   gehören dann nicht aufs Papier. */
+@media print {
+  .leiste, .kopf { position: static; }
+  .leiste, form { display: none !important; }
+  body { background: #fff; padding: 0; }
+}

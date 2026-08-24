@@ -114,3 +114,31 @@ describe('hashAccessToken', () => {
     await expect(hashAccessToken('a'.repeat(65))).rejects.toThrow(InvalidArgumentError);
   });
 });
+
+/**
+ * Die Entwicklungsdaten legen Hashes fest, die zu den in der Seed-Datei
+ * dokumentierten Klartext-Token gehören müssen. Stimmten sie nicht überein,
+ * wäre der lokale Bestellfluss nicht durchführbar — und der Fehler fiele erst
+ * beim Ausprobieren im Browser auf.
+ */
+describe('Entwicklungsdaten (seeds/002_cafe_ordering_dev.sql)', () => {
+  const dev: ReadonlyArray<readonly [string, string]> = [
+    ['DEV-nur-lokal-Testcafe-Nord-kein-Echtbetrieb',
+     '33f8b19f7b9fce5a90b3a1444e535e353f825fb8ea64099db40b979c161593bd'],
+    ['DEV-nur-lokal-Testcafe-Sued-kein-Echtbetrieb',
+     '1b6a2f8020c88c38ed27b2c80714235cdaa500a57a62c843946519aa98a8e4f1'],
+    ['DEV-nur-lokal-widerrufen-kein-Echtbetrieb00',
+     '6d2aef5d4a53ed2c4d45e49e339f9fa033820f54e6bedef6459dfadc6d949912'],
+  ];
+
+  it.each(dev)('der Hash zu %s stimmt', async (token, expected) => {
+    expect(await hashAccessToken(token)).toBe(expected);
+  });
+
+  it('die Entwicklungstoken sind als solche erkennbar', () => {
+    for (const [token] of dev) {
+      expect(isWellFormedToken(token)).toBe(true);
+      expect(token).toContain('DEV-nur-lokal');
+    }
+  });
+});

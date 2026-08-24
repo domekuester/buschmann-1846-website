@@ -41,19 +41,32 @@ fachliche Tabellen und direkte Prepared Statements genügen.
 cd order-system
 npm install
 npm run db:migrate:local     # D1-Schema lokal anlegen
-npm run db:seed:local        # Platzhalterdaten (keine echten Kunden/Preise)
+npm run db:seed:cafe:local   # fiktive Cafés, Sortiment und Entwicklungszugänge
 npm run dev                  # Worker auf http://localhost:8787
-curl http://localhost:8787/api/health
 ```
+
+Danach ist die Bestellseite erreichbar:
+
+```text
+http://127.0.0.1:8787/o/DEV-nur-lokal-Testcafe-Nord-kein-Echtbetrieb
+```
+
+> Dieser Token steht im Klartext in `seeds/002_cafe_ordering_dev.sql` und
+> damit in jedem Klon. Er ist ausschließlich für die lokale Entwicklung. Einen
+> echten Zugang stellt `npm run token:issue -- --customer <id>` aus; der
+> Klartext erscheint dabei **genau einmal**, in der Datenbank landet nur sein
+> SHA-256-Hash.
 
 | Befehl | Zweck |
 |---|---|
 | `npm test` | alle Tests (Domäne + Worker/D1) |
 | `npm run test:watch` | Tests im Watch-Modus |
-| `npm run typecheck` | `tsc --noEmit` |
+| `npm run typecheck` | Worker (`tsc`) **und** Client (`tsconfig.ui.json`) |
 | `npm run cf-typegen` | `worker-configuration.d.ts` neu erzeugen |
 | `npm run db:migrate:local` | Migrationen auf die lokale D1 anwenden |
-| `npm run db:seed:local` | Platzhalterdaten einspielen |
+| `npm run db:seed:local` | allgemeine Platzhalterdaten |
+| `npm run db:seed:cafe:local` | Café-Bestellung: fiktive Cafés + Entwicklungszugänge |
+| `npm run token:issue -- --customer <id>` | echten Zugangstoken ausstellen |
 
 ## Aufbau
 
@@ -69,25 +82,37 @@ src/
 │   ├── order-number.ts  order-item.ts
 │   ├── order-draft.ts     Eingabe-Whitelist OHNE Preisfeld
 │   └── order.ts           das Aggregat
+│   ├── access-token.ts    Web-Crypto, SHA-256 — NIE Klartext in der DB
+│   └── order.ts           das Aggregat
 ├── application/
-│   └── place-order.ts     der einzige vollständige Anwendungsfall
+│   ├── place-order.ts     der Anwendungsfall aus Phase 1
+│   ├── place-cafe-order.ts  Bestellung über einen Café-Zugang
+│   └── catalog-view.ts    was ein Café von einem Produkt sieht
 ├── infrastructure/d1/     Persistenz: prepare().bind(), batch()
-└── http/                  Response-Formen, Health
+├── ui/                    serverseitiges HTML, Preis-/Datumsformat, Escaping
+└── http/                  Routen, Sicherheitsheader, Fehlergrenze
 
 migrations/                D1-Schema, von Wrangler angewandt
-seeds/                     ausschließlich Platzhalterdaten
+seeds/                     ausschließlich erfundene Daten
+scripts/                   Zugangstoken ausstellen (schreibt NICHT selbst)
+public/assets/             CSS und Client-Skript, von der Plattform geliefert
 tests/domain/              laufen OHNE Worker-Runtime und OHNE D1
 tests/d1/  tests/http/     laufen in der echten Runtime gegen echte D1
-public/                    Platz für die Bestelloberfläche (Phase 2)
+tests/ui/                  Client-Skript gegen das real gerenderte HTML
 ```
 
 ### Warum die Domäne nichts von D1 weiß
 
-`vitest.config.ts` definiert zwei Testprojekte. Das Projekt `domain` läuft in
+`vitest.config.ts` definiert drei Testprojekte. Das Projekt `domain` läuft in
 schlichtem Node — ohne Workers-Runtime, ohne Datenbank, ohne Netz. Hinge die
 Geschäftslogik an einer dieser Sachen, ließen sich ihre Tests nicht ausführen.
 Die Schichtentrennung ist damit keine Absichtserklärung, sondern eine
 Bedingung, die bei jedem Testlauf geprüft wird.
+
+`worker` läuft in der echten Workers-Runtime gegen eine echte lokale D1.
+`ui` läuft in happy-dom und legt das Ergebnis von `renderOrderPage()` in ein
+DOM — das Client-Skript wird also gegen genau das HTML geprüft, das der Server
+ausliefert, nicht gegen ein Testfragment.
 
 ## Die vier Regeln, an denen dieses System steht
 
@@ -112,20 +137,47 @@ Regel aushebeln.
 läuft in UTC; um 00:30 Uhr Berliner Zeit ist dort noch der Vortag. „Heute"
 wird deshalb über `Europe/Berlin` bestimmt, nicht über die Uhr des Workers.
 
-## Was Phase 1 noch nicht enthält
+## Der Café-Zugang
 
-Keine Bestelloberfläche · keine Bestell-API · kein Admin-Dashboard · kein
-Login · kein Payment · kein Mailversand · kein Turnstile · kein R2 · keine
-Wiederbestellung · keine Lieferplanung · keine Rechnungen · keine Analytics.
+Ein Stammcafé bekommt einen persönlichen Link und **kein Passwort**:
 
-`placeOrder` existiert als Anwendungsfall und ist gegen eine echte Datenbank
-getestet, aber kein HTTP-Endpunkt ruft ihn auf. Ein Endpunkt ohne Oberfläche
-wäre eine Zusage, die später eingehalten werden müsste.
+```text
+/o/<43 Zeichen aus 32 Byte crypto.getRandomValues>
+```
+
+Wer den vollständigen Link besitzt, darf für dieses Café bestellen — ein
+Capability Link, und zwar als bewusste Entscheidung: Eine Anmeldung würde das
+Produktziel „schneller als WhatsApp" zunichtemachen.
+
+Was daraus folgt:
+
+* In D1 steht **ausschließlich** `sha256(token)`. Kein KDF und kein Salt —
+  beides schützt schwache Geheimnisse gegen Offline-Raten; gegen 256 Bit
+  gleichverteilten Zufall gibt es weder ein Rateverfahren noch eine Tabelle.
+* Unbekannt, widerrufen, formal falsch und „Café deaktiviert" erzeugen eine
+  **zeichenweise identische** Antwort. Es wird nicht preisgegeben, ob ein Café
+  existiert.
+* Zugänge sind widerrufbar und rotierbar; mehrere aktive Zugänge je Café sind
+  erlaubt, damit ein Wechsel ohne Unterbrechung möglich ist.
+* Die API authentifiziert über den Header `X-Order-Token`, nicht über ein
+  Cookie. Damit gibt es keine ambiente Autorität und CSRF ist konstruktiv
+  ausgeschlossen.
+
+Vollständiges Bedrohungsmodell samt der bewusst verworfenen Alternative
+(Token im URL-Fragment) und dem verbleibenden Restrisiko in den
+Cloudflare-Logs: siehe [Phase-2-Spezifikation](../docs/superpowers/specs/2026-08-24-buschmann-cafe-ordering-design.md).
+
+## Was es noch nicht gibt
+
+Kein Admin-Dashboard · kein Kundenkonto · kein Payment · kein Mailversand ·
+kein R2 · keine Wiederbestellung · keine Bestellhistorie für das Café · kein
+Ändern oder Stornieren · keine Lieferplanung · keine Rechnungen · keine
+Analytics · kein Rate-Limiting.
 
 ## Stand
 
-173 Tests grün (120 Domäne, 53 Worker/D1), Typecheck sauber, Migrationen lokal
-ausgeführt, Worker lokal verifiziert.
+405 Tests grün, Typecheck sauber (Worker und Client), Migrationen 0001–0007
+lokal ausgeführt, Bestellfluss lokal durchgespielt.
 
 **Es hat kein Deployment stattgefunden.** Es wurde keine entfernte
 D1-Datenbank angelegt; die `database_id` in `wrangler.jsonc` ist ein

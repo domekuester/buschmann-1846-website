@@ -83,8 +83,6 @@ export function renderOrderPage(view: OrderPageView): string {
           </div>
         </section>
 
-        <p class="banner" role="alert" data-form-error hidden></p>
-
         <noscript>
           <p class="banner banner--statisch">
             Für die Bestellung wird JavaScript gebraucht. Bitte aktiviere es —
@@ -97,11 +95,23 @@ export function renderOrderPage(view: OrderPageView): string {
     </main>
 
     <footer class="leiste" data-summary-bar>
-      <p class="summe">
-        <span data-summary-lines>Noch nichts ausgewählt</span>
-        <strong data-summary-total>0,00 €</strong>
-      </p>
-      <button type="submit" form="bestellformular" class="senden" data-submit>Bestellung senden</button>
+      <!--
+        Die Fehlermeldung steht IN der Fußleiste, nicht im Formular.
+
+        Im Formular stünde sie unter der Notiz — also außerhalb des sichtbaren
+        Bereichs, während der Daumen unten auf „Bestellung senden" liegt. Eine
+        Meldung, die man erst suchen muss, ist keine Meldung. Hier steht sie
+        direkt über der Schaltfläche, die gerade nicht funktioniert hat.
+      -->
+      <p class="banner" role="alert" data-form-error hidden></p>
+
+      <div class="leiste__zeile">
+        <p class="summe">
+          <span data-summary-lines>Noch nichts ausgewählt</span>
+          <strong data-summary-total>0,00 €</strong>
+        </p>
+        <button type="submit" form="bestellformular" class="senden" data-submit>Bestellung senden</button>
+      </div>
     </footer>
 
     <p class="hinweis" aria-live="polite" data-live-region></p>

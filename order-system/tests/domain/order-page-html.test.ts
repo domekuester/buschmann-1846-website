@@ -104,6 +104,27 @@ describe('renderOrderPage — Lieferdatum, Notiz, Absenden', () => {
   it('erklärt ohne JavaScript, was zu tun ist', () => {
     expect(page()).toContain('<noscript>');
   });
+
+  /**
+   * Die Fehlermeldung gehört in die Fußleiste, nicht ins Formular.
+   *
+   * Im Formular stünde sie unter der Notiz — also außerhalb des sichtbaren
+   * Bereichs, während der Daumen unten auf „Bestellung senden" liegt. Genau
+   * das war sie in der ersten Fassung, und im Browser fiel auf, dass die
+   * Meldung erscheint, ohne dass jemand sie sieht. Der Test hält die
+   * Platzierung fest, weil sie hier keine Gestaltungsfrage ist, sondern
+   * darüber entscheidet, ob die Meldung ihren Zweck erfüllt.
+   */
+  it('zeigt Fehler dort, wo der Absenden-Button steht', () => {
+    const html = page();
+    const leiste = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
+
+    expect(leiste).toContain('data-form-error');
+    expect(leiste).toContain('role="alert"');
+
+    const formular = html.slice(html.indexOf('<form'), html.indexOf('</form>'));
+    expect(formular).not.toContain('data-form-error');
+  });
 });
 
 describe('renderOrderPage — nichts tritt nach außen, was nicht soll', () => {
