@@ -52,7 +52,6 @@ beforeEach(async () => {
   for (const table of [
     'order_items',
     'orders',
-    'customer_access_tokens',
     'products',
     'customers',
     'order_number_sequences',

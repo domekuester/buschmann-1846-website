@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderInvalidLinkPage, renderOrderPage } from '../../src/ui/order-page-html';
+import { renderOrderPage } from '../../src/ui/order-page-html';
 import type { CatalogItemView } from '../../src/application/catalog-view';
 
 const PRODUCTS: CatalogItemView[] = [
@@ -198,26 +198,5 @@ describe('renderOrderPage — nichts tritt nach außen, was nicht soll', () => {
 
   it('bittet Suchmaschinen ausdrücklich, die Seite zu ignorieren', () => {
     expect(page()).toContain('noindex');
-  });
-});
-
-describe('renderInvalidLinkPage', () => {
-  it('sagt freundlich, dass der Link nicht mehr gilt', () => {
-    const html = renderInvalidLinkPage();
-    expect(html).toContain('nicht mehr gültig');
-    expect(html).toContain('Buschmann');
-  });
-
-  it('nennt keinen Grund und kein Café', () => {
-    const html = renderInvalidLinkPage().toLowerCase();
-    for (const leak of ['widerrufen', 'unbekannt', 'deaktiviert', 'abgelaufen', 'existiert', 'token']) {
-      expect(html).not.toContain(leak);
-    }
-  });
-
-  it('zeigt kein Formular und kein Sortiment', () => {
-    const html = renderInvalidLinkPage();
-    expect(html).not.toContain('<form');
-    expect(html).not.toContain('<input');
   });
 });

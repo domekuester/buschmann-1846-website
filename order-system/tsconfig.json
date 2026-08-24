@@ -20,13 +20,31 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
 
+    /* allowJs ohne checkJs, und beides mit Bedacht:
+       scripts/create-local-auth-account.mjs ist ein Node-Werkzeug ohne
+       Build-Schritt. Ein Test importiert seine reinen Funktionen, um zu
+       belegen, dass Skript und Worker dieselbe Normalisierung und dieselbe
+       Credential-Ableitung verwenden — ohne allowJs hätte dieser Import den
+       Typ any und der Test wäre wertlos.
+
+       checkJs bleibt AUS: Das Skript läuft in Node und benutzt `process`;
+       diese Typen gehören nicht in den Worker-Kontext, und sie
+       hereinzuziehen wäre der Anfang davon, dass Worker-Code sie benutzt. */
+    "allowJs": true,
+
     /* Der Worker wird von Wrangler gebündelt, tsc prüft nur. */
     "noEmit": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src/**/*.ts", "tests/**/*.ts", "*.ts", "worker-configuration.d.ts"],
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "scripts/**/*.mjs",
+    "*.ts",
+    "worker-configuration.d.ts"
+  ],
 
   /* tests/ui/ prüft das Client-Skript gegen ein DOM und gehört deshalb in
      tsconfig.ui.json — hier fehlen die DOM-Typen absichtlich. */

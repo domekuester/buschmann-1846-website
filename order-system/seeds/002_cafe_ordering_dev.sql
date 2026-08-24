@@ -1,36 +1,59 @@
 -- ============================================================================
---  ENTWICKLUNGSDATEN FÜR DIE CAFÉ-BESTELLUNG — NICHT PRODUKTIV EINSPIELEN
+--  ENTWICKLUNGSDATEN FÜR DEN CAFÉ-BESTELLFLUSS — NICHT PRODUKTIV EINSPIELEN
 --
---  Alles hier ist FREI ERFUNDEN: die Cafés, die Adressen, das Sortiment und
---  die Preise. Es sind keine echten Buschmann-Kunden, keine echten
---  Kontaktdaten und keine echten Preise enthalten — und es dürfen auch keine
---  eingetragen werden. Echte Kundendaten gehören in die produktive Datenbank,
---  niemals in ein Repository.
+--  Alles hier ist FREI ERFUNDEN: die Cafés, die Adressen, das Sortiment, die
+--  Preise und die Zugangsdaten. Es sind keine echten Buschmann-Kunden, keine
+--  echten Kontaktdaten und keine echten Preise enthalten — und es dürfen auch
+--  keine eingetragen werden. Echte Kundendaten gehören in die produktive
+--  Datenbank, niemals in ein Repository.
 --
 --  ╔══════════════════════════════════════════════════════════════════════╗
---  ║  DIE HIER HINTERLEGTEN ZUGANGSTOKEN SIND ÖFFENTLICH BEKANNT.         ║
---  ║  Sie stehen im Klartext in dieser Datei, in Git und in jedem Klon.   ║
---  ║  Sie dürfen ausschließlich gegen eine LOKALE D1 verwendet werden.    ║
---  ║  Für echte Cafés: npm run token:issue -- --customer <id>             ║
+--  ║  DIE HIER HINTERLEGTEN ZUGANGSDATEN SIND ÖFFENTLICH BEKANNT.         ║
+--  ║  Kundencodes, PINs und das Admin-Passwort stehen im Klartext in      ║
+--  ║  diesem Kommentar, in Git und in jedem Klon. Sie dürfen              ║
+--  ║  ausschließlich gegen eine LOKALE D1 verwendet werden.               ║
 --  ╚══════════════════════════════════════════════════════════════════════╝
 --
---  Bestell-Links nach dem Einspielen (bei `npm run dev`):
+--  Anmeldung unter http://127.0.0.1:8787/login (bei `npm run dev`):
 --
---    Testcafé Nord (Lieferung):
---    http://127.0.0.1:8787/o/DEV-nur-lokal-Testcafe-Nord-kein-Echtbetrieb
+--    Testcafé Nord (Lieferung)
+--      Kundencode  TESTCAFE
+--      PIN         01234567        ← führende Null ausdrücklich
 --
---    Testcafé Süd (Abholung — fragt trotzdem nicht nach Lieferung/Abholung):
---    http://127.0.0.1:8787/o/DEV-nur-lokal-Testcafe-Sued-kein-Echtbetrieb
+--    Testcafé Süd (Abholung — fragt trotzdem nicht nach Lieferung/Abholung)
+--      Kundencode  TESTSUED
+--      PIN         00000042        ← zwei führende Nullen, ebenfalls Absicht
 --
---    Widerrufener Zugang (muss die Ablehnungsseite zeigen):
---    http://127.0.0.1:8787/o/DEV-nur-lokal-widerrufen-kein-Echtbetrieb00
+--    Ehemaliges Testcafé (Konto aktiv, Café deaktiviert)
+--      Kundencode  EHEMALIG
+--      PIN         01234567
+--      → muss dieselbe generische Ablehnung zeigen wie ein falscher Zugang
+--
+--    Administration
+--      E-Mail      admin@example.test
+--      Passwort    demo-admin-passwort-nur-lokal
+--
+--  ┌──────────────────────────────────────────────────────────────────────┐
+--  │  DIESE VERIFIER GELTEN NUR MIT DEM ENTWICKLUNGS-PEPPER AUS           │
+--  │  .dev.vars.example:                                                  │
+--  │                                                                      │
+--  │    DEV-PEPPER-oeffentlich-bekannt-nur-lokal-kein-Echtbetrieb         │
+--  │                                                                      │
+--  │  Ein Verifier hängt am Pepper. Wer lokal einen anderen benutzt,      │
+--  │  kommt mit diesen Konten nicht herein — und legt sich stattdessen    │
+--  │  eigene an:                                                          │
+--  │                                                                      │
+--  │    npm run auth:account -- --role customer \                          │
+--  │        --identifier TESTCAFE --customer 1 --secret 01234567          │
+--  └──────────────────────────────────────────────────────────────────────┘
 --
 --  Anwenden:  npm run db:seed:cafe:local
 -- ============================================================================
 
 DELETE FROM order_items;
 DELETE FROM orders;
-DELETE FROM customer_access_tokens;
+DELETE FROM auth_sessions;
+DELETE FROM auth_accounts;
 DELETE FROM order_number_sequences;
 DELETE FROM products;
 DELETE FROM customers;
@@ -54,17 +77,29 @@ INSERT INTO customers (id, name, contact_person, email, phone, delivery_street, 
      '2026-08-24T06:00:00.000Z', '2026-08-24T06:00:00.000Z'),
     (2, 'Testcafé Süd', NULL, NULL, NULL, NULL, NULL, NULL, 1, 'pickup', NULL,
      '2026-08-24T06:00:00.000Z', '2026-08-24T06:00:00.000Z'),
-    -- Deaktiviertes Café: Sein Token ist gültig, die Seite muss trotzdem
-    -- ablehnen — und zwar nicht unterscheidbar von einem unbekannten Token.
+    -- Deaktiviertes Café: Sein Konto ist gültig, die Anmeldung muss trotzdem
+    -- scheitern — und zwar ununterscheidbar von einer falschen PIN.
     (3, 'Ehemaliges Testcafé', NULL, NULL, NULL, 'Beispielstraße 5', '40210', 'Düsseldorf', 0, 'delivery', NULL,
      '2026-08-24T06:00:00.000Z', '2026-08-24T06:00:00.000Z');
 
--- NUR HASHES. Der Klartext steht oben im Kommentar, weil dies
--- Entwicklungsdaten sind — in einer echten Datenbank existiert er nirgends.
-INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at, revoked_at) VALUES
-    -- sha256('DEV-nur-lokal-Testcafe-Nord-kein-Echtbetrieb')
-    (1, '33f8b19f7b9fce5a90b3a1444e535e353f825fb8ea64099db40b979c161593bd', 1, '2026-08-24T06:00:00.000Z', NULL),
-    -- sha256('DEV-nur-lokal-Testcafe-Sued-kein-Echtbetrieb')
-    (2, '1b6a2f8020c88c38ed27b2c80714235cdaa500a57a62c843946519aa98a8e4f1', 1, '2026-08-24T06:00:00.000Z', NULL),
-    -- sha256('DEV-nur-lokal-widerrufen-kein-Echtbetrieb00') — widerrufen
-    (1, '6d2aef5d4a53ed2c4d45e49e339f9fa033820f54e6bedef6459dfadc6d949912', 0, '2026-08-24T06:00:00.000Z', '2026-08-24T06:30:00.000Z');
+-- NUR VERIFIER. Die PINs und das Passwort stehen oben im Kommentar, weil dies
+-- Entwicklungsdaten sind — in einer echten Datenbank existieren sie nirgends.
+--
+-- Jede Zeile trägt ihren eigenen Salt und ihre eigene Iterationszahl. Dass die
+-- beiden Cafés mit derselben PIN verschiedene Verifier haben, ist genau der
+-- Zweck des Salts: Ein Blick in die Tabelle verrät nicht, wer dieselbe PIN
+-- benutzt.
+INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                           credential_algorithm, credential_iterations,
+                           credential_salt, credential_verifier,
+                           is_active, failed_attempts, created_at, updated_at) VALUES
+    (1, 'testcafe', 'customer', 1, 'pbkdf2-sha256', 600000,
+     'c18cfdddeb35a4181f6c7212bd421dd4', '7b9324c25dad5c800e40c3df9b867f13eff59f0e7b1a4e3ee3b93643fcbe3d7b', 1, 0, '2026-08-24T06:00:00.000Z', '2026-08-24T06:00:00.000Z'),
+    (2, 'testsued', 'customer', 2, 'pbkdf2-sha256', 600000,
+     'f02663e71c7286014fdbc56022c9e4a7', 'b15962db31d8842de10c0f1f9ba404dedbf7c8724edac5cd5aee15604158304b', 1, 0, '2026-08-24T06:00:00.000Z', '2026-08-24T06:00:00.000Z'),
+    (3, 'ehemalig', 'customer', 3, 'pbkdf2-sha256', 600000,
+     'f480c8b51cc3eae195806f542fab1050', '8c4e50433823d5f897e961f396dde0835df87d52cdcaaa76279f235a7946dd99', 1, 0, '2026-08-24T06:00:00.000Z', '2026-08-24T06:00:00.000Z'),
+    -- customer_id ist NULL und muss es sein: Ein Admin ist kein Café mit mehr
+    -- Rechten. Das Schema lehnt jede andere Zeile ab.
+    (4, 'admin@example.test', 'admin', NULL, 'pbkdf2-sha256', 600000,
+     '9a474740fa36ebc1cf463bb1bbfe7400', '8d93be0f95600543e3645292455c7d38e29abe201497e179bb4cadabd2e3ab47', 1, 0, '2026-08-24T06:00:00.000Z', '2026-08-24T06:00:00.000Z');

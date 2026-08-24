@@ -192,37 +192,7 @@ function productRow(product: CatalogItemView): string {
 }
 
 /**
- * Die Antwort auf jeden ungültigen Zugang — unbekannt, widerrufen, formal
- * falsch, Café deaktiviert.
- *
- * Für alle vier Fälle GENAU DIESE Seite, Zeichen für Zeichen identisch. Eine
- * unterschiedliche Formulierung, ein anderer Statuscode oder auch nur eine
- * andere Länge wäre eine Auskunft darüber, ob ein bestimmter Zugang existiert.
- *
- * Der Text nennt keinen Grund. Er nennt den Weg: bei Buschmann melden.
- */
-export function renderInvalidLinkPage(): string {
-  return htmlDocument(
-    'Bestelllink nicht gültig',
-    `
-    <header class="kopf">
-      <p class="marke">Buschmann <span>1846</span></p>
-    </header>
-    <main id="inhalt">
-      <section class="hinweisseite">
-        <h1>Dieser Bestelllink ist nicht mehr gültig.</h1>
-        <p>
-          Bitte melde dich kurz bei Buschmann 1846 — dann bekommst du einen
-          neuen Link, und die Bestellung geht wie gewohnt weiter.
-        </p>
-      </section>
-    </main>
-    `,
-  );
-}
-
-/**
- * Das gemeinsame Dokument beider Seiten.
+ * Das gemeinsame Dokument.
  *
  * Kein Inline-Skript, kein Inline-Stil, kein Verweis auf einen fremden Host —
  * das ist keine Stilfrage, sondern die Voraussetzung für die CSP aus

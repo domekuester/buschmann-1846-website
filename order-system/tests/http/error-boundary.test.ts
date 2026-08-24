@@ -53,7 +53,7 @@ describe('toSafeResponse', () => {
     expect(await response.json()).toEqual({ error: 'internal_error' });
 
     const text = await body(toSafeResponse(new Error('D1_ERROR: near "SELECT": syntax error')));
-    for (const leak of ['D1_ERROR', 'near', 'syntax', 'SELECT', 'customer_access_tokens', 'Error']) {
+    for (const leak of ['D1_ERROR', 'near', 'syntax', 'SELECT', 'Error']) {
       expect(text).not.toContain(leak);
     }
   });

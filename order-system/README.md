@@ -40,22 +40,34 @@ fachliche Tabellen und direkte Prepared Statements genügen.
 ```bash
 cd order-system
 npm install
+cp .dev.vars.example .dev.vars   # Pepper, Origin und Umgebung — nicht in Git
 npm run db:migrate:local     # D1-Schema lokal anlegen
-npm run db:seed:cafe:local   # fiktive Cafés, Sortiment und Entwicklungszugänge
+npm run db:seed:cafe:local   # fiktive Cafés, Sortiment und Demokonten
 npm run dev                  # Worker auf http://localhost:8787
 ```
 
-Danach ist die Bestellseite erreichbar:
+Danach führt der Weg über die Anmeldung:
 
 ```text
-http://127.0.0.1:8787/o/DEV-nur-lokal-Testcafe-Nord-kein-Echtbetrieb
+http://127.0.0.1:8787/login
 ```
 
-> Dieser Token steht im Klartext in `seeds/002_cafe_ordering_dev.sql` und
-> damit in jedem Klon. Er ist ausschließlich für die lokale Entwicklung. Einen
-> echten Zugang stellt `npm run token:issue -- --customer <id>` aus; der
-> Klartext erscheint dabei **genau einmal**, in der Datenbank landet nur sein
-> SHA-256-Hash.
+| | Kennung | Geheimnis | Ziel |
+|---|---|---|---|
+| Café | `TESTCAFE` | `01234567` | `/bestellen` |
+| Café (Abholung) | `TESTSUED` | `00000042` | `/bestellen` |
+| Administration | `admin@example.test` | `demo-admin-passwort-nur-lokal` | `/admin` |
+
+> Diese Zugangsdaten stehen im Klartext in `seeds/002_cafe_ordering_dev.sql`
+> und damit in jedem Klon. Sie gelten ausschließlich lokal — und ausschließlich
+> mit dem Entwicklungs-Pepper aus `.dev.vars.example`, denn ein Verifier hängt
+> am Pepper.
+>
+> Ein eigenes Konto: `npm run auth:account -- --role customer --identifier
+> TESTCAFE --customer 1 --secret 01234567`. Das Werkzeug schreibt **nicht**
+> selbst in die Datenbank; es gibt ein `INSERT` aus, das bewusst von Hand
+> angewendet wird. In die Datenbank kommt nur der Verifier — niemals die PIN
+> und niemals der Pepper.
 
 | Befehl | Zweck |
 |---|---|
@@ -65,8 +77,8 @@ http://127.0.0.1:8787/o/DEV-nur-lokal-Testcafe-Nord-kein-Echtbetrieb
 | `npm run cf-typegen` | `worker-configuration.d.ts` neu erzeugen |
 | `npm run db:migrate:local` | Migrationen auf die lokale D1 anwenden |
 | `npm run db:seed:local` | allgemeine Platzhalterdaten |
-| `npm run db:seed:cafe:local` | Café-Bestellung: fiktive Cafés + Entwicklungszugänge |
-| `npm run token:issue -- --customer <id>` | echten Zugangstoken ausstellen |
+| `npm run db:seed:cafe:local` | Café-Bestellung: fiktive Cafés + Demokonten |
+| `npm run auth:account -- …` | Anmeldekonto ausstellen (gibt ein `INSERT` aus) |
 
 ## Aufbau
 
@@ -81,20 +93,26 @@ src/
 │   ├── fulfillment-type.ts  fulfillment-date.ts  order-status.ts
 │   ├── order-number.ts  order-item.ts
 │   ├── order-draft.ts     Eingabe-Whitelist OHNE Preisfeld
-│   └── order.ts           das Aggregat
-│   ├── access-token.ts    Web-Crypto, SHA-256 — NIE Klartext in der DB
-│   └── order.ts           das Aggregat
+│   ├── order.ts           das Aggregat
+│   ├── auth-role.ts       genau zwei Rollen: customer, admin
+│   └── login-identifier.ts  Normalisierung, idempotent, mit Zeichen-Allowlist
+├── config/
+│   └── app-config.ts      Pepper, Origin, Umgebung — fail closed
 ├── application/
 │   ├── place-order.ts     der Anwendungsfall aus Phase 1
-│   ├── place-cafe-order.ts  Bestellung über einen Café-Zugang
+│   ├── place-cafe-order.ts  Bestellung für ein Café aus der Sitzung
+│   ├── log-in.ts          Anmeldung: zwei Ausgänge, ein generisches Nein
+│   ├── authenticate-request.ts  Sitzung → AuthContext, bei JEDEM Request neu
 │   └── catalog-view.ts    was ein Café von einem Produkt sieht
-├── infrastructure/d1/     Persistenz: prepare().bind(), batch()
+├── infrastructure/
+│   ├── auth/              PBKDF2 + Pepper, Sitzungstoken, Cookie-Policy
+│   └── d1/                Persistenz: prepare().bind(), batch()
 ├── ui/                    serverseitiges HTML, Preis-/Datumsformat, Escaping
-└── http/                  Routen, Sicherheitsheader, Fehlergrenze
+└── http/                  Routen, Wache, Sicherheitsheader, Fehlergrenze
 
 migrations/                D1-Schema, von Wrangler angewandt
 seeds/                     ausschließlich erfundene Daten
-scripts/                   Zugangstoken ausstellen (schreibt NICHT selbst)
+scripts/                   Anmeldekonto ausstellen (schreibt NICHT selbst)
 public/assets/             CSS und Client-Skript, von der Plattform geliefert
 tests/domain/              laufen OHNE Worker-Runtime und OHNE D1
 tests/d1/  tests/http/     laufen in der echten Runtime gegen echte D1
@@ -137,49 +155,109 @@ Regel aushebeln.
 läuft in UTC; um 00:30 Uhr Berliner Zeit ist dort noch der Vortag. „Heute"
 wird deshalb über `Europe/Berlin` bestimmt, nicht über die Uhr des Workers.
 
-## Der Café-Zugang
+## Anmeldung
 
-Ein Stammcafé bekommt einen persönlichen Link und **kein Passwort**:
+Alles First-Party auf `buschmann1846.de`. Eine Loginseite, ein Tab, keine
+fremde Domain — Cloudflare bleibt Infrastruktur und wird für den Benutzer
+nicht sichtbar.
 
 ```text
-/o/<43 Zeichen aus 32 Byte crypto.getRandomValues>
+/login  →  Kundencode + PIN   →  /bestellen
+        →  E-Mail + Passwort  →  /admin
 ```
 
-Wer den vollständigen Link besitzt, darf für dieses Café bestellen — ein
-Capability Link, und zwar als bewusste Entscheidung: Eine Anmeldung würde das
-Produktziel „schneller als WhatsApp" zunichtemachen.
+Das Formular fragt **nicht**, wer davorsteht. Die Rolle steht am Konto; eine
+Auswahl wäre ein überflüssiger Tap und zugleich eine Auskunft darüber, welche
+Rollen es gibt.
 
-Was daraus folgt:
+### Credential
 
-* In D1 steht **ausschließlich** `sha256(token)`. Kein KDF und kein Salt —
-  beides schützt schwache Geheimnisse gegen Offline-Raten; gegen 256 Bit
-  gleichverteilten Zufall gibt es weder ein Rateverfahren noch eine Tabelle.
-* Unbekannt, widerrufen, formal falsch und „Café deaktiviert" erzeugen eine
-  **zeichenweise identische** Antwort. Es wird nicht preisgegeben, ob ein Café
-  existiert.
-* Zugänge sind widerrufbar und rotierbar; mehrere aktive Zugänge je Café sind
-  erlaubt, damit ein Wechsel ohne Unterbrechung möglich ist.
-* Die API authentifiziert über den Header `X-Order-Token`, nicht über ein
-  Cookie. Damit gibt es keine ambiente Autorität und CSRF ist konstruktiv
-  ausgeschlossen.
+```text
+verifier = PBKDF2-HMAC-SHA256(
+    password = HMAC-SHA256(key = AUTH_PEPPER, message = geheimnis),
+    salt     = 16 zufällige Byte je Konto,
+    c        = 600 000,
+    dkLen    = 32 Byte)
+```
 
-Vollständiges Bedrohungsmodell samt der bewusst verworfenen Alternative
-(Token im URL-Fragment) und dem verbleibenden Restrisiko in den
-Cloudflare-Logs: siehe [Phase-2-Spezifikation](../docs/superpowers/specs/2026-08-24-buschmann-cafe-ordering-design.md).
+* **Kein Klartext in D1.** Individueller Salt je Konto, dazu ein
+  serverseitiger Pepper, der nicht in der Datenbank liegt. Wer einen Dump
+  erbeutet, steht vor einem fehlenden 256-Bit-Schlüssel.
+* **Der Work Factor ist gemessen, nicht geschätzt:** 7,6 ms je 100 000
+  Iterationen in der echten workerd-Runtime, also rund 45 ms bei 600 000.
+* **Argon2id wäre besser** und steht in Workers nicht zur Verfügung — die
+  Begründung samt Alternativen steht in
+  `src/infrastructure/auth/credential.ts`.
+* **Alle sechs Ablehnungsgründe** — unbekannte Kennung, falsches Geheimnis,
+  deaktiviertes Konto, deaktiviertes Café, gesperrtes Konto, unbrauchbare
+  Eingabe — erzeugen eine **byteweise identische** Antwort, und jeder von
+  ihnen kostet genau eine PBKDF2-Ableitung. Auch der unbekannte Fall: sonst
+  wäre die Menge der existierenden Konten am Zeitverhalten aufzählbar.
+* **Fünf Fehlversuche → 15 Minuten Pause**, gezählt in einer einzigen
+  SQL-Anweisung. Der Lockout-DoS ist real und dokumentiert; die Sperre läuft
+  von selbst ab und braucht keinen Eingriff.
+
+### Sitzung
+
+* 32 Byte Zufall im Cookie, in D1 **nur** `sha256(token)`.
+* `HttpOnly`, `SameSite=Lax`, `Path=/`, kein `Domain` — in Produktion
+  zusätzlich `Secure` und der Name `__Host-buschmann_session`. Entwicklung und
+  Produktion tragen **verschiedene Cookienamen**: Der `__Host-`-Präfix ist eine
+  Zusage an den Browser, und eine Zusage, die manchmal gilt, ist keine.
+* Café **30 Tage**, Admin **12 Stunden**.
+* Rolle, Konto- und Café-Aktivität werden bei **jedem** geschützten Request
+  frisch aus D1 gelesen. Ein Sitzungstoken ist kein Dauerausweis: Wird ein Café
+  deaktiviert, endet sein Zugriff beim nächsten Request.
+* Nach jeder Anmeldung entsteht eine **neue** Sitzung; eine mitgeschickte wird
+  widerrufen, nie übernommen.
+
+### CSRF und Origin
+
+Drei Schichten statt einer: `SameSite=Lax` im Cookie, exakte Origin-Prüfung
+gegen `APP_ORIGIN` und ein sitzungsgebundener Synchronizer-Token. `POST /login`
+hat bewusst keinen CSRF-Token — vor der Anmeldung gibt es keine Sitzung, an der
+einer hängen könnte; dort tragen SameSite und Origin.
+
+Vollständiges Bedrohungsmodell, Trust Boundaries und die verworfenen
+Alternativen: siehe
+[Phase-3A-Spezifikation](../docs/superpowers/specs/2026-08-24-buschmann-first-party-auth-design.md).
+
+### Konfiguration
+
+| Binding | Zweck | Fehlt er? |
+|---|---|---|
+| `AUTH_PEPPER` | Schlüssel der Credential-Verifikation | keine Anmeldung möglich |
+| `APP_ORIGIN` | erwarteter Origin schreibender Requests | jeder Schreibzugriff `403` |
+| `ENVIRONMENT` | genau `development` schaltet die lokale Cookie-Policy frei | Produktion |
+
+Alle drei stehen **bewusst nicht** in `wrangler.jsonc` — die Datei ist
+eingecheckt. Lokal kommen sie aus `.dev.vars` (siehe `.dev.vars.example`),
+produktiv aus Cloudflare-Secrets. Was fehlt, ist Produktion: Ein Tippfehler in
+`ENVIRONMENT` führt nie zu unsicheren Cookies.
+
+> **Der Login setzt den Workers-Paid-Tarif voraus.** Der Free-Tarif begrenzt
+> auf 10 ms CPU je Invocation; damit ist kein Passwort-KDF möglich, der einer
+> ernsthaften Guidance genügt. Die Entscheidung ist in der Spezifikation
+> festgehalten.
 
 ## Was es noch nicht gibt
 
-Kein Admin-Dashboard · kein Kundenkonto · kein Payment · kein Mailversand ·
-kein R2 · keine Wiederbestellung · keine Bestellhistorie für das Café · kein
-Ändern oder Stornieren · keine Lieferplanung · keine Rechnungen · keine
-Analytics · kein Rate-Limiting.
+Kein Admin-Dashboard · keine Tagesansicht · keine Kunden- oder Produktpflege ·
+kein Passwort-/PIN-Wechsel · kein „Passwort vergessen" · kein 2FA · kein
+Payment · kein Mailversand · kein R2 · keine Wiederbestellung · keine
+Bestellhistorie für das Café · kein Ändern oder Stornieren · keine
+Lieferplanung · keine Rechnungen · keine Analytics · kein Rate-Limiting.
 
 ## Stand
 
-410 Tests grün (195 Domäne, 179 Worker/D1, 36 Oberfläche), Typecheck sauber
-für Worker und Client, Migrationen 0001–0007 lokal ausgeführt, der
-Bestellfluss gegen eine frisch aufgesetzte lokale D1 durchgespielt und im
-Browser bei 375/390/430 px und Desktop geprüft.
+Phase 3A: First-Party-Authentifizierung. Der Capability-Link aus Phase 2 ist
+kein aktiver Anmeldeweg mehr — der Bestellfluss läuft vollständig über
+Kundensitzung, Origin-Prüfung und CSRF-Token, und die Phase-2-Regressionstests
+laufen unverändert gegen den neuen Weg.
+
+Typecheck sauber für Worker und Client, Migrationen 0001–0010 lokal
+ausgeführt, nichts deployed und nichts gepusht. Die aktuelle Testzahl steht im
+Abschlussbericht der Phase.
 
 **Es hat kein Deployment stattgefunden.** Es wurde keine entfernte
 D1-Datenbank angelegt; die `database_id` in `wrangler.jsonc` ist ein

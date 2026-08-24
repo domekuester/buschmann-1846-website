@@ -48,7 +48,6 @@ beforeEach(async () => {
     'orders',
     'auth_sessions',
     'auth_accounts',
-    'customer_access_tokens',
     'products',
     'customers',
     'order_number_sequences',
@@ -67,7 +66,6 @@ describe('Migrationen', () => {
     expect(results.map((r) => r.name)).toEqual([
       'auth_accounts',
       'auth_sessions',
-      'customer_access_tokens',
       'customers',
       'order_items',
       'order_number_sequences',
@@ -85,7 +83,6 @@ describe('Migrationen', () => {
       'idx_auth_accounts_customer',
       'idx_auth_sessions_account',
       'idx_auth_sessions_expiry',
-      'idx_cat_customer',
       'idx_customers_active_name',
       'idx_order_items_order',
       'idx_order_items_product',
@@ -332,85 +329,6 @@ describe('CHECK-Bedingungen', () => {
 
     const { results } = await env.DB.prepare('SELECT COUNT(*) AS n FROM customers').all<{ n: number }>();
     expect(results[0]?.n).toBe(1);
-  });
-});
-
-/**
- * Der Zugang eines Cafés. Die Anwendung ist die erste Verteidigungslinie —
- * hier steht die zweite, damit ein Datensatz auch dann nicht in einen
- * unmöglichen Zustand gerät, wenn er auf anderem Weg entsteht.
- */
-describe('customer_access_tokens', () => {
-  const HASH = 'a'.repeat(64);
-
-  async function seedToken(hash = HASH, customerId = 1, isActive = 1, revokedAt: string | null = null) {
-    await env.DB.prepare(
-      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at, revoked_at)
-       VALUES (?, ?, ?, ?, ?)`,
-    )
-      .bind(customerId, hash, isActive, NOW, revokedAt)
-      .run();
-  }
-
-  it('nehmen einen gültigen Zugang auf', async () => {
-    await seedCustomer();
-    await seedToken();
-
-    const row = await env.DB.prepare(
-      'SELECT customer_id, token_hash, is_active, revoked_at FROM customer_access_tokens',
-    ).first<{ customer_id: number; token_hash: string; is_active: number; revoked_at: string | null }>();
-
-    expect(row).toEqual({ customer_id: 1, token_hash: HASH, is_active: 1, revoked_at: null });
-  });
-
-  it('lehnen einen Hash ab, der keiner ist', async () => {
-    await seedCustomer();
-    // 64 Zeichen, aber kein Hex — genau der Fall, den eine reine Längenprüfung
-    // durchließe.
-    await expect(seedToken('z'.repeat(64))).rejects.toThrow(/CHECK constraint/i);
-    await expect(seedToken('a'.repeat(63))).rejects.toThrow(/CHECK constraint/i);
-    await expect(seedToken('A'.repeat(64))).rejects.toThrow(/CHECK constraint/i);
-  });
-
-  it('lehnen denselben Hash zweimal ab', async () => {
-    await seedCustomer();
-    await seedToken();
-    await expect(seedToken()).rejects.toThrow(/UNIQUE constraint/i);
-  });
-
-  it('lehnen einen Zugang ohne Kunden ab', async () => {
-    await expect(seedToken(HASH, 99)).rejects.toThrow(/FOREIGN KEY constraint/i);
-  });
-
-  /** Ein Widerruf ohne Zeitpunkt wäre eine Behauptung ohne Beleg. */
-  it('verlangen bei einem Widerruf einen Widerrufszeitpunkt', async () => {
-    await seedCustomer();
-    await expect(seedToken(HASH, 1, 0, null)).rejects.toThrow(/CHECK constraint/i);
-    await seedToken(HASH, 1, 0, NOW);
-  });
-
-  it('erlauben mehrere aktive Zugänge je Café — für die Rotation', async () => {
-    await seedCustomer();
-    await seedToken('a'.repeat(64));
-    await seedToken('b'.repeat(64));
-
-    const row = await env.DB.prepare(
-      'SELECT COUNT(*) AS n FROM customer_access_tokens WHERE customer_id = 1 AND is_active = 1',
-    ).first<{ n: number }>();
-    expect(row?.n).toBe(2);
-  });
-
-  /**
-   * Anders als bei orders (RESTRICT): Ein Zugang ohne Kunden ist kein
-   * historisches Dokument, sondern ein Sicherheitsproblem.
-   */
-  it('verschwinden mit ihrem Kunden', async () => {
-    await seedCustomer();
-    await seedToken();
-    await env.DB.prepare('DELETE FROM customers WHERE id = 1').run();
-
-    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM customer_access_tokens').first<{ n: number }>();
-    expect(row?.n).toBe(0);
   });
 });
 
@@ -788,5 +706,34 @@ describe('auth_sessions', () => {
 
     const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM auth_sessions').first<{ n: number }>();
     expect(row?.n).toBe(0);
+  });
+});
+
+/**
+ * Die Gegenprobe zur Migration 0010: Der Capability-Link ist nicht nur aus
+ * dem Code verschwunden, sondern auch aus dem Schema.
+ *
+ * Der Test steht hier und nicht bei den Tabellenlisten oben, weil er etwas
+ * anderes belegt: Dort geht es darum, WAS es gibt; hier darum, dass es einen
+ * bestimmten Weg NICHT mehr gibt.
+ */
+describe(() => {
+  it('existiert nach den Migrationen nicht mehr', async () => {
+    const row = await env.DB.prepare(
+      `SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'customer_access_tokens'`,
+    ).first<{ name: string }>();
+
+    expect(row).toBeNull();
+  });
+
+  it('lässt sich nicht mehr beschreiben', async () => {
+    await expect(
+      env.DB.prepare(
+        `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at)
+         VALUES (1, ?, 1, ?)`,
+      )
+        .bind('a'.repeat(64), NOW)
+        .run(),
+    ).rejects.toThrow(/no such table/i);
   });
 });
