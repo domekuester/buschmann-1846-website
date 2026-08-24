@@ -176,8 +176,10 @@ Analytics · kein Rate-Limiting.
 
 ## Stand
 
-405 Tests grün, Typecheck sauber (Worker und Client), Migrationen 0001–0007
-lokal ausgeführt, Bestellfluss lokal durchgespielt.
+410 Tests grün (195 Domäne, 179 Worker/D1, 36 Oberfläche), Typecheck sauber
+für Worker und Client, Migrationen 0001–0007 lokal ausgeführt, der
+Bestellfluss gegen eine frisch aufgesetzte lokale D1 durchgespielt und im
+Browser bei 375/390/430 px und Desktop geprüft.
 
 **Es hat kein Deployment stattgefunden.** Es wurde keine entfernte
 D1-Datenbank angelegt; die `database_id` in `wrangler.jsonc` ist ein
