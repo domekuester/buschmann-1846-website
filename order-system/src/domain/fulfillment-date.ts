@@ -49,6 +49,23 @@ export class FulfillmentDate {
     return new FulfillmentDate(value);
   }
 
+  /**
+   * Rekonstruiert einen gespeicherten Tag. Geprüft wird die Form, NICHT die
+   * Vergangenheit: Die Regel „nicht in der Vergangenheit" gehört zum
+   * Bestellvorgang, nicht zum Lesen. Eine Bestellung von letzter Woche muss
+   * lesbar bleiben.
+   */
+  static restore(value: string): FulfillmentDate {
+    if (!ISO_DAY.test(value)) {
+      throw FulfillmentDate.invalid();
+    }
+    const parsed = new Date(`${value}T00:00:00Z`);
+    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+      throw FulfillmentDate.invalid();
+    }
+    return new FulfillmentDate(value);
+  }
+
   toString(): string {
     return this.value;
   }

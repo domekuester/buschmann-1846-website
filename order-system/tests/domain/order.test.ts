@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Order } from '../../src/domain/order';
+import { OrderItem } from '../../src/domain/order-item';
+import { FulfillmentDate } from '../../src/domain/fulfillment-date';
 import { OrderDraft } from '../../src/domain/order-draft';
 import { OrderNumber } from '../../src/domain/order-number';
 import { Customer } from '../../src/domain/customer';
@@ -228,5 +230,54 @@ describe('Order-Status', () => {
     const bestaetigt = order.withStatus('confirmed', now);
     expect(order.status).toBe('new');
     expect(bestaetigt.status).toBe('confirmed');
+  });
+});
+
+describe('Order.restore', () => {
+  const items = [
+    new OrderItem({
+      productId: 1,
+      productNameSnapshot: 'Zitronen-Cheesecake',
+      productUnitSnapshot: 'Stück',
+      unitPrice: Money.fromCents(435),
+      quantity: 3,
+    }),
+  ];
+
+  function restored(overrides: Record<string, unknown> = {}) {
+    return Order.restore({
+      orderNumber: OrderNumber.fromString('BUS-2026-000001'),
+      customerId: 7,
+      customerNameSnapshot: 'Beispielcafé Nord',
+      fulfillmentType: 'delivery',
+      fulfillmentDate: FulfillmentDate.restore('2020-01-01'),
+      deliveryAddressSnapshot: 'Musterstraße 1, 40213 Düsseldorf',
+      note: null,
+      status: 'completed',
+      items,
+      createdAt: '2020-01-01T07:00:00.000Z',
+      updatedAt: '2020-01-02T07:00:00.000Z',
+      ...overrides,
+    } as Parameters<typeof Order.restore>[0]);
+  }
+
+  /**
+   * Laden ist nicht Bestellen. Eine abgeschlossene Bestellung von 2020 muss
+   * sich lesen lassen, ohne dass die Regeln des Bestellvorgangs erneut
+   * greifen — sonst wäre keine historische Bestellung mehr aufrufbar.
+   */
+  it('nimmt einen vergangenen Tag und einen Endstatus an', () => {
+    const order = restored();
+    expect(order.status).toBe('completed');
+    expect(order.fulfillmentDate.value).toBe('2020-01-01');
+    expect(order.total().cents).toBe(1305);
+    expect(order.updatedAt).toBe('2020-01-02T07:00:00.000Z');
+  });
+
+  /** Die Invarianten des Aggregats gelten aber weiterhin. */
+  it('lässt sich keine ungültige Bestellung unterschieben', () => {
+    expect(() => restored({ items: [] })).toThrow();
+    expect(() => restored({ deliveryAddressSnapshot: null })).toThrow();
+    expect(() => restored({ customerId: 0 })).toThrow();
   });
 });

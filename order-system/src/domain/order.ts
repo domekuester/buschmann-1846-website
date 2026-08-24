@@ -25,7 +25,7 @@ export interface PlaceOrderInput {
   now: Date;
 }
 
-interface OrderState {
+export interface OrderState {
   orderNumber: OrderNumber;
   customerId: number;
   customerNameSnapshot: string;
@@ -149,6 +149,22 @@ export class Order {
       createdAt: timestamp,
       updatedAt: timestamp,
     });
+  }
+
+  /**
+   * Rekonstruiert eine gespeicherte Bestellung.
+   *
+   * Getrennt von place(), weil Laden nicht Bestellen ist: Beim Laden gibt es
+   * keinen Kunden und keinen Katalog zu prüfen, der Status ist nicht
+   * zwingend „new", und der Liefertag darf längst vergangen sein. Würde man
+   * beides über denselben Weg führen, wäre entweder das Bestellen zu lasch
+   * oder keine historische Bestellung mehr aufrufbar.
+   *
+   * Die Invarianten des Aggregats gelten trotzdem — sie stecken im
+   * Konstruktor und laufen für beide Wege.
+   */
+  static restore(state: OrderState): Order {
+    return new Order(state);
   }
 
   /** Die Bestellsumme wird berechnet, nie entgegengenommen. */

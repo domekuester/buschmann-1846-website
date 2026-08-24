@@ -68,3 +68,21 @@ describe('FulfillmentDate', () => {
     expect(String(FulfillmentDate.fromString('2026-08-28', now))).toBe('2026-08-28');
   });
 });
+
+describe('FulfillmentDate.restore', () => {
+  /**
+   * Beim LADEN einer bestehenden Bestellung darf der Liefertag in der
+   * Vergangenheit liegen — die Regel „nicht in der Vergangenheit" gilt beim
+   * Bestellen, nicht beim Lesen. Eine Bestellung von letzter Woche muss
+   * lesbar bleiben.
+   */
+  it('nimmt einen vergangenen Tag aus der Datenbank an', () => {
+    expect(FulfillmentDate.restore('2020-01-01').value).toBe('2020-01-01');
+  });
+
+  it('lehnt einen unbrauchbaren gespeicherten Wert trotzdem ab', () => {
+    for (const bad of ['', 'morgen', '2026-02-30', '2026-8-28']) {
+      expect(() => FulfillmentDate.restore(bad)).toThrow();
+    }
+  });
+});
