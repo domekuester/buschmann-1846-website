@@ -37,6 +37,7 @@ export type AuthContext =
   | {
       readonly role: 'customer';
       readonly accountId: number;
+      readonly loginIdentifier: string;
       readonly sessionId: number;
       readonly csrfToken: string;
       readonly customer: Customer;
@@ -44,6 +45,7 @@ export type AuthContext =
   | {
       readonly role: 'admin';
       readonly accountId: number;
+      readonly loginIdentifier: string;
       readonly sessionId: number;
       readonly csrfToken: string;
     };
@@ -84,6 +86,7 @@ export async function authenticateRequest(
     return {
       role: 'admin',
       accountId: account.id,
+      loginIdentifier: account.loginIdentifier,
       sessionId: session.id,
       csrfToken: session.csrfToken,
     };
@@ -107,6 +110,7 @@ export async function authenticateRequest(
   return {
     role: 'customer',
     accountId: account.id,
+    loginIdentifier: account.loginIdentifier,
     sessionId: session.id,
     csrfToken: session.csrfToken,
     customer,

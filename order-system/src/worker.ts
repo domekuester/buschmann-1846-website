@@ -1,4 +1,5 @@
 import { readAppConfig } from './config/app-config';
+import { adminPage } from './http/admin-page';
 import { loginPage, loginSubmit, logout } from './http/auth-routes';
 import { requireSession } from './http/guard';
 import { sessionInfo } from './http/session-api';
@@ -26,6 +27,8 @@ import { methodNotAllowed, notFound } from './http/responses';
  *   POST /login        die Anmeldung.
  *   POST /logout       die Abmeldung. Niemals GET — ein GET-Logout wird von
  *                      Link-Prefetch und Virenscannern ausgelöst.
+ *   GET  /admin        die Admin-Shell. In Phase 3A absichtlich fast leer —
+ *                      sie beweist die Auth-Grenze und sonst nichts.
  *   GET  /api/auth/session   wer bin ich. Für beide Rollen, mit einer
  *                      minimalen Antwort.
  *   GET  /o/<token>    die Phase-2-Bestellseite. Noch da, bis der
@@ -76,6 +79,13 @@ export default {
           return methodNotAllowed('POST');
         }
         return await logout(env.DB, config, request, now);
+      }
+
+      if (pathname === '/admin') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET');
+        }
+        return await adminPage(env.DB, config, request, now);
       }
 
       if (pathname === '/api/auth/session') {

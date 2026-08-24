@@ -14,6 +14,7 @@ const CSRF = 'c'.repeat(43);
 const ADMIN_KONTEXT: AuthContext = {
   role: 'admin',
   accountId: 2,
+  loginIdentifier: 'admin@example.test',
   sessionId: 7,
   csrfToken: CSRF,
 };

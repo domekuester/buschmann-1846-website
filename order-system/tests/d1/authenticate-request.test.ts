@@ -156,7 +156,7 @@ describe('authenticateRequest — Verschwiegenheit', () => {
     expect(serialisiert).not.toContain('failedAttempts');
   });
 
-  it('trägt für ein Café genau die vier erwarteten Felder', async () => {
+  it('trägt für ein Café genau die erwarteten Felder', async () => {
     const { token } = await createSession(env.DB, 1, 'customer', NOW);
     const kontext = await authenticateRequest(env.DB, token, NOW);
 
@@ -164,18 +164,20 @@ describe('authenticateRequest — Verschwiegenheit', () => {
       'accountId',
       'csrfToken',
       'customer',
+      'loginIdentifier',
       'role',
       'sessionId',
     ]);
   });
 
-  it('trägt für einen Admin genau die vier erwarteten Felder', async () => {
+  it('trägt für einen Admin genau die erwarteten Felder', async () => {
     const { token } = await createSession(env.DB, 2, 'admin', NOW);
     const kontext = await authenticateRequest(env.DB, token, NOW);
 
     expect(Object.keys(kontext ?? {}).sort()).toEqual([
       'accountId',
       'csrfToken',
+      'loginIdentifier',
       'role',
       'sessionId',
     ]);

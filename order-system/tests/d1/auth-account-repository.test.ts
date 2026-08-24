@@ -304,6 +304,7 @@ describe('Verschwiegenheit', () => {
       'id',
       'isActive',
       'lockedUntil',
+      'loginIdentifier',
       'role',
     ]);
   });

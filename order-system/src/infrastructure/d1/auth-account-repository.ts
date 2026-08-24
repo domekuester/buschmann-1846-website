@@ -38,6 +38,16 @@ export const LOCKOUT_SECONDS = 15 * 60;
 
 export interface AuthAccount {
   readonly id: number;
+  /**
+   * Die normalisierte Kennung — dieselbe, mit der sich jemand angemeldet hat.
+   *
+   * Sie ist KEIN Geheimnis: Ein Kundencode ist ausdrücklich nicht geheim, und
+   * eine Admin-Adresse steht auf jeder Visitenkarte. Sie ist hier, damit der
+   * Adminbereich sagen kann, WER angemeldet ist — auf einem Gerät, das sich
+   * mehrere Leute teilen, ist das der Unterschied zwischen „ich arbeite als
+   * ich" und „ich arbeite als irgendwer".
+   */
+  readonly loginIdentifier: string;
   readonly role: AuthRole;
   /** Gesetzt bei 'customer', null bei 'admin' — das Schema erzwingt beides. */
   readonly customerId: number | null;
@@ -167,6 +177,7 @@ function toAccount(row: AuthAccountRow): AuthAccount {
 
   return {
     id: row.id,
+    loginIdentifier: row.login_identifier_normalized,
     role: row.role,
     customerId: row.customer_id,
     credential: {
