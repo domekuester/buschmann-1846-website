@@ -410,6 +410,15 @@ ausgenommen.
 scheitert jede Credential-Operation mit einem Konfigurationsfehler — der als
 `500` ohne Details nach außen geht. Kein Standardwert, kein „dann eben ohne".
 
+**Ein fehlender Pepper ist ausdrücklich kein falsches Passwort.** Die
+Credential-Schicht wirft in diesem Fall, statt `false` zu liefern, und das ist
+eine bewusste Ausnahme von der sonstigen Regel „im Zweifel ablehnen": Ein
+`false` sähe für jeden Aufrufer aus wie „Zugangsdaten stimmen nicht". Ein
+Worker ohne Secret meldete dann allen Cafés und allen Admins gleichzeitig
+falsche Zugangsdaten, und niemand käme auf die Ursache. Die Ausnahme sagt das
+Richtige: Hier stimmt der Server nicht, nicht der Benutzer. Erreichbar ist der
+Zweig im Normalbetrieb nicht — `readAppConfig` lehnt schon beim Lesen ab.
+
 ### 7.6 Unknown-User-Timing
 
 Eine unbekannte Kennung darf nicht daran erkennbar sein, dass die Antwort
