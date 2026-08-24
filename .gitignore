@@ -16,6 +16,9 @@ order-system/node_modules/
 order-system/.wrangler/
 order-system/.dev.vars
 order-system/.dev.vars.*
+# Einzige Ausnahme: die Vorlage. Sie enthält ausschließlich Platzhalter und
+# dokumentiert, welche Werte eine lokale .dev.vars braucht.
+!order-system/.dev.vars.example
 order-system/worker-startup.cpuprofile
 
 # worker-configuration.d.ts wird von `wrangler types` erzeugt, aber bewusst

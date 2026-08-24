@@ -31,6 +31,31 @@
     "directory": "./public"
   },
 
+  // BEWUSST OHNE "vars".
+  //
+  // Die Authentifizierung braucht drei Werte — AUTH_PEPPER, APP_ORIGIN und
+  // ENVIRONMENT —, und keiner davon steht hier. Der Grund ist nicht Vorsicht,
+  // sondern eine Eigenschaft dieser Datei: Sie ist eingecheckt.
+  //
+  //   AUTH_PEPPER  ist ein Geheimnis. Es gehört in ein Cloudflare Secret und
+  //                niemals in ein Repository.
+  //
+  //   ENVIRONMENT  stünde hier als "development", weil das der lokale Fall
+  //                ist — und wäre damit der eingecheckte Standardwert. Ein
+  //                Deployment, das ihn zu überschreiben vergisst, liefe mit
+  //                Cookies ohne Secure. src/config/app-config.ts ist genau
+  //                andersherum gebaut: Was fehlt, ist Produktion.
+  //
+  //   APP_ORIGIN   hinge sonst am selben Schalter.
+  //
+  // Lokal kommen alle drei aus .dev.vars (siehe .dev.vars.example, in Git;
+  // .dev.vars selbst nicht). Fehlen sie, startet der Worker zwar, aber jede
+  // Anmeldung scheitert mit einem Konfigurationsfehler — und das ist die
+  // gewollte Reihenfolge: lieber gar keine Anmeldung als eine unsichere.
+  //
+  // Typen dafür stehen in src/env.d.ts, von Hand und nicht aus
+  // `wrangler types` — sonst kennte ein frischer Klon sie nicht.
+
   "observability": {
     "enabled": true
   }

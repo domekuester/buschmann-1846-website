@@ -1,0 +1,27 @@
+# Vorlage für order-system/.dev.vars — NUR PLATZHALTER.
+#
+# Kopieren und anpassen:
+#     cp .dev.vars.example .dev.vars
+#
+# .dev.vars steht in .gitignore und darf dort auch niemals herausgenommen
+# werden. Diese Datei hier ist die einzige .dev.vars.*, die eingecheckt wird,
+# und sie enthält deshalb ausschließlich erkennbare Platzhalter.
+
+# Der serverseitige Pepper der Credential-Verifikation.
+#
+# DIESER WERT IST EIN PLATZHALTER UND KEIN GEHEIMNIS. Er steht in Git und in
+# jedem Klon. Für die lokale Entwicklung genügt er; produktiv wird ein
+# 256-Bit-Zufallswert als Cloudflare Secret gesetzt — nie hier.
+#
+# Einen eigenen lokalen Wert erzeugen:
+#     node -e "console.log(Buffer.from(crypto.getRandomValues(new Uint8Array(32))).toString('base64url'))"
+AUTH_PEPPER="PLATZHALTER-nur-lokal-kein-Echtwert-bitte-ersetzen"
+
+# Der erwartete Origin schreibender Requests. Muss exakt ein Origin sein:
+# Schema, Host, gegebenenfalls Port — kein Pfad, kein abschließender Schrägstrich.
+APP_ORIGIN="http://127.0.0.1:8787"
+
+# Genau das Wort 'development' schaltet die Entwicklungs-Cookie-Policy frei
+# (kein Secure, anderer Cookiename). Jeder andere Wert — auch ein Tippfehler,
+# auch ein fehlender — bedeutet Produktion.
+ENVIRONMENT="development"
