@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../src/infrastructure/d1/product-repository';
 import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
 import { reserveOrderNumber } from '../../src/infrastructure/d1/order-number-sequence';
-import { findOrderByNumber, saveOrder } from '../../src/infrastructure/d1/order-repository';
+import {
+  findOrderByNumber,
+  findOrderBySubmission,
+  saveOrder,
+} from '../../src/infrastructure/d1/order-repository';
 import { Order } from '../../src/domain/order';
 import { OrderDraft } from '../../src/domain/order-draft';
 import { OrderNumber } from '../../src/domain/order-number';
@@ -45,7 +49,14 @@ async function seed(): Promise<void> {
 }
 
 beforeEach(async () => {
-  for (const table of ['order_items', 'orders', 'products', 'customers', 'order_number_sequences']) {
+  for (const table of [
+    'order_items',
+    'orders',
+    'customer_access_tokens',
+    'products',
+    'customers',
+    'order_number_sequences',
+  ]) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
   await seed();
@@ -221,5 +232,84 @@ describe('saveOrder', () => {
     const neu = await findOrderByNumber(env.DB, 'BUS-2026-000002');
     expect(neu?.items[0]?.unitPrice.cents).toBe(520);
     expect(neu?.total().cents).toBe(1560);
+  });
+});
+
+/**
+ * Die Absendekennung ist der serverseitige Teil des Doppelklick-Schutzes.
+ * Sie wird im SELBEN INSERT geschrieben wie die Bestellung — es gibt keinen
+ * Zustand, in dem eine Bestellung ohne ihre Kennung oder eine Kennung ohne
+ * ihre Bestellung existiert.
+ */
+describe('saveOrder mit Absendekennung', () => {
+  async function order(seq = 1, customerId = 1): Promise<Order> {
+    const customer = await findCustomer(env.DB, customerId);
+    const catalog = await loadCatalog(env.DB);
+    return Order.place({
+      customer: customer!,
+      catalog,
+      draft: OrderDraft.fromInput(
+        {
+          fulfillment_type: customer!.defaultFulfillment,
+          fulfillment_date: '2026-08-28',
+          items: [{ product_id: 1, quantity: 3 }],
+        },
+        NOW,
+      ),
+      orderNumber: OrderNumber.fromYearAndSequence(2026, seq),
+      now: NOW,
+    });
+  }
+
+  it('schreibt die Kennung in dieselbe Zeile', async () => {
+    await saveOrder(env.DB, await order(1), 'sub-0001-abcd');
+
+    const row = await env.DB.prepare(
+      'SELECT order_number, submission_id FROM orders',
+    ).first<{ order_number: string; submission_id: string | null }>();
+
+    expect(row).toEqual({ order_number: 'BUS-2026-000001', submission_id: 'sub-0001-abcd' });
+  });
+
+  it('schreibt ohne Kennung NULL — der Phase-1-Pfad bleibt unberührt', async () => {
+    await saveOrder(env.DB, await order(1));
+
+    const row = await env.DB.prepare('SELECT submission_id FROM orders').first<{
+      submission_id: string | null;
+    }>();
+    expect(row?.submission_id).toBeNull();
+  });
+
+  it('findet eine Bestellung über Kunde und Kennung wieder', async () => {
+    await saveOrder(env.DB, await order(1), 'sub-0001-abcd');
+
+    const found = await findOrderBySubmission(env.DB, 1, 'sub-0001-abcd');
+    expect(found?.orderNumber.value).toBe('BUS-2026-000001');
+    expect(found?.total().cents).toBe(1305);
+    expect(found?.items).toHaveLength(1);
+  });
+
+  it('liefert null für eine unbekannte Kennung', async () => {
+    await saveOrder(env.DB, await order(1), 'sub-0001-abcd');
+    expect(await findOrderBySubmission(env.DB, 1, 'sub-9999-zzzz')).toBeNull();
+  });
+
+  /**
+   * Der Kunde gehört zum Schlüssel. Ohne ihn könnte ein Café mit einer
+   * geratenen Kennung die Bestellung eines anderen Cafés auslesen.
+   */
+  it('liefert die Kennung eines anderen Cafés nicht aus', async () => {
+    await saveOrder(env.DB, await order(1), 'sub-0001-abcd');
+    expect(await findOrderBySubmission(env.DB, 2, 'sub-0001-abcd')).toBeNull();
+  });
+
+  it('lehnt dieselbe Kennung beim selben Café ein zweites Mal ab', async () => {
+    await saveOrder(env.DB, await order(1), 'sub-0001-abcd');
+    await expect(saveOrder(env.DB, await order(2), 'sub-0001-abcd')).rejects.toThrow(
+      /UNIQUE constraint/i,
+    );
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM orders').first<{ n: number }>();
+    expect(row?.n).toBe(1);
   });
 });

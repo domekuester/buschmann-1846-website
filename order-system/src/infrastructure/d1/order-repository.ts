@@ -22,14 +22,26 @@ import type { OrderItemRow, OrderRow } from './rows';
  * Verlässlichkeit: Das Subselect sagt ausdrücklich, zu welcher Bestellung die
  * Position gehört, statt sich auf die Ausführungsreihenfolge innerhalb des
  * Batches und den Verbindungszustand zu verlassen.
+ *
+ * submissionId ist die Absendekennung der Bestellseite und optional, weil
+ * nicht jede Bestellung über sie entsteht — der Anwendungsfall aus Phase 1
+ * kennt sie nicht. Sie ist bewusst KEIN Feld des Order-Aggregats: Wie oft ein
+ * Daumen auf eine Schaltfläche getippt hat, ist keine Eigenschaft einer
+ * Bestellung. Sie geht in denselben INSERT und damit in dieselbe Zeile —
+ * damit kann keine Bestellung ohne ihre Kennung und keine Kennung ohne ihre
+ * Bestellung existieren.
  */
-export async function saveOrder(db: D1Database, order: Order): Promise<void> {
+export async function saveOrder(
+  db: D1Database,
+  order: Order,
+  submissionId: string | null = null,
+): Promise<void> {
   const insertOrder = db
     .prepare(
       `INSERT INTO orders (order_number, customer_id, customer_name_snapshot, fulfillment_type,
                            fulfillment_date, delivery_address_snapshot, note, status,
-                           total_amount_cents, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                           total_amount_cents, submission_id, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .bind(
       order.orderNumber.value,
@@ -41,6 +53,7 @@ export async function saveOrder(db: D1Database, order: Order): Promise<void> {
       order.note,
       order.status,
       order.total().cents,
+      submissionId,
       order.createdAt,
       order.updatedAt,
     );
@@ -101,6 +114,31 @@ export async function findOrderByNumber(db: D1Database, orderNumber: string): Pr
     .all<OrderItemRow>();
 
   return toOrder(row, results);
+}
+
+/**
+ * Sucht die Bestellung, die aus einem bestimmten Absendevorgang entstanden
+ * ist. Das ist die Leseseite des Doppelklick-Schutzes: Trifft eine zweite
+ * Anfrage mit derselben Kennung ein, wird nicht noch einmal bestellt, sondern
+ * die vorhandene Bestellung zurückgegeben.
+ *
+ * Der Kunde gehört zum Schlüssel und ist nicht bloß eine zusätzliche
+ * Bedingung: Ohne ihn könnte ein Café mit einer geratenen Kennung die
+ * Bestellung eines anderen Cafés auslesen.
+ */
+export async function findOrderBySubmission(
+  db: D1Database,
+  customerId: number,
+  submissionId: string,
+): Promise<Order | null> {
+  const row = await db
+    .prepare(
+      `SELECT order_number FROM orders WHERE customer_id = ? AND submission_id = ?`,
+    )
+    .bind(customerId, submissionId)
+    .first<{ order_number: string }>();
+
+  return row === null ? null : findOrderByNumber(db, row.order_number);
 }
 
 function toOrder(row: OrderRow, itemRows: readonly OrderItemRow[]): Order {
