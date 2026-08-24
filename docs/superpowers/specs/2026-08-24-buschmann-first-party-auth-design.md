@@ -456,13 +456,34 @@ POST /login  (application/x-www-form-urlencoded)
 11. 303 → /bestellen bzw. /admin
 ```
 
-Schritt 4 steht **vor** Schritt 5: Ein gesperrter Account soll nicht bei jedem
-Versuch 600 000 Iterationen kosten.
+Schritt 4 steht **vor** Schritt 5, aber ein gesperrter Account läuft trotzdem
+nicht ohne Arbeit heraus: Statt der echten Verifikation läuft die
+**Dummy-Verifikation** mit demselben Work Factor.
+
+Der naheliegende Entwurf — bei laufender Sperre sofort ablehnen und die 45 ms
+sparen — wäre ein Aufzählungsverfahren. Wer fünfmal auf eine geratene Kennung
+tippt und danach schnellere Antworten bekommt, hat bestätigt, dass es sie
+gibt. Für Kundencodes wäre das verschmerzbar (sie sind ausdrücklich nicht
+geheim), für Admin-Adressen nicht. Und der Einwand „ein gesperrter Account
+soll keine CPU kosten" trägt nicht: Eine **unbekannte** Kennung kostet
+dieselbe Ableitung, ein Angreifer gewinnt durch das Aussperren also nichts.
+
+Die echte Verifikation bleibt bei einer Sperre aus — ihr Ergebnis zählte
+ohnehin nicht.
 
 Schritte 6 und 7 stehen **nach** Schritt 5, nicht davor. Ein deaktivierter
 Account, der ohne Credential-Prüfung abgelehnt würde, wäre am Zeitverhalten
 erkennbar — und damit ein Enumerationspfad für genau die Accounts, die es
 gibt.
+
+**Jeder Ausgang kostet genau eine PBKDF2-Ableitung.** Das ist die
+zusammenfassende Zusage, und ein Test prüft sie für alle Fälle: unbekannte
+Kennung, formal unmögliche Kennung, gesperrter Account, falsches Geheimnis,
+richtiges Geheimnis.
+
+Die beiden Prüfungen in Schritt 6 und 7 zählen ausdrücklich **keinen**
+Fehlversuch: Wer das richtige Geheimnis kennt, soll sich nicht selbst
+aussperren können, nur weil sein Café gerade deaktiviert ist.
 
 ### 8.2 Generische Fehlermeldung
 
