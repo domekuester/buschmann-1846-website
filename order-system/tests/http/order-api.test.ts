@@ -225,7 +225,7 @@ describe('POST /api/orders — der gute Fall', () => {
   it('trägt no-store, damit die Bestätigung nirgends liegen bleibt', async () => {
     const response = await post(payload());
     expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(response.headers.get('referrer-policy')).toBe('same-origin');
   });
 });
 

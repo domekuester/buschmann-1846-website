@@ -145,6 +145,21 @@ describe('renderLoginPage — was NICHT darin steht', () => {
   it('will nicht indexiert werden', () => {
     expect(OHNE_FEHLER).toContain('noindex');
   });
+
+  /**
+   * KEIN `<meta name="referrer">` — und das ist kein Schönheitsfehler.
+   *
+   * Ein Meta-Tag gewinnt gegenüber der HTTP-Kopfzeile. Solange hier
+   * `no-referrer` stand, serialisierte der Browser den Origin jeder
+   * Formularabsendung als 'null' (so verlangt es der Fetch-Standard) — und
+   * die Origin-Prüfung lehnte JEDE Anmeldung ab. Die Worker-Tests konnten das
+   * nicht sehen, weil sie die Kopfzeile selbst setzen.
+   *
+   * Die Policy hat genau eine Quelle: src/http/security.ts.
+   */
+  it('trägt keine eigene Referrer-Policy im Markup', () => {
+    expect(OHNE_FEHLER).not.toContain('name="referrer"');
+  });
 });
 
 describe('renderLoginPage — Escaping', () => {

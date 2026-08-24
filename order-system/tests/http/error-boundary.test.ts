@@ -83,7 +83,7 @@ describe('toSafeResponse', () => {
     for (const thrown of [new ValidationError({ a: 'b' }), new AccessDeniedError(), new Error('x')]) {
       const response = toSafeResponse(thrown);
       expect(response.headers.get('cache-control')).toBe('no-store');
-      expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+      expect(response.headers.get('referrer-policy')).toBe('same-origin');
     }
   });
 });
@@ -94,7 +94,21 @@ describe('privateHeaders', () => {
   });
 
   it('verhindert, dass der Token als Referer abfließt', () => {
-    expect(privateHeaders()['referrer-policy']).toBe('no-referrer');
+    /**
+     * same-origin und NICHT no-referrer — die Zeile sieht nach einer
+     * Lockerung aus und ist eine Korrektur.
+     *
+     * Nach dem Fetch-Standard wird der Origin einer Anfrage als 'null'
+     * serialisiert, wenn die Referrer-Policy 'no-referrer' lautet. Mit
+     * no-referrer schickte ein echtes `<form method="post">` also
+     * `Origin: null` — und die Origin-Prüfung lehnte JEDE Anmeldung ab.
+     * Aufgefallen ist das erst im Browser; die Tests hier setzen die
+     * Kopfzeile selbst und konnten es nicht sehen.
+     *
+     * 'same-origin' sendet einen Referer nur an die eigene Herkunft. Fremde
+     * Anfragen lässt die CSP mit `default-src 'none'` ohnehin nicht zu.
+     */
+    expect(privateHeaders()['referrer-policy']).toBe('same-origin');
   });
 
   it('verhindert MIME-Raten, Einbettung und Indexierung', () => {

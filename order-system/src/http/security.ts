@@ -17,13 +17,37 @@ export function privateHeaders(extra: Record<string, string> = {}): Record<strin
     'cache-control': 'no-store',
 
     /**
-     * Seit Phase 3A steht kein Geheimnis mehr in der URL — der Token liegt im
-     * Cookie. Die Zeile bleibt trotzdem: Ein Referer verrät auch ohne
-     * Geheimnis, DASS jemand /bestellen oder /admin geöffnet hat, und diese
-     * Seiten lösen ohnehin keine Anfrage an einen fremden Host aus. Was
-     * nicht gesendet wird, kann nichts mitnehmen.
+     * same-origin statt no-referrer — und das ist eine Korrektur, keine
+     * Lockerung.
+     *
+     * Phase 2 setzte 'no-referrer', weil das Geheimnis in der URL stand:
+     * /o/<token>. Ein abfließender Referer wäre dort ein abfließender Zugang
+     * gewesen. Seit Phase 3A steht in keiner URL mehr ein Geheimnis — der
+     * Sitzungstoken liegt im Cookie.
+     *
+     * DER GRUND FÜR DIE ÄNDERUNG IST EIN BEFUND AUS DEM BROWSER:
+     *
+     * Nach dem Fetch-Standard wird der Origin einer Anfrage als 'null'
+     * serialisiert, wenn die Referrer-Policy 'no-referrer' lautet. Ein echtes
+     * `<form method="post">` schickte damit `Origin: null` — und die
+     * Origin-Prüfung lehnte jede Anmeldung ab. In den Worker-Tests fiel das
+     * nicht auf, weil sie die Kopfzeile selbst setzen; erst der Browser hat
+     * es gezeigt.
+     *
+     * 'same-origin' sendet einen Referer ausschließlich an die eigene
+     * Herkunft und an keinen fremden Host. Der Verlust gegenüber
+     * 'no-referrer' ist damit auf Anfragen beschränkt, die ohnehin an uns
+     * selbst gehen — und die CSP mit `default-src 'none'` lässt gar keine
+     * fremden Anfragen zu. Eingetauscht wird das gegen eine funktionierende
+     * CSRF-Abwehr, und das ist kein knapper Handel.
+     *
+     * DIESE KOPFZEILE IST DIE EINZIGE QUELLE DER POLICY. Die Seitengerüste
+     * trugen zusätzlich ein `<meta name="referrer">`, und das Meta-Tag
+     * gewinnt gegenüber der Kopfzeile — die Korrektur hier blieb deshalb
+     * zunächst wirkungslos. Eine Regel an zwei Orten ist eine Regel, von der
+     * eine Hälfte irgendwann vergessen wird; das Meta-Tag ist entfernt.
      */
-    'referrer-policy': 'no-referrer',
+    'referrer-policy': 'same-origin',
 
     'x-content-type-options': 'nosniff',
 

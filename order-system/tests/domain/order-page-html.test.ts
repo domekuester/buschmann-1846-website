@@ -200,3 +200,16 @@ describe('renderOrderPage — nichts tritt nach außen, was nicht soll', () => {
     expect(page()).toContain('noindex');
   });
 });
+
+/**
+ * Dieselbe Falle wie auf der Loginseite, und sie gilt für jedes Seitengerüst:
+ * Ein `<meta name="referrer">` gewinnt gegenüber der HTTP-Kopfzeile. Mit
+ * `no-referrer` schickt der Browser bei einer Formularabsendung
+ * `Origin: null`, und die CSRF-Abwehr lehnt alles ab. Die Policy hat genau
+ * eine Quelle: src/http/security.ts.
+ */
+describe('Referrer-Policy steht nur an einer Stelle', () => {
+  it('trägt keine eigene Referrer-Policy im Markup', () => {
+    expect(page()).not.toContain('name="referrer"');
+  });
+});

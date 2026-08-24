@@ -278,7 +278,7 @@ describe('GET /bestellen — Schutzkopfzeilen', () => {
 
   it('sendet keinen Referer an fremde Hosts', async () => {
     expect((await call('/bestellen', sitzung.cafe)).headers.get('referrer-policy')).toBe(
-      'no-referrer',
+      'same-origin',
     );
   });
 
@@ -305,7 +305,7 @@ describe('GET /bestellen — Schutzkopfzeilen', () => {
   it('trägt dieselben Kopfzeilen auch auf der Ablehnung', async () => {
     const response = await call('/bestellen', sitzung.admin);
     expect(response.headers.get('cache-control')).toBe('no-store');
-    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(response.headers.get('referrer-policy')).toBe('same-origin');
   });
 });
 

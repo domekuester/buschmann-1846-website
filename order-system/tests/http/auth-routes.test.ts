@@ -165,7 +165,7 @@ describe('GET /login', () => {
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).not.toContain('unsafe-inline');
     expect(response.headers.get('x-content-type-options')).toBe('nosniff');
-    expect(response.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(response.headers.get('referrer-policy')).toBe('same-origin');
   });
 
   it('leitet eine gültige Kundensitzung sofort zur Bestellseite', async () => {
