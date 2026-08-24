@@ -6,7 +6,7 @@
     "lib": ["ES2022"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["./worker-configuration.d.ts"],
+    "types": ["./worker-configuration.d.ts", "@cloudflare/vitest-plugin/types"],
 
     /* Die Anforderung aus Abschnitt 7: strikt, und zwar vollständig. */
     "strict": true,
