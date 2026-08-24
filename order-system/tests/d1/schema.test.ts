@@ -46,6 +46,8 @@ beforeEach(async () => {
   for (const table of [
     'order_items',
     'orders',
+    'auth_sessions',
+    'auth_accounts',
     'customer_access_tokens',
     'products',
     'customers',
@@ -63,6 +65,8 @@ describe('Migrationen', () => {
     ).all<{ name: string }>();
 
     expect(results.map((r) => r.name)).toEqual([
+      'auth_accounts',
+      'auth_sessions',
       'customer_access_tokens',
       'customers',
       'order_items',
@@ -78,6 +82,9 @@ describe('Migrationen', () => {
     ).all<{ name: string }>();
 
     expect(results.map((r) => r.name)).toEqual([
+      'idx_auth_accounts_customer',
+      'idx_auth_sessions_account',
+      'idx_auth_sessions_expiry',
       'idx_cat_customer',
       'idx_customers_active_name',
       'idx_order_items_order',
@@ -462,5 +469,324 @@ describe('orders.submission_id', () => {
 
     const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM orders').first<{ n: number }>();
     expect(row?.n).toBe(2);
+  });
+});
+
+/**
+ * Die Anmeldekonten. Die Anwendung ist die erste Verteidigungslinie — hier
+ * steht die zweite, damit ein Datensatz auch dann nicht in einen unmöglichen
+ * Zustand gerät, wenn er auf anderem Weg entsteht.
+ */
+describe('auth_accounts', () => {
+  const SALT = 'a'.repeat(32);
+  const VERIFIER = 'b'.repeat(64);
+
+  async function seedAccount(
+    overrides: Partial<{
+      identifier: string;
+      role: string;
+      customerId: number | null;
+      algorithm: string;
+      iterations: number;
+      salt: string;
+      verifier: string;
+      isActive: number;
+      failedAttempts: number;
+      lockedUntil: string | null;
+    }> = {},
+  ): Promise<void> {
+    const werte = {
+      identifier: 'testcafe',
+      role: 'customer',
+      customerId: 1,
+      algorithm: 'pbkdf2-sha256',
+      iterations: 600000,
+      salt: SALT,
+      verifier: VERIFIER,
+      isActive: 1,
+      failedAttempts: 0,
+      lockedUntil: null as string | null,
+      ...overrides,
+    };
+
+    await env.DB.prepare(
+      `INSERT INTO auth_accounts (login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations,
+                                  credential_salt, credential_verifier, is_active,
+                                  failed_attempts, locked_until, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(
+        werte.identifier,
+        werte.role,
+        werte.customerId,
+        werte.algorithm,
+        werte.iterations,
+        werte.salt,
+        werte.verifier,
+        werte.isActive,
+        werte.failedAttempts,
+        werte.lockedUntil,
+        NOW,
+        NOW,
+      )
+      .run();
+  }
+
+  it('nehmen ein gültiges Café-Konto auf', async () => {
+    await seedCustomer();
+    await seedAccount();
+
+    const row = await env.DB.prepare(
+      'SELECT login_identifier_normalized, role, customer_id, failed_attempts FROM auth_accounts',
+    ).first<{ login_identifier_normalized: string; role: string; customer_id: number; failed_attempts: number }>();
+
+    expect(row).toEqual({
+      login_identifier_normalized: 'testcafe',
+      role: 'customer',
+      customer_id: 1,
+      failed_attempts: 0,
+    });
+  });
+
+  it('nehmen ein gültiges Admin-Konto ohne Kundenbezug auf', async () => {
+    await seedAccount({ identifier: 'admin@example.test', role: 'admin', customerId: null });
+
+    const row = await env.DB.prepare(
+      'SELECT role, customer_id FROM auth_accounts',
+    ).first<{ role: string; customer_id: number | null }>();
+
+    expect(row).toEqual({ role: 'admin', customer_id: null });
+  });
+
+  it('kennen genau zwei Rollen', async () => {
+    await seedCustomer();
+    for (const rolle of ['manager', 'superadmin', 'accounting', 'owner', 'ADMIN', '']) {
+      await expect(seedAccount({ role: rolle })).rejects.toThrow(/CHECK constraint/i);
+    }
+  });
+
+  /**
+   * Ein Café ohne Kundenbezug könnte nicht bestellen. Der Fall darf gar nicht
+   * erst entstehen.
+   */
+  it('verlangen bei einem Café einen Kundenbezug', async () => {
+    await expect(seedAccount({ role: 'customer', customerId: null })).rejects.toThrow(
+      /CHECK constraint/i,
+    );
+  });
+
+  /**
+   * Der wichtigere der beiden: Ein Admin MIT Kundenbezug könnte im Namen
+   * eines Cafés bestellen, ohne dass es im Bestellablauf sichtbar wäre.
+   * Rollen sind getrennt, nicht gestuft.
+   */
+  it('verbieten einem Admin einen Kundenbezug', async () => {
+    await seedCustomer();
+    await expect(
+      seedAccount({ identifier: 'admin@example.test', role: 'admin', customerId: 1 }),
+    ).rejects.toThrow(/CHECK constraint/i);
+  });
+
+  it('lehnen dieselbe Kennung zweimal ab', async () => {
+    await seedCustomer();
+    await seedAccount();
+    await expect(seedAccount()).rejects.toThrow(/UNIQUE constraint/i);
+  });
+
+  it('lehnen eine leere Kennung ab', async () => {
+    await seedCustomer();
+    await expect(seedAccount({ identifier: '' })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedAccount({ identifier: '   ' })).rejects.toThrow(/CHECK constraint/i);
+  });
+
+  it('lehnen einen unbekannten Algorithmus ab', async () => {
+    await seedCustomer();
+    for (const algorithmus of ['md5', 'sha256', 'bcrypt', '']) {
+      await expect(seedAccount({ algorithm: algorithmus })).rejects.toThrow(/CHECK constraint/i);
+    }
+  });
+
+  /**
+   * Die Untergrenze gehört ins Schema und nicht in den Code: credential.ts ist
+   * ein Primitiv und rechnet mit dem, was es bekommt. Durchgesetzt wird die
+   * Grenze dort, wo geschrieben wird.
+   */
+  it('lehnen einen zu niedrigen Work Factor ab', async () => {
+    await seedCustomer();
+    for (const iterationen of [0, 1, 1000, 99999]) {
+      await expect(seedAccount({ iterations: iterationen })).rejects.toThrow(/CHECK constraint/i);
+    }
+    await seedAccount({ iterations: 100000 });
+  });
+
+  /**
+   * Genau der Fall, den eine reine Längenprüfung durchließe: ein
+   * versehentlich eingetragener Klartext derselben Länge.
+   */
+  it('lehnen Salt und Verifier ab, die keine Hexwerte sind', async () => {
+    await seedCustomer();
+    await expect(seedAccount({ salt: 'z'.repeat(32) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedAccount({ salt: 'A'.repeat(32) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedAccount({ salt: 'a'.repeat(31) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedAccount({ verifier: 'z'.repeat(64) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedAccount({ verifier: 'b'.repeat(63) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedAccount({ verifier: 'b'.repeat(65) })).rejects.toThrow(/CHECK constraint/i);
+  });
+
+  it('lehnen einen negativen Fehlversuchszähler ab', async () => {
+    await seedCustomer();
+    await expect(seedAccount({ failedAttempts: -1 })).rejects.toThrow(/CHECK constraint/i);
+  });
+
+  it('lehnen ein Konto ohne Kunden ab', async () => {
+    await expect(seedAccount({ customerId: 99 })).rejects.toThrow(/FOREIGN KEY constraint/i);
+  });
+
+  /**
+   * CASCADE, anders als bei orders: Eine Bestellung ist ein historisches
+   * Dokument. Ein Anmeldekonto ohne Kunden ist ein Sicherheitsproblem.
+   */
+  it('verschwinden mit ihrem Kunden', async () => {
+    await seedCustomer();
+    await seedAccount();
+    await env.DB.prepare('DELETE FROM customers WHERE id = 1').run();
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM auth_accounts').first<{ n: number }>();
+    expect(row?.n).toBe(0);
+  });
+});
+
+/**
+ * Die Sitzungen. Der Rohtoken steht hier nicht — geprüft wird, dass das Schema
+ * ihn auch gar nicht aufnehmen könnte.
+ */
+describe('auth_sessions', () => {
+  const HASH = 'c'.repeat(64);
+  const CSRF = 'd'.repeat(43);
+  const SPAETER = '2026-09-23T07:00:00.000Z';
+
+  async function seedAccountFor(id = 1): Promise<void> {
+    await env.DB.prepare(
+      `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations,
+                                  credential_salt, credential_verifier, is_active,
+                                  failed_attempts, created_at, updated_at)
+       VALUES (?, ?, 'admin', NULL, 'pbkdf2-sha256', 600000, ?, ?, 1, 0, ?, ?)`,
+    )
+      .bind(id, `admin${id}@example.test`, 'a'.repeat(32), 'b'.repeat(64), NOW, NOW)
+      .run();
+  }
+
+  async function seedSession(
+    overrides: Partial<{
+      accountId: number;
+      tokenHash: string;
+      csrf: string;
+      createdAt: string;
+      expiresAt: string;
+      revokedAt: string | null;
+    }> = {},
+  ): Promise<void> {
+    const werte = {
+      accountId: 1,
+      tokenHash: HASH,
+      csrf: CSRF,
+      createdAt: NOW,
+      expiresAt: SPAETER,
+      revokedAt: null as string | null,
+      ...overrides,
+    };
+
+    await env.DB.prepare(
+      `INSERT INTO auth_sessions (account_id, token_hash, csrf_token, created_at, expires_at, revoked_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+      .bind(werte.accountId, werte.tokenHash, werte.csrf, werte.createdAt, werte.expiresAt, werte.revokedAt)
+      .run();
+  }
+
+  it('nehmen eine gültige Sitzung auf', async () => {
+    await seedAccountFor();
+    await seedSession();
+
+    const row = await env.DB.prepare(
+      'SELECT account_id, token_hash, csrf_token, revoked_at FROM auth_sessions',
+    ).first<{ account_id: number; token_hash: string; csrf_token: string; revoked_at: string | null }>();
+
+    expect(row).toEqual({ account_id: 1, token_hash: HASH, csrf_token: CSRF, revoked_at: null });
+  });
+
+  it('lehnen denselben Tokenhash zweimal ab', async () => {
+    await seedAccountFor();
+    await seedSession();
+    await expect(seedSession()).rejects.toThrow(/UNIQUE constraint/i);
+  });
+
+  /**
+   * Ein 43 Zeichen langer base64url-Token ist kein 64 Zeichen langer Hex-Hash.
+   * Ein versehentlich gespeicherter ROHTOKEN kommt hier nicht durch — und das
+   * ist der eigentliche Zweck dieser Bedingung.
+   */
+  it('lehnen einen Tokenhash ab, der keiner ist', async () => {
+    await seedAccountFor();
+    await expect(seedSession({ tokenHash: 'z'.repeat(64) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedSession({ tokenHash: 'C'.repeat(64) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedSession({ tokenHash: 'c'.repeat(43) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedSession({ tokenHash: 'c'.repeat(63) })).rejects.toThrow(/CHECK constraint/i);
+  });
+
+  it('lehnen einen CSRF-Token in falscher Form ab', async () => {
+    await seedAccountFor();
+    await expect(seedSession({ csrf: 'd'.repeat(42) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedSession({ csrf: 'd'.repeat(44) })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedSession({ csrf: 'd'.repeat(42) + '+' })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedSession({ csrf: 'd'.repeat(42) + '=' })).rejects.toThrow(/CHECK constraint/i);
+  });
+
+  it('lehnen eine Sitzung ab, die schon bei ihrer Entstehung abgelaufen ist', async () => {
+    await seedAccountFor();
+    await expect(seedSession({ expiresAt: NOW })).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedSession({ expiresAt: '2026-01-01T00:00:00.000Z' })).rejects.toThrow(
+      /CHECK constraint/i,
+    );
+  });
+
+  it('lehnen eine Sitzung ohne Konto ab', async () => {
+    await expect(seedSession({ accountId: 99 })).rejects.toThrow(/FOREIGN KEY constraint/i);
+  });
+
+  it('verschwinden mit ihrem Konto', async () => {
+    await seedAccountFor();
+    await seedSession({ tokenHash: 'c'.repeat(64) });
+    await seedSession({ tokenHash: 'e'.repeat(64) });
+    await env.DB.prepare('DELETE FROM auth_accounts WHERE id = 1').run();
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM auth_sessions').first<{ n: number }>();
+    expect(row?.n).toBe(0);
+  });
+
+  /**
+   * Die ganze Kette: Kunde weg → Konto weg → Sitzungen weg. Ein deaktivierter
+   * Kunde bleibt bestehen (das ist der Normalfall), ein gelöschter nimmt
+   * seinen Zugang mit.
+   */
+  it('verschwinden über die Kette bis zum Kunden', async () => {
+    await seedCustomer();
+    await env.DB.prepare(
+      `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations,
+                                  credential_salt, credential_verifier, is_active,
+                                  failed_attempts, created_at, updated_at)
+       VALUES (2, 'testcafe', 'customer', 1, 'pbkdf2-sha256', 600000, ?, ?, 1, 0, ?, ?)`,
+    )
+      .bind('a'.repeat(32), 'b'.repeat(64), NOW, NOW)
+      .run();
+    await seedSession({ accountId: 2 });
+
+    await env.DB.prepare('DELETE FROM customers WHERE id = 1').run();
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM auth_sessions').first<{ n: number }>();
+    expect(row?.n).toBe(0);
   });
 });
