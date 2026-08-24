@@ -265,10 +265,32 @@ Die Normalisierung ist genau diese, in dieser Reihenfolge, und sonst nichts:
 3. Trimmen von Whitespace, einschließlich Unicode-Whitespace (`\p{White_Space}`).
 4. Kleinschreibung mit `toLowerCase()` — locale-unabhängig, ausdrücklich
    **nicht** `toLocaleLowerCase()`.
-5. Ablehnung, wenn danach leer, länger als 190 Zeichen oder mit
-   Steuerzeichen (Kategorie `Cc`) behaftet.
+5. Ablehnung, wenn das Ergebnis leer oder länger als 190 Zeichen ist.
+6. Ablehnung, wenn das Ergebnis nicht vollständig aus dem **Zeichenvorrat**
+   `[a-z0-9._@+-]` besteht.
 
 `CAFE27` → `cafe27`. `  Admin@Example.test  ` → `admin@example.test`.
+
+**Der Zeichenvorrat ist eine Allowlist, keine Blocklist**, und das ist der
+wichtigere Teil dieser Regel. Ein kyrillisches `а` (U+0430) sieht aus wie ein
+lateinisches `a`; ohne Allowlist wäre `саfe27` ein zweiter Account, den
+niemand vom ersten unterscheiden kann. Homoglyphen gibt es in griechischer,
+armenischer und mathematischer Schrift zu Hunderten — sie aufzuzählen ist
+aussichtslos, und deshalb wird stattdessen aufgezählt, was erlaubt ist.
+
+Die Allowlist trägt zusätzlich die **Idempotenz**: Über diesem Vorrat sind
+NFKC und `toLowerCase()` die Identität. Ein zweiter Durchlauf kann weder ein
+kombinierendes Zeichen noch einen Großbuchstaben erzeugen. Ohne sie wäre die
+Eigenschaft eine Hoffnung — `İ` (U+0130) etwa wird beim Kleinschreiben zu
+`i` + U+0307 und wäre nicht stabil; mit der Allowlist wird es sauber
+abgelehnt.
+
+Der Preis ist eine abgelehnte internationalisierte E-Mail-Adresse. Das ist
+hinnehmbar, weil Buschmann die Accounts selbst anlegt — und es ist eine
+sichtbare Ablehnung, kein stiller Fehlgriff.
+
+Steuerzeichen (Kategorie `Cc`) brauchen keine eigene Regel: Sie stehen nicht
+im Vorrat.
 
 **Keine Fuzzy-Matches, kein Raten.** Kein Entfernen von Punkten in
 E-Mail-Adressen, kein Ignorieren von `+tag`-Suffixen, keine
