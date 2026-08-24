@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { toSafeResponse } from '../../src/http/error-boundary';
 import { AccessDeniedError, InvalidArgumentError, ValidationError } from '../../src/domain/errors';
+import { ForbiddenError, UnauthenticatedError } from '../../src/http/guard';
 import { privateHeaders } from '../../src/http/security';
 
 async function body(response: Response): Promise<string> {
@@ -108,5 +109,50 @@ describe('privateHeaders', () => {
       'cache-control': 'no-store',
       'content-security-policy': "default-src 'none'",
     });
+  });
+});
+
+/**
+ * Die beiden Fehlerarten, die mit der Sitzungsauthentifizierung dazugekommen
+ * sind. Der Unterschied zwischen 401 und 403 ist die Aussage: „Melde dich an"
+ * gegenüber „das darfst du nicht".
+ */
+describe('Auth-Fehler', () => {
+  it('macht aus UnauthenticatedError eine 401', async () => {
+    const response = toSafeResponse(new UnauthenticatedError());
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'unauthorized' });
+  });
+
+  it('macht aus ForbiddenError eine 403', async () => {
+    const response = toSafeResponse(new ForbiddenError());
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'forbidden' });
+  });
+
+  /**
+   * Die Antwort sagt nicht, WELCHE Prüfung fehlgeschlagen ist. Origin, CSRF
+   * und Rolle sehen von außen gleich aus — alles andere wäre eine Anleitung.
+   */
+  it('verrät nicht, welche Prüfung fehlgeschlagen ist', async () => {
+    const körper = await Promise.all(
+      [
+        new ForbiddenError('Origin stimmt nicht'),
+        new ForbiddenError('CSRF-Token fehlt'),
+        new ForbiddenError('Rolle reicht nicht'),
+      ].map((fehler) => toSafeResponse(fehler).text()),
+    );
+
+    expect(new Set(körper).size).toBe(1);
+    expect(körper[0]).not.toContain('Origin');
+    expect(körper[0]).not.toContain('CSRF');
+    expect(körper[0]).not.toContain('Rolle');
+  });
+
+  it('trägt auch bei diesen Fehlern no-store', () => {
+    expect(toSafeResponse(new ForbiddenError()).headers.get('cache-control')).toBe('no-store');
+    expect(toSafeResponse(new UnauthenticatedError()).headers.get('cache-control')).toBe('no-store');
   });
 });

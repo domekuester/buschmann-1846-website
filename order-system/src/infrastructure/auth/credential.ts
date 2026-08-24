@@ -45,6 +45,8 @@
  * 7,6 ms je 100 000 Iterationen, also rund 45 ms bei 600 000.
  */
 
+import { constantTimeEquals } from './constant-time';
+
 const encoder = new TextEncoder();
 
 /**
@@ -242,29 +244,6 @@ function isUsable(stored: StoredCredential): boolean {
     SALT_FORM.test(stored.saltHex) &&
     VERIFIER_FORM.test(stored.verifierHex)
   );
-}
-
-/**
- * Vergleicht zwei Hexzeichenketten, ohne beim ersten Unterschied aufzuhören.
- *
- * `a === b` bricht ab, sobald sich ein Zeichen unterscheidet. Die Laufzeit
- * verriete damit, wie viele Zeichen am Anfang übereinstimmen — und wer raten
- * darf, kann sich Zeichen für Zeichen an einen Verifier herantasten. Hier wird
- * über ALLE Bytes ein Oder gebildet und erst am Ende einmal verglichen.
- *
- * Der Längenvergleich vorab ist unkritisch: Die Länge ist durch die Form
- * ohnehin festgelegt und keine Auskunft.
- */
-function constantTimeEquals(a: string, b: string): boolean {
-  if (a.length !== b.length) {
-    return false;
-  }
-
-  let unterschied = 0;
-  for (let i = 0; i < a.length; i += 1) {
-    unterschied |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return unterschied === 0;
 }
 
 function toHex(bytes: Uint8Array): string {
