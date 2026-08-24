@@ -43,7 +43,14 @@ async function seedOrder(id = 1, customerId = 1, total = 1305): Promise<void> {
 
 beforeEach(async () => {
   // Reihenfolge wegen der Fremdschlüssel.
-  for (const table of ['order_items', 'orders', 'products', 'customers', 'order_number_sequences']) {
+  for (const table of [
+    'order_items',
+    'orders',
+    'customer_access_tokens',
+    'products',
+    'customers',
+    'order_number_sequences',
+  ]) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
 });
@@ -56,6 +63,7 @@ describe('Migrationen', () => {
     ).all<{ name: string }>();
 
     expect(results.map((r) => r.name)).toEqual([
+      'customer_access_tokens',
       'customers',
       'order_items',
       'order_number_sequences',
@@ -70,6 +78,7 @@ describe('Migrationen', () => {
     ).all<{ name: string }>();
 
     expect(results.map((r) => r.name)).toEqual([
+      'idx_cat_customer',
       'idx_customers_active_name',
       'idx_order_items_order',
       'idx_order_items_product',
@@ -316,5 +325,142 @@ describe('CHECK-Bedingungen', () => {
 
     const { results } = await env.DB.prepare('SELECT COUNT(*) AS n FROM customers').all<{ n: number }>();
     expect(results[0]?.n).toBe(1);
+  });
+});
+
+/**
+ * Der Zugang eines Cafés. Die Anwendung ist die erste Verteidigungslinie —
+ * hier steht die zweite, damit ein Datensatz auch dann nicht in einen
+ * unmöglichen Zustand gerät, wenn er auf anderem Weg entsteht.
+ */
+describe('customer_access_tokens', () => {
+  const HASH = 'a'.repeat(64);
+
+  async function seedToken(hash = HASH, customerId = 1, isActive = 1, revokedAt: string | null = null) {
+    await env.DB.prepare(
+      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at, revoked_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    )
+      .bind(customerId, hash, isActive, NOW, revokedAt)
+      .run();
+  }
+
+  it('nehmen einen gültigen Zugang auf', async () => {
+    await seedCustomer();
+    await seedToken();
+
+    const row = await env.DB.prepare(
+      'SELECT customer_id, token_hash, is_active, revoked_at FROM customer_access_tokens',
+    ).first<{ customer_id: number; token_hash: string; is_active: number; revoked_at: string | null }>();
+
+    expect(row).toEqual({ customer_id: 1, token_hash: HASH, is_active: 1, revoked_at: null });
+  });
+
+  it('lehnen einen Hash ab, der keiner ist', async () => {
+    await seedCustomer();
+    // 64 Zeichen, aber kein Hex — genau der Fall, den eine reine Längenprüfung
+    // durchließe.
+    await expect(seedToken('z'.repeat(64))).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedToken('a'.repeat(63))).rejects.toThrow(/CHECK constraint/i);
+    await expect(seedToken('A'.repeat(64))).rejects.toThrow(/CHECK constraint/i);
+  });
+
+  it('lehnen denselben Hash zweimal ab', async () => {
+    await seedCustomer();
+    await seedToken();
+    await expect(seedToken()).rejects.toThrow(/UNIQUE constraint/i);
+  });
+
+  it('lehnen einen Zugang ohne Kunden ab', async () => {
+    await expect(seedToken(HASH, 99)).rejects.toThrow(/FOREIGN KEY constraint/i);
+  });
+
+  /** Ein Widerruf ohne Zeitpunkt wäre eine Behauptung ohne Beleg. */
+  it('verlangen bei einem Widerruf einen Widerrufszeitpunkt', async () => {
+    await seedCustomer();
+    await expect(seedToken(HASH, 1, 0, null)).rejects.toThrow(/CHECK constraint/i);
+    await seedToken(HASH, 1, 0, NOW);
+  });
+
+  it('erlauben mehrere aktive Zugänge je Café — für die Rotation', async () => {
+    await seedCustomer();
+    await seedToken('a'.repeat(64));
+    await seedToken('b'.repeat(64));
+
+    const row = await env.DB.prepare(
+      'SELECT COUNT(*) AS n FROM customer_access_tokens WHERE customer_id = 1 AND is_active = 1',
+    ).first<{ n: number }>();
+    expect(row?.n).toBe(2);
+  });
+
+  /**
+   * Anders als bei orders (RESTRICT): Ein Zugang ohne Kunden ist kein
+   * historisches Dokument, sondern ein Sicherheitsproblem.
+   */
+  it('verschwinden mit ihrem Kunden', async () => {
+    await seedCustomer();
+    await seedToken();
+    await env.DB.prepare('DELETE FROM customers WHERE id = 1').run();
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM customer_access_tokens').first<{ n: number }>();
+    expect(row?.n).toBe(0);
+  });
+});
+
+/**
+ * Die Absendekennung. Sie ist der Schutz gegen den Daumen, der zweimal auf
+ * „Bestellung senden" tippt — und sie hängt an der Datenbank, nicht am
+ * Anwendungscode.
+ */
+describe('orders.submission_id', () => {
+  async function seedOrderWithSubmission(id: number, customerId: number, submissionId: string | null) {
+    await env.DB.prepare(
+      `INSERT INTO orders (id, order_number, customer_id, customer_name_snapshot, fulfillment_type,
+                           fulfillment_date, delivery_address_snapshot, status, total_amount_cents,
+                           submission_id, created_at, updated_at)
+       VALUES (?, ?, ?, 'Beispielcafé', 'delivery', '2026-08-28',
+               'Beispielweg 1, 40213 Düsseldorf', 'new', 100, ?, ?, ?)`,
+    )
+      .bind(id, `BUS-2026-${String(id).padStart(6, '0')}`, customerId, submissionId, NOW, NOW)
+      .run();
+  }
+
+  it('nehmen eine Bestellung mit Absendekennung auf', async () => {
+    await seedCustomer();
+    await seedOrderWithSubmission(1, 1, 'abc-123');
+
+    const row = await env.DB.prepare('SELECT submission_id FROM orders').first<{ submission_id: string }>();
+    expect(row?.submission_id).toBe('abc-123');
+  });
+
+  it('lehnen dieselbe Absendekennung beim selben Café zweimal ab', async () => {
+    await seedCustomer();
+    await seedOrderWithSubmission(1, 1, 'abc-123');
+    await expect(seedOrderWithSubmission(2, 1, 'abc-123')).rejects.toThrow(/UNIQUE constraint/i);
+  });
+
+  /** Zwei Cafés dürfen zufällig dieselbe Kennung erzeugen, ohne sich zu stören. */
+  it('erlauben dieselbe Absendekennung bei verschiedenen Cafés', async () => {
+    await seedCustomer(1);
+    await seedCustomer(2);
+    await seedOrderWithSubmission(1, 1, 'abc-123');
+    await seedOrderWithSubmission(2, 2, 'abc-123');
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM orders').first<{ n: number }>();
+    expect(row?.n).toBe(2);
+  });
+
+  /**
+   * Der Index ist partiell. Ohne das WHERE wäre NULL zwar in SQLite ohnehin
+   * nicht eindeutigkeitspflichtig — aber die Absicht steht so im Schema und
+   * nicht in einer Fußnote über SQLite-Eigenheiten.
+   */
+  it('erlauben beliebig viele Bestellungen ohne Absendekennung', async () => {
+    await seedCustomer();
+    await seedOrderWithSubmission(1, 1, null);
+    await seedOrderWithSubmission(2, 1, null);
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM orders').first<{ n: number }>();
+    expect(row?.n).toBe(2);
   });
 });
