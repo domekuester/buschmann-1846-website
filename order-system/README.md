@@ -255,9 +255,20 @@ kein aktiver Anmeldeweg mehr — der Bestellfluss läuft vollständig über
 Kundensitzung, Origin-Prüfung und CSRF-Token, und die Phase-2-Regressionstests
 laufen unverändert gegen den neuen Weg.
 
-Typecheck sauber für Worker und Client, Migrationen 0001–0010 lokal
-ausgeführt, nichts deployed und nichts gepusht. Die aktuelle Testzahl steht im
-Abschlussbericht der Phase.
+**721 Tests grün** (276 Domäne, 408 Worker/D1, 37 Oberfläche), Typecheck
+sauber für Worker und Client, Migrationen 0001–0010 gegen eine frisch
+aufgesetzte lokale D1 ausgeführt, der vollständige Fluss — Anmeldung,
+Bestellung, Abmeldung, Adminbereich, Rollengrenze — im Browser bei 375, 390,
+430 px und Desktop durchgespielt.
+
+Vier Sicherheitsregeln wurden zur Probe einzeln gebrochen; die zugehörigen
+Tests wurden jedes Mal rot (Rollenprüfung 8, Session-Ablauf 2,
+Credential-Verifikation 18, CSRF-Prüfung 15).
+
+Gemessene Anmeldedauer im laufenden Worker: rund 50 ms — und eine unbekannte
+Kennung braucht mit 48 ms praktisch genauso lang.
+
+Nichts deployed, nichts gepusht, nichts gemergt.
 
 **Es hat kein Deployment stattgefunden.** Es wurde keine entfernte
 D1-Datenbank angelegt; die `database_id` in `wrangler.jsonc` ist ein
