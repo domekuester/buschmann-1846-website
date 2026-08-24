@@ -20,6 +20,17 @@
     }
   ],
 
+  // Statische Dateien der Bestelloberfläche (CSS, Client-Skript, robots.txt).
+  // Sie enthalten KEINE Kundendaten und werden von der Plattform ausgeliefert,
+  // bevor der Worker erreicht wird. Alles, wozu es keine Datei gibt — und dazu
+  // gehören /o/<token> und /api/* —, geht weiterhin an den Worker.
+  //
+  // Bewusst OHNE "binding": Der Worker muss die Dateien nicht selbst lesen.
+  // Ein Binding wäre eine zusätzliche Zeile in Env, die niemand benutzt.
+  "assets": {
+    "directory": "./public"
+  },
+
   "observability": {
     "enabled": true
   }

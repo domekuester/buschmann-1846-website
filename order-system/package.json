@@ -11,10 +11,13 @@
     "typecheck": "tsc --noEmit",
     "cf-typegen": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
-    "db:seed:local": "wrangler d1 execute DB --local --file=seeds/001_placeholder.sql"
+    "db:seed:local": "wrangler d1 execute DB --local --file=seeds/001_placeholder.sql",
+    "db:seed:cafe:local": "wrangler d1 execute DB --local --file=seeds/002_cafe_ordering_dev.sql",
+    "token:issue": "node scripts/issue-access-token.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.0.0",
+    "happy-dom": "^20.11.6",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0",
     "wrangler": "^4.125.0"

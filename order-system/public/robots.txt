@@ -1,0 +1,5 @@
+# Diese Herkunft trägt ausschließlich private Bestell-Links für Buschmanns
+# Stammcafés. Es gibt hier nichts zu indexieren, und ein indexierter
+# /o/<token>-Link wäre ein Sicherheitsvorfall.
+User-agent: *
+Disallow: /

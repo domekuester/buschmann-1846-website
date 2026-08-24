@@ -21,6 +21,12 @@ const migrations = await readD1Migrations('./migrations');
  *   worker — Integrationstests gegen die echte Workers-Runtime und eine echte
  *            lokale D1. Fremdschlüssel, CHECK-Bedingungen und der atomare
  *            Schreibvorgang werden hier ausgeführt, nicht behauptet.
+ *
+ *   ui     — das ausgelieferte Client-Skript gegen ein DOM. Das Test-DOM wird
+ *            NICHT von Hand geschrieben, sondern aus renderOrderPage() erzeugt
+ *            — also aus genau dem HTML, das der Worker ausliefert. Ein
+ *            Testfragment würde grün bleiben, während die echte Seite kaputt
+ *            ist; das ist hier ausgeschlossen.
  */
 export default defineConfig({
   test: {
@@ -45,6 +51,13 @@ export default defineConfig({
           name: 'worker',
           include: ['tests/d1/**/*.test.ts', 'tests/http/**/*.test.ts'],
           setupFiles: ['./tests/setup/apply-migrations.ts'],
+        },
+      },
+      {
+        test: {
+          name: 'ui',
+          include: ['tests/ui/**/*.test.ts'],
+          environment: 'happy-dom',
         },
       },
     ],

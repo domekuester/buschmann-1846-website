@@ -1,0 +1,15 @@
+# Nur für /assets/* — die Bestellseite selbst und die API setzen ihre Header
+# im Worker (src/http/security.ts), weil sie private Antworten sind.
+#
+# Diese Dateien enthalten KEINE Kundendaten: ein Stylesheet und ein
+# Client-Skript, für alle Cafés identisch. Sie dürfen deshalb öffentlich
+# zwischengespeichert werden — genau das erspart dem Stammkunden bei jedem
+# Besuch zwei Downloads, während das HTML unter no-store immer frisch kommt.
+#
+# 300 Sekunden statt "immutable", weil die Dateinamen keinen Inhaltshash
+# tragen (es gibt bewusst keinen Build-Schritt). Eine Korrektur ist damit
+# nach spätestens fünf Minuten überall wirksam.
+/assets/*
+  Cache-Control: public, max-age=300
+  Referrer-Policy: no-referrer
+  X-Content-Type-Options: nosniff

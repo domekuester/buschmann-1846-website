@@ -27,5 +27,8 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": ["src/**/*.ts", "tests/**/*.ts", "*.ts", "worker-configuration.d.ts"],
-  "exclude": ["node_modules"]
+
+  /* tests/ui/ prüft das Client-Skript gegen ein DOM und gehört deshalb in
+     tsconfig.ui.json — hier fehlen die DOM-Typen absichtlich. */
+  "exclude": ["node_modules", "tests/ui"]
 }
