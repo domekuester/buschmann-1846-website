@@ -38,10 +38,25 @@ CREATE TABLE orders (
     -- zweite Bestellung hier nicht durch.
     CONSTRAINT uq_orders_order_number UNIQUE (order_number),
 
-    CONSTRAINT chk_orders_number_format CHECK (order_number GLOB 'BUS-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9][0-9][0-9]'),
+    -- Form der Bestellnummer: BUS-JJJJ-NNNNNN, feste Länge 15.
+    -- Kein GLOB mit zehn Zeichenklassen — SQLite lehnt ein solches Muster zur
+    -- Laufzeit als "LIKE or GLOB pattern too complex" ab. NOT GLOB '*[^0-9]*'
+    -- ist das übliche SQLite-Idiom für "besteht nur aus Ziffern" und braucht
+    -- genau eine Klasse.
+    CONSTRAINT chk_orders_number_format CHECK (
+        length(order_number) = 15
+        AND substr(order_number, 1, 4) = 'BUS-'
+        AND substr(order_number, 9, 1) = '-'
+        AND substr(order_number, 5, 4) NOT GLOB '*[^0-9]*'
+        AND substr(order_number, 10, 6) NOT GLOB '*[^0-9]*'
+    ),
     CONSTRAINT chk_orders_fulfillment   CHECK (fulfillment_type IN ('delivery', 'pickup')),
     CONSTRAINT chk_orders_status        CHECK (status IN ('new', 'confirmed', 'in_production', 'completed', 'cancelled')),
-    CONSTRAINT chk_orders_date_format   CHECK (fulfillment_date GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]'),
+    -- Gültiger Kalendertag im Format JJJJ-MM-TT. date() normalisiert und
+    -- liefert NULL für Unsinn; der IS-Vergleich behandelt dieses NULL als
+    -- Verstoß (ein CHECK mit Ergebnis NULL würde sonst durchgehen). Damit
+    -- scheitern auch '2026-02-30', '2026-13-01' und '2026-8-28'.
+    CONSTRAINT chk_orders_date_valid CHECK (date(fulfillment_date) IS fulfillment_date),
     CONSTRAINT chk_orders_total_not_negative CHECK (total_amount_cents >= 0),
     CONSTRAINT chk_orders_total_is_integer   CHECK (typeof(total_amount_cents) = 'integer'),
 
