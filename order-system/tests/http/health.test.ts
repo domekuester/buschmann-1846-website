@@ -46,8 +46,22 @@ describe('Routing', () => {
     expect(response.headers.get('allow')).toBe('GET');
   });
 
-  /** In Phase 1 gibt es bewusst noch keine Bestell-API. */
-  it('kennt noch keine Bestell-Endpunkte', async () => {
-    expect((await call('/api/orders', 'POST')).status).toBe(404);
+  /**
+   * Seit Phase 2 gibt es die Bestell-API. Sie bleibt ohne Zugangstoken
+   * verschlossen — und der Aufrufer erfährt dabei nicht, ob es das Café gibt.
+   * Der vollständige Endpunkt wird in tests/http/order-api.test.ts geprüft.
+   */
+  it('gibt die Bestell-API ohne Zugang nicht frei', async () => {
+    const response = await worker.fetch(
+      new Request('https://bestellen.example/api/orders', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: '{}',
+      }),
+      env,
+    );
+
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'unauthorized' });
   });
 });
