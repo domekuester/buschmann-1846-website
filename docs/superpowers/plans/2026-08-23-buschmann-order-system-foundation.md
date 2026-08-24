@@ -1,5 +1,20 @@
 # Buschmann Bestellsystem — Phase 1 Foundation, Implementierungsplan
 
+> ## ⚠️ HISTORISCHES DOKUMENT — ÜBERHOLT AM 2026-08-24
+>
+> Dieses Dokument beschreibt die **PHP-/MariaDB-Fassung** des Bestellsystems.
+> Diese Plattform wurde aufgegeben. Der Domänenkern wurde nach TypeScript
+> portiert und läuft jetzt auf Cloudflare Workers mit Cloudflare D1.
+>
+> **Gültig ist stattdessen:**
+> `docs/superpowers/specs/2026-08-24-buschmann-order-system-cloudflare-design.md`
+>
+> Das Dokument bleibt erhalten, weil die **fachlichen** Festlegungen darin
+> unverändert gelten — Preis-Snapshots, serverseitige Preisbildung, die zwei
+> Fulfillment-Arten, die fünf Statuswerte, Datenminimierung beim Kunden. Was
+> nicht mehr gilt, ist alles Technische: PHP, MariaDB, DECIMAL(10,2),
+> .htaccess, klassisches Webhosting, der eigene Test-Runner.
+
 > **Für agentische Bearbeitung:** ERFORDERLICHE SUB-SKILL:
 > `superpowers:subagent-driven-development` (empfohlen) oder
 > `superpowers:executing-plans`, um diesen Plan Task für Task umzusetzen.

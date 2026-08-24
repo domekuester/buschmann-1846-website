@@ -1,7 +1,5 @@
 # Buschmann 1846 — Bestellsystem
 
-## Was ist das?
-
 Ein B2B-Vorbestellsystem für Buschmann 1846. Es lebt in diesem Repository
 neben der Website, ist aber ein **eigenständiges Subsystem**: eigener Stack,
 eigenes Deployment, keine gemeinsame Laufzeit mit den statischen Seiten.
@@ -9,12 +7,13 @@ eigenes Deployment, keine gemeinsame Laufzeit mit den statischen Seiten.
 **Es ist kein Onlineshop.** Keine Zahlungsabwicklung, kein anonymer
 Endkundenverkauf, kein Marketingkatalog.
 
-## Warum gibt es das?
+## Warum es das gibt
 
 Buschmann beliefert überwiegend feste Cafés in Düsseldorf, die regelmäßig
-bestellen. Diese Bestellungen laufen bisher über informelle Kanäle. Daraus
-folgt: keine strukturierten Daten für die Produktionsplanung, kein
-nachvollziehbarer Preisstand, viel manuelle Übertragung.
+bestellen — meist dieselben Positionen in wechselnden Mengen. Diese
+Bestellungen laufen bisher über informelle Kanäle. Daraus folgt: keine
+strukturierten Daten für die Produktionsplanung, kein nachvollziehbarer
+Preisstand, viel manuelle Übertragung.
 
 Die entscheidende Anforderung ist eine UX-Anforderung:
 
@@ -23,145 +22,112 @@ Die entscheidende Anforderung ist eine UX-Anforderung:
 
 Zielgröße für eine typische Wiederholungsbestellung: 20–30 Sekunden.
 
-## Was gehört zu Phase 1?
+## Stack
 
-Ein persistenzfreier, vollständig getesteter Domänenkern plus das
-Datenbankschema:
+TypeScript (`strict`) · Cloudflare Workers · Cloudflare D1 · Vitest mit
+`@cloudflare/vitest-plugin` · Wrangler.
 
-- `Money` — exakte Geldarithmetik in ganzzahligen Cent
-- `Address`, `OrderNumber`, `FulfillmentDate` — Value Objects
-- `Product`, `Customer`, `Order`, `OrderItem` — Entities mit Invarianten
-- `OrderStatus`, `FulfillmentType` — Enums mit zentral definierten Werten
-- `ProductCatalog` — die einzige Quelle, aus der Preise stammen dürfen
-- `OrderDraft` — Eingabe-Whitelist **ohne Preisfeld**
-- MariaDB-Schema als nummerierte Migrationen
-- Seeds mit gekennzeichneten Platzhalterdaten
+Sonst nichts. Kein Framework, kein ORM, keine Dependency Injection. Vier
+fachliche Tabellen und direkte Prepared Statements genügen.
 
-## Was gehört ausdrücklich noch NICHT dazu?
+> Bis zum 2026-08-23 lief dieses Subsystem auf PHP 8.1 und MariaDB. Die
+> Fachlichkeit ist unverändert übernommen, die Plattform gewechselt. Warum,
+> steht in der [Design-Spezifikation](../docs/superpowers/specs/2026-08-24-buschmann-order-system-cloudflare-design.md).
+> Der alte Stand liegt auf `archive/order-system-php-foundation`.
 
-Keine Bestelloberfläche · keine Adminoberfläche · keine
-Datenbank-Zugriffsschicht · kein Mailversand · kein Login · kein Passwort ·
-keine Zahlungsabwicklung · kein Stripe, PayPal, Shopify, WooCommerce,
-Supabase oder Firebase · kein CRM · kein Newsletter · keine Treuepunkte oder
-Gutscheine · keine Lagerverwaltung oder Warenwirtschaft · keine Buchhaltung ·
-kein Rechnungsgenerator · keine Lieferfahrer-App · keine Routenoptimierung ·
-keine Analytics · kein Chat · keine WhatsApp-Integration · keine
-KI-Funktionen · keine App · keine Mandantenfähigkeit · keine
-Produktvarianten · keine Rabatte · kein Umsatzsteuerausweis.
-
-Das ist keine Aufschubliste, sondern eine Abgrenzung. Was hier steht, wird
-nicht „vorbereitet" — nichts davon hat Platzhalter im Code.
-
-## Wie führt man die Tests aus?
+## Loslegen
 
 ```bash
-php order-system/tests/run.php
+cd order-system
+npm install
+npm run db:migrate:local     # D1-Schema lokal anlegen
+npm run db:seed:local        # Platzhalterdaten (keine echten Kunden/Preise)
+npm run dev                  # Worker auf http://localhost:8787
+curl http://localhost:8787/api/health
 ```
 
-Exit-Code 0 bedeutet: alle Tests grün. Zusätzlich die Syntaxprüfung:
+| Befehl | Zweck |
+|---|---|
+| `npm test` | alle Tests (Domäne + Worker/D1) |
+| `npm run test:watch` | Tests im Watch-Modus |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm run cf-typegen` | `worker-configuration.d.ts` neu erzeugen |
+| `npm run db:migrate:local` | Migrationen auf die lokale D1 anwenden |
+| `npm run db:seed:local` | Platzhalterdaten einspielen |
 
-```bash
-find order-system -name '*.php' -exec php -l {} \;
+## Aufbau
+
+```text
+src/
+├── worker.ts              äußere Hülle: Pfad → Antwort, sonst nichts
+├── domain/                Geschäftslogik — kennt weder HTTP noch D1
+│   ├── money.ts           ganzzahlige Cent, keine Division
+│   ├── clock.ts           Zeitpunkt (UTC) getrennt vom Tag (Europe/Berlin)
+│   ├── address.ts  text.ts  errors.ts
+│   ├── product.ts  product-catalog.ts  customer.ts
+│   ├── fulfillment-type.ts  fulfillment-date.ts  order-status.ts
+│   ├── order-number.ts  order-item.ts
+│   ├── order-draft.ts     Eingabe-Whitelist OHNE Preisfeld
+│   └── order.ts           das Aggregat
+├── application/
+│   └── place-order.ts     der einzige vollständige Anwendungsfall
+├── infrastructure/d1/     Persistenz: prepare().bind(), batch()
+└── http/                  Response-Formen, Health
+
+migrations/                D1-Schema, von Wrangler angewandt
+seeds/                     ausschließlich Platzhalterdaten
+tests/domain/              laufen OHNE Worker-Runtime und OHNE D1
+tests/d1/  tests/http/     laufen in der echten Runtime gegen echte D1
+public/                    Platz für die Bestelloberfläche (Phase 2)
 ```
 
-Der Test-Runner ist selbstgeschrieben (`tests/run.php`, rund hundert Zeilen)
-und hat keine Abhängigkeiten. Die Testklassen sind bewusst PHPUnit-förmig
-(`class …Test`, Methoden `test…()`), damit eine spätere Umstellung
-Konfigurationsarbeit bleibt und keine Umschreibung wird.
+### Warum die Domäne nichts von D1 weiß
 
-## Welche Runtime wird benötigt?
+`vitest.config.ts` definiert zwei Testprojekte. Das Projekt `domain` läuft in
+schlichtem Node — ohne Workers-Runtime, ohne Datenbank, ohne Netz. Hinge die
+Geschäftslogik an einer dieser Sachen, ließen sich ihre Tests nicht ausführen.
+Die Schichtentrennung ist damit keine Absichtserklärung, sondern eine
+Bedingung, die bei jedem Testlauf geprüft wird.
 
-- **PHP 8.1 oder neuer**, nur Standardbibliothek. Kein Composer, kein
-  `vendor/`, kein npm.
-  PHP 8.1 wegen `enum` (Statuswerte werden auf Typebene unfälschbar) und
-  `readonly` (Unveränderlichkeit wird erzwungen statt nur vereinbart).
-- **MariaDB 10.2+ oder MySQL 8.0+** — erst ab Phase 2 tatsächlich benötigt.
-- **Apache mit `.htaccess`** — Zielhosting IONOS.
+## Die vier Regeln, an denen dieses System steht
 
-Auf macOS ist PHP nicht mehr vorinstalliert: `brew install php`.
+**1. Geld ist immer ein ganzzahliger Cent-Betrag.** Im Modell wie in der
+Datenbank. `48,00 €` sind `4800`. Kein `DECIMAL`, kein `REAL`, kein
+`toFixed()`. `Money` ist die einzige Stelle mit Geldarithmetik und kennt
+bewusst keine Division.
 
-## Wie sieht die Struktur aus?
+**2. Der Preis kommt vom Server.** `OrderDraft` liest aus der Anfrage nur
+`fulfillment_type`, `fulfillment_date`, `note` und `items` mit `product_id`
+und `quantity`. Ein mitgesendeter Betrag wird nicht geprüft und verworfen — er
+wird nie gelesen. `Order.place()` nimmt Preise ausschließlich aus dem
+`ProductCatalog`, der aus der Datenbank kommt.
 
-```
-order-system/
-├── autoload.php        PSR-4-Autoloader, ~20 Zeilen
-├── config/             config.php (gitignored) + config.example.php
-├── database/           Migrationen und Seeds, siehe database/README.md
-├── public/             Web-Root ab Phase 2 — heute leer
-├── admin/              Adminanwendung ab Phase 2 — heute leer
-├── src/
-│   ├── Shared/         Money, Address, Fehlerhierarchie
-│   ├── Products/       Product, ProductCatalog
-│   ├── Customers/      Customer
-│   └── Orders/         Order, OrderItem, OrderDraft, Status, Fulfillment,
-│                       OrderNumber
-└── tests/              run.php + Testklassen, Struktur spiegelt src/
-```
+**3. Eine Bestellung ist ein Dokument.** Name, Einheit, Preis und Adresse
+stehen als Snapshot in ihren eigenen Zeilen. Ändert Buschmann morgen einen
+Preis, wird die Bestellung von heute nicht teurer. Deshalb verbindet
+`findOrderByNumber` auch nicht auf `products` — ein JOIN würde genau diese
+Regel aushebeln.
 
-Abhängigkeitsrichtung, verbindlich:
-`Orders → Products, Customers → Shared`. Keine Rückwärtskante. Ein `Product`
-weiß nicht, in welchen Bestellungen es vorkommt.
+**4. Ein Liefertag ist ein Tag in Düsseldorf.** Kein Zeitstempel. Der Worker
+läuft in UTC; um 00:30 Uhr Berliner Zeit ist dort noch der Vortag. „Heute"
+wird deshalb über `Europe/Berlin` bestimmt, nicht über die Uhr des Workers.
 
-`src/Delivery/` gibt es bewusst nicht: Lieferung ist in Phase 1 keine eigene
-Domäne, sondern eine Eigenschaft einer Bestellung. Ein leeres Modul würde
-dazu einladen, dort verfrüht Touren- oder Fahrerlogik anzusiedeln.
+## Was Phase 1 noch nicht enthält
 
-## Die drei Entscheidungen, die man kennen muss
+Keine Bestelloberfläche · keine Bestell-API · kein Admin-Dashboard · kein
+Login · kein Payment · kein Mailversand · kein Turnstile · kein R2 · keine
+Wiederbestellung · keine Lieferplanung · keine Rechnungen · keine Analytics.
 
-**1. Geld ist ganzzahliger Cent, in der Datenbank `DECIMAL(10,2)`.**
-PHP hat keinen Dezimaltyp, und MariaDB liefert `DECIMAL` als String — jede
-Rechnung damit würde still nach `float` konvertieren. Die Umwandlung liegt
-allein in `Money` und ist dort getestet. Niemals `float`, niemals `floatval`.
+`placeOrder` existiert als Anwendungsfall und ist gegen eine echte Datenbank
+getestet, aber kein HTTP-Endpunkt ruft ihn auf. Ein Endpunkt ohne Oberfläche
+wäre eine Zusage, die später eingehalten werden müsste.
 
-**2. Der Preis kann nicht aus der Anfrage kommen.**
-Nicht weil er geprüft wird, sondern weil `OrderDraft` **kein Preisfeld hat**
-und `OrderItem` seinen Positionsbetrag selbst berechnet. Aus der Anfrage
-kommen ausschließlich Produkt-IDs und Mengen.
+## Stand
 
-**3. Eine Bestellung ist ein Dokument.**
-Name, Einheit, Preis und Lieferadresse werden als Snapshot gespeichert. Eine
-spätere Preisänderung oder Umbenennung verändert historische Bestellungen
-nicht. Deshalb werden Produkte und Kunden **deaktiviert, nicht gelöscht**.
+173 Tests grün (120 Domäne, 53 Worker/D1), Typecheck sauber, Migrationen lokal
+ausgeführt, Worker lokal verifiziert.
 
-## Deployment (ab Phase 2)
-
-Nur `public/` gehört in den Web-Root — empfohlen als eigene Subdomain
-(`bestellung.<domain>`). Konfiguration, Quelltext, Migrationen und Protokolle
-liegen darüber. Zusätzlich trägt jedes nicht-öffentliche Verzeichnis eine
-`.htaccess` mit `Require all denied`.
-
-**`order-system/` gehört NICHT in ein GitHub-Pages-Deployment.** GitHub Pages
-führt PHP nicht aus, sondern liefert `.php`-Dateien als Klartext aus. Der
-Quelltext enthält zwar keine Geheimnisse — `config/config.php` ist gitignored
-und liegt nie im Repository —, aber ausgeliefert werden soll er trotzdem
-nicht.
-
-## Wo beginnt Phase 2?
-
-In dieser Reihenfolge:
-
-1. **PDO-Verbindung und Repositories** — `ProductRepository`,
-   `CustomerRepository`, `OrderRepository`. Ausschließlich Prepared
-   Statements, `EMULATE_PREPARES = false`, keine Stringinterpolation in SQL.
-2. **Vergabe der Bestellnummer** in derselben Transaktion wie das Anlegen der
-   Bestellung, über das Idiom in `database/migrations/006`.
-3. **Bestellseite** in `public/` — ein Formular, Mengen über `− / +`,
-   Lieferdatum, Notiz, absenden. Ohne JavaScript grundsätzlich benutzbar.
-   CSRF-Token per `random_bytes(32)` und `hash_equals()`. Ausgabe
-   ausnahmslos durch `htmlspecialchars(…, ENT_QUOTES | ENT_SUBSTITUTE,
-   'UTF-8')`.
-4. **Kundenspezifischer Bestell-Link** — Spalte
-   `public_token CHAR(32) UNIQUE` auf `customers`. Bewusst noch nicht
-   angelegt: Eine ungenutzte Token-Spalte wäre eine Sicherheitsfassade.
-   **Die Bestellnummer darf niemals als Zugriffsschlüssel dienen** — sie ist
-   fortlaufend und damit erratbar.
-5. **Adminbereich** in `admin/`, nicht öffentlich erreichbar, zusätzlich per
-   HTTP-Basic-Auth über den Webserver geschützt.
-6. **„Letzte Bestellung wiederholen"** — braucht keine neue Architektur; der
-   Index `(customer_id, fulfillment_date)` und `OrderDraft` genügen. Ein Test
-   in `OrderTest` belegt das bereits.
-
-Verbindliche Grundlagen:
-`docs/superpowers/specs/2026-08-23-buschmann-order-system-foundation-design.md`
-und
-`docs/superpowers/plans/2026-08-23-buschmann-order-system-foundation.md`.
+**Es hat kein Deployment stattgefunden.** Es wurde keine entfernte
+D1-Datenbank angelegt; die `database_id` in `wrangler.jsonc` ist ein
+Platzhalter aus Nullen und muss vor einem entfernten Betrieb ersetzt werden.
+Es liegen keine Zugangsdaten im Repository.
