@@ -1,6 +1,11 @@
-import type { AuthContext } from '../application/authenticate-request';
+import { authenticateRequest, type AuthContext } from '../application/authenticate-request';
 import type { AppConfig } from '../config/app-config';
+import type { AuthRole } from '../domain/auth-role';
 import { constantTimeEquals } from '../infrastructure/auth/constant-time';
+import { clearSessionCookie, readSessionCookie } from '../infrastructure/auth/cookie';
+import { renderForbiddenPage } from '../ui/notice-page-html';
+import { json } from './responses';
+import { pageHeaders, privateHeaders } from './security';
 
 /**
  * Die Prüfungen, die jeder ZUSTANDSVERÄNDERNDE Request bestehen muss.
@@ -120,4 +125,118 @@ export function assertCsrf(
   if (mitgeschickt === null || !constantTimeEquals(mitgeschickt, context.csrfToken)) {
     throw new ForbiddenError();
   }
+}
+
+/**
+ * Das Ergebnis einer Rollenprüfung.
+ *
+ * Ein Verbund und keine Ausnahme: Die Ablehnungen brauchen verschiedene
+ * Antworten — eine Weiterleitung zum Login, eine Ablehnungsseite, ein JSON —,
+ * und die über Fehlerarten zu unterscheiden hieße, drei Ausnahmetypen für
+ * drei Antworten zu erfinden. So steht die Antwort dort, wo die Entscheidung
+ * fällt.
+ *
+ * Der `ok`-Diskriminator zwingt jeden Aufrufer, beide Fälle zu behandeln: Es
+ * gibt keinen Weg, das Ergebnis zu ignorieren und trotzdem an den Kontext zu
+ * kommen.
+ */
+export type GuardResult =
+  | { readonly ok: true; readonly context: AuthContext }
+  | { readonly ok: false; readonly response: Response };
+
+/** Seite oder Schnittstelle — davon hängt ab, wie eine Ablehnung aussieht. */
+export type RequestKind = 'html' | 'api';
+
+/**
+ * Die Rollenprüfung. SERVERSEITIG, AN JEDEM GESCHÜTZTEN ENDPUNKT.
+ *
+ * Ein versteckter Button ist keine Autorisierung. Eine Navigation, die einen
+ * Link nicht anzeigt, ist keine Autorisierung. Nur diese Funktion ist eine.
+ *
+ * DREI AUSGÄNGE, UND JEDER SAGT ETWAS ANDERES:
+ *
+ *   keine Sitzung, Seite   303 auf /login. Das Cookie wird dabei gelöscht —
+ *                          sonst schickt der Browser einen abgelaufenen Token
+ *                          bei jedem Request wieder mit, und die
+ *                          Weiterleitung sähe für den Benutzer aus wie eine
+ *                          Schleife.
+ *   keine Sitzung, API     401. Ein fetch, der eine Loginseite als HTML
+ *                          zurückbekäme, verarbeitete sie als Nutzdaten.
+ *   falsche Rolle          403 — und ausdrücklich KEINE Weiterleitung zum
+ *                          Login. Wer angemeldet ist, hat kein
+ *                          Anmeldeproblem; ihn zum Login zu schicken wäre
+ *                          verwirrend und zugleich die Auskunft, dass die
+ *                          Route existiert und nur die Rolle fehlt. Die
+ *                          Sitzung bleibt bestehen: Ein Tippfehler in der
+ *                          Adresszeile darf niemanden abmelden.
+ */
+export async function requireRole(
+  db: D1Database,
+  config: AppConfig,
+  request: Request,
+  now: Date,
+  role: AuthRole,
+  kind: RequestKind,
+): Promise<GuardResult> {
+  const angemeldet = await requireSession(db, config, request, now, kind);
+  if (!angemeldet.ok) {
+    return angemeldet;
+  }
+
+  if (angemeldet.context.role !== role) {
+    return { ok: false, response: falscheRolle(kind) };
+  }
+
+  return angemeldet;
+}
+
+/**
+ * Verlangt eine gültige Sitzung — ohne Aussage über die Rolle.
+ *
+ * Genau EIN Endpunkt braucht das: `GET /api/auth/session` beantwortet „wer
+ * bin ich?" und muss dafür beide Rollen zulassen. Ihn über zwei
+ * requireRole-Aufrufe zu bauen hätte funktioniert und dabei zwei
+ * Datenbankrunden für eine Frage gekostet.
+ *
+ * Diese Funktion ist ausdrücklich KEIN allgemeiner Ersatz für requireRole.
+ * Wer eine geschützte Seite oder API baut, nennt die Rolle — sonst steht die
+ * Autorisierung wieder in der Zuständigkeit des Aufrufers, und genau davon
+ * soll die Wache befreien.
+ */
+export async function requireSession(
+  db: D1Database,
+  config: AppConfig,
+  request: Request,
+  now: Date,
+  kind: RequestKind,
+): Promise<GuardResult> {
+  const token = readSessionCookie(config, request.headers.get('cookie'));
+  const context = await authenticateRequest(db, token, now);
+
+  if (context === null) {
+    return { ok: false, response: nichtAngemeldet(config, kind) };
+  }
+
+  return { ok: true, context };
+}
+
+function nichtAngemeldet(config: AppConfig, kind: RequestKind): Response {
+  const cookieLoeschen = { 'set-cookie': clearSessionCookie(config) };
+
+  if (kind === 'api') {
+    return json({ error: 'unauthorized' }, 401, privateHeaders(cookieLoeschen));
+  }
+
+  return new Response(null, {
+    status: 303,
+    headers: privateHeaders({ location: '/login', ...cookieLoeschen }),
+  });
+}
+
+function falscheRolle(kind: RequestKind): Response {
+  if (kind === 'api') {
+    return json({ error: 'forbidden' }, 403, privateHeaders());
+  }
+
+  return new Response(renderForbiddenPage(), { status: 403, headers: pageHeaders() });
 }

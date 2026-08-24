@@ -1,5 +1,7 @@
 import { readAppConfig } from './config/app-config';
 import { loginPage, loginSubmit, logout } from './http/auth-routes';
+import { requireSession } from './http/guard';
+import { sessionInfo } from './http/session-api';
 import { health } from './http/health';
 import { toSafeResponse } from './http/error-boundary';
 import { createOrder } from './http/order-api';
@@ -24,6 +26,8 @@ import { methodNotAllowed, notFound } from './http/responses';
  *   POST /login        die Anmeldung.
  *   POST /logout       die Abmeldung. Niemals GET — ein GET-Logout wird von
  *                      Link-Prefetch und Virenscannern ausgelöst.
+ *   GET  /api/auth/session   wer bin ich. Für beide Rollen, mit einer
+ *                      minimalen Antwort.
  *   GET  /o/<token>    die Phase-2-Bestellseite. Noch da, bis der
  *                      sitzungsbasierte Weg vollständig nachgewiesen ist.
  *   POST /api/orders   die Bestellung.
@@ -72,6 +76,16 @@ export default {
           return methodNotAllowed('POST');
         }
         return await logout(env.DB, config, request, now);
+      }
+
+      if (pathname === '/api/auth/session') {
+        if (request.method !== 'GET') {
+          return methodNotAllowed('GET');
+        }
+        // Der einzige Endpunkt ohne Rollenvorgabe: „wer bin ich?" beantworten
+        // beide Rollen für sich selbst. Eine Sitzung wird trotzdem verlangt.
+        const wache = await requireSession(env.DB, config, request, now, 'api');
+        return wache.ok ? sessionInfo(wache.context) : wache.response;
       }
 
       if (pathname === '/api/orders') {
