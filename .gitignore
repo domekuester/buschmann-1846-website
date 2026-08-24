@@ -11,9 +11,6 @@ playwright-report/
 test-results/
 .playwright-mcp/
 
-# Bestellsystem: Zugangsdaten und Laufzeitdaten
-order-system/config/config.php
-order-system/var/
 
 # Bestellsystem (Cloudflare Worker): Laufzeit- und Buildartefakte
 order-system/node_modules/
