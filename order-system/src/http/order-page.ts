@@ -1,36 +1,47 @@
 import { toCatalogView } from '../application/catalog-view';
+import type { AppConfig } from '../config/app-config';
 import { businessDay, plusDays } from '../domain/clock';
-import { findCustomerByAccessToken } from '../infrastructure/d1/access-token-repository';
 import { loadCatalog } from '../infrastructure/d1/product-repository';
-import { renderInvalidLinkPage, renderOrderPage } from '../ui/order-page-html';
+import { renderOrderPage } from '../ui/order-page-html';
+import { requireRole } from './guard';
 import { pageHeaders } from './security';
 
 /**
  * Die Bestellseite.
  *
  * Ein einziger Roundtrip liefert alles: Café erkannt, Sortiment gerendert,
- * Liefertag vorbelegt, Absendekennung gesetzt. Danach braucht die Seite bis
- * zum Absenden keine Verbindung mehr — Mengen einstellen ist reine DOM-Arbeit.
+ * Liefertag vorbelegt, Absendekennung gesetzt, CSRF-Token mitgegeben. Danach
+ * braucht die Seite bis zum Absenden keine Verbindung mehr — Mengen einstellen
+ * ist reine DOM-Arbeit.
  *
- * Ein ungültiger Zugang führt zu einer 404 mit einer freundlichen Seite. Nicht
- * zu 401: Ein 401 lädt zu einem Anmeldeverfahren ein, das es hier nicht gibt.
- * 404 ist die ehrliche Aussage — diesen Link gibt es nicht.
+ * DER KUNDE KOMMT AUS DER SITZUNG.
  *
- * Alle vier Ablehnungsgründe erzeugen dieselbe Antwort. Der Grund steht in
- * access-token-repository.ts: Jede Unterscheidung wäre eine Auskunft.
+ * In Phase 2 stand er im Link; wer den Link hatte, war das Café. Jetzt steht
+ * er in der Sitzung, und die Sitzung wird bei JEDEM Aufruf frisch geprüft:
+ * Rolle, Konto-Aktivität, Café-Aktivität. Ein deaktiviertes Café sieht diese
+ * Seite deshalb nicht mehr — nicht erst beim Absenden, sondern sofort.
+ *
+ * Es gibt in dieser Datei keinen Parameter, über den sich der Kunde
+ * beeinflussen ließe. Das ist keine Prüfung, die man vergessen könnte,
+ * sondern ein fehlender Eingang.
  */
-export async function orderPage(db: D1Database, token: string, now: Date): Promise<Response> {
-  const customer = await findCustomerByAccessToken(db, token);
-
-  if (customer === null) {
-    return new Response(renderInvalidLinkPage(), { status: 404, headers: pageHeaders() });
+export async function orderPage(
+  db: D1Database,
+  config: AppConfig,
+  request: Request,
+  now: Date,
+): Promise<Response> {
+  const wache = await requireRole(db, config, request, now, 'customer', 'html');
+  if (!wache.ok) {
+    return wache.response;
   }
+
 
   const catalog = await loadCatalog(db);
   const today = businessDay(now);
 
   const html = renderOrderPage({
-    customerName: customer.name,
+    customerName: wache.context.customer.name,
     products: toCatalogView(catalog),
 
     /**
@@ -40,6 +51,14 @@ export async function orderPage(db: D1Database, token: string, now: Date): Promi
      * Doppelklicks ungeschützt.
      */
     submissionId: crypto.randomUUID(),
+
+    /**
+     * Der Synchronizer-Token der Sitzung. Er steht LESBAR im Dokument, weil
+     * das Client-Skript ihn zurücksenden muss — im Unterschied zum
+     * Sitzungstoken, der HttpOnly im Cookie bleibt und hier nirgends
+     * auftaucht.
+     */
+    csrfToken: wache.context.csrfToken,
 
     today,
 

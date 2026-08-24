@@ -1,28 +1,59 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import worker from '../../src/worker';
-import { generateAccessToken, hashAccessToken } from '../../src/domain/access-token';
+import { logIn } from '../../src/application/log-in';
+import type { AppConfig } from '../../src/config/app-config';
+import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
+import { findValidSession } from '../../src/infrastructure/d1/auth-session-repository';
 
 /**
  * Der Bestell-Endpunkt an der HTTP-Grenze.
  *
- * Der Token steht hier im HEADER, nicht im Pfad — anders als bei der Seite.
- * Zwei Gründe: Kopfzeilen tauchen in Zugriffsprotokollen nicht auf, und ein
- * Header ist keine ambiente Autorität. Ein fremdes Formular kann ihn nicht
- * setzen, ein Cross-Origin-fetch scheitert am Preflight. CSRF ist damit
- * konstruktiv ausgeschlossen, nicht durch ein Token-Feld abgewehrt.
+ * SEIT PHASE 3A TRÄGT EIN COOKIE DIE AUTORISIERUNG, KEIN HEADER.
+ *
+ * Phase 2 hatte damit konstruktiv kein CSRF-Risiko: Ein fremdes Formular kann
+ * keine Kopfzeile setzen, und ein Cross-Origin-fetch scheitert am Preflight.
+ * Ein Cookie schickt der Browser dagegen von sich aus mit — deshalb prüft der
+ * Endpunkt jetzt zusätzlich Origin und CSRF-Token, und deshalb prüfen die
+ * Tests dieser Datei genau das.
  */
 const NOW = '2026-08-24T07:00:00.000Z';
 const MORGEN = '2026-08-25';
+const ORIGIN = 'https://bestellen.example';
+const PEPPER = 'TEST-PEPPER-nur-fuer-Tests-kein-Echtwert-0123456789';
 
-const token = {
-  gueltig: generateAccessToken(),
-  widerrufen: generateAccessToken(),
-  unbekannt: generateAccessToken(),
-};
+const PIN = '01234567';
+const PASSWORT = 'demo-passwort-nur-fuer-tests-16plus';
+
+const CONFIG: AppConfig = { environment: 'production', appOrigin: ORIGIN, pepper: PEPPER };
+
+function umgebung(): Env {
+  return { ...env, AUTH_PEPPER: PEPPER, APP_ORIGIN: ORIGIN, ENVIRONMENT: 'production' };
+}
+
+/** Die Sitzung des Cafés — in jedem beforeEach frisch angemeldet. */
+const sitzung = { cookie: '', csrf: '' };
+/** Eine Adminsitzung, die an diesem Endpunkt nichts zu suchen hat. */
+const adminSitzung = { cookie: '', csrf: '' };
+
+async function anmelden(identifier: string, secret: string): Promise<{ cookie: string; csrf: string }> {
+  const ergebnis = await logIn(env.DB, CONFIG, {
+    identifier,
+    secret,
+    now: new Date(NOW),
+    existingSessionToken: null,
+  });
+  if (ergebnis === null) throw new Error('Anmeldung im Testaufbau fehlgeschlagen');
+  return { cookie: `__Host-buschmann_session=${ergebnis.token}`, csrf: ergebnis.csrfToken };
+}
 
 interface Options {
-  token?: string | null;
+  /** null lässt das Cookie weg. */
+  cookie?: string | null;
+  /** null lässt den CSRF-Token weg. */
+  csrf?: string | null;
+  /** null lässt den Origin weg. */
+  origin?: string | null;
   contentType?: string | null;
   body?: string;
   method?: string;
@@ -35,8 +66,14 @@ async function post(payload: unknown, options: Options = {}): Promise<Response> 
   if (options.contentType !== null) {
     headers['content-type'] = options.contentType ?? 'application/json';
   }
-  if (options.token !== null) {
-    headers['x-order-token'] = options.token ?? token.gueltig;
+  if (options.cookie !== null) {
+    headers['cookie'] = options.cookie ?? sitzung.cookie;
+  }
+  if (options.csrf !== null) {
+    headers['x-csrf-token'] = options.csrf ?? sitzung.csrf;
+  }
+  if (options.origin !== null) {
+    headers['origin'] = options.origin ?? ORIGIN;
   }
 
   const method = options.method ?? 'POST';
@@ -47,7 +84,7 @@ async function post(payload: unknown, options: Options = {}): Promise<Response> 
       ? { method, headers }
       : { method, headers, body: options.body ?? JSON.stringify(payload) };
 
-  return worker.fetch(new Request('https://bestellen.example/api/orders', init), env);
+  return worker.fetch(new Request(`${ORIGIN}/api/orders`, init), umgebung());
 }
 
 function payload(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -68,7 +105,8 @@ beforeEach(async () => {
   for (const table of [
     'order_items',
     'orders',
-    'customer_access_tokens',
+    'auth_sessions',
+    'auth_accounts',
     'products',
     'customers',
     'order_number_sequences',
@@ -93,15 +131,38 @@ beforeEach(async () => {
     ).bind(NOW),
   ]);
 
+  const cafeCredential = await deriveCredential(PIN, PEPPER, { iterations: MIN_ITERATIONS });
+  const adminCredential = await deriveCredential(PASSWORT, PEPPER, { iterations: MIN_ITERATIONS });
+
   await env.DB.batch([
     env.DB.prepare(
-      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at) VALUES (1, ?, 1, ?)`,
-    ).bind(await hashAccessToken(token.gueltig), NOW),
+      `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations, credential_salt,
+                                  credential_verifier, is_active, failed_attempts, created_at, updated_at)
+       VALUES (1, 'testcafe', 'customer', 1, ?2, ?3, ?4, ?5, 1, 0, ?1, ?1)`,
+    ).bind(
+      NOW,
+      cafeCredential.algorithm,
+      cafeCredential.iterations,
+      cafeCredential.saltHex,
+      cafeCredential.verifierHex,
+    ),
     env.DB.prepare(
-      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at, revoked_at)
-       VALUES (1, ?, 0, ?, ?)`,
-    ).bind(await hashAccessToken(token.widerrufen), NOW, NOW),
+      `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations, credential_salt,
+                                  credential_verifier, is_active, failed_attempts, created_at, updated_at)
+       VALUES (2, 'admin@example.test', 'admin', NULL, ?2, ?3, ?4, ?5, 1, 0, ?1, ?1)`,
+    ).bind(
+      NOW,
+      adminCredential.algorithm,
+      adminCredential.iterations,
+      adminCredential.saltHex,
+      adminCredential.verifierHex,
+    ),
   ]);
+
+  Object.assign(sitzung, await anmelden('testcafe', PIN));
+  Object.assign(adminSitzung, await anmelden('admin@example.test', PASSWORT));
 });
 
 describe('POST /api/orders — der gute Fall', () => {
@@ -160,48 +221,162 @@ describe('POST /api/orders — der gute Fall', () => {
 });
 
 describe('POST /api/orders — Zugang', () => {
-  it('lehnt eine Anfrage ohne Token mit 401 ab', async () => {
-    const response = await post(payload(), { token: null });
+  it('lehnt eine Anfrage ohne Sitzung mit 401 ab', async () => {
+    const response = await post(payload(), { cookie: null });
 
     expect(response.status).toBe(401);
     expect(await response.json()).toEqual({ error: 'unauthorized' });
     expect(await countOrders()).toBe(0);
   });
 
-  it('lehnt einen unbekannten Token mit 401 ab', async () => {
-    expect((await post(payload(), { token: token.unbekannt })).status).toBe(401);
-  });
-
-  it('lehnt einen widerrufenen Token mit 401 ab', async () => {
-    expect((await post(payload(), { token: token.widerrufen })).status).toBe(401);
-  });
-
-  it('antwortet auf alle drei Fälle identisch', async () => {
-    const bodies = await Promise.all(
-      [null, token.unbekannt, token.widerrufen, 'zu-kurz'].map(async (t) =>
-        (await post(payload(), { token: t })).text(),
-      ),
-    );
-    expect(new Set(bodies).size).toBe(1);
-  });
-
-  /** Der Token gehört in den Header, nicht in den Körper. */
-  it('nimmt einen Token aus dem Anfragekörper nicht an', async () => {
-    const response = await post(payload({ token: token.gueltig }), { token: null });
+  it('lehnt eine unbekannte Sitzung mit 401 ab', async () => {
+    const response = await post(payload(), {
+      cookie: `__Host-buschmann_session=${'x'.repeat(43)}`,
+    });
     expect(response.status).toBe(401);
   });
 
+  it('lehnt eine widerrufene Sitzung mit 401 ab', async () => {
+    // Abmelden über den Endpunkt, dann mit demselben Cookie bestellen.
+    const token = sitzung.cookie.split('=')[1] as string;
+    const gefunden = await findValidSession(env.DB, token, new Date(NOW));
+    await env.DB.prepare('UPDATE auth_sessions SET revoked_at = ?1 WHERE id = ?2')
+      .bind(NOW, gefunden?.id ?? 0)
+      .run();
+
+    expect((await post(payload())).status).toBe(401);
+    expect(await countOrders()).toBe(0);
+  });
+
+  it('antwortet auf alle Zugangsfälle identisch', async () => {
+    const bodies = await Promise.all([
+      post(payload(), { cookie: null }).then((r) => r.text()),
+      post(payload(), { cookie: `__Host-buschmann_session=${'x'.repeat(43)}` }).then((r) => r.text()),
+      post(payload(), { cookie: '__Host-buschmann_session=zu-kurz' }).then((r) => r.text()),
+    ]);
+
+    expect(new Set(bodies).size).toBe(1);
+  });
+
   /**
-   * Zugang VOR Eingabeprüfung. Andernfalls bekäme ein Aufrufer ohne gültigen
-   * Token feldweise Rückmeldung darüber, wie eine richtige Anfrage aussähe —
-   * und könnte den Endpunkt erkunden, ohne je einen Zugang zu haben.
+   * ROLLENTRENNUNG: Ein Admin ist kein Café mit mehr Rechten. Er hat keinen
+   * Kundenbezug und kann deshalb nicht bestellen — sonst gäbe es einen Weg,
+   * im Namen eines Cafés zu bestellen, der im Bestellablauf nicht sichtbar
+   * wäre.
+   */
+  it('lehnt eine Adminsitzung mit 403 ab', async () => {
+    const response = await post(payload(), {
+      cookie: adminSitzung.cookie,
+      csrf: adminSitzung.csrf,
+    });
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'forbidden' });
+    expect(await countOrders()).toBe(0);
+  });
+
+  /**
+   * Zugang VOR Eingabeprüfung. Andernfalls bekäme ein Aufrufer ohne gültige
+   * Sitzung feldweise Rückmeldung darüber, wie eine richtige Anfrage aussähe
+   * — und könnte den Endpunkt erkunden, ohne je einen Zugang zu haben.
    */
   it('prüft den Zugang, bevor es die Eingabe prüft', async () => {
     for (const body of [{}, { items: [] }, { submission_id: 'unbrauchbar' }]) {
-      const response = await post(body, { token: token.unbekannt });
+      const response = await post(body, { cookie: null });
       expect(response.status).toBe(401);
       expect(await response.json()).toEqual({ error: 'unauthorized' });
     }
+  });
+
+  it('prüft den Zugang, bevor es den Content-Type prüft', async () => {
+    // Ein 415 für einen Fremden wäre die Auskunft „hier ist ein
+    // JSON-Endpunkt, versuch es anders".
+    const response = await post(payload(), { cookie: null, contentType: 'text/plain' });
+    expect(response.status).toBe(401);
+  });
+});
+
+describe('POST /api/orders — CSRF und Origin', () => {
+  it('nimmt eine Bestellung mit gültigem CSRF-Token an', async () => {
+    expect((await post(payload())).status).toBe(201);
+  });
+
+  it('lehnt eine Bestellung ohne CSRF-Token mit 403 ab', async () => {
+    const response = await post(payload(), { csrf: null });
+
+    expect(response.status).toBe(403);
+    expect(await countOrders()).toBe(0);
+  });
+
+  it('lehnt einen falschen CSRF-Token mit 403 ab', async () => {
+    const response = await post(payload(), { csrf: 'x'.repeat(43) });
+
+    expect(response.status).toBe(403);
+    expect(await countOrders()).toBe(0);
+  });
+
+  /**
+   * Der Token gilt für GENAU EINE Sitzung. Der einer Adminsitzung hilft an
+   * einer Kundensitzung nicht weiter.
+   */
+  it('lehnt den CSRF-Token einer fremden Sitzung ab', async () => {
+    const response = await post(payload(), { csrf: adminSitzung.csrf });
+    expect(response.status).toBe(403);
+  });
+
+  it('lehnt einen fremden Origin mit 403 ab', async () => {
+    const response = await post(payload(), { origin: 'https://angreifer.test' });
+
+    expect(response.status).toBe(403);
+    expect(await countOrders()).toBe(0);
+  });
+
+  it('lehnt eine Anfrage ohne Origin mit 403 ab', async () => {
+    expect((await post(payload(), { origin: null })).status).toBe(403);
+  });
+
+  /**
+   * Der Origin wird VOR der Sitzung geprüft: Eine fremd ausgelöste Anfrage
+   * soll gar nicht erst zu einem Datenbankzugriff führen.
+   */
+  it('prüft den Origin auch ohne Sitzung', async () => {
+    const response = await post(payload(), { origin: 'https://angreifer.test', cookie: null });
+    expect(response.status).toBe(403);
+  });
+
+  it('sagt nicht, welche der drei Prüfungen fehlgeschlagen ist', async () => {
+    const bodies = await Promise.all([
+      post(payload(), { csrf: null }).then((r) => r.text()),
+      post(payload(), { csrf: 'x'.repeat(43) }).then((r) => r.text()),
+      post(payload(), { origin: 'https://angreifer.test' }).then((r) => r.text()),
+      post(payload(), { cookie: adminSitzung.cookie, csrf: adminSitzung.csrf }).then((r) => r.text()),
+    ]);
+
+    expect(new Set(bodies).size).toBe(1);
+  });
+});
+
+describe('POST /api/orders — Kundenbindung', () => {
+  /**
+   * Die wichtigste Zusage des Endpunkts: Der Kunde kommt aus der Sitzung.
+   * Ein mitgesendetes customerId wirkt nicht — nicht weil es geprüft würde,
+   * sondern weil es nirgends gelesen wird.
+   */
+  it('ignoriert eine mitgesendete Kunden-ID vollständig', async () => {
+    const response = await post(payload({ customerId: 999, customer_id: 999 }));
+
+    expect(response.status).toBe(201);
+
+    const row = await env.DB.prepare('SELECT customer_id FROM orders').first<{ customer_id: number }>();
+    expect(row?.customer_id).toBe(1);
+  });
+
+  it('lässt eine mitgesendete Rolle wirkungslos', async () => {
+    const response = await post(payload({ role: 'admin' }));
+    expect(response.status).toBe(201);
+
+    const row = await env.DB.prepare('SELECT customer_id FROM orders').first<{ customer_id: number }>();
+    expect(row?.customer_id).toBe(1);
   });
 });
 

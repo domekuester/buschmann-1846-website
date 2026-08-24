@@ -31,9 +31,9 @@ import { methodNotAllowed, notFound } from './http/responses';
  *                      sie beweist die Auth-Grenze und sonst nichts.
  *   GET  /api/auth/session   wer bin ich. Für beide Rollen, mit einer
  *                      minimalen Antwort.
- *   GET  /o/<token>    die Phase-2-Bestellseite. Noch da, bis der
- *                      sitzungsbasierte Weg vollständig nachgewiesen ist.
- *   POST /api/orders   die Bestellung.
+ *   GET  /bestellen    die Bestellseite. Das Café kommt aus der Sitzung, nicht
+ *                      mehr aus einem Link.
+ *   POST /api/orders   die Bestellung. Sitzung, Origin und CSRF-Token.
  *
  * /assets/* taucht hier nicht auf: Diese Dateien liefert die Plattform aus,
  * bevor der Worker überhaupt erreicht wird (siehe wrangler.jsonc).
@@ -81,6 +81,13 @@ export default {
         return await logout(env.DB, config, request, now);
       }
 
+      if (pathname === '/bestellen') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET');
+        }
+        return await orderPage(env.DB, config, request, now);
+      }
+
       if (pathname === '/admin') {
         if (request.method !== 'GET' && request.method !== 'HEAD') {
           return methodNotAllowed('GET');
@@ -102,15 +109,7 @@ export default {
         if (request.method !== 'POST') {
           return methodNotAllowed('POST');
         }
-        return await createOrder(env.DB, request, now);
-      }
-
-      const token = orderPageToken(pathname);
-      if (token !== null) {
-        if (request.method !== 'GET' && request.method !== 'HEAD') {
-          return methodNotAllowed('GET');
-        }
-        return await orderPage(env.DB, token, now);
+        return await createOrder(env.DB, config, request, now);
       }
 
       return notFound();
@@ -119,15 +118,3 @@ export default {
     }
   },
 } satisfies ExportedHandler<Env>;
-
-/**
- * Zieht den Token aus '/o/<token>' — und zwar nur aus genau dieser Form.
- *
- * Kein Präfixvergleich: '/o/abc/def' und '/o/' sind keine Bestellseiten und
- * dürfen es auch nicht beinahe sein. Die inhaltliche Prüfung des Tokens
- * passiert danach in der Domäne; hier geht es allein um die Pfadform.
- */
-function orderPageToken(pathname: string): string | null {
-  const match = /^\/o\/([^/]+)$/.exec(pathname);
-  return match?.[1] ?? null;
-}

@@ -140,9 +140,20 @@ export function assertCsrf(
  * gibt keinen Weg, das Ergebnis zu ignorieren und trotzdem an den Kontext zu
  * kommen.
  */
-export type GuardResult =
-  | { readonly ok: true; readonly context: AuthContext }
+export type GuardResult<C extends AuthContext = AuthContext> =
+  | { readonly ok: true; readonly context: C }
   | { readonly ok: false; readonly response: Response };
+
+/**
+ * Der Kontext, der zu einer Rolle gehört.
+ *
+ * Damit trägt das ERGEBNIS der Wache die Rolle, die sie geprüft hat: Wer
+ * requireRole(..., 'customer', ...) aufruft und `ok` bekommt, hat einen
+ * Kontext MIT Kunden — ohne zweite Prüfung, ohne Typzusicherung, ohne die
+ * Möglichkeit, es zu vergessen. Die Autorisierung steht damit nicht nur zur
+ * Laufzeit fest, sondern schon beim Übersetzen.
+ */
+export type ContextForRole<R extends AuthRole> = Extract<AuthContext, { role: R }>;
 
 /** Seite oder Schnittstelle — davon hängt ab, wie eine Ablehnung aussieht. */
 export type RequestKind = 'html' | 'api';
@@ -170,14 +181,14 @@ export type RequestKind = 'html' | 'api';
  *                          Sitzung bleibt bestehen: Ein Tippfehler in der
  *                          Adresszeile darf niemanden abmelden.
  */
-export async function requireRole(
+export async function requireRole<R extends AuthRole>(
   db: D1Database,
   config: AppConfig,
   request: Request,
   now: Date,
-  role: AuthRole,
+  role: R,
   kind: RequestKind,
-): Promise<GuardResult> {
+): Promise<GuardResult<ContextForRole<R>>> {
   const angemeldet = await requireSession(db, config, request, now, kind);
   if (!angemeldet.ok) {
     return angemeldet;
@@ -187,7 +198,11 @@ export async function requireRole(
     return { ok: false, response: falscheRolle(kind) };
   }
 
-  return angemeldet;
+  // Der Laufzeitvergleich oben stellt genau das sicher, was hier behauptet
+  // wird. TypeScript kann eine Verengung über eine generische Variable nicht
+  // selbst führen — das ist die einzige Zusicherung in dieser Datei, und sie
+  // steht unmittelbar hinter ihrer Begründung.
+  return { ok: true, context: angemeldet.context as ContextForRole<R> };
 }
 
 /**

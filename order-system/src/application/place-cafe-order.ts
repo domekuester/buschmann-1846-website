@@ -1,8 +1,8 @@
 import { businessDay, plusDays } from '../domain/clock';
-import { AccessDeniedError, ValidationError } from '../domain/errors';
+import type { Customer } from '../domain/customer';
+import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
-import { findCustomerByAccessToken } from '../infrastructure/d1/access-token-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
 import {
   findOrderBySubmission,
@@ -25,8 +25,15 @@ const MAX_LEAD_DAYS = 365;
 const SUBMISSION_ID = /^[A-Za-z0-9-]{8,64}$/;
 
 export interface PlaceCafeOrderCommand {
-  /** Der Klartext-Token aus dem persönlichen Link. */
-  token: string;
+  /**
+   * Das bestellende Café — AUSSCHLIESSLICH aus der geprüften Sitzung.
+   *
+   * Ein `customerId: number` an dieser Stelle wäre der Unterschied zwischen
+   * „der Aufrufer muss den Kunden geladen haben" und „der Aufrufer darf eine
+   * Zahl nennen". Ein fertiger Customer lässt sich nicht aus einem
+   * Anfragekörper herbeireden.
+   */
+  customer: Customer;
   /** Serverseitig beim Rendern der Seite erzeugt, vom Formular zurückgesendet. */
   submissionId: string;
   /** Der ungeprüfte Anfragekörper. */
@@ -49,31 +56,31 @@ export interface CafeOrderResult {
  *
  * Die Reihenfolge ist durchweg Absicht:
  *
- *   1. Zugang auflösen. Ohne gültigen Token wird nichts weiter getan.
- *   2. Absendekennung prüfen und nachsehen, ob dieser Absendevorgang schon
+ *   1. Absendekennung prüfen und nachsehen, ob dieser Absendevorgang schon
  *      eine Bestellung hat. Der schnelle Weg gegen den Doppelklick.
- *   3. Entwurf lesen. Ein Eingabefehler kostet so keine Bestellnummer.
- *   4. Katalog laden, Nummer ziehen, rechnen, atomar speichern.
- *   5. Scheitert das Speichern am UNIQUE-Index über
+ *   2. Entwurf lesen. Ein Eingabefehler kostet so keine Bestellnummer.
+ *   3. Katalog laden, Nummer ziehen, rechnen, atomar speichern.
+ *   4. Scheitert das Speichern am UNIQUE-Index über
  *      (customer_id, submission_id), war es doch ein Doppelklick — dann
  *      gewinnt die zuerst geschriebene Bestellung.
  *
- * Schritt 2 UND Schritt 5 sind nötig, nicht einer von beiden: Schritt 2
- * fängt die Wiederholung nach einer abgebrochenen Verbindung ab, Schritt 5
- * die echte Gleichzeitigkeit, bei der beide Anfragen in Schritt 2 noch
+ * Schritt 1 UND Schritt 4 sind nötig, nicht einer von beiden: Schritt 1
+ * fängt die Wiederholung nach einer abgebrochenen Verbindung ab, Schritt 4
+ * die echte Gleichzeitigkeit, bei der beide Anfragen in Schritt 1 noch
  * nichts sehen.
  *
- * Der Kunde kommt ausschließlich aus dem Token. Es gibt in dieser Funktion
- * keine Stelle, an der ein customer_id aus der Anfrage gelesen werden könnte.
+ * DIE ZUGANGSPRÜFUNG STEHT NICHT MEHR HIER. In Phase 2 löste diese Funktion
+ * selbst einen Token zu einem Café auf; seit Phase 3A bekommt sie ein
+ * bereits geprüftes Café aus der Sitzung. Der Unterschied ist nicht bloß
+ * Verschiebung: Es gibt in dieser Funktion keinen Parameter mehr, über den
+ * sich der Kunde beeinflussen ließe — und damit auch keine Prüfung, die man
+ * vergessen könnte.
  */
 export async function placeCafeOrder(
   db: D1Database,
   command: PlaceCafeOrderCommand,
 ): Promise<CafeOrderResult> {
-  const customer = await findCustomerByAccessToken(db, command.token);
-  if (customer === null) {
-    throw new AccessDeniedError();
-  }
+  const customer = command.customer;
 
   if (!SUBMISSION_ID.test(command.submissionId)) {
     throw ValidationError.field('submission_id', 'Die Bestellung konnte nicht gelesen werden.');

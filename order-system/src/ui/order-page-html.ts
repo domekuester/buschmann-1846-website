@@ -14,15 +14,22 @@ import { escapeHtml, formatEuro } from './format';
  * DOM legen und das echte Client-Skript darauf loslassen — geprüft wird die
  * ausgelieferte Seite, nicht ein Testfragment.
  *
- * DER TOKEN STEHT NICHT IM DOKUMENT. Er steht in der URL, und dort genügt er:
- * Das Client-Skript liest ihn aus location.pathname. Ein Screenshot der Seite
- * oder ein kopierter Quelltext enthält ihn damit nicht.
+ * DER SITZUNGSTOKEN STEHT NICHT IM DOKUMENT. Er liegt HttpOnly im Cookie und
+ * ist für JavaScript unsichtbar; ein Screenshot der Seite oder ein kopierter
+ * Quelltext enthält ihn nicht.
+ *
+ * Was im Dokument steht, ist der CSRF-Token — und das MUSS so sein: Das
+ * Client-Skript liest ihn und sendet ihn beim Absenden zurück. Er ist ein
+ * anderer Wert mit einer anderen Aufgabe. Wer ihn kennt, kann damit nichts
+ * anfangen, solange er nicht auch das Cookie hat.
  */
 export interface OrderPageView {
   customerName: string;
   products: readonly CatalogItemView[];
   /** Serverseitig erzeugt, siehe migrations/0007. */
   submissionId: string;
+  /** Der Synchronizer-Token der Sitzung. Steht bewusst lesbar im Dokument. */
+  csrfToken: string;
   /** Heute in Europe/Berlin — die untere Grenze des Datumsfeldes. */
   today: string;
   /** Vorbelegung des Datumsfeldes: in aller Regel morgen. */
@@ -39,10 +46,15 @@ export function renderOrderPage(view: OrderPageView): string {
       <p class="marke">Buschmann <span>1846</span></p>
       <h1>Bestellung für ${name}</h1>
       <p class="gruss">Schön, dass du da bist. Menge einstellen, Tag wählen, senden.</p>
+
+      <form method="post" action="/logout" class="abmelden">
+        <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
+        <button type="submit" class="abmelden__taste">Abmelden</button>
+      </form>
     </header>
 
     <main id="inhalt">
-      <form class="formular" id="bestellformular" data-order-form data-submission-id="${escapeHtml(view.submissionId)}" novalidate>
+      <form class="formular" id="bestellformular" data-order-form data-submission-id="${escapeHtml(view.submissionId)}" data-csrf="${escapeHtml(view.csrfToken)}" novalidate>
         <section aria-labelledby="titel-sortiment">
           <h2 id="titel-sortiment">Sortiment</h2>
           <ul class="produkte">

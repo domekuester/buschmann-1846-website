@@ -12,6 +12,10 @@
  *   zur Anzeige und sendet nichts davon mit — im Anfragekörper stehen nur
  *   Produkt-IDs, Mengen, Liefertag, Notiz und die Absendekennung.
  *
+ *   Der KUNDE steht nicht im Körper und kann es nicht: Er kommt aus der
+ *   Sitzung. Ein hier mitgesendetes customerId würde vom Server nicht
+ *   gelesen — es gibt dort keine Stelle dafür.
+ *
  * Geprüft wird sie in tests/ui/ gegen genau das HTML, das der Server
  * ausliefert — nicht gegen ein Testfragment.
  */
@@ -218,11 +222,11 @@ async function submit(state) {
       method: 'POST',
       headers: {
         'content-type': 'application/json',
-        // Der Token steht in der URL, nicht im Dokument. Er wird hier gelesen
-        // und als Kopfzeile gesendet — Kopfzeilen tauchen in
-        // Zugriffsprotokollen nicht auf, und ein fremdes Formular kann sie
-        // nicht setzen.
-        'x-order-token': tokenFromLocation(),
+        // Der Sitzungstoken liegt HttpOnly im Cookie und ist hier unsichtbar
+        // — der Browser schickt ihn von sich aus mit. Was dieses Skript
+        // beitragen muss, ist der CSRF-Token: der Nachweis, dass die Anfrage
+        // von dieser Seite kommt und nicht von einer fremden.
+        'x-csrf-token': state.form.getAttribute('data-csrf') ?? '',
       },
       body: JSON.stringify({
         submission_id: state.form.getAttribute('data-submission-id'),
@@ -246,11 +250,15 @@ async function submit(state) {
       return;
     }
 
-    if (response.status === 401 || response.status === 404) {
+    // 401 die Sitzung ist abgelaufen oder widerrufen, 403 Rolle, Origin oder
+    // CSRF-Token stimmen nicht. Für das Café ist beides derselbe Zustand:
+    // neu anmelden. Der Text sagt ausdrücklich, dass NICHTS bestellt wurde —
+    // der gefährliche Zustand wäre Ungewissheit.
+    if (response.status === 401 || response.status === 403) {
       show(
         state.formError,
-        'Dieser Bestelllink gilt nicht mehr. Die Bestellung wurde nicht aufgenommen — ' +
-          'bitte melde dich kurz bei Buschmann 1846.',
+        'Die Anmeldung gilt nicht mehr. Die Bestellung wurde NICHT aufgenommen — ' +
+          'bitte neu anmelden.',
       );
       setSubmitting(state, false);
       return;
@@ -287,11 +295,6 @@ function collectItems(state) {
     }
   }
   return items;
-}
-
-/** '/o/<token>' — der Token steht nur hier, nie im Dokument. */
-function tokenFromLocation() {
-  return decodeURIComponent(window.location.pathname.replace(/^\/o\//, ''));
 }
 
 /**

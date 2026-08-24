@@ -1,5 +1,7 @@
 import { placeCafeOrder } from '../application/place-cafe-order';
+import type { AppConfig } from '../config/app-config';
 import type { Order } from '../domain/order';
+import { assertCsrf, assertSameOrigin, requireRole } from './guard';
 import { json } from './responses';
 import { privateHeaders } from './security';
 
@@ -8,21 +10,6 @@ import { privateHeaders } from './security';
  * unter 10 KiB; alles darüber ist kein Café, das Kuchen bestellt.
  */
 const MAX_BODY_BYTES = 64 * 1024;
-
-/**
- * Der Token steht im HEADER, nicht im Körper und nicht im Pfad.
- *
- * Zwei Gründe, und beide zählen:
- *
- *   Kopfzeilen tauchen in Zugriffsprotokollen nicht auf, Pfade schon.
- *
- *   Ein Header ist keine ambiente Autorität. Ein fremdes Formular kann ihn
- *   nicht setzen, und ein Cross-Origin-fetch scheitert am Preflight, weil
- *   dieser Worker keine CORS-Kopfzeilen sendet. CSRF ist damit konstruktiv
- *   ausgeschlossen — es gibt kein Cookie, das ein Browser von sich aus
- *   mitschicken würde.
- */
-const TOKEN_HEADER = 'x-order-token';
 
 /**
  * Ein Fehler, den die Fehlergrenze in eine bestimmte Antwort übersetzt.
@@ -41,19 +28,49 @@ class RequestError extends Error {
 /**
  * Nimmt eine Bestellung entgegen.
  *
- * Die Prüfungen stehen in der Reihenfolge, in der sie billig sind: Verfahren,
- * Content-Type und angekündigte Größe kosten keinen Lesevorgang und keinen
- * Datenbankzugriff. Erst danach wird der Körper gelesen.
+ * DIE REIHENFOLGE IST DIE DES AUFWANDS — und zugleich die der Sicherheit:
+ *
+ *   1. Origin. Kostet nichts und lehnt jede fremd ausgelöste Anfrage ab,
+ *      bevor irgendetwas geschieht.
+ *   2. Sitzung und Rolle. Ohne gültige Kundensitzung wird nichts weiter
+ *      getan — insbesondere wird der Körper nicht gelesen.
+ *   3. CSRF-Token. Er hängt an der Sitzung und ist deshalb erst hier prüfbar.
+ *   4. Content-Type und angekündigte Größe.
+ *   5. Erst danach der Körper.
+ *
+ * Schritt 2 vor Schritt 4 ist Absicht: Wer keinen gültigen Zugang hat, soll
+ * keine Rückmeldung über die erwartete Anfrageform bekommen. Ein 415 für
+ * einen Fremden wäre die Auskunft „hier ist ein JSON-Endpunkt, versuch es
+ * anders".
+ *
+ * SEIT PHASE 3A GIBT ES KEIN TOKEN IM HEADER MEHR. Phase 2 hatte damit
+ * konstruktiv kein CSRF-Risiko — ein fremdes Formular kann keine Kopfzeile
+ * setzen. Ein Cookie schickt der Browser dagegen von sich aus mit, und
+ * genau deshalb stehen Origin-Prüfung und CSRF-Token jetzt hier.
  */
-export async function createOrder(db: D1Database, request: Request, now: Date): Promise<Response> {
+export async function createOrder(
+  db: D1Database,
+  config: AppConfig,
+  request: Request,
+  now: Date,
+): Promise<Response> {
   try {
+    assertSameOrigin(request, config);
+
+    const wache = await requireRole(db, config, request, now, 'customer', 'api');
+    if (!wache.ok) {
+      return wache.response;
+    }
+
+    assertCsrf(request, wache.context);
+
     assertJsonContentType(request);
     assertAnnouncedSizeOk(request);
 
     const input = parseBody(await readBody(request));
 
     const { order, created } = await placeCafeOrder(db, {
-      token: request.headers.get(TOKEN_HEADER) ?? '',
+      customer: wache.context.customer,
       submissionId: readSubmissionId(input),
       input,
       now,
@@ -149,10 +166,10 @@ function parseBody(text: string): Record<string, unknown> {
  *
  * Hier wird sie NICHT geprüft, sondern nur gelesen — ein fehlender Wert wird
  * zur leeren Zeichenkette. Die Prüfung findet in placeCafeOrder statt, also
- * NACH der Zugangsprüfung.
+ * NACH der Sitzungs- und CSRF-Prüfung.
  *
  * Das ist kein Detail: Würde hier ein 422 entstehen, bekäme ein Aufrufer
- * ohne gültigen Token eine Rückmeldung über die erwartete Anfrageform. Wer
+ * ohne gültige Sitzung eine Rückmeldung über die erwartete Anfrageform. Wer
  * keinen Zugang hat, erfährt nichts — auch nicht, wie eine richtige Anfrage
  * aussähe.
  */

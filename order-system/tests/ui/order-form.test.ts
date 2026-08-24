@@ -9,7 +9,12 @@ import { renderOrderPage } from '../../src/ui/order-page-html';
  * erzeugt. Ein handgeschriebenes Fragment bliebe grün, während die echte
  * Seite kaputt ist — etwa weil ein data-Attribut umbenannt wurde.
  */
-const TOKEN = 'A'.repeat(43);
+/**
+ * Der CSRF-Token der Sitzung. Er steht im Dokument, weil das Skript ihn
+ * zurücksenden muss — der Sitzungstoken dagegen liegt HttpOnly im Cookie und
+ * kommt in diesem Test nirgends vor, weil er im Browser nirgends vorkommt.
+ */
+const CSRF = 'C'.repeat(43);
 
 function setUpPage(): void {
   document.documentElement.innerHTML = renderOrderPage({
@@ -19,6 +24,7 @@ function setUpPage(): void {
       { id: 2, name: 'Beispiel Streuselblech', description: null, priceCents: 280, unit: 'Blech' },
     ],
     submissionId: 'sub-0123-4567-89ab',
+    csrfToken: CSRF,
     today: '2026-08-24',
     defaultDate: '2026-08-25',
   })
@@ -26,7 +32,7 @@ function setUpPage(): void {
     .replace(/^[\s\S]*?<html[^>]*>/, '')
     .replace(/<\/html>\s*$/, '');
 
-  window.history.replaceState({}, '', `/o/${TOKEN}`);
+  window.history.replaceState({}, '', '/bestellen');
 }
 
 function form(): HTMLFormElement {
@@ -217,13 +223,13 @@ describe('Absenden', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  it('schickt Token, Kennung und nur Produkt-ID und Menge', async () => {
+  it('schickt CSRF-Token, Kennung und nur Produkt-ID und Menge', async () => {
     await submitWithThree();
 
     const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect(url).toBe('/api/orders');
     expect(init.method).toBe('POST');
-    expect((init.headers as Record<string, string>)['x-order-token']).toBe(TOKEN);
+    expect((init.headers as Record<string, string>)['x-csrf-token']).toBe(CSRF);
 
     const body = JSON.parse(init.body as string) as Record<string, unknown>;
     expect(body['submission_id']).toBe('sub-0123-4567-89ab');
@@ -384,9 +390,22 @@ describe('Fehler', () => {
     expect(visibleFormError()).toMatch(/nicht bestätigt/i);
   });
 
-  it('sagt bei einem ungültigen Link, dass Buschmann helfen kann', async () => {
+  /**
+   * 401 heißt: Die Sitzung gilt nicht mehr. Der gefährliche Zustand wäre
+   * Ungewissheit — deshalb steht ausdrücklich da, dass NICHTS bestellt wurde.
+   */
+  it('sagt bei abgelaufener Sitzung, dass nichts bestellt wurde', async () => {
     await fail(jsonResponse(401, { error: 'unauthorized' }));
-    expect(visibleFormError()).toContain('Buschmann');
+
+    const banner = visibleFormError();
+    expect(banner).toContain('NICHT aufgenommen');
+    expect(banner).toContain('neu anmelden');
+  });
+
+  /** 403 — Rolle, Origin oder CSRF-Token. Für das Café derselbe Zustand. */
+  it('behandelt 403 wie eine abgelaufene Sitzung', async () => {
+    await fail(jsonResponse(403, { error: 'forbidden' }));
+    expect(visibleFormError()).toContain('NICHT aufgenommen');
   });
 
   it('zeigt niemals eine technische Meldung', async () => {

@@ -1,26 +1,35 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { placeCafeOrder } from '../../src/application/place-cafe-order';
-import { generateAccessToken, hashAccessToken } from '../../src/domain/access-token';
-import { AccessDeniedError, ValidationError } from '../../src/domain/errors';
+import type { Customer } from '../../src/domain/customer';
+import { ValidationError } from '../../src/domain/errors';
+import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
 import { findOrderByNumber } from '../../src/infrastructure/d1/order-repository';
 
 /**
  * Der vollständige Bestellvorgang eines Cafés gegen eine echte D1 — vom
- * Token bis zur gespeicherten Zeile. Hier laufen die Regeln zusammen, die
- * einzeln schon geprüft sind, und hier fällt auf, wenn sie sich gegenseitig
- * aushebeln.
+ * geprüften Café bis zur gespeicherten Zeile. Hier laufen die Regeln
+ * zusammen, die einzeln schon geprüft sind, und hier fällt auf, wenn sie sich
+ * gegenseitig aushebeln.
+ *
+ * SEIT PHASE 3A GIBT ES HIER KEINE ZUGANGSPRÜFUNG MEHR. placeCafeOrder
+ * bekommt einen bereits geprüften Customer aus der Sitzung; wer ihn prüft,
+ * steht in tests/http/order-api.test.ts. Der Gewinn ist nicht bloß eine
+ * verschobene Prüfung: Ein fertiger Customer lässt sich nicht aus einem
+ * Anfragekörper herbeireden, und damit gibt es in diesem Vorgang gar keinen
+ * Eingang mehr, über den der Kunde zu beeinflussen wäre.
  */
 const NOW = new Date('2026-08-24T07:00:00Z'); // Montag, Berlin: 09:00
 const MORGEN = '2026-08-25';
 
-const token = {
-  nord: generateAccessToken(),
-  sued: generateAccessToken(),
-  abholung: generateAccessToken(),
-  widerrufen: generateAccessToken(),
-  unbekannt: generateAccessToken(),
-};
+/** Die geprüften Cafés — im Betrieb kommen sie aus der Sitzung. */
+const cafe: Record<'nord' | 'sued' | 'abholung', Customer> = {} as never;
+
+async function ladeCafe(id: number): Promise<Customer> {
+  const customer = await findCustomer(env.DB, id);
+  if (customer === null) throw new Error(`Café ${id} fehlt im Testaufbau`);
+  return customer;
+}
 
 async function countOrders(): Promise<number> {
   const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM orders').first<{ n: number }>();
@@ -37,10 +46,10 @@ function request(overrides: Record<string, unknown> = {}): Record<string, unknow
 
 async function order(
   overrides: Record<string, unknown> = {},
-  opts: { token?: string; submissionId?: string; now?: Date } = {},
+  opts: { customer?: Customer; submissionId?: string; now?: Date } = {},
 ) {
   return placeCafeOrder(env.DB, {
-    token: opts.token ?? token.nord,
+    customer: opts.customer ?? cafe.nord,
     submissionId: opts.submissionId ?? `sub-${crypto.randomUUID()}`,
     input: request(overrides),
     now: opts.now ?? NOW,
@@ -51,7 +60,8 @@ beforeEach(async () => {
   for (const table of [
     'order_items',
     'orders',
-    'customer_access_tokens',
+    'auth_sessions',
+    'auth_accounts',
     'products',
     'customers',
     'order_number_sequences',
@@ -91,25 +101,16 @@ beforeEach(async () => {
     ).bind(ts),
   ]);
 
-  await env.DB.batch([
-    env.DB.prepare(
-      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at) VALUES (1, ?, 1, ?)`,
-    ).bind(await hashAccessToken(token.nord), ts),
-    env.DB.prepare(
-      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at) VALUES (2, ?, 1, ?)`,
-    ).bind(await hashAccessToken(token.sued), ts),
-    env.DB.prepare(
-      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at) VALUES (3, ?, 1, ?)`,
-    ).bind(await hashAccessToken(token.abholung), ts),
-    env.DB.prepare(
-      `INSERT INTO customer_access_tokens (customer_id, token_hash, is_active, created_at, revoked_at)
-       VALUES (1, ?, 0, ?, ?)`,
-    ).bind(await hashAccessToken(token.widerrufen), ts, ts),
-  ]);
+  // Im Betrieb kommen diese drei aus der geprüften Sitzung; hier werden sie
+  // direkt geladen, weil dieser Test den Bestellvorgang prüft und nicht die
+  // Anmeldung.
+  cafe.nord = await ladeCafe(1);
+  cafe.sued = await ladeCafe(2);
+  cafe.abholung = await ladeCafe(3);
 });
 
 describe('placeCafeOrder — der gute Fall', () => {
-  it('legt eine Bestellung für das Café des Tokens an', async () => {
+  it('legt eine Bestellung für das Café der Sitzung an', async () => {
     const { order: placed, created } = await order();
 
     expect(created).toBe(true);
@@ -146,44 +147,32 @@ describe('placeCafeOrder — der gute Fall', () => {
   });
 });
 
-describe('placeCafeOrder — Zugang', () => {
-  it('lehnt einen unbekannten Token ab, ohne etwas zu speichern', async () => {
-    await expect(order({}, { token: token.unbekannt })).rejects.toThrow(AccessDeniedError);
-    expect(await countOrders()).toBe(0);
-  });
-
-  it('lehnt einen widerrufenen Token ab', async () => {
-    await expect(order({}, { token: token.widerrufen })).rejects.toThrow(AccessDeniedError);
-    expect(await countOrders()).toBe(0);
-  });
-
-  it('lehnt einen formal ungültigen Token ab', async () => {
-    await expect(order({}, { token: 'zu-kurz' })).rejects.toThrow(AccessDeniedError);
-    await expect(order({}, { token: '' })).rejects.toThrow(AccessDeniedError);
-    expect(await countOrders()).toBe(0);
-  });
-
-  it('verbraucht bei einem abgelehnten Zugang keine Bestellnummer', async () => {
-    await expect(order({}, { token: token.unbekannt })).rejects.toThrow(AccessDeniedError);
-    expect((await order()).order.orderNumber.value).toBe('BUS-2026-000001');
-  });
-
+describe('placeCafeOrder — Kundenbindung', () => {
   /**
-   * Die wichtigste Zusage des ganzen Vorgangs: Der Kunde kommt aus dem
-   * Token, nie aus der Anfrage. Ein mitgesendetes customer_id wirkt nicht —
+   * Die wichtigste Zusage des ganzen Vorgangs: Der Kunde kommt aus der
+   * SITZUNG, nie aus der Anfrage. Ein mitgesendetes customer_id wirkt nicht —
    * nicht weil es geprüft würde, sondern weil es nie gelesen wird.
    */
-  it('nimmt den Kunden aus dem Token, nicht aus der Anfrage', async () => {
+  it('nimmt den Kunden aus der Sitzung, nicht aus der Anfrage', async () => {
     const { order: placed } = await order({ customer_id: 2, customerId: 2 });
 
     expect(placed.customerId).toBe(1);
     expect(placed.customerNameSnapshot).toBe('Testcafé Nord');
   });
 
-  it('bestellt mit dem Token von Café Süd für Café Süd', async () => {
-    const { order: placed } = await order({}, { token: token.sued });
+  it('bestellt mit der Sitzung von Café Süd für Café Süd', async () => {
+    const { order: placed } = await order({}, { customer: cafe.sued });
     expect(placed.customerId).toBe(2);
     expect(placed.customerNameSnapshot).toBe('Testcafé Süd');
+  });
+
+  /**
+   * Auch eine mitgesendete Rolle wirkt nicht. Es gibt in OrderDraft kein Feld
+   * dafür, und der Vorgang kennt überhaupt keine Rollen.
+   */
+  it('lässt eine mitgesendete Rolle wirkungslos', async () => {
+    const { order: placed } = await order({ role: 'admin' });
+    expect(placed.customerId).toBe(1);
   });
 });
 
@@ -194,7 +183,7 @@ describe('placeCafeOrder — Fulfillment', () => {
    */
   it('nimmt den Fulfillment-Typ aus den Stammdaten des Cafés', async () => {
     expect((await order()).order.fulfillmentType).toBe('delivery');
-    expect((await order({}, { token: token.abholung })).order.fulfillmentType).toBe('pickup');
+    expect((await order({}, { customer: cafe.abholung })).order.fulfillmentType).toBe('pickup');
   });
 
   it('lässt einen mitgesendeten Fulfillment-Typ nicht wirken', async () => {
@@ -205,7 +194,7 @@ describe('placeCafeOrder — Fulfillment', () => {
   });
 
   it('speichert bei Abholung keine Lieferadresse', async () => {
-    const { order: placed } = await order({}, { token: token.abholung });
+    const { order: placed } = await order({}, { customer: cafe.abholung });
     expect(placed.deliveryAddressSnapshot).toBeNull();
   });
 });
@@ -385,8 +374,8 @@ describe('placeCafeOrder — Doppelklick', () => {
 
   it('trennt die Kennungen zweier Cafés', async () => {
     const submissionId = 'sub-gleich-0003';
-    await order({}, { submissionId, token: token.nord });
-    await order({}, { submissionId, token: token.sued });
+    await order({}, { submissionId, customer: cafe.nord });
+    await order({}, { submissionId, customer: cafe.sued });
 
     expect(await countOrders()).toBe(2);
   });

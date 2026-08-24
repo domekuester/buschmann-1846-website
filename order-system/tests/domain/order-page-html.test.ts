@@ -12,6 +12,7 @@ function page(overrides: Partial<Parameters<typeof renderOrderPage>[0]> = {}): s
     customerName: 'Testcafé Nord',
     products: PRODUCTS,
     submissionId: 'sub-0123-4567-89ab',
+    csrfToken: 'C'.repeat(43),
     today: '2026-08-24',
     defaultDate: '2026-08-25',
     ...overrides,
@@ -158,10 +159,26 @@ describe('renderOrderPage — nichts tritt nach außen, was nicht soll', () => {
    * Kopieren des Quelltextes ebenfalls nicht. Der Client liest ihn aus
    * location.pathname.
    */
-  it('enthält den Token nicht', () => {
+  /**
+   * Zwei Geheimnisse mit verschiedenen Aufgaben, und nur EINES gehört ins
+   * Dokument.
+   *
+   * Der Sitzungstoken liegt HttpOnly im Cookie: Er darf hier nirgends
+   * auftauchen, und dieses Gerüst bekommt ihn gar nicht erst übergeben. Der
+   * CSRF-Token MUSS dagegen im Dokument stehen — das Client-Skript liest ihn
+   * und sendet ihn beim Absenden zurück. Wer nur ihn hat und nicht das Cookie,
+   * kann damit nichts anfangen.
+   */
+  it('trägt den CSRF-Token und sonst kein Geheimnis', () => {
     const html = page();
+
+    // Der CSRF-Token steht genau zweimal: im Formular und im Abmeldefeld.
+    expect(html.split('C'.repeat(43)).length - 1).toBe(2);
+
+    // Vom alten Capability-Link ist nichts übrig.
     expect(html).not.toContain('/o/');
-    expect(html.toLowerCase()).not.toContain('token');
+    expect(html).not.toContain('x-order-token');
+    expect(html).not.toContain('access');
   });
 
   it('lädt nichts von einem fremden Host', () => {

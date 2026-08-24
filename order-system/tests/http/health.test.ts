@@ -51,11 +51,30 @@ describe('Routing', () => {
    * verschlossen — und der Aufrufer erfährt dabei nicht, ob es das Café gibt.
    * Der vollständige Endpunkt wird in tests/http/order-api.test.ts geprüft.
    */
-  it('gibt die Bestell-API ohne Zugang nicht frei', async () => {
+  /**
+   * Ohne Origin-Kopfzeile schlägt schon die erste Prüfung an — noch vor der
+   * Sitzung. Das ist Absicht: Eine fremd ausgelöste Anfrage soll gar nicht
+   * erst zu einem Datenbankzugriff führen.
+   */
+  it('lehnt die Bestell-API ohne Origin mit 403 ab', async () => {
     const response = await worker.fetch(
       new Request('https://bestellen.example/api/orders', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
+        body: '{}',
+      }),
+      env,
+    );
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: 'forbidden' });
+  });
+
+  it('gibt die Bestell-API ohne Sitzung nicht frei', async () => {
+    const response = await worker.fetch(
+      new Request('http://127.0.0.1:8787/api/orders', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', origin: 'http://127.0.0.1:8787' },
         body: '{}',
       }),
       env,

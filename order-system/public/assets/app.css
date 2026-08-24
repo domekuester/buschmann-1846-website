@@ -619,3 +619,40 @@ textarea[aria-invalid='true'] {
 @media (min-width: 480px) {
   .anmeldung { padding-top: 2.5rem; }
 }
+
+/* ---------- Abmelden ----------
+
+   Klein und oben rechts im Kopf: Ein Café meldet sich alle 30 Tage einmal an
+   und praktisch nie ab. Die Schaltfläche muss auffindbar sein, nicht
+   auffällig — und sie darf der Bestellung keinen Platz wegnehmen.
+
+   Ein echtes Formular, kein Link. Ein GET-Logout wird von Link-Prefetch,
+   Bildvorschau und Virenscannern ausgelöst.                                */
+
+.abmelden {
+  position: absolute;
+  top: 1.25rem;
+  right: var(--rand, 1rem);
+  margin: 0;
+}
+
+.abmelden__taste {
+  min-height: 2rem;
+  padding: .25rem .7rem;
+  font: inherit;
+  font-size: .85rem;
+  color: var(--elfenbein);
+  background: transparent;
+  border: 1px solid rgba(243, 237, 223, .35);
+  border-radius: var(--radius);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.abmelden__taste:hover { border-color: var(--champagner); color: var(--champagner); }
+
+/* Der Kopf trägt die absolut positionierte Schaltfläche. */
+.kopf { position: relative; }
+
+/* Damit die Überschrift nicht unter die Schaltfläche läuft. */
+.kopf h1 { padding-right: 5.5rem; }
