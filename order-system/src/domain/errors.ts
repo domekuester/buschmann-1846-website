@@ -1,9 +1,11 @@
 /**
- * Die zwei Fehlerarten der Domäne — und der Unterschied zwischen ihnen ist
- * kein Stilfrage, sondern entscheidet, was die HTTP-Grenze später tut:
+ * Die drei Fehlerarten der Domäne — und der Unterschied zwischen ihnen ist
+ * keine Stilfrage, sondern entscheidet, was die HTTP-Grenze tut:
  *
  *   ValidationError      → fehlerhafte Eingabe, gehört als 422 zurück an das
  *                          Café, mit einer Meldung je Feld.
+ *   AccessDeniedError    → kein gültiger Zugang. Gehört als 401 bzw. als
+ *                          freundliche 404-Seite zurück — ohne Begründung.
  *   InvalidArgumentError → verletzte Invariante, also ein Programmierfehler.
  *                          Gehört als 500 ins Log und nie in eine Oberfläche.
  */
@@ -46,5 +48,23 @@ export class ValidationError extends DomainError {
 
   fieldCount(): number {
     return Object.keys(this.errors).length;
+  }
+}
+
+/**
+ * Der Zugang gilt nicht.
+ *
+ * Dieser Fehler trägt bewusst KEINE Angabe darüber, warum: Ob ein Token
+ * unbekannt, widerrufen, formal falsch oder das Café deaktiviert ist, ist
+ * dieselbe Antwort. Jede Unterscheidung wäre eine Auskunft darüber, ob ein
+ * bestimmter Zugang existiert — und damit ein Weg, Cafés aufzuzählen.
+ *
+ * Die Nachricht ist für Menschen geschrieben und darf angezeigt werden.
+ */
+export class AccessDeniedError extends DomainError {
+  constructor(
+    message = 'Dieser Bestelllink ist nicht mehr gültig.',
+  ) {
+    super(message);
   }
 }
