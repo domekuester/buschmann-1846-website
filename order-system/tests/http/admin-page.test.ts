@@ -6,7 +6,6 @@ import type { AppConfig } from '../../src/config/app-config';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
 
 const NOW_ISO = '2026-08-24T07:00:00.000Z';
-const NOW = new Date(NOW_ISO);
 const ORIGIN = 'http://127.0.0.1:8787';
 const PEPPER = 'TEST-PEPPER-nur-fuer-Tests-kein-Echtwert-0123456789';
 
@@ -49,11 +48,20 @@ async function seedKonto(
     .run();
 }
 
+/**
+ * WICHTIG: Die Sitzung wird auf die ECHTE Uhr geprägt, nicht auf NOW.
+ *
+ * NOW ist ein fester Zeitpunkt für die Testdaten. Der Worker prüft eine
+ * Sitzung aber gegen `new Date()` — er bekommt keine Uhr übergeben. Eine
+ * Adminsitzung läuft 12 Stunden; wäre sie auf NOW = 07:00 UTC geprägt,
+ * schlüge dieser Test ab 19:00 UTC fehl und davor nicht. Genau das ist hier
+ * einmal passiert.
+ */
 async function anmelden(identifier: string, secret: string): Promise<string> {
   const ergebnis = await logIn(env.DB, CONFIG, {
     identifier,
     secret,
-    now: NOW,
+    now: new Date(),
     existingSessionToken: null,
   });
   if (ergebnis === null) throw new Error('Anmeldung im Testaufbau fehlgeschlagen');

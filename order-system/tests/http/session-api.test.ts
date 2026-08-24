@@ -51,11 +51,20 @@ async function seedKonto(
     .run();
 }
 
+/**
+ * WICHTIG: Die Sitzung wird auf die ECHTE Uhr geprägt, nicht auf NOW.
+ *
+ * NOW ist ein fester Zeitpunkt für die Testdaten. Der Worker prüft eine
+ * Sitzung aber gegen `new Date()` — er bekommt keine Uhr übergeben. Eine
+ * Adminsitzung läuft 12 Stunden; wäre sie auf NOW = 07:00 UTC geprägt,
+ * schlüge dieser Test ab 19:00 UTC fehl und davor nicht. Genau das ist hier
+ * einmal passiert.
+ */
 async function anmelden(identifier: string, secret: string): Promise<string> {
   const ergebnis = await logIn(env.DB, CONFIG, {
     identifier,
     secret,
-    now: NOW,
+    now: new Date(),
     existingSessionToken: null,
   });
   if (ergebnis === null) throw new Error('Anmeldung im Testaufbau fehlgeschlagen');
