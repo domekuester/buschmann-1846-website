@@ -11,12 +11,12 @@ playwright-report/
 test-results/
 .playwright-mcp/
 
-
 # Bestellsystem (Cloudflare Worker): Laufzeit- und Buildartefakte
 order-system/node_modules/
 order-system/.wrangler/
 order-system/.dev.vars
 order-system/.dev.vars.*
+order-system/worker-startup.cpuprofile
 
 # worker-configuration.d.ts wird von `wrangler types` erzeugt, aber bewusst
 # eingecheckt: Ohne die Datei schlägt `npm run typecheck` in einem frischen
