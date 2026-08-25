@@ -94,6 +94,7 @@ src/
 │   ├── order-number.ts  order-item.ts
 │   ├── order-draft.ts     Eingabe-Whitelist OHNE Preisfeld
 │   ├── order.ts           das Aggregat
+│   ├── production-day.ts  Lesemodell: was ist an einem Tag zu backen
 │   ├── auth-role.ts       genau zwei Rollen: customer, admin
 │   └── login-identifier.ts  Normalisierung, idempotent, mit Zeichen-Allowlist
 ├── config/
@@ -103,6 +104,7 @@ src/
 │   ├── place-cafe-order.ts  Bestellung für ein Café aus der Sitzung
 │   ├── log-in.ts          Anmeldung: zwei Ausgänge, ein generisches Nein
 │   ├── authenticate-request.ts  Sitzung → AuthContext, bei JEDEM Request neu
+│   ├── get-production-day.ts    ein Tag: abfragen und aggregieren
 │   └── catalog-view.ts    was ein Café von einem Produkt sieht
 ├── infrastructure/
 │   ├── auth/              PBKDF2 + Pepper, Sitzungstoken, Cookie-Policy
@@ -240,9 +242,131 @@ produktiv aus Cloudflare-Secrets. Was fehlt, ist Produktion: Ein Tippfehler in
 > ernsthaften Guidance genügt. Die Entscheidung ist in der Spezifikation
 > festgehalten.
 
+## Produktionstag
+
+Die Frage, für die dieses System gebaut wurde:
+
+> Was muss Buschmann am 26. August produzieren?
+
+```text
+GET /api/admin/production-day?date=2026-08-26
+```
+
+Rolle `admin`, ausschließlich lesend. Eine Café-Sitzung bekommt 403, keine
+Sitzung 401. `Cache-Control: no-store` auf **jeder** Antwort — welches Café
+wie viel bestellt, gehört in keinen Zwischenspeicher.
+
+Die Antwort hat zwei Ebenen aus **denselben** Daten: `products` ist die
+Backliste, `orders` die Aufteilung darauf. Sie können sich nicht
+widersprechen, weil die Summe aus den Bestellungen gerechnet wird.
+
+```json
+{
+  "date": "2026-08-26",
+  "order_count": 2,
+  "total_units": 11,
+  "products": [
+    { "product_id": 1, "name": "Beispiel Käsekuchen", "unit": "Stück", "quantity": 11 }
+  ],
+  "orders": [
+    {
+      "order_number": "BUS-2026-000901",
+      "customer_name": "Testcafé Nord",
+      "status": "confirmed",
+      "fulfillment_type": "delivery",
+      "note": "Bitte vor 10 Uhr",
+      "items": [
+        { "product_id": 1, "name": "Beispiel Käsekuchen", "unit": "Stück", "quantity": 3 }
+      ]
+    }
+  ]
+}
+```
+
+### Was zählt
+
+| Status | zählt | warum |
+|---|---|---|
+| `new`, `confirmed` | **ja** | muss gebacken werden |
+| `in_production` | **ja** | bleibt bis zum Abschluss Teil der Tagesmenge — sonst schrumpfte die Liste, während gearbeitet wird |
+| `completed` | nein | gehört nicht mehr zur offenen Menge |
+| `cancelled` | nein | darf niemals Produktion erzeugen |
+
+Die Liste steht **an einer Stelle**: `OPEN_PRODUCTION_STATUSES` in
+`domain/order-status.ts`. Die SQL-Platzhalter entstehen aus ihrer Länge, die
+Werte werden gebunden — es gibt keinen Weg, sie zu ändern, ohne dass die
+Abfrage folgt.
+
+Lieferung und Abholung zählen beide: Gebacken werden muss so oder so.
+
+### Das Datum
+
+Ausdrücklich und immer. Kein implizites „heute", kein „morgen", kein
+„nächster Werktag" — ein Endpunkt, dessen Antwort davon abhängt, wann er
+aufgerufen wird, ist um 23:59 Uhr etwas anderes als um 00:01 Uhr. Eine
+spätere Oberfläche darf „morgen" vorauswählen; dann steht die Entscheidung
+dort, wo sie hingehört.
+
+Akzeptiert wird ein **gültiger Kalendertag** als `JJJJ-MM-TT`, geprüft von
+`isCalendarDay` in `domain/clock.ts`. Alles andere ist `400 invalid_date` —
+auch `2026-02-29`, auch ein doppelter `date`-Parameter. Vergangenheit,
+Gegenwart und Zukunft sind gleichermaßen lesbar: Die Regel „nicht in der
+Vergangenheit" gehört zum Bestellen, nicht zum Nachschauen.
+
+**Der Tag wird nirgends umgerechnet.** Er kommt als Zeichenkette herein,
+wird als Zeichenkette gebunden und geht als Zeichenkette hinaus. Aus dem 25.
+kann deshalb nicht der 24. werden — es gibt keine Zeitzone, durch die er
+laufen könnte.
+
+### Snapshots
+
+Kunden- und Produktname stammen aus der **Bestellung**, nicht aus den
+aktuellen Stammdaten. Eine Umbenennung ändert eine Bestellung von letzter
+Woche nicht rückwirkend.
+
+Aggregiert wird deshalb über `(product_id, Name, Einheit)` und nicht über die
+Produkt-ID allein. Kommen an einem Tag zwei Namensstände desselben Produkts
+vor, erscheinen zwei Zeilen — Korrektheit vor kosmetischer Zusammenführung.
+Dasselbe für die Einheit: „8 Blech" und „3 Stück" ergeben keine 11.
+
+Aus `products` kommt genau eine Spalte, `sort_order`, und nur zum Sortieren.
+Auf `customers` wird gar nicht verbunden — deshalb können E-Mail, Telefon und
+interne Notiz auf diesem Weg nicht abfließen. Preise werden nicht einmal
+geladen.
+
+### Zwei Abfragen, kein Index
+
+Zwei je Request, unabhängig davon, ob der Tag eine Bestellung hat oder
+vierzig. Ein Test zählt die Aufrufe von `db.prepare` mit; ein später
+eingeschlichenes N+1 fällt damit sofort auf.
+
+Zwei und nicht eine: Ein einzelner JOIN würde eine Bestellung ohne Positionen
+verschlucken und `order_count` verfälschen. Das Aggregat verlangt mindestens
+eine Position, das Schema nicht.
+
+Der Query Plan wird bei **jedem** Testlauf gegen echtes SQLite geprüft:
+
+```text
+SEARCH orders USING INDEX idx_orders_day (fulfillment_date=? AND status=?)
+SEARCH i USING INDEX idx_order_items_order (order_id=?)
+```
+
+Kein Full Table Scan. **Keine neue Migration und kein neuer Index** —
+`idx_orders_day` aus Migration 0003 deckt genau diesen Zugriff ab, so wie es
+dort schon angekündigt war.
+
+### Was es noch nicht ist
+
+Eine **Daten**grundlage, keine Oberfläche. Es gibt keine Produktionsseite,
+keine Tabelle, keine Kalenderansicht und keinen Statusknopf; das ist Phase 3C.
+
+> Für Phase 3C: `note` ist Kundeneingabe und wird hier unverändert als Text
+> geliefert. Wer sie in HTML rendert, escapet sie.
+
 ## Was es noch nicht gibt
 
-Kein Admin-Dashboard · keine Tagesansicht · keine Kunden- oder Produktpflege ·
+Kein Admin-Dashboard · keine sichtbare Tagesansicht (die Daten dazu gibt es,
+siehe oben) · keine Kunden- oder Produktpflege ·
 kein Passwort-/PIN-Wechsel · kein „Passwort vergessen" · kein 2FA · kein
 Payment · kein Mailversand · kein R2 · keine Wiederbestellung · keine
 Bestellhistorie für das Café · kein Ändern oder Stornieren · keine
@@ -250,23 +374,29 @@ Lieferplanung · keine Rechnungen · keine Analytics · kein Rate-Limiting.
 
 ## Stand
 
-Phase 3A: First-Party-Authentifizierung. Der Capability-Link aus Phase 2 ist
-kein aktiver Anmeldeweg mehr — der Bestellfluss läuft vollständig über
-Kundensitzung, Origin-Prüfung und CSRF-Token, und die Phase-2-Regressionstests
-laufen unverändert gegen den neuen Weg.
+Phase 3B: Produktions-Tagesdaten. Das System beantwortet jetzt die Frage, für
+die es gebaut wurde — was an einem bestimmten Tag zu produzieren ist —, und
+zwar als geprüfte Daten- und API-Grundlage. **Eine Oberfläche dafür gibt es
+bewusst noch nicht**; das ist Phase 3C.
 
-**721 Tests grün** (276 Domäne, 408 Worker/D1, 37 Oberfläche), Typecheck
+**844 Tests grün** (314 Domäne, 493 Worker/D1, 37 Oberfläche), Typecheck
 sauber für Worker und Client, Migrationen 0001–0010 gegen eine frisch
-aufgesetzte lokale D1 ausgeführt, der vollständige Fluss — Anmeldung,
-Bestellung, Abmeldung, Adminbereich, Rollengrenze — im Browser bei 375, 390,
-430 px und Desktop durchgespielt.
+aufgesetzte lokale D1 ausgeführt und der Query Plan dort erneut geprüft.
 
-Vier Sicherheitsregeln wurden zur Probe einzeln gebrochen; die zugehörigen
-Tests wurden jedes Mal rot (Rollenprüfung 8, Session-Ablauf 2,
-Credential-Verifikation 18, CSRF-Prüfung 15).
+Phase 3B hat **keine** Migration, **keinen** Index, **keine** Tabelle und
+**keine** Dependency hinzugefügt — und keine einzige schreibende Route.
 
-Gemessene Anmeldedauer im laufenden Worker: rund 50 ms — und eine unbekannte
-Kennung braucht mit 48 ms praktisch genauso lang.
+Der vollständige Kreis wurde im laufenden Worker durchgespielt: Ein Café
+meldet sich an, bestellt, bekommt eine Bestellnummer mit serverseitig
+gebildetem Preis — und dieselbe Bestellung erscheint für den Admin im
+Produktionstag, während das Café denselben Endpunkt mit 403 nicht erreicht.
+Eine stornierte Bestellung über 999 Stück blieb dabei außen vor.
+
+Vier Geschäftsregeln wurden zur Probe einzeln gebrochen; die zugehörigen Tests
+wurden jedes Mal rot (`cancelled` als Produktion 10, Statusfilter entfernt 6,
+Mengensumme durch Positionszählung ersetzt 17, Datumsfilter hart verdrahtet
+4). Jede Mutation wurde zurückgesetzt, die Suite danach erneut vollständig
+grün.
 
 Nichts deployed, nichts gepusht, nichts gemergt.
 
@@ -274,3 +404,14 @@ Nichts deployed, nichts gepusht, nichts gemergt.
 D1-Datenbank angelegt; die `database_id` in `wrangler.jsonc` ist ein
 Platzhalter aus Nullen und muss vor einem entfernten Betrieb ersetzt werden.
 Es liegen keine Zugangsdaten im Repository.
+
+### Aus Phase 3A offen
+
+Diese Punkte gehören zur Inbetriebnahme und sind durch Phase 3B unverändert:
+`AUTH_PEPPER` wird erst beim echten Deployment als Cloudflare Secret gesetzt ·
+die PBKDF2-Kosten der Anmeldung sind gegen das CPU-Budget von Workers Free
+noch nicht abschließend bewertet · zusätzliche Rate-Limiting-Härtung über
+Cloudflare ist sinnvoll, aber nicht eingerichtet.
+
+Der Produktionstag berührt keinen davon: Er liest, aggregiert eine
+zweistellige Zahl Zeilen und braucht kein Workers Paid.
