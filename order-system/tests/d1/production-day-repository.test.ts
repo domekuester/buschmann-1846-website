@@ -1,7 +1,10 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { InvalidArgumentError } from '../../src/domain/errors';
-import { findProductionOrders } from '../../src/infrastructure/d1/production-day-repository';
+import {
+  PRODUCTION_DAY_QUERIES,
+  findProductionOrders,
+} from '../../src/infrastructure/d1/production-day-repository';
 
 /**
  * Die Tagesabfrage gegen eine ECHTE lokale D1 — mit den echten Migrationen,
@@ -593,5 +596,105 @@ describe('findProductionOrders — Randfälle des Schemas', () => {
          VALUES (1, 999, 'Erfundenes Produkt', 'Stück', 0, 1, 0)`,
       ).run(),
     ).rejects.toThrow();
+  });
+});
+
+/**
+ * DER QUERY PLAN — als geprüfte Eigenschaft und nicht als einmaliger Befund
+ * in einem Protokoll.
+ *
+ * Ein Plan, den jemand einmal von Hand angeschaut hat, ist in dem Moment
+ * veraltet, in dem jemand anders einen Index entfernt oder eine Bedingung
+ * umstellt. Hier läuft er in jedem Testlauf gegen dieselbe frisch migrierte
+ * D1 wie alles andere — und wird rot, wenn aus dem Indexzugriff ein Scan
+ * wird.
+ *
+ * Die Abfragen kommen aus dem Modul selbst. Sie hier abzuschreiben hieße, den
+ * Plan einer Abfrage zu prüfen, die gar nicht ausgeführt wird.
+ */
+describe('Query Plan', () => {
+  async function plan(sql: string): Promise<string[]> {
+    const { results } = await env.DB.prepare(`EXPLAIN QUERY PLAN ${sql}`)
+      .bind(TAG, 'new', 'confirmed', 'in_production')
+      .all<{ detail: string }>();
+
+    return results.map((zeile) => zeile.detail);
+  }
+
+  it('findet die Bestellungen des Tages über idx_orders_day', async () => {
+    const zeilen = await plan(PRODUCTION_DAY_QUERIES.orders);
+
+    expect(zeilen.join(' | ')).toContain('idx_orders_day');
+  });
+
+  it('findet die Positionen über idx_orders_day und idx_order_items_order', async () => {
+    const zeilen = await plan(PRODUCTION_DAY_QUERIES.items);
+    const text = zeilen.join(' | ');
+
+    expect(text).toContain('idx_orders_day');
+    expect(text).toContain('idx_order_items_order');
+  });
+
+  /**
+   * KEIN FULL TABLE SCAN in keiner der beiden Abfragen.
+   *
+   * SQLite schreibt „SCAN <tabelle>", wenn es eine Tabelle vollständig liest,
+   * und „SEARCH ... USING INDEX", wenn es einen Index benutzt. Ein Tag darf
+   * niemals die gesamte Bestellhistorie lesen — genau dafür gibt es
+   * idx_orders_day.
+   *
+   * Das verbleibende „USE TEMP B-TREE FOR ORDER BY" ist ausdrücklich in
+   * Ordnung: Es sortiert das bereits auf EINEN Tag eingeschränkte Ergebnis,
+   * also eine Handvoll Zeilen. Ein zusätzlicher Index auf
+   * customer_name_snapshot wäre bei jedem Bestellvorgang mitzuschreiben, um
+   * die Sortierung von zehn Zeilen zu beschleunigen — kein guter Handel.
+   */
+  it('liest keine Tabelle vollständig', async () => {
+    for (const sql of [PRODUCTION_DAY_QUERIES.orders, PRODUCTION_DAY_QUERIES.items]) {
+      for (const zeile of await plan(sql)) {
+        expect(zeile.startsWith('SCAN')).toBe(false);
+      }
+    }
+  });
+
+  /**
+   * Die Zahl der Abfragen ist Teil des Vertrags: ZWEI je Request, unabhängig
+   * davon, wie viele Bestellungen der Tag hat. Diese Prüfung ist der Wächter
+   * gegen ein N+1, das sich später einschleicht — eine Schleife über
+   * Bestellungen fiele hier sofort auf.
+   */
+  it('kommt mit genau zwei Abfragen aus', async () => {
+    expect(Object.keys(PRODUCTION_DAY_QUERIES)).toHaveLength(2);
+
+    for (let i = 1; i <= 8; i += 1) {
+      await bestellung({
+        id: i,
+        customerId: 1,
+        customerName: 'Testcafé Nord',
+        day: TAG,
+        items: [
+          { productId: 1, quantity: i },
+          { productId: 2, quantity: i },
+        ],
+      });
+    }
+
+    const zaehler = { anzahl: 0 };
+    const gezaehlt = new Proxy(env.DB, {
+      get(ziel, name, empfaenger) {
+        if (name === 'prepare') {
+          return (sql: string) => {
+            zaehler.anzahl += 1;
+            return ziel.prepare(sql);
+          };
+        }
+        return Reflect.get(ziel, name, empfaenger) as unknown;
+      },
+    });
+
+    const orders = await findProductionOrders(gezaehlt, TAG);
+
+    expect(orders).toHaveLength(8);
+    expect(zaehler.anzahl).toBe(2);
   });
 });

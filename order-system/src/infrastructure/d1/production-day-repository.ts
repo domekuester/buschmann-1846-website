@@ -106,6 +106,22 @@ const Q_ITEMS = `
 `;
 
 /**
+ * Die beiden Abfragen, für den Query-Plan-Test nach außen sichtbar.
+ *
+ * Der Test soll den Plan DIESER Abfragen prüfen und nicht den einer Kopie,
+ * die in der Testdatei steht und irgendwann von ihnen abweicht. Der Export
+ * ist deshalb kein Zugeständnis an die Tests, sondern die einzige Form, in
+ * der die Prüfung überhaupt etwas aussagt.
+ *
+ * Dass es GENAU ZWEI Einträge sind, ist ebenfalls Vertrag: zwei Abfragen je
+ * Request, unabhängig davon, ob der Tag eine Bestellung hat oder vierzig.
+ */
+export const PRODUCTION_DAY_QUERIES = {
+  orders: Q_ORDERS,
+  items: Q_ITEMS,
+} as const;
+
+/**
  * Liefert die produktionsrelevanten Bestellungen eines Tages samt Positionen.
  *
  * Ein Tag ohne Bestellungen ergibt eine leere Liste — das ist kein Fehler,
