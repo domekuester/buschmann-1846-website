@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { businessDay, plusDays, toUtcTimestamp } from '../../src/domain/clock';
+import { businessDay, isCalendarDay, plusDays, toUtcTimestamp } from '../../src/domain/clock';
 
 /**
  * Das Zeitmodell ist die Stelle, an der ein Bestellsystem am unauffälligsten
@@ -63,5 +63,74 @@ describe('toUtcTimestamp', () => {
     const value = toUtcTimestamp(new Date('2026-08-24T07:00:00Z'));
     expect(value).toBe('2026-08-24T07:00:00.000Z');
     expect(value).toHaveLength(24);
+  });
+});
+
+/**
+ * Die Prüfung „ist das ein Tag, den es gibt?" — an EINER Stelle.
+ *
+ * Sie stand vorher zweimal wörtlich in FulfillmentDate und wird jetzt auch
+ * vom Produktionstag-Endpunkt gebraucht. Drei Kopien derselben Regel wären
+ * drei Gelegenheiten, dass eine davon den 30. Februar durchlässt.
+ *
+ * WICHTIG: Diese Funktion prüft die FORM eines Kalendertags und sonst nichts.
+ * Kein „nicht in der Vergangenheit", kein Mindestjahr, keine Vorlaufzeit —
+ * das sind Regeln des Bestellens, nicht des Datums.
+ */
+describe('isCalendarDay', () => {
+  it('erkennt gültige Kalendertage', () => {
+    for (const tag of ['2026-08-26', '2026-01-01', '2026-12-31', '2000-01-01', '1999-06-15']) {
+      expect(isCalendarDay(tag)).toBe(true);
+    }
+  });
+
+  it('erkennt den 29. Februar im Schaltjahr', () => {
+    expect(isCalendarDay('2028-02-29')).toBe(true);
+  });
+
+  /**
+   * Der Fall, den eine reine Formatprüfung durchlässt: '2026-02-29' passt auf
+   * JJJJ-MM-TT und existiert trotzdem nicht. JavaScript rollt ihn still auf
+   * den 1. März weiter — der Rückvergleich fängt genau das ab.
+   */
+  it('erkennt den 29. Februar im Nichtschaltjahr als ungültig', () => {
+    expect(isCalendarDay('2026-02-29')).toBe(false);
+  });
+
+  it('lehnt unmögliche Kalendertage ab', () => {
+    for (const tag of ['2026-02-30', '2026-13-01', '2026-00-10', '2026-04-31', '2026-01-32']) {
+      expect(isCalendarDay(tag)).toBe(false);
+    }
+  });
+
+  it('lehnt nicht zweistellige Monate und Tage ab', () => {
+    for (const tag of ['2026-8-26', '2026-08-6', '26-08-26']) {
+      expect(isCalendarDay(tag)).toBe(false);
+    }
+  });
+
+  it('lehnt andere Datumsformate ab', () => {
+    for (const tag of ['25.08.2026', '2026/08/25', '08/25/2026', '20260825']) {
+      expect(isCalendarDay(tag)).toBe(false);
+    }
+  });
+
+  it('lehnt Datumssprache ab', () => {
+    for (const tag of ['tomorrow', 'heute', 'morgen', 'now']) {
+      expect(isCalendarDay(tag)).toBe(false);
+    }
+  });
+
+  /** Ein Zeitpunkt ist kein Tag — das ist der Kern des Zeitmodells. */
+  it('lehnt Zeitstempel ab', () => {
+    for (const wert of ['2026-08-26T10:00:00Z', '2026-08-26 10:00', '2026-08-26T00:00:00.000Z']) {
+      expect(isCalendarDay(wert)).toBe(false);
+    }
+  });
+
+  it('lehnt Leeres und Nichtzeichenketten ab', () => {
+    for (const wert of ['', '   ', null, undefined, 42, {}, [], ['2026-08-26']]) {
+      expect(isCalendarDay(wert)).toBe(false);
+    }
   });
 });

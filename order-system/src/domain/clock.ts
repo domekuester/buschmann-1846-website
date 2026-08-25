@@ -46,6 +46,41 @@ export function toUtcTimestamp(instant: Date): string {
 const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
+ * Ist das ein Kalendertag, den es wirklich gibt?
+ *
+ * DIE EINZIGE STELLE, an der diese Frage beantwortet wird. Sie stand vorher
+ * zweimal wörtlich in FulfillmentDate und wird seit Phase 3B auch vom
+ * Produktions-Endpunkt gebraucht — drei Kopien derselben Regel wären drei
+ * Gelegenheiten, dass eine davon den 30. Februar durchlässt.
+ *
+ * ZWEI PRÜFUNGEN, UND DIE ZWEITE IST DIE WICHTIGE:
+ *
+ * Das Muster allein genügt nicht. '2026-02-30' und '2026-13-01' passen darauf
+ * und existieren trotzdem nicht. JavaScript rollt sie still auf den 2. März
+ * und den 1. Januar weiter, statt zu scheitern — deshalb wird der Tag
+ * zurückgerechnet und mit der Eingabe verglichen. Ein übergelaufener Monat
+ * fällt dabei auf.
+ *
+ * Das ausdrückliche 'T00:00:00Z' ist kein Zierrat: Ohne Zonenangabe
+ * interpretieren manche Laufzeiten eine reine Datumszeichenkette als lokale
+ * Zeit, und dann kann der Rückvergleich in einer Zone westlich von Greenwich
+ * einen Tag daneben liegen. Mit Z ist die Rechnung überall dieselbe.
+ *
+ * WAS DIESE FUNKTION NICHT PRÜFT: ob der Tag in der Vergangenheit liegt, ob
+ * das Jahr plausibel ist und ob an diesem Tag geliefert wird. Das sind Regeln
+ * des BESTELLENS und stehen dort, wo bestellt wird. Ein Lesezugriff auf einen
+ * vergangenen Produktionstag ist völlig in Ordnung.
+ */
+export function isCalendarDay(value: unknown): value is string {
+  if (typeof value !== 'string' || !ISO_DAY.test(value)) {
+    return false;
+  }
+
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+/**
  * Verschiebt einen Kalendertag um n Tage und liefert wieder einen
  * Kalendertag.
  *
@@ -67,14 +102,14 @@ export function plusDays(day: string, days: number): string {
   if (!Number.isInteger(days)) {
     throw new InvalidArgumentError('Die Anzahl der Tage muss ganzzahlig sein.');
   }
-
-  const parsed = new Date(`${day}T00:00:00Z`);
   // date() in SQLite und Date in JavaScript sind sich einig, dass es den
   // 30. Februar nicht gibt — aber JavaScript rollt ihn still auf den 2. März
-  // weiter, statt zu scheitern. Der Rückvergleich fängt das ab.
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== day) {
+  // weiter, statt zu scheitern. isCalendarDay fängt das ab.
+  if (!isCalendarDay(day)) {
     throw new InvalidArgumentError('Der Tag ist kein gültiger Kalendertag.');
   }
+
+  const parsed = new Date(`${day}T00:00:00Z`);
 
   parsed.setUTCDate(parsed.getUTCDate() + days);
   return parsed.toISOString().slice(0, 10);

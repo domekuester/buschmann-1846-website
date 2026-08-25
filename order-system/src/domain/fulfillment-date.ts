@@ -1,7 +1,5 @@
 import { ValidationError } from './errors';
-import { businessDay } from './clock';
-
-const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
+import { businessDay, isCalendarDay } from './clock';
 
 /**
  * Liefer- oder Abholtag — ein Kalendertag ohne Uhrzeit.
@@ -21,15 +19,10 @@ export class FulfillmentDate {
   private constructor(readonly value: string) {}
 
   static fromString(value: string, now: Date): FulfillmentDate {
-    if (!ISO_DAY.test(value)) {
-      throw FulfillmentDate.invalid();
-    }
-
-    // Die Formatprüfung allein genügt nicht: '2026-02-30' und '2026-13-01'
-    // passen auf das Muster. Deshalb wird der Tag zurückgerechnet und mit der
-    // Eingabe verglichen — ein überrollter Monat fällt dabei auf.
-    const parsed = new Date(`${value}T00:00:00Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    // Form UND Existenz des Tages — isCalendarDay prüft beides und ist die
+    // einzige Stelle im System, an der diese Prüfung steht. '2026-02-30'
+    // passt auf das Muster und existiert trotzdem nicht.
+    if (!isCalendarDay(value)) {
       throw FulfillmentDate.invalid();
     }
     // Ein vierstelliges Jahr vor 2000 ist kein Liefertag, sondern ein Tippfehler.
@@ -56,11 +49,7 @@ export class FulfillmentDate {
    * lesbar bleiben.
    */
   static restore(value: string): FulfillmentDate {
-    if (!ISO_DAY.test(value)) {
-      throw FulfillmentDate.invalid();
-    }
-    const parsed = new Date(`${value}T00:00:00Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    if (!isCalendarDay(value)) {
       throw FulfillmentDate.invalid();
     }
     return new FulfillmentDate(value);
