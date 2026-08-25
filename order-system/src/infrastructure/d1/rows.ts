@@ -55,6 +55,48 @@ export interface OrderItemRow {
   quantity: number;
 }
 
+/**
+ * Eine Bestellung, wie die Produktionsabfrage sie sieht — und ausdrücklich
+ * WENIGER als OrderRow.
+ *
+ * Was hier fehlt, wird nicht gelesen: kein customer_id, kein
+ * total_amount_cents, keine Adresse, keine Zeitstempel, keine
+ * submission_id. Eine Spalte, die nicht in der Abfrage steht, kann nicht
+ * versehentlich in einer Antwort landen — das ist Datenminimierung durch
+ * Bauart und nicht durch Sorgfalt beim Serialisieren.
+ *
+ * `id` ist die Ausnahme und verlässt die Infrastrukturschicht nicht: Sie
+ * dient allein dazu, Positionen ihrer Bestellung zuzuordnen.
+ */
+export interface ProductionOrderRow {
+  id: number;
+  order_number: string;
+  customer_name_snapshot: string;
+  fulfillment_type: string;
+  note: string | null;
+  status: string;
+}
+
+/**
+ * Eine Position, wie die Produktionsabfrage sie sieht.
+ *
+ * OHNE unit_price_cents und OHNE line_total_cents. Die Produktionsansicht
+ * beantwortet Mengenfragen; Geld gehört in eine Controlling-Domäne, die es
+ * noch nicht gibt.
+ *
+ * `sort_order` ist die einzige Spalte, die aus `products` stammt — sie
+ * sortiert und ist keine Eigenschaft der historischen Bestellung. Name und
+ * Einheit kommen aus den Snapshot-Spalten der Position.
+ */
+export interface ProductionItemRow {
+  order_id: number;
+  product_id: number;
+  product_name_snapshot: string;
+  product_unit_snapshot: string;
+  sort_order: number;
+  quantity: number;
+}
+
 /** SQLite kennt kein BOOLEAN; gespeichert wird 0 oder 1. */
 export function toBoolean(value: number): boolean {
   return value === 1;
