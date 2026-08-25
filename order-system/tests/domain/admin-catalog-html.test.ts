@@ -54,6 +54,14 @@ describe('Admin-Katalog HTML', () => {
     expect(html).not.toContain('0,00 €');
   });
 
+  it('zeigt eine in der Quelle fehlende Einheit eindeutig als fehlend', () => {
+    const html = renderAdminCatalogPage({
+      ...VIEW,
+      products: [{ ...VIEW.products[0]!, unit: null }],
+    });
+    expect(html).toContain('<span aria-label="Keine Einheit angegeben">—</span>');
+  });
+
   it('escaped Produktname, Variante und Einheit', () => {
     const html = renderAdminCatalogPage({
       ...VIEW,

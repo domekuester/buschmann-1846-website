@@ -4,7 +4,7 @@ interface CatalogPriceRow {
   product_id: number;
   name: string;
   variant: string | null;
-  unit: string;
+  unit: string | null;
   price_list_code: 'gastro' | 'private';
   price_type: CatalogPrice['type'] | null;
   price_cents: number | null;

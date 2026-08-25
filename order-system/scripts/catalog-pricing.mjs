@@ -46,7 +46,7 @@ export function validateCatalogPricing(input) {
       source_key: sourceKey,
       name: text(product.name, 160, `products[${index}].name`),
       variant: nullableText(product.variant, 240, `products[${index}].variant`),
-      unit: text(product.unit, 120, `products[${index}].unit`),
+      unit: nullableText(product.unit, 120, `products[${index}].unit`),
       category: nullableText(product.category, 120, `products[${index}].category`),
       sort_order: integer(product.sort_order, `products[${index}].sort_order`),
       prices,

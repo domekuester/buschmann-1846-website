@@ -76,6 +76,11 @@ describe('validateCatalogPricing', () => {
     expect(withoutPrivate.products[0]?.prices).not.toHaveProperty('private');
   });
 
+  it('bewahrt eine in der Quelle fehlende Einheit als null', () => {
+    const catalog = validateCatalogPricing(fixture({ unit: null }));
+    expect(catalog.products[0]?.unit).toBeNull();
+  });
+
   it('lehnt unbekannte Preislisten ab', () => {
     expect(() => validateCatalogPricing(fixture({ prices: { wholesale: { type: 'fixed', price_cents: 2100 } } }))).toThrow(/wholesale/);
   });

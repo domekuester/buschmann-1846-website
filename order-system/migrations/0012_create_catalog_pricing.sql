@@ -28,7 +28,7 @@ CREATE TABLE catalog_products (
     source_key TEXT    NOT NULL UNIQUE,
     name       TEXT    NOT NULL,
     variant    TEXT,
-    unit       TEXT    NOT NULL,
+    unit       TEXT,
     category   TEXT,
     is_active  INTEGER NOT NULL DEFAULT 1,
     sort_order INTEGER NOT NULL DEFAULT 0,
@@ -38,7 +38,7 @@ CREATE TABLE catalog_products (
     CONSTRAINT chk_catalog_products_source_not_blank CHECK (length(trim(source_key)) > 0),
     CONSTRAINT chk_catalog_products_name_not_blank   CHECK (length(trim(name)) > 0),
     CONSTRAINT chk_catalog_products_variant          CHECK (variant IS NULL OR length(trim(variant)) > 0),
-    CONSTRAINT chk_catalog_products_unit_not_blank   CHECK (length(trim(unit)) > 0),
+    CONSTRAINT chk_catalog_products_unit_not_blank   CHECK (unit IS NULL OR length(trim(unit)) > 0),
     CONSTRAINT chk_catalog_products_category         CHECK (category IS NULL OR length(trim(category)) > 0),
     CONSTRAINT chk_catalog_products_active_boolean   CHECK (is_active IN (0, 1)),
     CONSTRAINT chk_catalog_products_sort             CHECK (sort_order >= 0 AND typeof(sort_order) = 'integer')

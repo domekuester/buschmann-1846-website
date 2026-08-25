@@ -7,7 +7,7 @@ export type CatalogPrice =
 export interface AdminCatalogProduct {
   readonly name: string;
   readonly variant: string | null;
-  readonly unit: string;
+  readonly unit: string | null;
   readonly gastroPrice: CatalogPrice | null;
   readonly privatePrice: CatalogPrice | null;
 }

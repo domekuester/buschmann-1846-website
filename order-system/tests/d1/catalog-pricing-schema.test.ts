@@ -70,6 +70,19 @@ describe('Migration 0012 — Katalog und Preislisten', () => {
     ]);
   });
 
+  it('erlaubt eine fehlende Quelleneinheit, aber keine leere erfundene Einheit', async () => {
+    await env.DB.prepare(
+      `INSERT INTO catalog_products
+         (source_key, name, variant, unit, sort_order, created_at, updated_at)
+       VALUES ('fixture:saisonal', 'Fiktives Saisonsortiment', NULL, NULL, 30, ?, ?)`,
+    ).bind(NOW, NOW).run();
+    await expect(env.DB.prepare(
+      `INSERT INTO catalog_products
+         (source_key, name, variant, unit, sort_order, created_at, updated_at)
+       VALUES ('fixture:leer', 'Fiktives Produkt', NULL, '   ', 40, ?, ?)`,
+    ).bind(NOW, NOW).run()).rejects.toThrow(/CHECK constraint/i);
+  });
+
   it('erzwingt stabile eindeutige source_keys', async () => {
     await seedProduct();
     await expect(seedProduct()).rejects.toThrow(/UNIQUE constraint/i);

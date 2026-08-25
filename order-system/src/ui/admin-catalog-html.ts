@@ -41,7 +41,7 @@ function productRow(product: AdminCatalogProduct): string {
   return `<tr>
     <th scope="row" data-label="Produkt">${escapeHtml(product.name)}</th>
     <td data-label="Variante">${product.variant === null ? missing('Keine Variante') : escapeHtml(product.variant)}</td>
-    <td data-label="Einheit">${escapeHtml(product.unit)}</td>
+    <td data-label="Einheit">${product.unit === null ? missing('Keine Einheit angegeben') : escapeHtml(product.unit)}</td>
     <td data-label="Gastronomie" class="katalogpreis">${formatCatalogPrice(product.gastroPrice)}</td>
     <td data-label="Privatkunden" class="katalogpreis">${formatCatalogPrice(product.privatePrice)}</td>
   </tr>`;
