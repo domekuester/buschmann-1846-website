@@ -24,3 +24,4 @@ order-system/worker-startup.cpuprofile
 # worker-configuration.d.ts wird von `wrangler types` erzeugt, aber bewusst
 # eingecheckt: Ohne die Datei schlägt `npm run typecheck` in einem frischen
 # Klon fehl, bevor irgendjemand Wrangler ausgeführt hat.
+order-system/source-data/
