@@ -1,5 +1,10 @@
 import { escapeHtml } from './format';
-import type { ProductionDayView, ProductionLineView } from './production-day-view';
+import type {
+  ProductionDayView,
+  ProductionLineView,
+  ProductionOrderItemView,
+  ProductionOrderView,
+} from './production-day-view';
 
 /**
  * Die Bausteine der Produktions-Tagesansicht.
@@ -115,4 +120,105 @@ function renderEmptyState(): string {
         <h2 id="titel-produktion">Produktion</h2>
         <p class="leer">Für diesen Tag sind keine offenen Bestellungen vorhanden.</p>
       </section>`;
+}
+
+/**
+ * Die Aufschlüsselung — woraus die Backliste entsteht.
+ *
+ * SIE IST BEWUSST LEISER ALS DIE SUMME. Der Mitarbeiter soll zuerst
+ * beantworten können „wie viele Käsekuchen?" und erst danach „für wen?".
+ * Stünden die Bestellkarten gleich laut da, wäre die Reihenfolge der Fragen
+ * umgedreht — und damit genau die Arbeit wieder da, die das System abnehmen
+ * soll: aus zwölf Karten selbst zu summieren.
+ *
+ * KARTEN UND KEINE TABELLE. Die Daten sind ungleichartig — ein Name, eine
+ * Nummer, zwei Merkmale, n Positionen und eine optionale Notiz aus zwei
+ * Sätzen. Eine Notiz sprengt jede Tabellenzelle, und auf einem Telefon
+ * bliebe von einer sechsspaltigen Zeile nichts Lesbares übrig.
+ *
+ * KEINE BESTELLUNGEN, KEIN ABSCHNITT. Eine Überschrift „Bestellungen" über
+ * nichts wäre eine Frage ohne Antwort; der leere Tag sagt bereits im
+ * Produktionsbereich, was los ist.
+ */
+export function renderOrderBreakdown(view: ProductionDayView): string {
+  if (view.orders.length === 0) {
+    return '';
+  }
+
+  return `
+      <section class="bestellungen" aria-labelledby="titel-bestellungen">
+        <h2 id="titel-bestellungen">Bestellungen</h2>
+${view.orders.map(bestellkarte).join('\n')}
+      </section>`;
+}
+
+/**
+ * Eine Bestellung.
+ *
+ * DER STATUS STEHT AUSGESCHRIEBEN DA und nicht als Farbpunkt. Farbe allein
+ * ist für einen Teil der Nutzenden keine Information — dieselbe Regel, der
+ * app.css bereits bei der ausgewählten Produktzeile folgt. Es gibt hier auch
+ * keine Schaltfläche und kein Auswahlfeld: Phase 3C liest, sie schreibt
+ * nicht.
+ *
+ * Der Kundenname ist eine <h3> unter der <h2> des Abschnitts — die Hierarchie
+ * bleibt lückenlos, und ein Screenreader kann von Bestellung zu Bestellung
+ * springen.
+ *
+ * WAS NICHT AUF DER KARTE STEHT: keine E-Mail, keine Telefonnummer, keine
+ * Lieferadresse, keine Bestell-ID, keine Kunden-ID, kein Betrag. Das
+ * Lesemodell führt nichts davon; die Karte kann es nicht zeigen.
+ */
+function bestellkarte(order: ProductionOrderView): string {
+  return `        <article class="bestellung">
+          <h3 class="bestellung__kunde">${escapeHtml(order.customerName)}</h3>
+          <p class="bestellung__nummer">${escapeHtml(order.orderNumber)}</p>
+          <p class="bestellung__merkmale">
+            <span class="marke-status">${escapeHtml(order.statusLabel)}</span>
+            <span aria-hidden="true"> · </span>
+            <span class="marke-uebergabe">${escapeHtml(order.fulfillmentLabel)}</span>
+          </p>
+          <ul class="bestellung__positionen">
+${order.items.map(position).join('\n')}
+          </ul>${order.note === null ? '' : notiz(order.note)}
+        </article>`;
+}
+
+/**
+ * Eine Position: „3 × Beispiel Käsekuchen".
+ *
+ * Menge, Einheit und Name in EINEM Listenpunkt — aus demselben Grund, aus dem
+ * sie in der Backliste in einer Zelle stehen: Getrennt gelesen zerfällt die
+ * Aussage.
+ *
+ * Das Malzeichen ist ein echtes × (U+00D7) und kein kleines x. Ein
+ * Screenreader liest es als „mal"; ein Buchstabe x wäre an dieser Stelle ein
+ * Buchstabe.
+ */
+function position(item: ProductionOrderItemView): string {
+  return `            <li>${item.quantity} ${escapeHtml(item.unit)} × ${escapeHtml(item.name)}</li>`;
+}
+
+/**
+ * Die Notiz — Kundeneingabe, und damit der Wert, auf den es beim Escapen
+ * ankommt.
+ *
+ * Sie kann Produktionsinformation enthalten („bitte ohne Zucker", „Lieferung
+ * an die Rückseite") und steht deshalb sichtbar da und nicht in einem
+ * aufklappbaren Element, das niemand öffnet.
+ *
+ * DIESE FUNKTION WIRD NUR AUFGERUFEN, WENN ES EINE NOTIZ GIBT. Ob es eine
+ * gibt, entscheidet das Ansichtsmodell — dort ist auch festgelegt, dass ein
+ * Leerzeichen keine ist. Ein leerer Notizblock mit Überschrift wäre
+ * sichtbarer Platz für nichts.
+ *
+ * white-space wird über CSS gesetzt, nicht über <pre>: Die Notiz soll
+ * umbrechen dürfen, ihre Zeilenumbrüche aber behalten.
+ */
+function notiz(text: string): string {
+  return `
+          <div class="bestellung__notiz">
+            <p class="bestellung__notiz-titel">Hinweis</p>
+            <p class="bestellung__notiz-text">${escapeHtml(text)}</p>
+          </div>`;
 }

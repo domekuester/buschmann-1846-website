@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renderProductionSummary } from '../../src/ui/production-day-html';
+import { renderOrderBreakdown, renderProductionSummary } from '../../src/ui/production-day-html';
 import type { ProductionDayView, ProductionLineView, ProductionOrderView } from '../../src/ui/production-day-view';
 
 /**
@@ -234,5 +234,208 @@ describe('renderProductionSummary — leerer Tag', () => {
     );
 
     expect(html).not.toContain('<table');
+  });
+});
+
+describe('renderOrderBreakdown — Bestellungen', () => {
+  it('zeigt Kundenname, Bestellnummer, Status und Art der Übergabe', () => {
+    const html = renderOrderBreakdown(ansicht());
+
+    expect(html).toContain('Testcafé Nord');
+    expect(html).toContain('BUS-2026-000123');
+    expect(html).toContain('Bestätigt');
+    expect(html).toContain('Lieferung');
+  });
+
+  it('zeigt Abholung, wenn nicht geliefert wird', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ fulfillmentLabel: 'Abholung' })] }),
+    );
+
+    expect(html).toContain('Abholung');
+    expect(html).not.toContain('Lieferung');
+  });
+
+  it('zeigt jeden offenen Status mit seinem deutschen Namen', () => {
+    for (const label of ['Neu', 'Bestätigt', 'In Produktion']) {
+      const html = renderOrderBreakdown(
+        ansicht({ orders: [bestellung({ statusLabel: label })] }),
+      );
+      expect(html).toContain(label);
+    }
+  });
+
+  it('zeigt die Positionen einer Bestellung mit Menge und Einheit', () => {
+    const html = renderOrderBreakdown(
+      ansicht({
+        orders: [
+          bestellung({
+            items: [
+              { name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 },
+              { name: 'Beispiel Streusel', unit: 'Blech', quantity: 2 },
+            ],
+          }),
+        ],
+      }),
+    );
+
+    expect(html).toContain('3 Stück × Beispiel Käsekuchen');
+    expect(html).toContain('2 Blech × Beispiel Streusel');
+  });
+
+  it('rendert jede Bestellung als eigene Sektion mit eigener Überschrift', () => {
+    const html = renderOrderBreakdown(
+      ansicht({
+        orders: [
+          bestellung({ customerName: 'Testcafé Nord', orderNumber: 'BUS-2026-000001' }),
+          bestellung({ customerName: 'Testcafé Süd', orderNumber: 'BUS-2026-000002' }),
+        ],
+      }),
+    );
+
+    expect(html.match(/<h3/g)).toHaveLength(2);
+    expect(html).toContain('Testcafé Nord');
+    expect(html).toContain('Testcafé Süd');
+    expect(html).toContain('BUS-2026-000001');
+    expect(html).toContain('BUS-2026-000002');
+  });
+
+  /**
+   * Phase 3C liest. Eine Schaltfläche oder ein Auswahlfeld waere der Anfang
+   * einer Schreiboperation, die es nicht gibt.
+   */
+  it('bietet keine Bedienelemente zum Ändern an', () => {
+    const html = renderOrderBreakdown(ansicht());
+
+    for (const verboten of ['<button', '<select', '<input', '<form']) {
+      expect(html).not.toContain(verboten);
+    }
+  });
+
+  it('zeigt weder Preise noch Kontaktdaten', () => {
+    const html = renderOrderBreakdown(ansicht());
+
+    for (const verboten of ['€', 'cents', '@', 'Telefon', 'Adresse', 'Straße']) {
+      expect(html).not.toContain(verboten);
+    }
+  });
+
+  it('gibt ohne Bestellungen gar nichts aus', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ isEmpty: true, orders: [], products: [], orderCount: 0, totalUnits: 0 }),
+    );
+
+    expect(html).toBe('');
+  });
+});
+
+describe('renderOrderBreakdown — Notiz', () => {
+  it('zeigt eine vorhandene Notiz klar sichtbar', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ note: 'Bitte vor 10 Uhr anliefern' })] }),
+    );
+
+    expect(html).toContain('Hinweis');
+    expect(html).toContain('Bitte vor 10 Uhr anliefern');
+  });
+
+  /**
+   * DER TEST GEGEN LEEREN PLATZ: Ohne Notiz darf kein Notizblock im Dokument
+   * stehen — auch keiner mit leerem Inhalt.
+   */
+  it('rendert ohne Notiz keinen Notizblock', () => {
+    const html = renderOrderBreakdown(ansicht({ orders: [bestellung({ note: null })] }));
+
+    expect(html).not.toContain('Hinweis');
+    expect(html).not.toContain('notiz');
+  });
+
+  it('escapet ein Skript in der Notiz', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ note: '<script>alert(1)</script>' })] }),
+    );
+
+    expect(html).not.toContain('<script');
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+  });
+
+  it('escapet ein Bild mit onerror in der Notiz', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ note: '<img src=x onerror=alert(1)>' })] }),
+    );
+
+    // Der Text 'onerror=alert(1)' STEHT in der Antwort — als Text. Genau das
+    // ist richtig: Die Notiz wird angezeigt, wie sie eingegeben wurde. Worauf
+    // es ankommt, ist, dass daraus kein Element wird: Ohne < und > gibt es
+    // kein Tag, an dem ein Attribut haengen koennte.
+    expect(html).not.toContain('<img');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+  });
+
+  it('escapet Anführungszeichen, die aus einem Attribut ausbrechen könnten', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ note: `" onmouseover="alert(1)` })] }),
+    );
+
+    expect(html).not.toContain('onmouseover="alert');
+    expect(html).toContain('&quot;');
+  });
+
+  it('escapet Ampersand und einfache Anführungszeichen', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ note: `Müller & Söhne 'fein'` })] }),
+    );
+
+    expect(html).toContain('Müller &amp; Söhne &#39;fein&#39;');
+  });
+
+  /** Eine bereits escapete Entity darf nicht ein zweites Mal escapet werden. */
+  it('verdoppelt keine bestehende HTML-Entity zu Unkenntlichkeit', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ note: 'A &amp; B' })] }),
+    );
+
+    expect(html).toContain('A &amp;amp; B');
+    expect(html).not.toContain('A &amp; B<');
+  });
+});
+
+describe('renderOrderBreakdown — Escaping von Stammdaten', () => {
+  it('escapet HTML im Kundennamen', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ customerName: '<b>Testcafé Nord</b>' })] }),
+    );
+
+    expect(html).toContain('&lt;b&gt;Testcafé Nord&lt;/b&gt;');
+    expect(html).not.toContain('<b>Testcafé Nord</b>');
+  });
+
+  it('escapet HTML im Produktnamen einer Position', () => {
+    const html = renderOrderBreakdown(
+      ansicht({
+        orders: [
+          bestellung({ items: [{ name: '<i>Kuchen</i>', unit: 'Stück', quantity: 1 }] }),
+        ],
+      }),
+    );
+
+    expect(html).toContain('&lt;i&gt;Kuchen&lt;/i&gt;');
+  });
+
+  it('escapet die Bestellnummer', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ orderNumber: 'BUS-<2026>' })] }),
+    );
+
+    expect(html).toContain('BUS-&lt;2026&gt;');
+  });
+
+  it('escapet Status- und Übergabelabel', () => {
+    const html = renderOrderBreakdown(
+      ansicht({ orders: [bestellung({ statusLabel: '<s>Neu</s>', fulfillmentLabel: '<u>Lieferung</u>' })] }),
+    );
+
+    expect(html).toContain('&lt;s&gt;Neu&lt;/s&gt;');
+    expect(html).toContain('&lt;u&gt;Lieferung&lt;/u&gt;');
   });
 });
