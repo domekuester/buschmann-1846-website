@@ -7,6 +7,7 @@ import { health } from './http/health';
 import { toSafeResponse } from './http/error-boundary';
 import { createOrder } from './http/order-api';
 import { orderPage } from './http/order-page';
+import { productionDay } from './http/production-api';
 import { methodNotAllowed, notFound } from './http/responses';
 
 /**
@@ -31,6 +32,10 @@ import { methodNotAllowed, notFound } from './http/responses';
  *                      sie beweist die Auth-Grenze und sonst nichts.
  *   GET  /api/auth/session   wer bin ich. Für beide Rollen, mit einer
  *                      minimalen Antwort.
+ *   GET  /api/admin/production-day
+ *                      was ist für einen bestimmten Tag zu produzieren. Nur
+ *                      für Administration, nur lesend, mit ausdrücklichem
+ *                      Datum — kein implizites „heute".
  *   GET  /bestellen    die Bestellseite. Das Café kommt aus der Sitzung, nicht
  *                      mehr aus einem Link.
  *   POST /api/orders   die Bestellung. Sitzung, Origin und CSRF-Token.
@@ -103,6 +108,13 @@ export default {
         // beide Rollen für sich selbst. Eine Sitzung wird trotzdem verlangt.
         const wache = await requireSession(env.DB, config, request, now, 'api');
         return wache.ok ? sessionInfo(wache.context) : wache.response;
+      }
+
+      if (pathname === '/api/admin/production-day') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET');
+        }
+        return await productionDay(env.DB, config, request, now);
       }
 
       if (pathname === '/api/orders') {
