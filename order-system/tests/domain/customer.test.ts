@@ -89,3 +89,36 @@ describe('Customer', () => {
     }
   });
 });
+
+/**
+ * Phase 5B — die Preisgruppe eines Kunden.
+ *
+ * Ein Kunde TRÄGT die Zuordnung, er berechnet mit ihr nichts. Welchen Preis
+ * eine Bestellung bekommt, entscheidet weiterhin ausschließlich der
+ * bestehende Bestellfluss über products.price_cents; in dieser Klasse steht
+ * dazu keine Zeile — das ist Phase 5C.
+ */
+describe('Customer — Preisgruppe', () => {
+  it('ist ohne ausdrückliche Zuordnung nicht zugeordnet', () => {
+    expect(customer().priceListId).toBeNull();
+  });
+
+  it('behält eine ausdrückliche Zuordnung', () => {
+    expect(customer({ priceListId: 7 }).priceListId).toBe(7);
+  });
+
+  it('lässt eine Zuordnung wieder auf „nicht zugeordnet" zurückfallen', () => {
+    expect(customer({ priceListId: null }).priceListId).toBeNull();
+  });
+
+  it('rät die Preisgruppe niemals aus dem Namen oder der E-Mail', () => {
+    const cafe = customer({ name: 'Café Beispiel', email: 'kontakt@gastro-beispiel.test' });
+    const privat = customer({ name: 'Privatkunde Beispiel' });
+    expect(cafe.priceListId).toBeNull();
+    expect(privat.priceListId).toBeNull();
+  });
+
+  it.each([0, -1, 1.5, Number.NaN])('lehnt die unmögliche Preislisten-ID %s ab', (value) => {
+    expect(() => customer({ priceListId: value })).toThrow(InvalidArgumentError);
+  });
+});

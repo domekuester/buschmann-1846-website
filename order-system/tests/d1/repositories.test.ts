@@ -106,6 +106,26 @@ describe('findCustomer', () => {
   it('liefert null für unbekannte Kunden', async () => {
     expect(await findCustomer(env.DB, 999)).toBeNull();
   });
+
+  /**
+   * Phase 5B — die Zuordnung reist mit dem Kunden.
+   *
+   * Damit kann Phase 5C später „welche Preisgruppe gilt für diesen Kunden?"
+   * beantworten, ohne dafür ein neues Schema oder eine zweite Abfrage zu
+   * brauchen. Der geladene Kunde BERECHNET damit weiterhin nichts.
+   */
+  it('trägt eine fehlende Preisgruppe als „nicht zugeordnet"', async () => {
+    expect((await findCustomer(env.DB, 1))?.priceListId).toBeNull();
+  });
+
+  it('trägt eine gesetzte Preisgruppe mit', async () => {
+    const gastro = await env.DB.prepare("SELECT id FROM price_lists WHERE code = 'gastro'")
+      .first<{ id: number }>();
+    await env.DB.prepare('UPDATE customers SET price_list_id = ? WHERE id = 1')
+      .bind(gastro?.id).run();
+
+    expect((await findCustomer(env.DB, 1))?.priceListId).toBe(gastro?.id);
+  });
 });
 
 describe('reserveOrderNumber', () => {

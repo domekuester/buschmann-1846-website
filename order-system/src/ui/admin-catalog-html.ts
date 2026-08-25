@@ -13,18 +13,18 @@ export function renderAdminCatalogPage(view: AdminCatalogPageView): string {
     'Sortiment & Preise — Buschmann 1846',
     view,
     'catalog',
-    `<header class="katalogkopf">
-      <p class="katalogkopf__kicker">Katalog</p>
+    `<header class="bereichskopf">
+      <p class="bereichskopf__kicker">Katalog</p>
       <h1>Sortiment &amp; Preise</h1>
-      <p class="katalogkopf__vorspann">Gastronomie- und Privatpreise im direkten Vergleich.</p>
+      <p class="bereichskopf__vorspann">Gastronomie- und Privatpreise im direkten Vergleich.</p>
     </header>
     ${view.products.length === 0 ? emptyState() : catalogTable(view.products)}`,
   );
 }
 
 function catalogTable(products: readonly AdminCatalogProduct[]): string {
-  return `<div class="katalogtabelle-wrap">
-    <table class="katalogtabelle">
+  return `<div class="datentabelle-wrap">
+    <table class="datentabelle">
       <thead><tr>
         <th scope="col">Produkt</th>
         <th scope="col">Variante</th>
@@ -62,8 +62,8 @@ function missing(label: string): string {
 }
 
 function emptyState(): string {
-  return `<section class="katalogleer" aria-labelledby="katalogleer-titel">
-    <h2 id="katalogleer-titel">Noch kein Sortiment importiert</h2>
+  return `<section class="leerzustand" aria-labelledby="leerzustand-titel">
+    <h2 id="leerzustand-titel">Noch kein Sortiment importiert</h2>
     <p>Nach dem lokalen Import erscheinen Produkte und Preise hier automatisch.</p>
   </section>`;
 }

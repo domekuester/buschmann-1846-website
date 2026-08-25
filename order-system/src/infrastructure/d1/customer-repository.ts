@@ -8,7 +8,7 @@ export async function findCustomer(db: D1Database, id: number): Promise<Customer
   const row = await db
     .prepare(
       `SELECT id, name, contact_person, email, phone, delivery_street, delivery_postal_code,
-              delivery_city, is_active, default_fulfillment, internal_note
+              delivery_city, is_active, default_fulfillment, internal_note, price_list_id
          FROM customers
         WHERE id = ?`,
     )
@@ -36,6 +36,14 @@ function toCustomer(row: CustomerRow): Customer {
     isActive: toBoolean(row.is_active),
     defaultFulfillment: row.default_fulfillment,
     internalNote: row.internal_note,
+    /**
+     * Die Preisgruppe reist ab Phase 5B mit dem Kunden — DAMIT PHASE 5C sie
+     * später fragen kann, ohne ein zweites Schema zu erfinden. Der
+     * Bestellfluss liest sie heute nicht: place-order.ts und
+     * place-cafe-order.ts enthalten keine Zeile, die sie ansähe, und der
+     * Preis einer Bestellung kommt weiterhin aus products.price_cents.
+     */
+    priceListId: row.price_list_id,
   });
 }
 

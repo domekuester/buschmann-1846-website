@@ -91,4 +91,14 @@ describe('Admin-Katalog HTML', () => {
     expect(html).toContain('href="/admin/catalog"');
     expect(html).toContain('aria-current="page"');
   });
+
+  it('benutzt das gemeinsame Listenmuster der Adminseiten', () => {
+    const html = renderAdminCatalogPage({
+      loginIdentifier: 'admin@example.test',
+      csrfToken: 'fiktiver-csrf-token',
+      products: [],
+    });
+    expect(html).toContain('class="bereichskopf"');
+    expect(html).toContain('class="leerzustand"');
+  });
 });

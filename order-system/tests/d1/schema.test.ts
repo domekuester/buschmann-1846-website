@@ -106,6 +106,7 @@ describe('Migrationen', () => {
       'idx_auth_sessions_account',
       'idx_auth_sessions_expiry',
       'idx_customers_active_name',
+      'idx_customers_price_list',
       'idx_order_items_order',
       'idx_order_items_product',
       'idx_orders_customer_day',

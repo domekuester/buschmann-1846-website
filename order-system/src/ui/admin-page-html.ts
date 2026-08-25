@@ -343,10 +343,12 @@ export function renderStatusChangeFailurePage(
  * und Virenscannern ausgelöst und meldet dann jemanden ab, der nichts getan
  * hat.
  *
- * KEINE SIDEBAR. Seit Phase 5A gibt es genau zwei echte Ziele: Produktion
- * und Sortiment & Preise. Mehr Navigation wäre weiterhin Attrappe.
+ * KEINE SIDEBAR. Seit Phase 5B gibt es genau drei echte Ziele: Produktion,
+ * Sortiment & Preise und Kunden. Mehr Navigation wäre weiterhin Attrappe —
+ * ein Menüpunkt „Finanzen", hinter dem keine Seite liegt, ist kein Ausblick,
+ * sondern eine Unwahrheit im Kopf jeder Seite.
  */
-export type AdminArea = 'production' | 'catalog';
+export type AdminArea = 'production' | 'catalog' | 'customers';
 
 export function renderAdminShell(
   title: string,
@@ -370,6 +372,7 @@ export function renderAdminShell(
   <nav class="adminnav" aria-label="Adminbereich">
     <a href="/admin"${activeArea === 'production' ? ' aria-current="page"' : ''}>Produktion</a>
     <a href="/admin/catalog"${activeArea === 'catalog' ? ' aria-current="page"' : ''}>Sortiment &amp; Preise</a>
+    <a href="/admin/customers"${activeArea === 'customers' ? ' aria-current="page"' : ''}>Kunden</a>
   </nav>
   <p class="kopf__kennung">Angemeldet als ${escapeHtml(view.loginIdentifier)}</p>
 

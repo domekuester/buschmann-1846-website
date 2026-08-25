@@ -20,6 +20,8 @@ export interface CustomerRow {
   is_active: number;
   default_fulfillment: string;
   internal_note: string | null;
+  /** Seit 0013: die zugeordnete Preisgruppe — NULL heißt „nicht zugeordnet". */
+  price_list_id: number | null;
 }
 
 export interface ProductRow {

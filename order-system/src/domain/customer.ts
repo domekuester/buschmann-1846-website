@@ -22,6 +22,18 @@ export interface CustomerData {
   isActive: boolean;
   defaultFulfillment: FulfillmentType;
   internalNote: string | null;
+  /**
+   * Die zugeordnete Preisgruppe — oder nichts.
+   *
+   * OPTIONAL IM TYP UND NULL ALS VOREINSTELLUNG, und das ist beides
+   * Absicht. Optional, weil jede bestehende Stelle, die einen Kunden baut,
+   * das ohne Änderung weiter tun können soll — ein Pflichtfeld hätte hier
+   * bedeutet, dass Aufrufer, die von Preisgruppen nichts wissen, sich
+   * trotzdem für eine entscheiden müssen. Und NULL, weil „noch nicht
+   * zugeordnet" der wahrheitsgemäße Zustand jedes Kunden ist, den niemand
+   * bewusst zugeordnet hat.
+   */
+  priceListId?: number | null;
 }
 
 /**
@@ -48,6 +60,19 @@ export class Customer {
   readonly isActive: boolean;
   readonly defaultFulfillment: FulfillmentType;
   readonly internalNote: string | null;
+  /**
+   * Die Preisgruppe dieses Kunden — die einzige Neuerung aus Phase 5B.
+   *
+   * SIE WIRD NIEMALS GERATEN. Nicht aus dem Namen („Café" ⇒ Gastronomie),
+   * nicht aus der E-Mail-Domain, nicht aus dem bisherigen Bestellumfang. Eine
+   * Preisgruppe ist eine kaufmännische Entscheidung, die ein Mensch trifft;
+   * in dieser Klasse gibt es dafür keine Ableitung und keinen Standardwert
+   * außer „nicht zugeordnet".
+   *
+   * SIE BERECHNET AUCH NICHTS. Der Kunde weiß, WELCHER Preiswelt er
+   * angehört, und nicht, was ein Produkt darin kostet.
+   */
+  readonly priceListId: number | null;
 
   constructor(data: CustomerData) {
     if (!Number.isInteger(data.id) || data.id <= 0) {
@@ -73,6 +98,20 @@ export class Customer {
     this.deliveryAddress = data.deliveryAddress;
     this.isActive = data.isActive;
     this.defaultFulfillment = data.defaultFulfillment;
+
+    /**
+     * Eine Preislisten-ID ist entweder eine echte Zeilenkennung oder gar
+     * nichts. `undefined` und `null` bedeuten dasselbe — „nicht zugeordnet" —,
+     * und alles andere muss eine positive ganze Zahl sein. Dass die Zeile
+     * auch EXISTIERT, kann diese Klasse nicht wissen; das prüft der
+     * Anwendungsfall gegen die Datenbank, und der Fremdschlüssel hält es
+     * darunter noch einmal fest.
+     */
+    const priceListId = data.priceListId ?? null;
+    if (priceListId !== null && (!Number.isInteger(priceListId) || priceListId <= 0)) {
+      throw new InvalidArgumentError('Die Preislisten-ID des Kunden ist ungültig.');
+    }
+    this.priceListId = priceListId;
   }
 
   /** Eine Lieferung ist möglich, sobald eine Adresse hinterlegt ist. */

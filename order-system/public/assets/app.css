@@ -742,11 +742,11 @@ textarea[aria-invalid='true'] {
 .adminnav a:hover { color: var(--champagner); }
 .adminnav a[aria-current='page'] { border-bottom-color: var(--champagner); }
 
-/* ---------- Sortiment & Preise ---------- */
+/* ---------- Adminseiten mit Liste: Sortiment & Preise, Kunden ---------- */
 
-.katalogkopf { margin-bottom: 1.5rem; }
+.bereichskopf { margin-bottom: 1.5rem; }
 
-.katalogkopf__kicker {
+.bereichskopf__kicker {
   margin: 0 0 .3rem;
   font-size: .78rem;
   font-weight: 600;
@@ -755,7 +755,7 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
-.katalogkopf h1 {
+.bereichskopf h1 {
   margin: 0;
   font-family: var(--serif);
   font-size: clamp(1.65rem, 7vw, 2.15rem);
@@ -764,30 +764,30 @@ textarea[aria-invalid='true'] {
   color: var(--navy);
 }
 
-.katalogkopf__vorspann {
+.bereichskopf__vorspann {
   margin: .45rem 0 0;
   color: var(--text-leise);
 }
 
-.katalogtabelle-wrap { width: 100%; }
+.datentabelle-wrap { width: 100%; }
 
-.katalogtabelle {
+.datentabelle {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
 }
 
-.katalogtabelle th,
-.katalogtabelle td { overflow-wrap: anywhere; }
+.datentabelle th,
+.datentabelle td { overflow-wrap: anywhere; }
 
-.katalogtabelle thead { display: none; }
+.datentabelle thead { display: none; }
 
-.katalogtabelle tbody,
-.katalogtabelle tr,
-.katalogtabelle th,
-.katalogtabelle td { display: block; }
+.datentabelle tbody,
+.datentabelle tr,
+.datentabelle th,
+.datentabelle td { display: block; }
 
-.katalogtabelle tr {
+.datentabelle tr {
   margin-bottom: .9rem;
   padding: .9rem;
   border: var(--spur);
@@ -795,7 +795,7 @@ textarea[aria-invalid='true'] {
   border-radius: var(--radius);
 }
 
-.katalogtabelle th[scope='row'] {
+.datentabelle th[scope='row'] {
   padding-bottom: .65rem;
   color: var(--navy);
   font-size: 1.05rem;
@@ -803,7 +803,7 @@ textarea[aria-invalid='true'] {
   border-bottom: var(--spur);
 }
 
-.katalogtabelle td {
+.datentabelle td {
   display: grid;
   grid-template-columns: minmax(6.5rem, .8fr) 1fr;
   gap: .75rem;
@@ -811,7 +811,7 @@ textarea[aria-invalid='true'] {
   color: var(--text);
 }
 
-.katalogtabelle td::before {
+.datentabelle td::before {
   content: attr(data-label);
   color: var(--text-leise);
   font-size: .78rem;
@@ -822,7 +822,125 @@ textarea[aria-invalid='true'] {
 
 .katalogpreis { font-variant-numeric: tabular-nums; }
 
-.katalogleer {
+/* ---------- Kunden & Preisgruppen ----------
+
+   Dieselbe Liste, eine andere Frage: nicht „was kostet was", sondern „wer
+   gehört wohin". Deshalb kein zweites Layout — dieselbe Tabelle, die auf dem
+   Telefon zu Karten wird, mit genau einem Bedienelement je Zeile.
+
+   NICHTS WIRD ALLEIN ÜBER FARBE GESAGT. „Nicht zugeordnet", „Inaktiv" und
+   „nicht mehr aktiv" stehen als WORTE da; die gedeckte Farbe ist Zugabe und
+   nicht die Aussage.                                                        */
+
+/* Die eine Zahl der Seite: wie viel noch offen ist. Ruhig gesetzt — sie ist
+   eine Standortbestimmung und keine Warnung. */
+.kundenoffen {
+  margin: 0 0 1.25rem;
+  padding: .7rem .9rem;
+  color: var(--text-leise);
+  background: #fff;
+  border: var(--spur);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+}
+
+.kundenoffen strong { color: var(--navy); }
+
+.kundenmeldung { margin-bottom: 1.25rem; }
+
+/* Die Erfolgsmeldung trägt bewusst NICHT .banner: Das ist im ganzen System
+   die Fehlerdarstellung samt ⚠. Ein Häkchen statt eines Warndreiecks — und
+   auch hier steht ein ZEICHEN neben der Farbe, nicht die Farbe allein. */
+.kundenmeldung--erfolg {
+  margin-top: 0;
+  padding: .7rem .8rem;
+  color: var(--erfolg);
+  font-size: .92rem;
+  font-weight: 500;
+  background: #fff;
+  border: 1px solid var(--erfolg);
+  border-radius: var(--radius);
+}
+
+.kundenmeldung--erfolg::before { content: '✓ '; font-weight: 700; }
+
+/* Eine fehlende Zuordnung ist ein Zustand, kein Fehler: gedeckt, nicht rot. */
+.kundengruppe--offen { color: var(--text-leise); }
+
+/* „Inaktiv" und „nicht mehr aktiv" — ein Wort, klein gesetzt, mit Rahmen
+   statt Fläche. Es soll erkennbar sein, ohne die Zeile zu dominieren. */
+.kundenzustand {
+  display: inline-block;
+  padding: .1rem .4rem;
+  color: var(--text-leise);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border: var(--spur);
+  border-radius: 999px;
+}
+
+/* Auf dem Telefon steht die Bedienung NICHT in der schmalen Wertespalte der
+   Karte, sondern über die ganze Kartenbreite: Dort ist ein Auswahlfeld mit
+   drei Preisgruppen lesbar und der Speichern-Knopf muss nicht umbrechen.
+   Die Beschriftung rutscht dafür über die Bedienung statt daneben. */
+.datentabelle td.kundenaktion {
+  display: block;
+  padding-top: .8rem;
+}
+
+.datentabelle td.kundenaktion::before {
+  display: block;
+  margin-bottom: .45rem;
+}
+
+/* Ein echtes Formular je Zeile: Auswahl und Speichern, sonst nichts.
+   Auf dem Telefon untereinander mit voller Breite — der Daumen trifft dort
+   nichts Kleines. */
+.preisgruppe {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin: 0;
+}
+
+.preisgruppe__wahl {
+  flex: 1 1 11rem;
+  min-width: 0;
+  /* Nicht kleiner als jede andere Tippfläche des Systems. */
+  min-height: var(--tap);
+  padding: 0 .6rem;
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  /* Kein appearance:none — der native Pfeil ist auf jedem Gerät der
+     vertraute Hinweis darauf, dass hier eine Auswahl steht. */
+}
+
+.preisgruppe__wahl:hover { border-color: var(--champagner); }
+
+.preisgruppe__senden { flex: 0 0 auto; }
+
+/* Ein Label, das nur vorgelesen wird: „Preisgruppe für Fiktives Café Nord".
+   Sehende lesen die Spaltenüberschrift, ein Screenreader braucht je Zeile
+   den Bezug. display:none wäre falsch — das nähme es auch dem Screenreader. */
+.nur-vorlesen {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  border: 0;
+  clip-path: inset(50%);
+}
+
+.leerzustand {
   margin-top: 0;
   padding: 1.25rem;
   background: #fff;
@@ -830,7 +948,7 @@ textarea[aria-invalid='true'] {
   border-radius: var(--radius);
 }
 
-.katalogleer h2 {
+.leerzustand h2 {
   margin-bottom: .35rem;
   color: var(--navy);
   font-size: 1rem;
@@ -838,7 +956,7 @@ textarea[aria-invalid='true'] {
   text-transform: none;
 }
 
-.katalogleer p { margin: 0; color: var(--text-leise); }
+.leerzustand p { margin: 0; color: var(--text-leise); }
 
 /* ---------- Überschrift ---------- */
 
@@ -1341,32 +1459,40 @@ textarea[aria-invalid='true'] {
 
   .bestellung { padding: 1.15rem 1.1rem; }
 
-  .katalogtabelle thead { display: table-header-group; }
-  .katalogtabelle tbody { display: table-row-group; }
-  .katalogtabelle tr { display: table-row; }
-  .katalogtabelle th,
-  .katalogtabelle td { display: table-cell; }
-  .katalogtabelle tr { margin: 0; padding: 0; border: 0; }
-  .katalogtabelle th,
-  .katalogtabelle td {
+  .datentabelle thead { display: table-header-group; }
+  .datentabelle tbody { display: table-row-group; }
+  .datentabelle tr { display: table-row; }
+  .datentabelle th,
+  .datentabelle td { display: table-cell; }
+  .datentabelle tr { margin: 0; padding: 0; border: 0; }
+  .datentabelle th,
+  .datentabelle td {
     padding: .8rem .65rem;
     text-align: left;
     vertical-align: top;
     border-bottom: var(--spur);
   }
-  .katalogtabelle thead th {
+  .datentabelle thead th {
     color: var(--text-leise);
     font-size: .75rem;
     letter-spacing: .05em;
     text-transform: uppercase;
     border-top: var(--spur);
   }
-  .katalogtabelle th[scope='row'] {
+  .datentabelle th[scope='row'] {
     color: var(--navy);
     font-size: .95rem;
     border-bottom: var(--spur);
   }
-  .katalogtabelle td::before { content: none; }
+  .datentabelle td::before { content: none; }
+
+  /* Ab Tablet steht die Zeile als Tabellenzeile, und das Formular passt
+     nebeneinander in seine Zelle. */
+  .preisgruppe { flex-wrap: nowrap; align-items: center; }
+  .preisgruppe__wahl { flex: 1 1 auto; }
+
+  /* Ab Tablet ist die Zelle wieder eine Tabellenzelle wie jede andere. */
+  .datentabelle td.kundenaktion { display: table-cell; padding-top: .8rem; }
 }
 
 /* Desktop bekommt KEINE zweite Gestaltung — nur die begrenzte Spalte, die

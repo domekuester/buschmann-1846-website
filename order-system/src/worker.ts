@@ -1,7 +1,12 @@
 import { readAppConfig } from './config/app-config';
 import { adminPage } from './http/admin-page';
 import { adminCatalogPage } from './http/admin-catalog-page';
+import { adminCustomersPage } from './http/admin-customers-page';
 import { changeOrderStatusEndpoint, matchOrderStatusPath } from './http/admin-order-api';
+import {
+  changeCustomerPriceGroupEndpoint,
+  matchCustomerPriceListPath,
+} from './http/admin-customer-api';
 import { loginPage, loginSubmit, logout } from './http/auth-routes';
 import { requireSession } from './http/guard';
 import { sessionInfo } from './http/session-api';
@@ -48,6 +53,15 @@ import { privateHeaders } from './http/security';
  *                      benennt — nicht, weil sie autorisiert: Sie ist
  *                      fortlaufend und damit erratbar (siehe
  *                      domain/order-number.ts).
+ *   GET  /admin/customers
+ *                      Kunden und ihre Preisgruppen. Lesend; der zugehörige
+ *                      Schreibvorgang ist ein eigener Endpunkt.
+ *   POST /api/admin/customers/:customerId/price-list
+ *                      die Zuordnung eines Kunden zu einer Preisgruppe. Der
+ *                      zweite schreibende Adminvorgang — Origin, Rolle,
+ *                      CSRF-Token, danach 303 zurück auf die Kundenliste. Er
+ *                      wählt KEINEN Bestellpreis: Das bestehende Pricing
+ *                      bleibt in dieser Phase unberührt.
  *   GET  /bestellen    die Bestellseite. Das Café kommt aus der Sitzung, nicht
  *                      mehr aus einem Link.
  *   POST /api/orders   die Bestellung. Sitzung, Origin und CSRF-Token.
@@ -119,6 +133,13 @@ export default {
         return await adminCatalogPage(env.DB, config, request, now);
       }
 
+      if (pathname === '/admin/customers') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminCustomersPage(env.DB, config, request, now);
+      }
+
       const cancelOrderNumber = matchCancelOrderPath(pathname);
       if (cancelOrderNumber !== null) {
         if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -164,6 +185,25 @@ export default {
           request,
           now,
           orderNumberSegment,
+        );
+      }
+
+      /**
+       * Die zweite Route mit einem veränderlichen Pfadteil — erkannt von der
+       * Datei, die auch den Endpunkt enthält. Die 405 trägt privateHeaders(),
+       * damit auch die abweisende Antwort no-store trägt.
+       */
+      const customerIdSegment = matchCustomerPriceListPath(pathname);
+      if (customerIdSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await changeCustomerPriceGroupEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          customerIdSegment,
         );
       }
 
