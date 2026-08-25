@@ -8,10 +8,10 @@ import { buildCatalogImportSql, validateCatalogPricing } from './catalog-pricing
 const scriptDirectory = dirname(fileURLToPath(import.meta.url));
 const projectDirectory = resolve(scriptDirectory, '..');
 
-export async function runCatalogImport({ source, mode, execute = executeLocal }) {
+export async function runCatalogImport({ source, mode, persistTo = null, execute = executeLocal }) {
   const raw = await readFile(source, 'utf8');
   const catalog = validateCatalogPricing(JSON.parse(raw));
-  return importValidatedCatalog(catalog, mode, execute);
+  return importValidatedCatalog(catalog, mode, (sql) => execute(sql, persistTo));
 }
 
 export async function importValidatedCatalog(catalog, mode, execute) {
@@ -27,14 +27,16 @@ export async function importValidatedCatalog(catalog, mode, execute) {
   return { products: catalog.products.length, prices: priceCount, written: mode === 'local' };
 }
 
-async function executeLocal(sql) {
+async function executeLocal(sql, persistTo = null) {
   const directory = await mkdtemp(join(tmpdir(), 'buschmann-catalog-import-'));
   const sqlPath = join(directory, 'catalog-import.sql');
   try {
     await writeFile(sqlPath, sql, { encoding: 'utf8', mode: 0o600 });
+    const args = ['wrangler', 'd1', 'execute', 'DB', '--local', `--file=${sqlPath}`];
+    if (persistTo !== null) args.push(`--persist-to=${persistTo}`);
     const result = spawnSync(
       process.platform === 'win32' ? 'npx.cmd' : 'npx',
-      ['wrangler', 'd1', 'execute', 'DB', '--local', `--file=${sqlPath}`],
+      args,
       { cwd: projectDirectory, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] },
     );
     if (result.status !== 0) {
@@ -48,6 +50,7 @@ async function executeLocal(sql) {
 function parseArgs(args) {
   let mode = null;
   let source = resolve(projectDirectory, 'source-data/derived/catalog-pricing.json');
+  let persistTo = null;
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
     if (arg === '--dry-run' || arg === '--local') {
@@ -58,12 +61,17 @@ function parseArgs(args) {
       if (!next) throw new Error('--source braucht einen Pfad.');
       source = resolve(projectDirectory, next);
       index += 1;
+    } else if (arg === '--persist-to') {
+      const next = args[index + 1];
+      if (!next) throw new Error('--persist-to braucht einen Pfad.');
+      persistTo = resolve(projectDirectory, next);
+      index += 1;
     } else {
       throw new Error(`Unbekanntes Argument: ${arg}`);
     }
   }
   if (mode === null) throw new Error('Modus fehlt: --dry-run oder --local.');
-  return { source, mode };
+  return { source, mode, persistTo };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
