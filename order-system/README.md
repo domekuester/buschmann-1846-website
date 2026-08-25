@@ -105,6 +105,7 @@ src/
 │   ├── log-in.ts          Anmeldung: zwei Ausgänge, ein generisches Nein
 │   ├── authenticate-request.ts  Sitzung → AuthContext, bei JEDEM Request neu
 │   ├── get-production-day.ts    ein Tag: abfragen und aggregieren
+│   ├── change-order-status.ts   der einzige schreibende Adminvorgang
 │   └── catalog-view.ts    was ein Café von einem Produkt sieht
 ├── infrastructure/
 │   ├── auth/              PBKDF2 + Pepper, Sitzungstoken, Cookie-Policy
@@ -397,10 +398,127 @@ Escape-Funktion im System.
 
 READ ONLY: kein Statuswechsel, kein Bearbeiten, kein Löschen.
 
+## Statuswechsel
+
+`POST /api/admin/orders/:orderNumber/status` — der erste und bislang einzige
+schreibende Adminvorgang. Ein angemeldeter Admin setzt den Status genau einer
+bestehenden Bestellung. Mehr kann dieser Endpunkt nicht, und das ist der
+Entwurf.
+
+Die Anfrage trägt **ausschließlich den Zielstatus**:
+
+```http
+POST /api/admin/orders/BUS-2026-000042/status
+Content-Type: application/json
+X-CSRF-Token: <aus der Sitzung>
+Origin: <APP_ORIGIN>
+
+{"status": "confirmed"}
+```
+
+```json
+{"order_number": "BUS-2026-000042", "status": "confirmed"}
+```
+
+Nicht gelesen werden: Rolle, Kunde, bisheriger Status, Preis, Positionen,
+Zeitstempel. Es gibt in `http/admin-order-api.ts` keine Zeile, die sie läse —
+was nicht gelesen wird, kann auch nicht geschmuggelt werden.
+
+### Die Prüfreihenfolge
+
+Dieselbe wie bei `POST /api/orders`, und aus demselben Grund:
+
+1. **Origin** — kostet nichts und lehnt jede fremd ausgelöste Anfrage ab.
+2. **Sitzung und Rolle `admin`** — ohne sie wird der Körper nicht gelesen und
+   die Bestellung nicht gesucht.
+3. **CSRF-Token** — hängt an der Sitzung, ist erst hier prüfbar.
+4. **Anfrageform** — Content-Type, Größe (1 KiB), JSON.
+5. **Zielstatus.**
+6. **Erst danach die Bestellung.**
+
+Wer keinen Zugang hat, erfährt nichts über die erwartete Anfrageform und
+nichts darüber, ob es diese Bestellung gibt. Ein 415 für einen Fremden wäre
+die Auskunft „hier ist ein JSON-Endpunkt, versuch es anders".
+
+| Fall | Antwort |
+|---|---|
+| erlaubter Übergang | `200` mit Bestellnummer und neuem Status |
+| unbekannter oder formal falscher Status | `400 invalid_status` |
+| kaputtes JSON | `400 bad_request` |
+| unbekannte **oder formal falsche** Bestellnummer | `404 not_found` |
+| Übergang von der Domäne verboten | `409 invalid_transition` |
+| Ausgangsstatus inzwischen verändert | `409 conflict` |
+| falsche Methode | `405` mit `Allow: POST` |
+| kein Zugang | `401` / `403` wie überall sonst |
+
+Jede dieser Antworten trägt `Cache-Control: no-store` — auch die abweisenden.
+Eine 409 verrät den aktuellen Zustand einer Bestellung so gut wie eine 200,
+und ein Tresengerät wird geteilt.
+
+Eine formal falsche Bestellnummer ist bewusst dieselbe Antwort wie eine
+unbekannte. „Das Format stimmt nicht" gegenüber „die gibt es nicht" wäre eine
+Auskunft darüber, wie eine gültige Nummer aussieht.
+
+### Es gibt keine zweite State Machine
+
+Welcher Übergang erlaubt ist, steht in `domain/order-status.ts` und
+ausschließlich dort. Weder `http/admin-order-api.ts` noch
+`application/change-order-status.ts` enthalten einen Vergleich der Form
+`if (status === 'confirmed')`; sie fragen `canTransitionTo()`. Ein Test spielt
+alle 25 Paare durch und holt sich den **Erwartungswert aus derselben
+Funktion** — eine Kopie der Regel im Anwendungsfall fiele damit auf, sobald
+sie abwiche.
+
+Auch die Antwort verrät die Tabelle nicht: Die 409 sagt, dass es nicht geht —
+nicht, was stattdessen ginge.
+
+### Lost Update
+
+Admin A liest „bestätigt". Admin B setzt „in Produktion". Admin A schickt
+danach seinen Wechsel ab, auf Grundlage eines Standes, den es nicht mehr gibt.
+
+Der Schutz ist eine Bedingung im `UPDATE` und kein Lock:
+
+```sql
+UPDATE orders
+   SET status = ?, updated_at = ?
+ WHERE order_number = ?
+   AND status = ?          -- der Status, gegen den die Domäne geprüft hat
+```
+
+Ändert die Anweisung keine Zeile, ist der Ausgangsstatus nicht mehr der
+erwartete — und der Aufrufer bekommt `409 conflict` statt einer
+Erfolgsmeldung. Entscheidend ist `meta.changes`, nicht `success`: D1 meldet
+eine erfolgreich **ausgeführte** Anweisung auch dann als erfolgreich, wenn sie
+null Zeilen getroffen hat. Genau darum geht es hier.
+
+Kein Distributed Lock, kein Durable Object, keine Queue, keine Versionsspalte
+— und damit auch keine Migration.
+
+### Was sich ändert
+
+`status` und `updated_at`. Sonst nichts.
+
+Der `UPDATE` nennt zwei Spalten; es gibt keinen Parameter für Kunde,
+Liefertag, Notiz, Betrag oder Positionen. Eine Bestellung ist ein Dokument,
+und ein Statuswechsel ist ein Vermerk darauf — keine Neuausstellung. Preis-
+Snapshots und `order_items` werden von diesem Vorgang nicht einmal berührt.
+
+NOCH KEINE OBERFLÄCHE. Phase 4A baut den Vorgang, nicht den Knopf. Für Phase
+4B braucht es hier zwei Ergänzungen und keinen Umbau: einen zweiten
+Content-Type (`application/x-www-form-urlencoded`, aus dem `assertCsrf` ohnehin
+schon lesen kann) und statt der 200 eine 303 zurück auf den Produktionstag.
+
+KEIN AUDIT-LOG. Wer wann was umgestellt hat, wird nicht festgehalten — das
+wäre eine Tabelle, die noch niemand gebraucht hat. Die Architektur steht dem
+nicht im Weg: Der Anwendungsfall ist die eine Stelle, an der ein Statuswechsel
+stattfindet.
+
 ## Was es noch nicht gibt
 
-Kein Statuswechsel aus der Oberfläche · kein Bearbeiten oder Stornieren durch
-den Admin · keine Wochen- oder Mehrtagesansicht · keine Kunden- oder
+Kein Statuswechsel aus der **Oberfläche** (der Endpunkt dafür steht, der Knopf
+kommt in Phase 4B) · kein Audit-Log · kein Bearbeiten von Positionen oder
+Liefertag durch den Admin · keine Wochen- oder Mehrtagesansicht · keine Kunden- oder
 Produktpflege ·
 kein Passwort-/PIN-Wechsel · kein „Passwort vergessen" · kein 2FA · kein
 Payment · kein Mailversand · kein R2 · keine Wiederbestellung · keine
@@ -409,38 +527,49 @@ Lieferplanung · keine Rechnungen · keine Analytics · kein Rate-Limiting.
 
 ## Stand
 
-Phase 3C: Produktions-Tagesansicht. Der Adminbereich zeigt jetzt, was an
-einem Tag zu produzieren ist — dieselben geprüften Daten aus Phase 3B, als
-Seite. Wer sich als Admin anmeldet, landet unmittelbar darauf; eine
-Dashboard-Zwischenseite gibt es bewusst nicht, weil das System genau eine
-Adminfunktion hat.
+Phase 4A: gesicherter Statuswechsel im Backend. Ein angemeldeter Admin kann
+den Status genau einer bestehenden Bestellung ändern — über einen Endpunkt,
+nicht über einen Knopf. Die Oberfläche dazu ist Phase 4B und ausdrücklich
+nicht gebaut.
 
-**985 Tests grün** (380 Domäne, 568 Worker/D1, 37 Oberfläche), Typecheck
-sauber für Worker und Client, D1-Integration gegen eine echte lokale
-Datenbank in der Workers-Runtime.
+**1045 Tests grün** (383 Domäne, 625 Worker/D1, 37 Oberfläche), Typecheck
+sauber für Worker und Client, D1-Integration gegen eine frisch migrierte
+lokale Datenbank in der Workers-Runtime.
 
-Phase 3C hat **keine** Migration, **keine** Tabelle, **keinen** Index,
-**keine** Dependency und **keine** zusätzliche Datenbankabfrage hinzugefügt —
-und keine einzige schreibende Route. Es sind dieselben zwei Abfragen aus
-Phase 3B. Am Datenmodell, an der Aggregation, an der Auth und am Bestellfluss
-wurde nichts geändert.
+Phase 4A hat **keine** Migration, **keine** Tabelle, **keinen** Index und
+**keine** Dependency hinzugefügt. Am Datenmodell, an der Aggregation des
+Produktionstags, an der Auth, an der serverseitigen Preisbildung und am
+Bestellfluss wurde nichts geändert. Die Statusregeln stehen unverändert in
+`domain/order-status.ts`; es ist keine zweite Fassung von ihnen entstanden.
 
-Die Seite wurde im laufenden Worker auf 375, 390, 430, 768 und 1440 Pixel
-geprüft: kein horizontales Scrollen, kein überstehendes Element, kleinste
-Tippfläche 44 px, genau eine `h1`, Überschriften ohne Sprung, Fokusring
-sichtbar, keine abgeschnittene Menge. Datumspfeile und Datumsformular wurden
-zusätzlich per `curl` bedient — also nachweislich ohne JavaScript. Alle
-Härtungskopfzeilen aus Phase 3A stehen unverändert auf der Antwort.
+Drei bestehende Dateien wurden angefasst, und jede aus einem Grund:
+`domain/order-number.ts` bekam `parse()` — dieselbe Prüfung wie
+`fromString()`, nur ohne Ausnahme, weil eine Nummer aus einem URL-Pfad Eingabe
+ist und keine 500 auslösen darf. `http/order-api.ts` gab seine JSON-Körper-
+Helfer an `http/json-body.ts` ab, statt sie ein zweites Mal zu bekommen.
+`http/responses.ts` nimmt bei `methodNotAllowed()` jetzt zusätzliche
+Kopfzeilen entgegen, damit auch eine 405 dieses Endpunkts `no-store` trägt.
+
+Der Vorgang wurde gegen eine **frisch angelegte lokale D1** durchgespielt:
+alle zehn Migrationen angewandt, Testkunde, Testadmin, Testcafé-Konto und eine
+Bestellung samt Position angelegt, im laufenden `wrangler dev` per `curl`
+angemeldet und der Status gewechselt. Die Zeile wurde danach direkt in der
+Datenbank gelesen: `status` steht auf `confirmed`, `updated_at` ist neu — und
+`order_number`, `customer_id`, `customer_name_snapshot`, `fulfillment_type`,
+`fulfillment_date`, `delivery_address_snapshot`, `note`, `total_amount_cents`,
+`submission_id` und `created_at` sind unverändert. `order_items` samt
+`unit_price_cents` und `line_total_cents` ebenso. Es ist keine zweite
+Bestellung entstanden. Ein Café bekam auf denselben Endpunkt `403`, eine
+Anfrage ohne Sitzung `401`, ein verbotener Übergang `409`, ein unbekannter
+Status `400`, eine unbekannte Bestellung `404`, ein fehlender CSRF-Token und
+ein fremder Origin je `403`, ein `GET` eine `405`. Die Produktionsansicht aus
+Phase 3C zeigte anschließend den neuen Status.
 
 Vier Eigenschaften wurden zur Probe einzeln gebrochen; die zugehörigen Tests
-wurden jedes Mal rot (Adminrollenprüfung entfernt 3, Escaping der Notiz
-entfernt 9, Preis in eine Position gerendert 2, Empty-State-Bedingung
-invertiert 20). Jede Mutation wurde zurückgesetzt, die Suite danach erneut
-vollständig grün.
-
-Zwei Tests aus Phase 3A kodierten „die Admin-Shell zeigt nichts" und sind auf
-den neuen Vertrag umgeschrieben. Ihre Sicherheitsabsicht ist geblieben:
-Geprüft wird jetzt, dass die Seite weder Preise noch Kontaktdaten zeigt.
+wurden jedes Mal rot (Adminrollenprüfung entfernt 4, `canTransitionTo()`
+umgangen 7, CSRF-Prüfung entfernt 3, Bedingung im `UPDATE` entfernt 4). Jede
+Mutation wurde vollständig zurückgesetzt, die Suite danach erneut vollständig
+grün.
 
 Nichts deployed, nichts gepusht, nichts gemergt.
 
@@ -451,7 +580,7 @@ Es liegen keine Zugangsdaten im Repository.
 
 ### Aus Phase 3A offen
 
-Diese Punkte gehören zur Inbetriebnahme und sind durch Phase 3B und 3C
+Diese Punkte gehören zur Inbetriebnahme und sind durch Phase 3B, 3C und 4A
 unverändert:
 `AUTH_PEPPER` wird erst beim echten Deployment als Cloudflare Secret gesetzt ·
 die PBKDF2-Kosten der Anmeldung sind gegen das CPU-Budget von Workers Free
@@ -461,4 +590,6 @@ Cloudflare ist sinnvoll, aber nicht eingerichtet.
 Der Produktionstag berührt keinen davon: Er liest, aggregiert eine
 zweistellige Zahl Zeilen und braucht kein Workers Paid. Die Oberfläche aus
 Phase 3C fügt dem nichts hinzu — sie rendert dieselbe Antwort als HTML,
-ohne zusätzliche Abfrage und ohne Skript.
+ohne zusätzliche Abfrage und ohne Skript. Der Statuswechsel aus Phase 4A
+ebenfalls nicht: eine Leseabfrage, ein `UPDATE`, kein Hashen, keine
+zusätzliche CPU-Last.

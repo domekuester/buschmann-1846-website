@@ -1,5 +1,6 @@
 import { readAppConfig } from './config/app-config';
 import { adminPage } from './http/admin-page';
+import { changeOrderStatusEndpoint, matchOrderStatusPath } from './http/admin-order-api';
 import { loginPage, loginSubmit, logout } from './http/auth-routes';
 import { requireSession } from './http/guard';
 import { sessionInfo } from './http/session-api';
@@ -9,6 +10,7 @@ import { createOrder } from './http/order-api';
 import { orderPage } from './http/order-page';
 import { productionDay } from './http/production-api';
 import { methodNotAllowed, notFound } from './http/responses';
+import { privateHeaders } from './http/security';
 
 /**
  * Die äußere Hülle des Systems — und bewusst nicht mehr als das.
@@ -36,6 +38,14 @@ import { methodNotAllowed, notFound } from './http/responses';
  *                      was ist für einen bestimmten Tag zu produzieren. Nur
  *                      für Administration, nur lesend, mit ausdrücklichem
  *                      Datum — kein implizites „heute".
+ *   POST /api/admin/orders/:orderNumber/status
+ *                      der Statuswechsel einer Bestellung. Der erste
+ *                      SCHREIBENDE Adminvorgang und damit der erste mit
+ *                      Origin-Prüfung und CSRF-Token im Adminbereich. Die
+ *                      Bestellnummer steht im Pfad, weil sie die Bestellung
+ *                      benennt — nicht, weil sie autorisiert: Sie ist
+ *                      fortlaufend und damit erratbar (siehe
+ *                      domain/order-number.ts).
  *   GET  /bestellen    die Bestellseite. Das Café kommt aus der Sitzung, nicht
  *                      mehr aus einem Link.
  *   POST /api/orders   die Bestellung. Sitzung, Origin und CSRF-Token.
@@ -115,6 +125,29 @@ export default {
           return methodNotAllowed('GET');
         }
         return await productionDay(env.DB, config, request, now);
+      }
+
+      /**
+       * Die einzige Route mit einem veränderlichen Pfadteil. Sie steht
+       * deshalb nicht in der Kette der Gleichheitsvergleiche, sondern wird
+       * gesondert erkannt — von der Datei, die auch den Endpunkt enthält.
+       *
+       * Die 405 trägt hier privateHeaders() und nicht die nackte Antwort aus
+       * responses.ts: Jede Antwort dieses Endpunkts soll no-store tragen,
+       * auch die abweisende.
+       */
+      const orderNumberSegment = matchOrderStatusPath(pathname);
+      if (orderNumberSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await changeOrderStatusEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          orderNumberSegment,
+        );
       }
 
       if (pathname === '/api/orders') {

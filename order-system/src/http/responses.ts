@@ -14,6 +14,15 @@ export function notFound(): Response {
   return json({ error: 'not_found' }, 404);
 }
 
-export function methodNotAllowed(allowed: string): Response {
-  return json({ error: 'method_not_allowed' }, 405, { allow: allowed });
+/**
+ * `allow` ist bei einer 405 vorgeschrieben und keine Höflichkeit: Ohne sie
+ * weiß der Aufrufer nicht, womit es ginge.
+ *
+ * Die zusätzlichen Kopfzeilen sind optional, weil nicht jede 405 sie braucht.
+ * Die Routen des Adminbereichs geben privateHeaders() mit — dort soll auch
+ * eine Ablehnung no-store tragen, weil sie zu einem sitzungsgebundenen
+ * Endpunkt gehört.
+ */
+export function methodNotAllowed(allowed: string, headers: HeadersInit = {}): Response {
+  return json({ error: 'method_not_allowed' }, 405, { ...headers, allow: allowed });
 }

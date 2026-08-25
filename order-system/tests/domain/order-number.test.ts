@@ -51,4 +51,39 @@ describe('OrderNumber', () => {
     expect(OrderNumber.fromYearAndSequence(2026, 1).value).toHaveLength(15);
     expect(OrderNumber.fromYearAndSequence(2026, 999999).value).toHaveLength(15);
   });
+
+  /**
+   * parse() ist fromString() ohne Ausnahme — für den Fall, dass die Nummer
+   * aus einer ANFRAGE stammt und nicht aus der eigenen Datenbank.
+   *
+   * Der Unterschied ist nicht bloß Stil: Ein InvalidArgumentError bedeutet in
+   * diesem Projekt „Programmierfehler" und wird zu einer 500. Eine
+   * Bestellnummer aus einem URL-Pfad ist aber Eingabe, und Eingabe darf keine
+   * 500 erzeugen.
+   */
+  describe('parse', () => {
+    it('liefert dieselbe Nummer wie fromString', () => {
+      const n = OrderNumber.parse('BUS-2026-000123');
+      expect(n?.value).toBe('BUS-2026-000123');
+      expect(n?.year).toBe(2026);
+      expect(n?.sequence).toBe(123);
+    });
+
+    it('liefert null statt zu werfen — bei genau denselben Eingaben', () => {
+      for (const bad of [
+        '', 'BUS-2026-123', 'bus-2026-000123', 'BUS-26-000123', 'BUS-2026-0001234',
+        'XYZ-2026-000123', 'BUS_2026_000123', 'BUS-2026-000000', ' BUS-2026-000123',
+        'BUS-1999-000001', 'BUS-2026-000001/../admin', "BUS-2026-000001' OR '1'='1",
+      ]) {
+        expect(OrderNumber.parse(bad)).toBeNull();
+        expect(() => OrderNumber.fromString(bad)).toThrow(InvalidArgumentError);
+      }
+    });
+
+    it('nimmt auch nicht-Zeichenketten entgegen, ohne zu werfen', () => {
+      for (const bad of [null, undefined, 42, {}, [], true]) {
+        expect(OrderNumber.parse(bad)).toBeNull();
+      }
+    });
+  });
 });

@@ -5,7 +5,7 @@ import { Money } from '../../domain/money';
 import { Order } from '../../domain/order';
 import { OrderItem } from '../../domain/order-item';
 import { OrderNumber } from '../../domain/order-number';
-import { isOrderStatus } from '../../domain/order-status';
+import { isOrderStatus, type OrderStatus } from '../../domain/order-status';
 import type { OrderItemRow, OrderRow } from './rows';
 
 /**
@@ -188,4 +188,71 @@ function toOrder(row: OrderRow, itemRows: readonly OrderItemRow[]): Order {
   }
 
   return order;
+}
+
+/**
+ * Was ein Statuswechsel schreiben darf — und die Feldliste IST die Regel.
+ *
+ * Es gibt keinen Parameter für Kunde, Liefertag, Notiz, Betrag oder
+ * Positionen, weil es für sie keine Anweisung gibt: Der UPDATE unten nennt
+ * zwei Spalten. Eine dritte hinzuzufügen wäre eine bewusste Änderung an
+ * dieser Datei und kein Nebeneffekt eines Aufrufers.
+ */
+export interface OrderStatusUpdate {
+  readonly orderNumber: string;
+  /**
+   * Der Status, gegen den die Domäne den Übergang geprüft hat.
+   *
+   * Er ist kein Protokollwert, sondern eine BEDINGUNG — siehe unten.
+   */
+  readonly expectedStatus: OrderStatus;
+  readonly newStatus: OrderStatus;
+  readonly updatedAt: string;
+}
+
+/**
+ * Setzt den Status einer Bestellung — aber nur, wenn sie noch dort steht, wo
+ * der Aufrufer sie gelesen hat.
+ *
+ * DAS `AND status = ?` IST DER GANZE PUNKT DIESER FUNKTION.
+ *
+ * Zwischen dem Lesen einer Bestellung und ihrem Schreiben liegt Zeit, und in
+ * dieser Zeit kann ein zweiter Adminbrowser dieselbe Bestellung weitergesetzt
+ * haben. Ein UPDATE nur über die Bestellnummer würde diese Änderung still
+ * überschreiben: Admin A hätte gegen „bestätigt" geprüft und auf einen Stand
+ * geschrieben, den es nicht mehr gibt — und beide Oberflächen zeigten
+ * anschließend einen Erfolg an, obwohl eine der beiden Entscheidungen
+ * verschwunden ist.
+ *
+ * Mit der Bedingung ist der Fall entschieden, bevor er entsteht: Passt der
+ * Ausgangsstatus nicht mehr, trifft die Anweisung keine Zeile, und der
+ * Rückgabewert sagt das. Das ist optimistische Nebenläufigkeit im kleinsten
+ * möglichen Umfang — eine zusätzliche Spalte in der WHERE-Klausel. Kein Lock,
+ * kein Durable Object, keine Warteschlange, keine Versionsspalte und damit
+ * auch keine Migration.
+ *
+ * DER RÜCKGABEWERT IST `changes` UND NICHT `success`. D1 meldet eine
+ * erfolgreich AUSGEFÜHRTE Anweisung auch dann als erfolgreich, wenn sie null
+ * Zeilen betroffen hat — genau der Fall, um den es hier geht. Nur die Anzahl
+ * geänderter Zeilen unterscheidet „geschrieben" von „nicht mehr zuständig".
+ *
+ * Ein Ergebnis größer eins kann es nicht geben: order_number ist UNIQUE
+ * (Migration 0003). Der Vergleich auf genau 1 hält das fest, statt sich darauf
+ * zu verlassen.
+ */
+export async function updateOrderStatus(
+  db: D1Database,
+  update: OrderStatusUpdate,
+): Promise<boolean> {
+  const { meta } = await db
+    .prepare(
+      `UPDATE orders
+          SET status = ?, updated_at = ?
+        WHERE order_number = ?
+          AND status = ?`,
+    )
+    .bind(update.newStatus, update.updatedAt, update.orderNumber, update.expectedStatus)
+    .run();
+
+  return meta.changes === 1;
 }

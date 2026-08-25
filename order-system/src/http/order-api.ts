@@ -2,6 +2,13 @@ import { placeCafeOrder } from '../application/place-cafe-order';
 import type { AppConfig } from '../config/app-config';
 import type { Order } from '../domain/order';
 import { assertCsrf, assertSameOrigin, requireRole } from './guard';
+import {
+  RequestError,
+  assertAnnouncedSizeOk,
+  assertJsonContentType,
+  parseBody,
+  readBody,
+} from './json-body';
 import { json } from './responses';
 import { privateHeaders } from './security';
 
@@ -10,20 +17,6 @@ import { privateHeaders } from './security';
  * unter 10 KiB; alles darüber ist kein Café, das Kuchen bestellt.
  */
 const MAX_BODY_BYTES = 64 * 1024;
-
-/**
- * Ein Fehler, den die Fehlergrenze in eine bestimmte Antwort übersetzt.
- * Getrennt von ValidationError, weil es hier nicht um ein Eingabefeld geht,
- * sondern um die Anfrage als Ganzes.
- */
-class RequestError extends Error {
-  constructor(
-    readonly status: number,
-    readonly code: string,
-  ) {
-    super(code);
-  }
-}
 
 /**
  * Nimmt eine Bestellung entgegen.
@@ -65,9 +58,9 @@ export async function createOrder(
     assertCsrf(request, wache.context);
 
     assertJsonContentType(request);
-    assertAnnouncedSizeOk(request);
+    assertAnnouncedSizeOk(request, MAX_BODY_BYTES);
 
-    const input = parseBody(await readBody(request));
+    const input = parseBody(await readBody(request, MAX_BODY_BYTES));
 
     const { order, created } = await placeCafeOrder(db, {
       customer: wache.context.customer,
@@ -110,53 +103,6 @@ function confirmation(order: Order): unknown {
       unit: item.productUnitSnapshot,
     })),
   };
-}
-
-function assertJsonContentType(request: Request): void {
-  const contentType = request.headers.get('content-type') ?? '';
-  // Der Zeichensatz darf angehängt sein: 'application/json; charset=utf-8'.
-  if (!contentType.split(';')[0]?.trim().toLowerCase().endsWith('application/json')) {
-    throw new RequestError(415, 'unsupported_media_type');
-  }
-}
-
-/**
- * Die angekündigte Größe zuerst: Sie kostet nichts und lehnt den offensichtlich
- * zu großen Körper ab, bevor er überhaupt gelesen wird.
- */
-function assertAnnouncedSizeOk(request: Request): void {
-  const announced = Number(request.headers.get('content-length'));
-  if (Number.isFinite(announced) && announced > MAX_BODY_BYTES) {
-    throw new RequestError(413, 'payload_too_large');
-  }
-}
-
-/**
- * Und danach die tatsächliche: Eine Anfrage ohne content-length — etwa mit
- * chunked transfer encoding — käme sonst an der ersten Prüfung vorbei.
- */
-async function readBody(request: Request): Promise<string> {
-  const text = await request.text();
-  if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) {
-    throw new RequestError(413, 'payload_too_large');
-  }
-  return text;
-}
-
-function parseBody(text: string): Record<string, unknown> {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    // Die Meldung des Parsers wird bewusst verworfen: Sie nennt Position und
-    // Zeichen und beschreibt damit, was der Server erwartet hat.
-    throw new RequestError(400, 'bad_request');
-  }
-
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new RequestError(400, 'bad_request');
-  }
-  return parsed as Record<string, unknown>;
 }
 
 /**
