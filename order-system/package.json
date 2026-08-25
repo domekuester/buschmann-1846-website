@@ -13,7 +13,8 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:seed:local": "wrangler d1 execute DB --local --file=seeds/001_placeholder.sql",
     "db:seed:cafe:local": "wrangler d1 execute DB --local --file=seeds/002_cafe_ordering_dev.sql",
-    "auth:account": "node scripts/create-local-auth-account.mjs"
+    "auth:account": "node scripts/create-local-auth-account.mjs",
+    "catalog:import": "node scripts/import-local-catalog-pricing.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.0.0",
