@@ -355,18 +355,53 @@ Kein Full Table Scan. **Keine neue Migration und kein neuer Index** —
 `idx_orders_day` aus Migration 0003 deckt genau diesen Zugriff ab, so wie es
 dort schon angekündigt war.
 
-### Was es noch nicht ist
+### Die Oberfläche dazu
 
-Eine **Daten**grundlage, keine Oberfläche. Es gibt keine Produktionsseite,
-keine Tabelle, keine Kalenderansicht und keinen Statusknopf; das ist Phase 3C.
+```text
+GET /admin                      der nächste Kalendertag
+GET /admin?date=2026-08-26      genau dieser Tag
+```
 
-> Für Phase 3C: `note` ist Kundeneingabe und wird hier unverändert als Text
-> geliefert. Wer sie in HTML rendert, escapet sie.
+Dieselbe Frage, dieselben Daten — als Seite. Der Adminbereich, der bis
+Phase 3A eine leere Schale war, zeigt jetzt die Backliste des Tages.
+
+Die Seite wird **serverseitig** gerendert und ruft `getProductionDay()`
+DIREKT auf. Kein `fetch` des Workers auf den eigenen Endpunkt: Das kostete
+einen zweiten Roundtrip, müsste das Sitzungscookie weiterreichen und
+verwandelte einen Typfehler in einen Laufzeitfehler. Der JSON-Endpunkt oben
+bleibt daneben bestehen; er ist die maschinenlesbare Fassung.
+
+**Die Seite trägt kein Skript.** Datumspfeile sind echte Links, die
+Datumswahl ist ein echtes `<form method="get">` — die Kernbedienung
+funktioniert ohne JavaScript, und der Tag steht in der URL, also im
+Lesezeichen und in der Browserhistorie.
+
+**Der Standardtag ist der nächste Kalendertag** und wird im Controller
+gebildet, nicht im Anwendungsfall: `getProductionDay()` bleibt datumsbasiert
+und leitet nichts ab. Kein Geschäftstag, keine Feiertage, kein Überspringen
+von Sonntagen — eine solche Regel gibt es in diesem System nicht.
+
+**Ein ungültiges Datum fällt nicht still auf den Standardtag zurück**, sondern
+ergibt 400 mit einer lesbaren Seite. Sonst zeigte ein Lesezeichen mit einem
+Tippfehler eine korrekt aussehende Backliste für einen anderen Tag — und
+jemand backte nach der falschen Liste.
+
+**Was die Seite nicht zeigt:** keine Preise, keine Beträge, keine Kosten,
+keine Marge, keine E-Mail, keine Telefonnummer, keine Lieferadresse, keine
+internen Kennungen. Nicht weil es unterdrückt würde, sondern weil das
+Lesemodell nichts davon führt.
+
+`note` ist Kundeneingabe und läuft — wie jeder dynamische Wert dieser Seite —
+durch `escapeHtml()` aus `src/ui/format.ts`. Es gibt genau diese eine
+Escape-Funktion im System.
+
+READ ONLY: kein Statuswechsel, kein Bearbeiten, kein Löschen.
 
 ## Was es noch nicht gibt
 
-Kein Admin-Dashboard · keine sichtbare Tagesansicht (die Daten dazu gibt es,
-siehe oben) · keine Kunden- oder Produktpflege ·
+Kein Statuswechsel aus der Oberfläche · kein Bearbeiten oder Stornieren durch
+den Admin · keine Wochen- oder Mehrtagesansicht · keine Kunden- oder
+Produktpflege ·
 kein Passwort-/PIN-Wechsel · kein „Passwort vergessen" · kein 2FA · kein
 Payment · kein Mailversand · kein R2 · keine Wiederbestellung · keine
 Bestellhistorie für das Café · kein Ändern oder Stornieren · keine
@@ -374,29 +409,38 @@ Lieferplanung · keine Rechnungen · keine Analytics · kein Rate-Limiting.
 
 ## Stand
 
-Phase 3B: Produktions-Tagesdaten. Das System beantwortet jetzt die Frage, für
-die es gebaut wurde — was an einem bestimmten Tag zu produzieren ist —, und
-zwar als geprüfte Daten- und API-Grundlage. **Eine Oberfläche dafür gibt es
-bewusst noch nicht**; das ist Phase 3C.
+Phase 3C: Produktions-Tagesansicht. Der Adminbereich zeigt jetzt, was an
+einem Tag zu produzieren ist — dieselben geprüften Daten aus Phase 3B, als
+Seite. Wer sich als Admin anmeldet, landet unmittelbar darauf; eine
+Dashboard-Zwischenseite gibt es bewusst nicht, weil das System genau eine
+Adminfunktion hat.
 
-**844 Tests grün** (314 Domäne, 493 Worker/D1, 37 Oberfläche), Typecheck
-sauber für Worker und Client, Migrationen 0001–0010 gegen eine frisch
-aufgesetzte lokale D1 ausgeführt und der Query Plan dort erneut geprüft.
+**985 Tests grün** (380 Domäne, 568 Worker/D1, 37 Oberfläche), Typecheck
+sauber für Worker und Client, D1-Integration gegen eine echte lokale
+Datenbank in der Workers-Runtime.
 
-Phase 3B hat **keine** Migration, **keinen** Index, **keine** Tabelle und
-**keine** Dependency hinzugefügt — und keine einzige schreibende Route.
+Phase 3C hat **keine** Migration, **keine** Tabelle, **keinen** Index,
+**keine** Dependency und **keine** zusätzliche Datenbankabfrage hinzugefügt —
+und keine einzige schreibende Route. Es sind dieselben zwei Abfragen aus
+Phase 3B. Am Datenmodell, an der Aggregation, an der Auth und am Bestellfluss
+wurde nichts geändert.
 
-Der vollständige Kreis wurde im laufenden Worker durchgespielt: Ein Café
-meldet sich an, bestellt, bekommt eine Bestellnummer mit serverseitig
-gebildetem Preis — und dieselbe Bestellung erscheint für den Admin im
-Produktionstag, während das Café denselben Endpunkt mit 403 nicht erreicht.
-Eine stornierte Bestellung über 999 Stück blieb dabei außen vor.
+Die Seite wurde im laufenden Worker auf 375, 390, 430, 768 und 1440 Pixel
+geprüft: kein horizontales Scrollen, kein überstehendes Element, kleinste
+Tippfläche 44 px, genau eine `h1`, Überschriften ohne Sprung, Fokusring
+sichtbar, keine abgeschnittene Menge. Datumspfeile und Datumsformular wurden
+zusätzlich per `curl` bedient — also nachweislich ohne JavaScript. Alle
+Härtungskopfzeilen aus Phase 3A stehen unverändert auf der Antwort.
 
-Vier Geschäftsregeln wurden zur Probe einzeln gebrochen; die zugehörigen Tests
-wurden jedes Mal rot (`cancelled` als Produktion 10, Statusfilter entfernt 6,
-Mengensumme durch Positionszählung ersetzt 17, Datumsfilter hart verdrahtet
-4). Jede Mutation wurde zurückgesetzt, die Suite danach erneut vollständig
-grün.
+Vier Eigenschaften wurden zur Probe einzeln gebrochen; die zugehörigen Tests
+wurden jedes Mal rot (Adminrollenprüfung entfernt 3, Escaping der Notiz
+entfernt 9, Preis in eine Position gerendert 2, Empty-State-Bedingung
+invertiert 20). Jede Mutation wurde zurückgesetzt, die Suite danach erneut
+vollständig grün.
+
+Zwei Tests aus Phase 3A kodierten „die Admin-Shell zeigt nichts" und sind auf
+den neuen Vertrag umgeschrieben. Ihre Sicherheitsabsicht ist geblieben:
+Geprüft wird jetzt, dass die Seite weder Preise noch Kontaktdaten zeigt.
 
 Nichts deployed, nichts gepusht, nichts gemergt.
 
@@ -407,11 +451,14 @@ Es liegen keine Zugangsdaten im Repository.
 
 ### Aus Phase 3A offen
 
-Diese Punkte gehören zur Inbetriebnahme und sind durch Phase 3B unverändert:
+Diese Punkte gehören zur Inbetriebnahme und sind durch Phase 3B und 3C
+unverändert:
 `AUTH_PEPPER` wird erst beim echten Deployment als Cloudflare Secret gesetzt ·
 die PBKDF2-Kosten der Anmeldung sind gegen das CPU-Budget von Workers Free
 noch nicht abschließend bewertet · zusätzliche Rate-Limiting-Härtung über
 Cloudflare ist sinnvoll, aber nicht eingerichtet.
 
 Der Produktionstag berührt keinen davon: Er liest, aggregiert eine
-zweistellige Zahl Zeilen und braucht kein Workers Paid.
+zweistellige Zahl Zeilen und braucht kein Workers Paid. Die Oberfläche aus
+Phase 3C fügt dem nichts hinzu — sie rendert dieselbe Antwort als HTML,
+ohne zusätzliche Abfrage und ohne Skript.
