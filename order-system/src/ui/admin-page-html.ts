@@ -17,17 +17,27 @@ import type { ProductionDayView } from './production-day-view';
  * anmeldet, sieht sofort, was zu produzieren ist.
  *
  * DIE SEITE TRÄGT KEIN SKRIPT. Kein <script>, nichts Inline, kein fremder
- * Host. Datumsnavigation und Datumswahl sind echte Links und ein echtes
- * GET-Formular — die Kernbedienung funktioniert ohne JavaScript, und die CSP
- * mit default-src 'none' wird nicht einmal auf die Probe gestellt.
+ * Host. Datumsnavigation, Datumswahl und seit Phase 4B auch der
+ * Statuswechsel sind echte Links und echte Formulare — die Kernbedienung
+ * funktioniert ohne JavaScript, und die CSP mit default-src 'none' wird nicht
+ * einmal auf die Probe gestellt.
  *
- * READ ONLY. Es gibt auf dieser Seite genau ein Formular, das etwas
- * verändert, und das ist die Abmeldung.
+ * SEIT PHASE 4B SCHREIBT DIESE SEITE. Sie tut es über POST-Formulare mit dem
+ * CSRF-Token der Sitzung, und sie schreibt genau eine Spalte: den Status
+ * einer Bestellung. Mengen, Notizen, Produkte, Kunden und Preise sind hier
+ * weiterhin nicht änderbar — es gibt kein Feld dafür.
  */
 export interface AdminPageView {
   /** Die Kennung des angemeldeten Admins — kein Geheimnis. */
   loginIdentifier: string;
-  /** Der Synchronizer-Token dieser Sitzung, für das Abmeldeformular. */
+  /**
+   * Der Synchronizer-Token dieser Sitzung — für das Abmeldeformular und seit
+   * Phase 4B für jedes Statusformular.
+   *
+   * Er kommt aus der Sitzungszeile in D1 und wird beim Rendern eingesetzt.
+   * Damit trägt jedes schreibende Formular dieser Seite denselben geprüften
+   * Wert, und es gibt keinen Weg, eines davon ohne ihn zu bauen.
+   */
   csrfToken: string;
   /** Der aufbereitete Produktionstag. */
   day: ProductionDayView;
@@ -42,7 +52,7 @@ export function renderAdminPage(view: AdminPageView): string {
       ${renderDayNavigation(view.day)}
       ${renderProductionSummary(view.day)}
       ${renderMetrics(view.day)}
-      ${renderOrderBreakdown(view.day)}`,
+      ${renderOrderBreakdown(view.day, view.csrfToken)}`,
   );
 }
 
@@ -206,6 +216,109 @@ export function renderInvalidDatePage(): string {
     im Format JJJJ-MM-TT.
   </p>
   <p><a href="/admin">Zurück zur Produktionsansicht</a></p>
+</main>
+</body>
+</html>
+`;
+}
+
+/**
+ * WENN EIN STATUSWECHSEL NICHT DURCHGEGANGEN IST — Phase 4B.
+ *
+ * DER WICHTIGSTE SATZ DIESER SEITE IST „Der Status wurde nicht geändert."
+ * Ohne ihn ist die Lage für einen Menschen nicht zu erkennen: Er hat geklickt,
+ * die Seite hat sich verändert, und ob der Kuchen jetzt in Produktion ist oder
+ * nicht, wäre Auslegungssache. Eine stille Weiterleitung auf den alten Stand
+ * wäre noch schlimmer — sie sähe aus wie ein Anzeigefehler, und der nächste
+ * Klick käme sofort.
+ *
+ * VIER LAGEN, VIER TEXTE, EINE SEITE. Für jede Fehlerart eine eigene
+ * Oberfläche zu bauen wäre vierfacher Aufwand für dieselbe Aussage; ein
+ * einziger Text für alle vier wäre dagegen unehrlich, weil „jemand war
+ * schneller" und „diese Bestellung gibt es nicht" für den nächsten Schritt
+ * etwas völlig anderes bedeuten.
+ *
+ * KEINE TECHNIK, KEINE STATUSNAMEN. Der Text nennt kein SQL, keinen
+ * Fehlercode, keinen Tabellennamen und auch nicht, welcher Übergang
+ * stattdessen erlaubt wäre: Die Übergangstabelle ist eine Eigenschaft des
+ * Systems und gehört nicht in eine Fehlermeldung — dieselbe Regel, der die
+ * JSON-Antwort aus Phase 4A folgt.
+ *
+ * DER WEG ZURÜCK IST EIN ECHTER LINK auf den Produktionstag der Bestellung.
+ * Kein „zurück" per JavaScript: Der Browserverlauf zeigte die alte Seite mit
+ * der alten Schaltfläche, und die ist genau das, was gerade nicht mehr
+ * stimmt. Ist der Tag unbekannt, führt der Link auf /admin — eine Konstante.
+ */
+export type StatusChangeFailure =
+  /** Jemand anderes war schneller. */
+  | 'conflict'
+  /** Von diesem Stand aus geht dieser Schritt nicht (mehr). */
+  | 'invalid_transition'
+  /** Diese Bestellnummer gibt es nicht. */
+  | 'unknown_order'
+  /** Die Anfrage passte nicht — oder es ging gerade technisch nicht. */
+  | 'unavailable';
+
+const FEHLERTEXTE: Readonly<
+  Record<StatusChangeFailure, { readonly heading: string; readonly body: string }>
+> = {
+  conflict: {
+    heading: 'Die Bestellung hat sich inzwischen geändert',
+    body:
+      'Jemand anderes hat diese Bestellung bearbeitet, während dein Bildschirm noch den alten Stand zeigte. ' +
+      'Der Status wurde nicht geändert. Bitte lade den Produktionstag neu und sieh dir an, wo die Bestellung jetzt steht.',
+  },
+  invalid_transition: {
+    heading: 'Dieser Schritt ist hier nicht möglich',
+    body:
+      'Die Bestellung steht nicht mehr dort, wo dieser Schritt beginnt. ' +
+      'Der Status wurde nicht geändert. Bitte lade den Produktionstag neu.',
+  },
+  unknown_order: {
+    heading: 'Diese Bestellung gibt es nicht',
+    body:
+      'Zu dieser Bestellnummer ist nichts gespeichert. ' +
+      'Der Status wurde nicht geändert. Bitte gehe zurück zur Produktionsansicht.',
+  },
+  unavailable: {
+    heading: 'Der Status konnte nicht geändert werden',
+    body:
+      'Die Änderung ist nicht durchgegangen. Der Status wurde nicht geändert. ' +
+      'Bitte versuche es gleich noch einmal. Wenn es bleibt, melde dich bei Buschmann 1846.',
+  },
+};
+
+/**
+ * @param day Der Produktionstag der Bestellung — 'JJJJ-MM-TT' oder null.
+ *            Er stammt aus der Bestellung in D1 und NIEMALS aus der Anfrage;
+ *            der Aufrufer stellt das sicher (siehe http/admin-order-api.ts).
+ */
+export function renderStatusChangeFailurePage(
+  reason: StatusChangeFailure,
+  day: string | null,
+): string {
+  const text = FEHLERTEXTE[reason];
+  const ziel = day === null ? '/admin' : `/admin?date=${escapeHtml(day)}`;
+
+  return `<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light">
+<title>${escapeHtml(text.heading)} — Buschmann 1846</title>
+<link rel="stylesheet" href="/assets/app.css">
+</head>
+<body class="anmeldeseite">
+<header class="kopf kopf--schmal">
+  <p class="marke">Buschmann <span>1846</span></p>
+</header>
+
+<main id="inhalt" class="anmeldung">
+  <h1>${escapeHtml(text.heading)}</h1>
+  <p class="banner" role="alert">${escapeHtml(text.body)}</p>
+  <p><a href="${ziel}">Zurück zur Produktionsansicht</a></p>
 </main>
 </body>
 </html>

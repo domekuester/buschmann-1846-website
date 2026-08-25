@@ -46,9 +46,23 @@ export type ChangeOrderStatusResult =
   /** Diese Bestellnummer gibt es nicht. */
   | { readonly outcome: 'unknown_order' }
   /** Die Domäne erlaubt diesen Übergang nicht. */
-  | { readonly outcome: 'invalid_transition' }
+  | { readonly outcome: 'invalid_transition'; readonly fulfillmentDate: string }
   /** Jemand anderes war schneller; der geprüfte Ausgangsstatus gilt nicht mehr. */
-  | { readonly outcome: 'conflict' };
+  | { readonly outcome: 'conflict'; readonly fulfillmentDate: string };
+
+/**
+ * WARUM DIE BEIDEN ABLEHNUNGEN EINEN TAG TRAGEN — und ausgerechnet DIESEN.
+ *
+ * Eine Oberfläche, die einen Fehlschlag anzeigt, muss den Weg zurück
+ * anbieten, und der führt zu dem Produktionstag, auf dem die Bestellung
+ * steht. Ihn hier mitzugeben ist billiger und ehrlicher, als ihn in der
+ * HTTP-Schicht ein zweites Mal aus der Datenbank zu holen.
+ *
+ * Es ist ausdrücklich NICHT die ganze Bestellung. Im Konfliktfall ist der
+ * gelesene Stand VERALTET — ihn herauszureichen hieße, einen Wert anzubieten,
+ * der schon falsch ist, wenn er ankommt. Der Liefertag ist der einzige Teil,
+ * den kein Statuswechsel verändert; er kann nicht veralten.
+ */
 
 export interface ChangeOrderStatusCommand {
   /**
@@ -86,7 +100,7 @@ export async function changeOrderStatus(
    * nur einer von beiden kennt.
    */
   if (!canTransitionTo(order.status, target)) {
-    return { outcome: 'invalid_transition' };
+    return { outcome: 'invalid_transition', fulfillmentDate: order.fulfillmentDate.value };
   }
 
   /**
@@ -117,7 +131,7 @@ export async function changeOrderStatus(
    * bestätigt, während in der Datenbank etwas anderes steht.
    */
   if (!geschrieben) {
-    return { outcome: 'conflict' };
+    return { outcome: 'conflict', fulfillmentDate: order.fulfillmentDate.value };
   }
 
   return { outcome: 'changed', order: geaendert };

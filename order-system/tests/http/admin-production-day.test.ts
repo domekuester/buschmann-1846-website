@@ -402,13 +402,21 @@ describe('Bestellungen', () => {
     expect(text).toContain('BUS-2026-000124');
   });
 
+  /**
+   * SICHTBAR IST ALLES DEUTSCH. Seit Phase 4B steht der technische Statusname
+   * an genau einer Stelle im Dokument: im Wert eines VERSTECKTEN Feldes, das
+   * der Server gleich wieder liest. Deshalb wird hier gegen das Markup OHNE
+   * die Eingabefelder geprüft — was ein Mensch liest, ist Deutsch, und was
+   * die Maschine liest, ist es nicht.
+   */
   it('zeigt den Status auf Deutsch', async () => {
     const text = await alsAdmin(`/admin?date=${TAG}`);
+    const sichtbar = text.replace(/<input[^>]*>/g, '');
 
     expect(text).toContain('Bestätigt');
     expect(text).toContain('In Produktion');
-    expect(text).not.toContain('confirmed');
-    expect(text).not.toContain('in_production');
+    expect(sichtbar).not.toContain('confirmed');
+    expect(sichtbar).not.toContain('in_production');
   });
 
   it('zeigt eine Lieferung auf Deutsch', async () => {
@@ -962,11 +970,176 @@ describe('Struktur und Zugänglichkeit', () => {
   });
 
   /** READ ONLY: Das einzige veraendernde Formular ist die Abmeldung. */
-  it('bietet keine Bedienelemente zum Ändern von Bestellungen an', async () => {
+  /**
+   * PHASE 4B HAT DIESEN TEST GEÄNDERT, und zwar an einer einzigen Stelle: Es
+   * gibt jetzt Formulare, die an die API senden — die Statuswechsel.
+   *
+   * Was unverändert ausgeschlossen bleibt, ist die BEARBEITUNG einer
+   * Bestellung: kein Auswahlfeld mit allen Statuswerten, kein Textfeld, keine
+   * Menge, kein Preis, kein Kunde. Die Probe darauf ist die Menge aller
+   * Feldnamen des Dokuments — sie ist abgeschlossen und kurz.
+   */
+  it('bietet außer dem Statuswechsel kein Bedienelement zum Ändern an', async () => {
     const text = await alsAdmin(`/admin?date=${TAG}`);
 
-    expect(text.match(/<form/g)).toHaveLength(2); // Abmeldung + Datumswahl
     expect(text).not.toContain('<select');
-    expect(text).not.toContain('method="post" action="/api');
+    expect(text).not.toContain('<textarea');
+
+    const ziele = [...text.matchAll(/action="(\/api[^"]*)"/g)].map((treffer) => treffer[1]);
+    expect(ziele.length).toBeGreaterThan(0);
+    for (const ziel of ziele) {
+      expect(ziel).toMatch(/^\/api\/admin\/orders\/BUS-\d{4}-\d{6}\/status$/);
+    }
+
+    const felder = [
+      ...new Set([...text.matchAll(/<input[^>]*name="([^"]+)"/g)].map((t) => t[1])),
+    ].sort();
+    expect(felder).toEqual(['csrf_token', 'date', 'status']);
+  });
+});
+
+/**
+ * DIE STATUSAKTIONEN AUF DER SEITE — Phase 4B, geprüft am ausgelieferten HTML.
+ *
+ * Die Ableitung selbst ist in tests/domain/production-day-view.test.ts gegen
+ * canTransitionTo() geprüft. Hier geht es um die Frage danach: Kommt das, was
+ * die Domäne erlaubt, tatsächlich bei einem angemeldeten Admin an — durch
+ * Routing, Wache, Anwendungsfall, echte D1 und Renderer?
+ */
+describe('Statusaktionen', () => {
+  async function karte(status: NonNullable<BestellungSeed['status']>): Promise<string> {
+    await seedBestellung({
+      id: 1,
+      orderNumber: 'BUS-2026-000123',
+      customerName: 'Testcafé Nord',
+      status,
+      items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
+    });
+    return alsAdmin(`/admin?date=${TAG}`);
+  }
+
+  it('bietet einer neuen Bestellung Bestätigen und Stornieren an', async () => {
+    const text = await karte('new');
+
+    expect(text).toContain('Bestätigen');
+    expect(text).toContain('Stornieren');
+    expect(text).toContain('value="confirmed"');
+    expect(text).toContain('value="cancelled"');
+    expect(text).not.toContain('value="in_production"');
+    expect(text).not.toContain('value="completed"');
+  });
+
+  it('bietet einer bestätigten Bestellung Produktion starten und Stornieren an', async () => {
+    const text = await karte('confirmed');
+
+    expect(text).toContain('Produktion starten');
+    expect(text).toContain('Stornieren');
+    expect(text).toContain('value="in_production"');
+    expect(text).not.toContain('value="confirmed"');
+    expect(text).not.toContain('value="completed"');
+  });
+
+  it('bietet einer laufenden Produktion Abschließen und Stornieren an', async () => {
+    const text = await karte('in_production');
+
+    expect(text).toContain('Abschließen');
+    expect(text).toContain('Stornieren');
+    expect(text).toContain('value="completed"');
+    expect(text).not.toContain('value="in_production"');
+  });
+
+  it('schickt jedes Statusformular an die eigene Bestellung', async () => {
+    await seedBestellung({
+      id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'new',
+      items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
+    });
+    await seedBestellung({
+      id: 2, orderNumber: 'BUS-2026-000124', customerName: 'Testcafé Süd', status: 'confirmed',
+      items: [{ productId: 2, name: 'Beispiel Carrot Cake', unit: 'Stück', quantity: 2 }],
+    });
+
+    const text = await alsAdmin(`/admin?date=${TAG}`);
+
+    expect(text).toContain('action="/api/admin/orders/BUS-2026-000123/status"');
+    expect(text).toContain('action="/api/admin/orders/BUS-2026-000124/status"');
+  });
+
+  /**
+   * Der Token im Formular ist der Token DIESER Sitzung — nicht irgendein
+   * Wert, nicht der einer anderen Sitzung, nicht leer. Ohne diese Prüfung
+   * bliebe der Test grün, während jeder Klick an der CSRF-Wache scheitert.
+   */
+  it('setzt den CSRF-Token der eigenen Sitzung in jedes Statusformular', async () => {
+    await seedBestellung({
+      id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'new',
+      items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
+    });
+
+    const sitzung = await logIn(env.DB, CONFIG, {
+      identifier: 'admin@example.test',
+      secret: PASSWORT,
+      now: new Date(),
+      existingSessionToken: null,
+    });
+    if (sitzung === null) throw new Error('Anmeldung im Testaufbau fehlgeschlagen');
+
+    const text = await (
+      await call(`/admin?date=${TAG}`, `buschmann_session_dev=${sitzung.token}`)
+    ).text();
+
+    const token = [...text.matchAll(/name="csrf_token" value="([^"]+)"/g)].map((t) => t[1]);
+    expect(token.length).toBeGreaterThanOrEqual(3); // Abmeldung + zwei Aktionen
+    for (const wert of token) {
+      expect(wert).toBe(sitzung.csrfToken);
+    }
+  });
+
+  it('bietet einer abgeschlossenen oder stornierten Bestellung nichts an', async () => {
+    for (const status of ['completed', 'cancelled'] as const) {
+      await env.DB.prepare(`DELETE FROM order_items`).run();
+      await env.DB.prepare(`DELETE FROM orders`).run();
+      const text = await karte(status);
+
+      // Sie stehen gar nicht erst in der offenen Produktion …
+      expect(text).not.toContain('BUS-2026-000123');
+      // … und damit auch keine Schaltfläche zu ihnen.
+      expect(text).not.toContain('/status"');
+    }
+  });
+
+  /**
+   * SICHTBARKEIT IST KEINE BERECHTIGUNG — aber ein Café darf die Seite
+   * ohnehin nicht sehen, und damit auch keine Schaltfläche.
+   */
+  it('zeigt einem Café weder Seite noch Schaltflächen', async () => {
+    await seedBestellung({
+      id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'new',
+      items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
+    });
+
+    const response = await call(`/admin?date=${TAG}`, await anmelden('testcafe', PIN));
+    const text = await response.text();
+
+    expect(response.status).toBe(403);
+    expect(text).not.toContain('Bestätigen');
+    expect(text).not.toContain('Stornieren');
+    expect(text).not.toContain('/status');
+  });
+
+  /** Die Kernbedienung braucht kein Skript — die Seite trägt weiterhin keines. */
+  it('kommt ohne JavaScript aus', async () => {
+    const text = await karte('new');
+
+    expect(text).not.toContain('<script');
+    expect(text).not.toContain('onclick');
+    expect(text).toContain('method="post"');
+    expect(text).toContain('<button type="submit"');
+  });
+
+  it('stellt die Backliste weiterhin vor die Bestellkarten', async () => {
+    const text = await karte('new');
+
+    expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('Bestellungen'));
+    expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('Bestätigen'));
   });
 });

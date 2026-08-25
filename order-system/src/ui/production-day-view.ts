@@ -1,6 +1,11 @@
 import { plusDays } from '../domain/clock';
 import { fulfillmentLabel } from '../domain/fulfillment-type';
-import { orderStatusLabel } from '../domain/order-status';
+import {
+  ORDER_STATUSES,
+  canTransitionTo,
+  orderStatusLabel,
+  type OrderStatus,
+} from '../domain/order-status';
 import type { ProductionDay } from '../domain/production-day';
 import { formatGermanDate } from './format';
 
@@ -59,6 +64,31 @@ export interface ProductionLineView {
   readonly renamed: boolean;
 }
 
+/**
+ * Eine anklickbare Statusaktion — Phase 4B.
+ *
+ * WOHER SIE KOMMT: aus canTransitionTo(). Nicht aus einer Liste in dieser
+ * Datei, nicht aus einer im Renderer, nicht aus einer in der HTTP-Schicht.
+ * Siehe statusAktionen() weiter unten; dort steht die ganze Ableitung in drei
+ * Zeilen, und sie enthält keinen einzigen Statusvergleich.
+ */
+export interface StatusActionView {
+  /** Der Zielstatus — der Wert des versteckten Feldes im Formular. */
+  readonly target: OrderStatus;
+  /** „Bestätigen", „Produktion starten" — was auf der Schaltfläche steht. */
+  readonly label: string;
+  /**
+   * Diese Aktion bringt die Bestellung nicht voran, sondern beendet sie.
+   *
+   * Eine Frage der DARSTELLUNG und keine der Domäne: Für canTransitionTo()
+   * ist ein Übergang erlaubt oder nicht, mehr sagt die Regel nicht. Ob eine
+   * erlaubte Aktion zurückhaltender aussehen soll, entscheidet die
+   * Oberfläche — und deshalb steht das Merkmal hier und nicht in
+   * order-status.ts.
+   */
+  readonly destructive: boolean;
+}
+
 export interface ProductionOrderItemView {
   readonly name: string;
   readonly unit: string;
@@ -78,6 +108,12 @@ export interface ProductionOrderView {
    */
   readonly note: string | null;
   readonly items: readonly ProductionOrderItemView[];
+  /**
+   * Was ein Mitarbeiter mit dieser Bestellung als Nächstes tun kann —
+   * ausschließlich das, was die Domäne erlaubt. Eine leere Liste heißt
+   * Endzustand und ist kein Sonderfall.
+   */
+  readonly actions: readonly StatusActionView[];
 }
 
 export interface ProductionDayView {
@@ -132,6 +168,7 @@ export function toProductionDayView(day: ProductionDay): ProductionDayView {
         unit: item.productUnit,
         quantity: item.quantity,
       })),
+      actions: statusAktionen(order.status),
     })),
 
     /**
@@ -203,3 +240,84 @@ function normalisiereNotiz(note: string | null): string | null {
   }
   return note;
 }
+
+/**
+ * DIE STATUSAKTIONEN EINER BESTELLUNG — und die Stelle, an der Phase 4B am
+ * ehesten hätte falsch abbiegen können.
+ *
+ * ES GIBT HIER KEINE ZWEITE ÜBERGANGSTABELLE. Kein `if (status === 'new')`,
+ * keine Aufzählung erlaubter Ziele, keine Kopie von ALLOWED_TARGETS. Die
+ * Funktion geht die Statusliste der Domäne durch und FRAGT für jeden Eintrag
+ * canTransitionTo() — dieselbe Funktion, die der Anwendungsfall vor dem
+ * Schreiben fragt und das Aggregat in withStatus() ein zweites Mal.
+ *
+ * Damit ist die Oberfläche nicht bloß „zufällig einig" mit dem Server: Sie
+ * kann gar nichts anderes anbieten. Ändert jemand die Tabelle in
+ * order-status.ts, ändern sich die Schaltflächen mit, ohne dass hier eine
+ * Zeile angefasst werden müsste — und ohne dass jemand es vergessen könnte.
+ *
+ * DIE REIHENFOLGE KOMMT AUS ORDER_STATUSES und ist damit die des
+ * Lebenszyklus. Das ist keine Kosmetik: 'cancelled' steht dort zuletzt, also
+ * steht die abbrechende Aktion in der Karte hinter der fortschreitenden. Eine
+ * eigene Sortierung wäre eine zweite Meinung über eine Ordnung, die es schon
+ * gibt.
+ *
+ * EINE SCHALTFLÄCHE OHNE ZUGANG IST KEINE BERECHTIGUNG. Diese Funktion
+ * entscheidet, was ein Admin SIEHT. Ob er es DARF, entscheidet die Wache in
+ * http/guard.ts — jedes Mal neu, bei jedem POST. Das ist die Trennung, ohne
+ * die eine ausgeblendete Schaltfläche wie Sicherheit aussähe.
+ */
+function statusAktionen(status: OrderStatus): readonly StatusActionView[] {
+  return ORDER_STATUSES.filter((ziel) => canTransitionTo(status, ziel)).map((ziel) => ({
+    target: ziel,
+    label: AKTIONSLABEL[ziel],
+    destructive: ABBRUCH[ziel],
+  }));
+}
+
+/**
+ * Wie eine Aktion auf Deutsch heißt.
+ *
+ * REINE DARSTELLUNG. Diese Tabelle entscheidet NICHT, ob ein Übergang
+ * möglich ist — sie benennt nur einen, der es bereits ist. Das ist der
+ * Unterschied, an dem die Regel „keine zweite State Machine" hängt.
+ *
+ * SIE IST VOLLSTÄNDIG, und zwar mit Absicht: Ein Record über OrderStatus
+ * zwingt jeden, der einen sechsten Status hinzufügt, ihm hier einen Namen zu
+ * geben. Mit einer lückenhaften Zuordnung verschwände eine von der Domäne
+ * erlaubte Aktion still aus der Oberfläche — und das wäre wieder eine zweite
+ * Entscheidung darüber, was möglich ist.
+ *
+ * DESHALB STEHT AUCH 'new' DARIN, obwohl heute kein Übergang dorthin führt:
+ * Der Eintrag ist der Platzhalter für den Tag, an dem sich das ändert, und
+ * nicht die Behauptung, dass es die Schaltfläche gibt. Erlaubt wird sie
+ * ausschließlich in order-status.ts.
+ *
+ * Die Labels sind VERBEN, keine Zustandsnamen. Auf der Schaltfläche steht,
+ * was passiert, wenn man sie drückt — „Bestätigen", nicht „Bestätigt"; der
+ * Zustandsname steht darüber im Statusfeld.
+ */
+const AKTIONSLABEL: Readonly<Record<OrderStatus, string>> = {
+  new: 'Zurück auf Neu setzen',
+  confirmed: 'Bestätigen',
+  in_production: 'Produktion starten',
+  completed: 'Abschließen',
+  cancelled: 'Stornieren',
+};
+
+/**
+ * Welche Aktion beendet statt voranzubringen.
+ *
+ * Auch das ist Darstellung: Die Domäne kennt „abbrechend" nicht, und
+ * isFinalStatus() wäre die falsche Quelle — 'completed' ist ebenfalls ein
+ * Endzustand und trotzdem der normale Abschluss der Arbeit. Was Storno
+ * besonders macht, ist die Folge für den Kunden, nicht die Struktur der
+ * Zustandsmenge.
+ */
+const ABBRUCH: Readonly<Record<OrderStatus, boolean>> = {
+  new: false,
+  confirmed: false,
+  in_production: false,
+  completed: false,
+  cancelled: true,
+};

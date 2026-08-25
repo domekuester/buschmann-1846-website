@@ -4,6 +4,7 @@ import type {
   ProductionLineView,
   ProductionOrderItemView,
   ProductionOrderView,
+  StatusActionView,
 } from './production-day-view';
 
 /**
@@ -146,7 +147,7 @@ function renderEmptyState(): string {
  * nichts wäre eine Frage ohne Antwort; der leere Tag sagt bereits im
  * Produktionsbereich, was los ist.
  */
-export function renderOrderBreakdown(view: ProductionDayView): string {
+export function renderOrderBreakdown(view: ProductionDayView, csrfToken: string): string {
   if (view.orders.length === 0) {
     return '';
   }
@@ -154,7 +155,7 @@ export function renderOrderBreakdown(view: ProductionDayView): string {
   return `
       <section class="bestellungen" aria-labelledby="titel-bestellungen">
         <h2 id="titel-bestellungen">Bestellungen</h2>
-${view.orders.map(bestellkarte).join('\n')}
+${view.orders.map((order) => bestellkarte(order, csrfToken)).join('\n')}
       </section>`;
 }
 
@@ -163,9 +164,14 @@ ${view.orders.map(bestellkarte).join('\n')}
  *
  * DER STATUS STEHT AUSGESCHRIEBEN DA und nicht als Farbpunkt. Farbe allein
  * ist für einen Teil der Nutzenden keine Information — dieselbe Regel, der
- * app.css bereits bei der ausgewählten Produktzeile folgt. Es gibt hier auch
- * keine Schaltfläche und kein Auswahlfeld: Phase 3C liest, sie schreibt
- * nicht.
+ * app.css bereits bei der ausgewählten Produktzeile folgt.
+ *
+ * SEIT PHASE 4B STEHT UNTER DER KARTE EINE AKTIONSFLÄCHE. Sie steht ZULETZT,
+ * und das ist die eigentliche Gestaltungsentscheidung dieser Phase: Die
+ * wichtigste Frage der Seite bleibt „wie viele Käsekuchen?" — sie wird oben
+ * in der Backliste beantwortet. Die Schaltflächen sind das, was danach kommt,
+ * und sie sehen auch so aus. Große Handlungsflächen an dieser Stelle würden
+ * eine Produktionsübersicht in eine Klickliste verwandeln.
  *
  * Der Kundenname ist eine <h3> unter der <h2> des Abschnitts — die Hierarchie
  * bleibt lückenlos, und ein Screenreader kann von Bestellung zu Bestellung
@@ -175,7 +181,7 @@ ${view.orders.map(bestellkarte).join('\n')}
  * Lieferadresse, keine Bestell-ID, keine Kunden-ID, kein Betrag. Das
  * Lesemodell führt nichts davon; die Karte kann es nicht zeigen.
  */
-function bestellkarte(order: ProductionOrderView): string {
+function bestellkarte(order: ProductionOrderView, csrfToken: string): string {
   return `        <article class="bestellung">
           <h3 class="bestellung__kunde">${escapeHtml(order.customerName)}</h3>
           <p class="bestellung__nummer">${escapeHtml(order.orderNumber)}</p>
@@ -186,8 +192,87 @@ function bestellkarte(order: ProductionOrderView): string {
           </p>
           <ul class="bestellung__positionen">
 ${order.items.map(position).join('\n')}
-          </ul>${order.note === null ? '' : notiz(order.note)}
+          </ul>${order.note === null ? '' : notiz(order.note)}${aktionsflaeche(order, csrfToken)}
         </article>`;
+}
+
+/**
+ * Die Aktionsfläche einer Bestellung.
+ *
+ * WELCHE SCHALTFLÄCHEN HIER ERSCHEINEN, ENTSCHEIDET DIESE DATEI NICHT. Sie
+ * rendert, was im Ansichtsmodell steht, und dort kommt es aus
+ * canTransitionTo(). In dieser Datei gibt es keinen einzigen Statusvergleich
+ * und keine Liste erlaubter Übergänge — dieselbe Regel, der auch
+ * http/admin-order-api.ts folgt.
+ *
+ * KEINE AKTION, KEINE FLÄCHE. Eine abgeschlossene oder stornierte Bestellung
+ * bekommt keinen leeren Kasten und keine ausgegraute Schaltfläche: Eine
+ * deaktivierte Schaltfläche wäre das Angebot einer Handlung, die es nicht
+ * gibt, und sie ist für Tastatur und Screenreader zusätzlich ein Hindernis
+ * ohne Zweck.
+ */
+function aktionsflaeche(order: ProductionOrderView, csrfToken: string): string {
+  if (order.actions.length === 0) {
+    return '';
+  }
+
+  return `
+          <div class="bestellung__aktionen">
+${order.actions.map((aktion) => statusFormular(order, aktion, csrfToken)).join('\n')}
+          </div>`;
+}
+
+/**
+ * EIN FORMULAR JE AKTION — und das ist die Entscheidung, an der die
+ * Bedienbarkeit ohne JavaScript hängt.
+ *
+ * Ein echtes `<form method="post">` mit einem echten `<button type="submit">`.
+ * Kein fetch, kein Klick-Handler, kein Auswahlfeld mit „Speichern": Die
+ * Backstube arbeitet an einem Tresengerät, und ein Statuswechsel darf nicht
+ * daran hängen, ob ein Skript geladen wurde. Die Seite trägt weiterhin
+ * KEIN <script>.
+ *
+ * WARUM NICHT EIN FORMULAR MIT MEHREREN SCHALTFLÄCHEN: Ein `<button
+ * name="status" value="…">` täte dasselbe mit weniger Markup — und verlöre
+ * den Wert in genau dem Fall, in dem ein Formular per Tastatur mit Enter aus
+ * einem Feld heraus abgeschickt wird. Zwei Formulare sind ein paar Zeilen
+ * mehr und haben keinen solchen Fall.
+ *
+ * ZWEI VERSTECKTE FELDER, MEHR NICHT: der Zielstatus und der CSRF-Token. Die
+ * Bestellnummer steht in der ROUTE, weil sie die Bestellung benennt. Alles
+ * Weitere — Rolle, Kunde, Preis, bisheriger Status — fehlt nicht aus
+ * Sparsamkeit, sondern weil der Server es nicht liest: Was aus einem Formular
+ * käme, wäre eine Behauptung des Aufrufers.
+ *
+ * DER ZUGÄNGLICHE NAME NENNT DIE BESTELLUNG. „Bestätigen" gibt es auf einer
+ * Seite mit zwölf Karten zwölfmal; wer die Seite mit einer Tastatur oder
+ * einem Screenreader durchgeht, braucht den Unterschied. Der sichtbare Text
+ * steht dabei VORNE, damit „Klicke Bestätigen" in einer Sprachsteuerung
+ * weiter funktioniert (WCAG 2.5.3).
+ *
+ * Er entsteht über einen Zusatz in der Schaltfläche und NICHT über
+ * aria-label. Ein aria-label ersetzt den sichtbaren Text vollständig — und
+ * damit auch dann, wenn jemand die Seite übersetzen lässt oder das Attribut
+ * eines Tages nicht mitgepflegt wird. `.hinweis` ist dieselbe Klasse, mit der
+ * die Backliste ihre Tabellenbeschriftung für Screenreader trägt; eine zweite
+ * Utility mit denselben Regeln wäre eine Kopie ohne Gewinn.
+ */
+function statusFormular(
+  order: ProductionOrderView,
+  action: StatusActionView,
+  csrfToken: string,
+): string {
+  const klasse = action.destructive ? 'statustaste statustaste--abbruch' : 'statustaste';
+
+  return `            <form class="statusaktion" method="post" action="/api/admin/orders/${escapeHtml(
+    encodeURIComponent(order.orderNumber),
+  )}/status">
+              <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
+              <input type="hidden" name="status" value="${escapeHtml(action.target)}">
+              <button type="submit" class="${klasse}">${escapeHtml(action.label)}<span class="hinweis"> — Bestellung ${escapeHtml(
+                order.orderNumber,
+              )}</span></button>
+            </form>`;
 }
 
 /**

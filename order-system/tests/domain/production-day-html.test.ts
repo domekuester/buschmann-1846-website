@@ -13,6 +13,21 @@ function zeile(over: Partial<ProductionLineView> = {}): ProductionLineView {
   return { name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 11, renamed: false, ...over };
 }
 
+/**
+ * Ein Testtoken. KEIN Geheimnis: Er steht im Klartext in Git und in jedem
+ * Klon, genau wie der Testpepper in vitest.config.ts.
+ */
+const CSRF = 'csrf-token-nur-fuer-tests-0123456789';
+
+/**
+ * Der Renderer bekommt seit Phase 4B den Sitzungstoken für die
+ * Statusformulare. Die Tests rufen ihn über diesen Wrapper auf, damit der
+ * Token nicht in achtzehn Aufrufen wiederholt werden muss.
+ */
+function aufschluesselung(view: ProductionDayView, token: string = CSRF): string {
+  return renderOrderBreakdown(view, token);
+}
+
 function bestellung(over: Partial<ProductionOrderView> = {}): ProductionOrderView {
   return {
     orderNumber: 'BUS-2026-000123',
@@ -21,6 +36,7 @@ function bestellung(over: Partial<ProductionOrderView> = {}): ProductionOrderVie
     fulfillmentLabel: 'Lieferung',
     note: null,
     items: [{ name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
+    actions: [{ target: 'in_production', label: 'Produktion starten', destructive: false }],
     ...over,
   };
 }
@@ -239,7 +255,7 @@ describe('renderProductionSummary — leerer Tag', () => {
 
 describe('renderOrderBreakdown — Bestellungen', () => {
   it('zeigt Kundenname, Bestellnummer, Status und Art der Übergabe', () => {
-    const html = renderOrderBreakdown(ansicht());
+    const html = aufschluesselung(ansicht());
 
     expect(html).toContain('Testcafé Nord');
     expect(html).toContain('BUS-2026-000123');
@@ -248,7 +264,7 @@ describe('renderOrderBreakdown — Bestellungen', () => {
   });
 
   it('zeigt Abholung, wenn nicht geliefert wird', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ fulfillmentLabel: 'Abholung' })] }),
     );
 
@@ -258,7 +274,7 @@ describe('renderOrderBreakdown — Bestellungen', () => {
 
   it('zeigt jeden offenen Status mit seinem deutschen Namen', () => {
     for (const label of ['Neu', 'Bestätigt', 'In Produktion']) {
-      const html = renderOrderBreakdown(
+      const html = aufschluesselung(
         ansicht({ orders: [bestellung({ statusLabel: label })] }),
       );
       expect(html).toContain(label);
@@ -266,7 +282,7 @@ describe('renderOrderBreakdown — Bestellungen', () => {
   });
 
   it('zeigt die Positionen einer Bestellung mit Menge und Einheit', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({
         orders: [
           bestellung({
@@ -284,7 +300,7 @@ describe('renderOrderBreakdown — Bestellungen', () => {
   });
 
   it('rendert jede Bestellung als eigene Sektion mit eigener Überschrift', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({
         orders: [
           bestellung({ customerName: 'Testcafé Nord', orderNumber: 'BUS-2026-000001' }),
@@ -301,11 +317,35 @@ describe('renderOrderBreakdown — Bestellungen', () => {
   });
 
   /**
-   * Phase 3C liest. Eine Schaltfläche oder ein Auswahlfeld waere der Anfang
-   * einer Schreiboperation, die es nicht gibt.
+   * PHASE 3C LAS NUR — DIESER TEST HAT SICH MIT PHASE 4B GEÄNDERT, und zwar
+   * bewusst: Es gibt jetzt genau EINE Schreiboperation auf dieser Seite, den
+   * Statuswechsel. Alles andere bleibt, was es war.
+   *
+   * Was hier weiterhin ausgeschlossen ist, ist die Bearbeitung: kein
+   * Auswahlfeld mit allen Statuswerten, kein Textfeld für die Notiz, kein
+   * Zahlenfeld für die Menge, kein Preisfeld. Die einzigen Eingaben der Seite
+   * sind versteckt und tragen Status und Token.
    */
-  it('bietet keine Bedienelemente zum Ändern an', () => {
-    const html = renderOrderBreakdown(ansicht());
+  it('bietet außer dem Statuswechsel kein Bedienelement an', () => {
+    const html = aufschluesselung(ansicht());
+
+    for (const verboten of [
+      '<select',
+      '<textarea',
+      'type="text"',
+      'type="number"',
+      'type="date"',
+      'contenteditable',
+    ]) {
+      expect(html).not.toContain(verboten);
+    }
+
+    expect(html.match(/<input/g)?.length).toBe(html.match(/type="hidden"/g)?.length);
+  });
+
+  /** Und ohne erlaubten Übergang bleibt die Karte, was sie in Phase 3C war. */
+  it('bleibt ohne erlaubte Aktion vollständig ohne Bedienelement', () => {
+    const html = aufschluesselung(ansicht({ orders: [bestellung({ actions: [] })] }));
 
     for (const verboten of ['<button', '<select', '<input', '<form']) {
       expect(html).not.toContain(verboten);
@@ -313,7 +353,7 @@ describe('renderOrderBreakdown — Bestellungen', () => {
   });
 
   it('zeigt weder Preise noch Kontaktdaten', () => {
-    const html = renderOrderBreakdown(ansicht());
+    const html = aufschluesselung(ansicht());
 
     for (const verboten of ['€', 'cents', '@', 'Telefon', 'Adresse', 'Straße']) {
       expect(html).not.toContain(verboten);
@@ -321,7 +361,7 @@ describe('renderOrderBreakdown — Bestellungen', () => {
   });
 
   it('gibt ohne Bestellungen gar nichts aus', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ isEmpty: true, orders: [], products: [], orderCount: 0, totalUnits: 0 }),
     );
 
@@ -331,7 +371,7 @@ describe('renderOrderBreakdown — Bestellungen', () => {
 
 describe('renderOrderBreakdown — Notiz', () => {
   it('zeigt eine vorhandene Notiz klar sichtbar', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ note: 'Bitte vor 10 Uhr anliefern' })] }),
     );
 
@@ -344,14 +384,14 @@ describe('renderOrderBreakdown — Notiz', () => {
    * stehen — auch keiner mit leerem Inhalt.
    */
   it('rendert ohne Notiz keinen Notizblock', () => {
-    const html = renderOrderBreakdown(ansicht({ orders: [bestellung({ note: null })] }));
+    const html = aufschluesselung(ansicht({ orders: [bestellung({ note: null })] }));
 
     expect(html).not.toContain('Hinweis');
     expect(html).not.toContain('notiz');
   });
 
   it('escapet ein Skript in der Notiz', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ note: '<script>alert(1)</script>' })] }),
     );
 
@@ -360,7 +400,7 @@ describe('renderOrderBreakdown — Notiz', () => {
   });
 
   it('escapet ein Bild mit onerror in der Notiz', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ note: '<img src=x onerror=alert(1)>' })] }),
     );
 
@@ -373,7 +413,7 @@ describe('renderOrderBreakdown — Notiz', () => {
   });
 
   it('escapet Anführungszeichen, die aus einem Attribut ausbrechen könnten', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ note: `" onmouseover="alert(1)` })] }),
     );
 
@@ -382,7 +422,7 @@ describe('renderOrderBreakdown — Notiz', () => {
   });
 
   it('escapet Ampersand und einfache Anführungszeichen', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ note: `Müller & Söhne 'fein'` })] }),
     );
 
@@ -391,7 +431,7 @@ describe('renderOrderBreakdown — Notiz', () => {
 
   /** Eine bereits escapete Entity darf nicht ein zweites Mal escapet werden. */
   it('verdoppelt keine bestehende HTML-Entity zu Unkenntlichkeit', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ note: 'A &amp; B' })] }),
     );
 
@@ -402,7 +442,7 @@ describe('renderOrderBreakdown — Notiz', () => {
 
 describe('renderOrderBreakdown — Escaping von Stammdaten', () => {
   it('escapet HTML im Kundennamen', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ customerName: '<b>Testcafé Nord</b>' })] }),
     );
 
@@ -411,7 +451,7 @@ describe('renderOrderBreakdown — Escaping von Stammdaten', () => {
   });
 
   it('escapet HTML im Produktnamen einer Position', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({
         orders: [
           bestellung({ items: [{ name: '<i>Kuchen</i>', unit: 'Stück', quantity: 1 }] }),
@@ -423,7 +463,7 @@ describe('renderOrderBreakdown — Escaping von Stammdaten', () => {
   });
 
   it('escapet die Bestellnummer', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ orderNumber: 'BUS-<2026>' })] }),
     );
 
@@ -431,11 +471,206 @@ describe('renderOrderBreakdown — Escaping von Stammdaten', () => {
   });
 
   it('escapet Status- und Übergabelabel', () => {
-    const html = renderOrderBreakdown(
+    const html = aufschluesselung(
       ansicht({ orders: [bestellung({ statusLabel: '<s>Neu</s>', fulfillmentLabel: '<u>Lieferung</u>' })] }),
     );
 
     expect(html).toContain('&lt;s&gt;Neu&lt;/s&gt;');
     expect(html).toContain('&lt;u&gt;Lieferung&lt;/u&gt;');
+  });
+});
+
+/**
+ * DIE STATUSAKTIONEN IM HTML — Phase 4B.
+ *
+ * Geprüft wird das ausgelieferte Markup, weil genau daran hängt, ob die
+ * Bedienung ohne JavaScript funktioniert: ein echtes <form method="post">,
+ * ein echter <button type="submit">, zwei versteckte Felder. Ein Test gegen
+ * eine Zwischenstruktur bliebe grün, während im Browser nichts passiert.
+ *
+ * Und geprüft wird, was NICHT im Formular steht. Ein Formularfeld ist eine
+ * Eingabe des Aufrufers; jedes zusätzliche wäre eine zusätzliche Behauptung,
+ * die der Server glauben könnte.
+ */
+describe('renderOrderBreakdown — Statusaktionen', () => {
+  function mitAktionen(...actions: ProductionOrderView['actions']): string {
+    return aufschluesselung(ansicht({ orders: [bestellung({ actions })] }));
+  }
+
+  const BESTAETIGEN = {
+    target: 'confirmed',
+    label: 'Bestätigen',
+    destructive: false,
+  } as const;
+
+  const STORNIEREN = {
+    target: 'cancelled',
+    label: 'Stornieren',
+    destructive: true,
+  } as const;
+
+  it('sendet an den Statusendpunkt der richtigen Bestellung', () => {
+    const html = mitAktionen(BESTAETIGEN);
+
+    expect(html).toContain('action="/api/admin/orders/BUS-2026-000123/status"');
+  });
+
+  it('benutzt method="post"', () => {
+    expect(mitAktionen(BESTAETIGEN)).toContain('method="post"');
+  });
+
+  it('schickt den Zielstatus als verstecktes Feld mit', () => {
+    expect(mitAktionen(BESTAETIGEN)).toContain(
+      '<input type="hidden" name="status" value="confirmed">',
+    );
+  });
+
+  it('schickt den CSRF-Token als verstecktes Feld mit', () => {
+    expect(mitAktionen(BESTAETIGEN)).toContain(
+      `<input type="hidden" name="csrf_token" value="${CSRF}">`,
+    );
+  });
+
+  /** Der Token gehört in ein Feld — nicht in sichtbaren Text und nicht in eine URL. */
+  it('zeigt den CSRF-Token nirgends an', () => {
+    const html = mitAktionen(BESTAETIGEN, STORNIEREN);
+
+    expect(html).not.toContain(`>${CSRF}`);
+    expect(html).not.toContain(`${CSRF}<`);
+    expect(html).not.toContain(`?csrf`);
+    expect(html).not.toContain(`status?`);
+  });
+
+  it('benutzt eine echte Schaltfläche mit sichtbarem deutschem Label', () => {
+    const html = mitAktionen(BESTAETIGEN);
+
+    expect(html).toContain('<button type="submit"');
+    expect(html).toContain('Bestätigen');
+  });
+
+  it('erzeugt für jede erlaubte Aktion genau ein Formular', () => {
+    const html = mitAktionen(BESTAETIGEN, STORNIEREN);
+
+    expect(html.match(/<form/g)).toHaveLength(2);
+    expect(html.match(/<button/g)).toHaveLength(2);
+  });
+
+  it('erzeugt ohne erlaubte Aktion kein Formular und keine Aktionsfläche', () => {
+    const html = mitAktionen();
+
+    expect(html).not.toContain('<form');
+    expect(html).not.toContain('<button');
+    expect(html).not.toContain('bestellung__aktionen');
+  });
+
+  /**
+   * Die abbrechende Aktion ist erkennbar — und zwar nicht nur an der Farbe.
+   * Sie steht zuletzt, trägt eine eigene Klasse und heißt „Stornieren".
+   */
+  it('kennzeichnet die abbrechende Aktion eigens', () => {
+    const html = mitAktionen(BESTAETIGEN, STORNIEREN);
+
+    expect(html).toContain('statustaste--abbruch');
+    expect(html.indexOf('Bestätigen')).toBeLessThan(html.indexOf('Stornieren'));
+  });
+
+  it('kennzeichnet die fortschreitende Aktion nicht als Abbruch', () => {
+    expect(mitAktionen(BESTAETIGEN)).not.toContain('statustaste--abbruch');
+  });
+
+  /**
+   * „Bestätigen" allein ist auf einer Seite mit zwölf Bestellungen für einen
+   * Screenreader mehrdeutig. Der zugängliche Name nennt deshalb die
+   * Bestellung mit — und beginnt trotzdem mit dem sichtbaren Text, damit
+   * Sprachsteuerung („Klicke Bestätigen") weiter funktioniert.
+   */
+  it('gibt der Schaltfläche einen eindeutigen zugänglichen Namen', () => {
+    const html = mitAktionen(BESTAETIGEN);
+    const taste = html.slice(html.indexOf('<button'), html.indexOf('</button>'));
+
+    expect(taste).toContain('Bestätigen');
+    expect(taste).toContain('BUS-2026-000123');
+    expect(taste.indexOf('Bestätigen')).toBeLessThan(taste.indexOf('BUS-2026-000123'));
+  });
+
+  /**
+   * WAS DAS FORMULAR NICHT TRÄGT.
+   *
+   * Rolle, Kunde, Preis, Positionen, bisheriger Status, Sitzungs-ID: nichts
+   * davon steht in einem Feld. Der Server liest sie ohnehin nicht — aber ein
+   * Feld, das es gar nicht gibt, kann auch nicht eines Tages gelesen werden.
+   */
+  it('trägt außer Status und Token kein einziges Feld', () => {
+    const html = aufschluesselung(
+      ansicht({ orders: [bestellung({ actions: [BESTAETIGEN, STORNIEREN] })] }),
+    );
+
+    const felder = [...html.matchAll(/<input[^>]*name="([^"]+)"/g)].map((treffer) => treffer[1]);
+    expect([...new Set(felder)].sort()).toEqual(['csrf_token', 'status']);
+  });
+
+  it('trägt weder Rolle noch Kunde noch Preis noch Sitzung', () => {
+    const html = mitAktionen(BESTAETIGEN, STORNIEREN);
+
+    for (const verboten of [
+      'role',
+      'is_admin',
+      'customer_id',
+      'customerId',
+      'account_id',
+      'session',
+      'total_amount',
+      'price',
+      'cents',
+      'current_status',
+      'expected',
+      'items',
+      'return',
+      'redirect',
+    ]) {
+      expect(html).not.toContain(verboten);
+    }
+  });
+
+  /**
+   * Die Bestellnummer steht in der ROUTE und ist damit Teil einer URL. Sie
+   * ist geprüft, bevor sie hierher kommt — escapet und kodiert wird sie
+   * trotzdem: Ein „das ist doch schon geprüft" ist genau die Stelle, an der
+   * später jemand eine ungeprüfte Nummer einsetzt.
+   */
+  it('kodiert die Bestellnummer für die Route und escapet sie', () => {
+    const html = aufschluesselung(
+      ansicht({
+        orders: [
+          bestellung({
+            orderNumber: 'BUS-2026-0001"><script>alert(1)</script>',
+            actions: [BESTAETIGEN],
+          }),
+        ],
+      }),
+    );
+
+    expect(html).not.toContain('<script>');
+    expect(html).not.toContain('action="/api/admin/orders/BUS-2026-0001"');
+  });
+
+  it('escapet einen Zielstatus und ein Label unverändert nicht ins Markup', () => {
+    const html = mitAktionen({
+      target: 'confirmed',
+      label: '<b>Bestätigen</b>',
+      destructive: false,
+    });
+
+    expect(html).not.toContain('<b>');
+  });
+
+  /** Kein Skript, kein Inline-Handler — die Kernbedienung ist reines HTML. */
+  it('kommt ohne JavaScript aus', () => {
+    const html = mitAktionen(BESTAETIGEN, STORNIEREN);
+
+    expect(html).not.toContain('<script');
+    expect(html).not.toContain('onclick');
+    expect(html).not.toContain('onsubmit');
+    expect(html).not.toContain('javascript:');
   });
 });

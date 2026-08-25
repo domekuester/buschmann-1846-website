@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ORDER_STATUSES, canTransitionTo } from '../../src/domain/order-status';
 import type { ProductionDay, ProductionOrder } from '../../src/domain/production-day';
 import { toProductionDayView } from '../../src/ui/production-day-view';
 
@@ -344,5 +345,143 @@ describe('toProductionDayView — Bestellungen', () => {
       'Zuletzt im Sortiment',
       'Als Erstes',
     ]);
+  });
+});
+
+/**
+ * DIE STATUSAKTIONEN — Phase 4B.
+ *
+ * Der Kern dieser Gruppe ist ein einziger Satz: Es gibt in der Oberfläche
+ * KEINE zweite Übergangstabelle. Welche Schaltfläche erscheint, entscheidet
+ * canTransitionTo() in domain/order-status.ts und sonst nichts.
+ *
+ * Deshalb steht in den Tests unten canTransitionTo() selbst auf der
+ * Erwartungsseite und keine abgeschriebene Liste: Eine abgeschriebene Liste
+ * wäre genau die zweite Fassung der Regel, die hier ausgeschlossen werden
+ * soll — sie bliebe grün, wenn die Domäne sich änderte.
+ */
+describe('toProductionDayView — Statusaktionen', () => {
+  it('bietet zu einer neuen Bestellung Bestätigen und Stornieren an', () => {
+    const view = toProductionDayView(tag({ orders: [bestellung({ status: 'new' })] }));
+
+    expect(view.orders[0]?.actions.map((aktion) => aktion.target)).toEqual([
+      'confirmed',
+      'cancelled',
+    ]);
+  });
+
+  it('bietet zu einer bestätigten Bestellung Produktion starten und Stornieren an', () => {
+    const view = toProductionDayView(tag({ orders: [bestellung({ status: 'confirmed' })] }));
+
+    expect(view.orders[0]?.actions.map((aktion) => aktion.target)).toEqual([
+      'in_production',
+      'cancelled',
+    ]);
+  });
+
+  it('bietet zu einer laufenden Produktion Abschließen und Stornieren an', () => {
+    const view = toProductionDayView(tag({ orders: [bestellung({ status: 'in_production' })] }));
+
+    expect(view.orders[0]?.actions.map((aktion) => aktion.target)).toEqual([
+      'completed',
+      'cancelled',
+    ]);
+  });
+
+  /**
+   * Endzustände. Sie tauchen in der offenen Produktionsliste nicht auf —
+   * geprüft wird hier trotzdem, weil das Ansichtsmodell nicht filtert und
+   * eine beschädigte Zeile sonst eine Schaltfläche bekäme, die nichts
+   * bewirken kann.
+   */
+  it('bietet zu einer abgeschlossenen Bestellung keine Aktion an', () => {
+    const view = toProductionDayView(tag({ orders: [bestellung({ status: 'completed' })] }));
+
+    expect(view.orders[0]?.actions).toEqual([]);
+  });
+
+  it('bietet zu einer stornierten Bestellung keine Aktion an', () => {
+    const view = toProductionDayView(tag({ orders: [bestellung({ status: 'cancelled' })] }));
+
+    expect(view.orders[0]?.actions).toEqual([]);
+  });
+
+  /**
+   * DER TEST GEGEN DIE ZWEITE STATE MACHINE.
+   *
+   * Für JEDEN Ausgangsstatus und JEDEN Zielstatus gilt: Die Aktion ist genau
+   * dann da, wenn die Domäne den Übergang erlaubt. Würde die Oberfläche eine
+   * eigene Liste führen, müsste sie hier auseinanderlaufen.
+   */
+  it('bietet genau die Übergänge an, die canTransitionTo erlaubt', () => {
+    for (const von of ORDER_STATUSES) {
+      const view = toProductionDayView(tag({ orders: [bestellung({ status: von })] }));
+      const angeboten = view.orders[0]?.actions.map((aktion) => aktion.target) ?? [];
+
+      expect({ von, ziele: angeboten }).toEqual({
+        von,
+        ziele: ORDER_STATUSES.filter((nach) => canTransitionTo(von, nach)),
+      });
+    }
+  });
+
+  it('gibt jeder Aktion ein verständliches deutsches Label', () => {
+    const labels = new Map<string, string>();
+    for (const von of ORDER_STATUSES) {
+      const view = toProductionDayView(tag({ orders: [bestellung({ status: von })] }));
+      for (const aktion of view.orders[0]?.actions ?? []) {
+        labels.set(aktion.target, aktion.label);
+      }
+    }
+
+    expect(Object.fromEntries(labels)).toEqual({
+      confirmed: 'Bestätigen',
+      in_production: 'Produktion starten',
+      completed: 'Abschließen',
+      cancelled: 'Stornieren',
+    });
+  });
+
+  /** Kein Label trägt den technischen Statusnamen. */
+  it('schreibt keine technischen Statusnamen auf die Schaltflächen', () => {
+    for (const von of ORDER_STATUSES) {
+      const view = toProductionDayView(tag({ orders: [bestellung({ status: von })] }));
+      for (const aktion of view.orders[0]?.actions ?? []) {
+        for (const technisch of ORDER_STATUSES) {
+          expect(aktion.label).not.toContain(technisch);
+        }
+      }
+    }
+  });
+
+  /**
+   * Stornieren ist die einzige Aktion, die nichts voranbringt, sondern etwas
+   * beendet. Die Oberfläche muss sie anders darstellen können — das ist eine
+   * Frage der Darstellung und keine der Domäne, deshalb steht das Merkmal
+   * hier und nicht in order-status.ts.
+   */
+  it('kennzeichnet ausschließlich das Stornieren als abbrechende Aktion', () => {
+    for (const von of ORDER_STATUSES) {
+      const view = toProductionDayView(tag({ orders: [bestellung({ status: von })] }));
+      for (const aktion of view.orders[0]?.actions ?? []) {
+        expect({ ziel: aktion.target, abbruch: aktion.destructive }).toEqual({
+          ziel: aktion.target,
+          abbruch: aktion.target === 'cancelled',
+        });
+      }
+    }
+  });
+
+  /** Die abbrechende Aktion steht zuletzt und niemals vor dem Fortschritt. */
+  it('stellt die abbrechende Aktion hinter die fortschreitende', () => {
+    for (const von of ORDER_STATUSES) {
+      const view = toProductionDayView(tag({ orders: [bestellung({ status: von })] }));
+      const aktionen = view.orders[0]?.actions ?? [];
+      const abbruch = aktionen.findIndex((aktion) => aktion.destructive);
+
+      if (abbruch !== -1) {
+        expect(abbruch).toBe(aktionen.length - 1);
+      }
+    }
   });
 });

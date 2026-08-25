@@ -616,6 +616,27 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
+/* Der Weg zurück auf den Hinweisseiten.
+
+   AUCH DAS EIN BEFUND AUS DEM BROWSER: Der Link stand im Browserviolett da —
+   auf einer Seite, die sonst aus Navy, Elfenbein und Champagner besteht, das
+   einzige Element ohne Marke. Es fiel erst mit der Konfliktseite aus Phase 4B
+   auf, betrifft aber genauso die Datumsfehlerseite aus Phase 3C; deshalb
+   steht die Regel bei der Seitenart und nicht bei einer der beiden Seiten.
+
+   :visited wird ausdrücklich mitgenommen. Genau dieser Link ist einer, den
+   man mehr als einmal benutzt — beim zweiten Mal soll er nicht anders
+   aussehen als beim ersten. */
+.anmeldung a,
+.anmeldung a:visited {
+  color: var(--blau);
+  font-weight: 600;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.anmeldung a:hover { color: var(--champagner-text); }
+
 @media (min-width: 480px) {
   .anmeldung { padding-top: 2.5rem; }
 }
@@ -967,6 +988,103 @@ textarea[aria-invalid='true'] {
   overflow-wrap: anywhere;
 }
 
+/* ---------- Statusaktionen (Phase 4B) ---------- */
+
+/* Die Aktionsfläche steht am FUSS der Karte und ist bewusst der leiseste
+   Bereich der Seite.
+
+   Die wichtigste Frage bleibt „wie viele Käsekuchen?", und die wird oben in
+   der Backliste beantwortet. Große, farbige Handlungsflächen an dieser Stelle
+   würden eine Produktionsübersicht in eine Klickliste verwandeln — und zwar
+   genau in dem Moment, in dem jemand mit mehligen Händen schnell etwas
+   nachsehen will.
+
+   Die dünne Trennlinie macht sichtbar, dass hier etwas anderes beginnt:
+   darüber steht, was ist, darunter, was man tun kann. */
+.bestellung__aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: .85rem;
+  padding-top: .75rem;
+  border-top: var(--spur);
+}
+
+/* DIESE REGEL KOMMT AUS DEM BROWSER UND NICHT AUS DEM ENTWURF.
+
+   Folgt die Aktionsfläche unmittelbar auf die Positionsliste, standen zwei
+   Haarlinien im Abstand von zwölf Pixeln übereinander: die untere Kante der
+   letzten Position und die obere Kante der Aktionsfläche. Auf dem Papier des
+   Entwurfs fällt so etwas nicht auf, auf einem 390px-Telefon sofort — es sieht
+   aus wie eine leere Zeile in der Liste.
+
+   Getrennt wird trotzdem, nur eben von der Linie, die ohnehin schon da ist.
+   Nach einer Notiz bleibt die eigene Kante: Der Notizblock hat eine Fläche und
+   endet ohne Linie, dort fehlte die Trennung sonst. */
+.bestellung__positionen + .bestellung__aktionen {
+  margin-top: .5rem;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Ein Formular je Aktion — sie sollen sich wie Schaltflächen nebeneinander
+   verhalten und nicht wie Blockelemente untereinander. */
+.statusaktion { margin: 0; }
+
+/* Die fortschreitende Aktion: sichtbar, aber nicht laut.
+
+   Kein gefülltes Gold wie .senden auf der Bestellseite. Dort gibt es EINE
+   Handlung und einen klaren Abschluss; hier stehen an einem vollen Dienstag
+   zwölf Karten mit je zwei Schaltflächen untereinander, und zwölf goldene
+   Flächen wären eine Wand. Der Rahmen reicht, weil daneben nichts anderes
+   anklickbar ist.
+
+   Die Tippfläche unterschreitet --tap NICHT. Zurückhaltung gehört in Farbe
+   und Schriftgröße, niemals in die Fläche, die ein Daumen treffen muss:
+   getroffen wird sie in derselben Backstube wie alles andere. */
+.statustaste {
+  min-height: var(--tap);
+  padding: .4rem .9rem;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--navy-tief);
+  background: var(--elfenbein);
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.statustaste:hover { background: var(--leinen); border-color: var(--champagner); }
+.statustaste:active { background: var(--champagner); }
+
+/* Das Stornieren.
+
+   Es ist die einzige Aktion, die nichts voranbringt, sondern etwas beendet —
+   und für ein Café bedeutet sie, dass der Kuchen nicht kommt. Sie steht
+   deshalb zuletzt, trägt keine Fläche und ist an der Fehlerfarbe zu erkennen.
+
+   NICHT NUR AN DER FARBE: Sie heißt „Stornieren" und steht getrennt hinter
+   der fortschreitenden Aktion. Wer Rot nicht als Rot sieht, liest das Wort
+   und die Position — dieselbe Regel, der die Seite schon beim Status folgt.
+
+   Kein confirm()-Dialog: Die Seite trägt kein Skript, und ein Dialog wäre
+   ohnehin die schwächere Sicherung als eine Schaltfläche, die nicht wie die
+   Hauptaktion aussieht. */
+.statustaste--abbruch {
+  color: var(--fehler);
+  background: transparent;
+  border-color: rgba(141, 43, 28, .35);
+}
+
+.statustaste--abbruch:hover {
+  background: var(--fehler-grund);
+  border-color: var(--fehler);
+}
+
+.statustaste--abbruch:active { background: var(--fehler-grund); }
+
 /* ---------- Breiten ---------- */
 
 /* Ab Tablet passen Pfeile, Label und Datumsfeld in eine Zeile, und die
@@ -1004,6 +1122,11 @@ textarea[aria-invalid='true'] {
    Navigation und Abmeldung gehören dann nicht aufs Papier. */
 @media print {
   .kopf, .tagnav, .abmelden { display: none !important; }
+
+  /* Eine ausgedruckte Schaltfläche ist ein Kasten ohne Funktion. Die
+     Bestellkarte behält beim Abhaken alles, was sie braucht: Kunde, Nummer,
+     Status, Positionen. */
+  .bestellung__aktionen { display: none !important; }
 
   .admin { max-width: none; padding: 0; }
   .bestellung { break-inside: avoid; }
