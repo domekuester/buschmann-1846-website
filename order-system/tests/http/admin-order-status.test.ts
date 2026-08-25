@@ -215,6 +215,39 @@ describe('POST /api/admin/orders/:orderNumber/status — der erlaubte Weg', () =
     expect((await zeile())['updated_at']).not.toBe(ANGELEGT);
   });
 
+  it('setzt Actor und Zeitpunkt ausschließlich aus der validierten Admin-Sitzung', async () => {
+    await post({
+      status: 'confirmed',
+      accountId: 999,
+      account_id: 999,
+      role: 'customer',
+      email: 'angreifer@example.test',
+      status_changed_at: '2000-01-01T00:00:00.000Z',
+    });
+
+    const nachher = await zeile();
+    expect(nachher['status_changed_by_account_id']).toBe(admin.accountId);
+    expect(nachher['status_changed_at']).toBe(nachher['updated_at']);
+    expect(nachher['status_changed_at']).not.toBe('2000-01-01T00:00:00.000Z');
+  });
+
+  it('unterscheidet zwei fiktive Admins bei aufeinanderfolgenden Wechseln', async () => {
+    await seedKonto(3, 'admin-b@example.test', 'admin', PASSWORT);
+    const adminB = await anmelden('admin-b@example.test', PASSWORT);
+
+    await post({ status: 'confirmed' });
+    const ersterZeitpunkt = String((await zeile())['status_changed_at']);
+
+    await post(
+      { status: 'in_production', accountId: admin.accountId, role: 'admin' },
+      { cookie: adminB.cookie, csrf: adminB.csrf },
+    );
+    const nachher = await zeile();
+
+    expect(nachher['status_changed_by_account_id']).toBe(3);
+    expect(String(nachher['status_changed_at']) >= ersterZeitpunkt).toBe(true);
+  });
+
   it('lässt jede andere Spalte in Ruhe', async () => {
     const vorher = await zeile();
 
@@ -401,6 +434,8 @@ describe('POST /api/admin/orders/:orderNumber/status — wer nicht darf', () => 
   async function bleibtUnveraendert(): Promise<void> {
     expect((await zeile())['status']).toBe('new');
     expect((await zeile())['updated_at']).toBe(ANGELEGT);
+    expect((await zeile())['status_changed_by_account_id']).toBeNull();
+    expect((await zeile())['status_changed_at']).toBeNull();
   }
 
   it('lehnt eine Café-Sitzung mit 403 ab', async () => {
@@ -580,6 +615,8 @@ describe('POST /api/admin/orders/:orderNumber/status — gleichzeitig', () => {
     expect(codes[0]).toBe(200);
     expect(codes[1]).toBe(409);
     expect((await zeile())['status']).toBe('confirmed');
+    expect((await zeile())['status_changed_by_account_id']).toBe(admin.accountId);
+    expect((await zeile())['status_changed_at']).toBe((await zeile())['updated_at']);
   });
 
   it('bestätigt einen zweiten Klick auf einen veralteten Stand nicht', async () => {

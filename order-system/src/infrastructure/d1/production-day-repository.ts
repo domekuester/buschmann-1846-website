@@ -51,6 +51,10 @@ const STATUS_PLATZHALTER = OPEN_PRODUCTION_STATUSES.map(() => '?').join(', ');
  * Telefon, Ansprechpartner und interne Notiz können auf diesem Weg nicht
  * abfließen, weil die Tabelle nicht gelesen wird.
  *
+ * Der LEFT JOIN auf auth_accounts liest genau den normalisierten Login-Identifier
+ * des letzten Actors. Credential- und Sitzungsdaten kommen in der Abfrage nicht vor.
+ * LEFT statt INNER erhält die Bestellung auch dann, wenn ein Konto gelöscht wurde.
+ *
  * Ausdrücklich NICHT gelesen: id als Ausgabewert (sie wird nur zum Zuordnen
  * gebraucht und verlässt diese Datei nicht), customer_id, submission_id,
  * total_amount_cents, delivery_address_snapshot, created_at, updated_at.
@@ -59,11 +63,14 @@ const STATUS_PLATZHALTER = OPEN_PRODUCTION_STATUSES.map(() => '?').join(', ');
  * damit ist die Reihenfolge vollständig bestimmt und kein Test kann flattern.
  */
 const Q_ORDERS = `
-  SELECT id, order_number, customer_name_snapshot, fulfillment_type, note, status
-    FROM orders
-   WHERE fulfillment_date = ?
-     AND status IN (${STATUS_PLATZHALTER})
-   ORDER BY customer_name_snapshot, order_number
+  SELECT o.id, o.order_number, o.customer_name_snapshot, o.fulfillment_type, o.note, o.status,
+         o.status_changed_at,
+         a.login_identifier_normalized AS status_changed_by_login_identifier
+    FROM orders o
+    LEFT JOIN auth_accounts a ON a.id = o.status_changed_by_account_id
+   WHERE o.fulfillment_date = ?
+     AND o.status IN (${STATUS_PLATZHALTER})
+   ORDER BY o.customer_name_snapshot, o.order_number
 `;
 
 /**
@@ -212,6 +219,13 @@ function toProductionOrder(
     status: zeile.status,
     fulfillmentType: zeile.fulfillment_type,
     note: zeile.note,
+    lastStatusChange:
+      zeile.status_changed_at === null
+        ? null
+        : {
+            changedAt: zeile.status_changed_at,
+            changedBy: zeile.status_changed_by_login_identifier,
+          },
     /**
      * Eine Bestellung ohne Positionen ist eine leere Liste und kein Grund zu
      * scheitern. Das Order-Aggregat verlangt mindestens eine Position, das

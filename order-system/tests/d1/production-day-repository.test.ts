@@ -66,6 +66,8 @@ async function bestellung(options: {
   fulfillmentType?: string;
   note?: string | null;
   items: readonly PositionsWunsch[];
+  statusChangedByAccountId?: number | null;
+  statusChangedAt?: string | null;
 }): Promise<string> {
   const nummer = `BUS-2026-${String(naechsteNummer++).padStart(6, '0')}`;
   const typ = options.fulfillmentType ?? 'delivery';
@@ -73,8 +75,9 @@ async function bestellung(options: {
   await env.DB.prepare(
     `INSERT INTO orders (id, order_number, customer_id, customer_name_snapshot, fulfillment_type,
                          fulfillment_date, delivery_address_snapshot, note, status,
-                         total_amount_cents, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?10, ?10)`,
+                         total_amount_cents, created_at, updated_at,
+                         status_changed_by_account_id, status_changed_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?10, ?10, ?11, ?12)`,
   )
     .bind(
       options.id,
@@ -87,6 +90,8 @@ async function bestellung(options: {
       options.note ?? null,
       options.status ?? 'confirmed',
       NOW,
+      options.statusChangedByAccountId ?? null,
+      options.statusChangedAt ?? null,
     )
     .run();
 
@@ -114,7 +119,7 @@ async function bestellung(options: {
 }
 
 beforeEach(async () => {
-  for (const tabelle of ['order_items', 'orders', 'products', 'customers']) {
+  for (const tabelle of ['order_items', 'orders', 'auth_sessions', 'auth_accounts', 'products', 'customers']) {
     await env.DB.prepare(`DELETE FROM ${tabelle}`).run();
   }
   naechsteNummer = 1;
@@ -146,6 +151,7 @@ describe('findProductionOrders — ein Tag', () => {
       status: 'confirmed',
       fulfillmentType: 'delivery',
       note: 'Bitte vor 10 Uhr',
+      lastStatusChange: null,
       items: [
         {
           productId: 1,
@@ -155,6 +161,33 @@ describe('findProductionOrders — ein Tag', () => {
           quantity: 3,
         },
       ],
+    });
+  });
+
+  it('liefert den letzten Statuswechsel mit vertrauenswürdigem Admin-Identifier', async () => {
+    await env.DB.prepare(
+      `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations,
+                                  credential_salt, credential_verifier, is_active,
+                                  failed_attempts, created_at, updated_at)
+       VALUES (7, 'admin-a@example.test', 'admin', NULL, 'pbkdf2-sha256', 600000,
+               ?, ?, 1, 0, ?, ?)`,
+    )
+      .bind('a'.repeat(32), 'b'.repeat(64), NOW, NOW)
+      .run();
+    await bestellung({
+      id: 2,
+      customerId: 1,
+      customerName: 'Testcafé Nord',
+      day: TAG,
+      statusChangedByAccountId: 7,
+      statusChangedAt: '2026-08-25T12:32:00.000Z',
+      items: [{ productId: 1, quantity: 3 }],
+    });
+
+    expect((await findProductionOrders(env.DB, TAG))[0]?.lastStatusChange).toEqual({
+      changedAt: '2026-08-25T12:32:00.000Z',
+      changedBy: 'admin-a@example.test',
     });
   });
 

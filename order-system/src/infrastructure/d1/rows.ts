@@ -75,6 +75,8 @@ export interface ProductionOrderRow {
   fulfillment_type: string;
   note: string | null;
   status: string;
+  status_changed_at: string | null;
+  status_changed_by_login_identifier: string | null;
 }
 
 /**

@@ -950,6 +950,13 @@ textarea[aria-invalid='true'] {
   font-weight: 600;
 }
 
+.bestellung__status-audit {
+  margin: -.35rem 0 .75rem;
+  font-size: .78rem;
+  color: var(--text-leise);
+  overflow-wrap: anywhere;
+}
+
 .bestellung__positionen {
   margin: 0;
   padding: 0;

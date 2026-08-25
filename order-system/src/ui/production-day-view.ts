@@ -7,7 +7,7 @@ import {
   type OrderStatus,
 } from '../domain/order-status';
 import type { ProductionDay } from '../domain/production-day';
-import { formatGermanDate } from './format';
+import { formatGermanDate, formatGermanTimestamp } from './format';
 
 /**
  * Das Ansichtsmodell eines Produktionstags — alles, was die Seite anzeigt,
@@ -107,6 +107,10 @@ export interface ProductionOrderView {
    * versehentliches Leerzeichen soll keinen Notizblock erzeugen.
    */
   readonly note: string | null;
+  readonly lastStatusChange: {
+    readonly changedAtLabel: string;
+    readonly changedBy: string;
+  } | null;
   readonly items: readonly ProductionOrderItemView[];
   /**
    * Was ein Mitarbeiter mit dieser Bestellung als Nächstes tun kann —
@@ -163,6 +167,13 @@ export function toProductionDayView(day: ProductionDay): ProductionDayView {
       statusLabel: orderStatusLabel(order.status),
       fulfillmentLabel: fulfillmentLabel(order.fulfillmentType),
       note: normalisiereNotiz(order.note),
+      lastStatusChange:
+        order.lastStatusChange?.changedBy == null
+          ? null
+          : {
+              changedAtLabel: formatGermanTimestamp(order.lastStatusChange.changedAt),
+              changedBy: order.lastStatusChange.changedBy,
+            },
       items: order.items.map((item) => ({
         name: item.productName,
         unit: item.productUnit,

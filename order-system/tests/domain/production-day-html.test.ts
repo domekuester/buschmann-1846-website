@@ -35,6 +35,7 @@ function bestellung(over: Partial<ProductionOrderView> = {}): ProductionOrderVie
     statusLabel: 'Bestätigt',
     fulfillmentLabel: 'Lieferung',
     note: null,
+    lastStatusChange: null,
     items: [{ name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
     actions: [{ target: 'in_production', label: 'Produktion starten', destructive: false }],
     ...over,
@@ -254,6 +255,29 @@ describe('renderProductionSummary — leerer Tag', () => {
 });
 
 describe('renderOrderBreakdown — Bestellungen', () => {
+  it('zeigt den letzten Statuswechsel dezent und escapet den Admin-Identifier', () => {
+    const html = aufschluesselung(
+      ansicht({
+        orders: [
+          bestellung({
+            lastStatusChange: {
+              changedAtLabel: '25.08.2026, 14:32',
+              changedBy: '<admin-a@example.test>',
+            },
+          }),
+        ],
+      }),
+    );
+
+    expect(html).toContain('Zuletzt geändert: 25.08.2026, 14:32');
+    expect(html).toContain('&lt;admin-a@example.test&gt;');
+    expect(html).not.toContain('<admin-a@example.test>');
+  });
+
+  it('zeigt ohne Audit keinen Fake-Wert', () => {
+    expect(aufschluesselung(ansicht())).not.toContain('Zuletzt geändert:');
+  });
+
   it('zeigt Kundenname, Bestellnummer, Status und Art der Übergabe', () => {
     const html = aufschluesselung(ansicht());
 

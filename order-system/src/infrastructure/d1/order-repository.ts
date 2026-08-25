@@ -195,7 +195,8 @@ function toOrder(row: OrderRow, itemRows: readonly OrderItemRow[]): Order {
  *
  * Es gibt keinen Parameter für Kunde, Liefertag, Notiz, Betrag oder
  * Positionen, weil es für sie keine Anweisung gibt: Der UPDATE unten nennt
- * zwei Spalten. Eine dritte hinzuzufügen wäre eine bewusste Änderung an
+ * ausschließlich Status, technischen Update-Zeitpunkt und die beiden
+ * Last-Change-Auditfelder. Eine weitere Spalte wäre eine bewusste Änderung an
  * dieser Datei und kein Nebeneffekt eines Aufrufers.
  */
 export interface OrderStatusUpdate {
@@ -208,6 +209,8 @@ export interface OrderStatusUpdate {
   readonly expectedStatus: OrderStatus;
   readonly newStatus: OrderStatus;
   readonly updatedAt: string;
+  readonly actorAccountId: number;
+  readonly statusChangedAt: string;
 }
 
 /**
@@ -229,7 +232,7 @@ export interface OrderStatusUpdate {
  * Rückgabewert sagt das. Das ist optimistische Nebenläufigkeit im kleinsten
  * möglichen Umfang — eine zusätzliche Spalte in der WHERE-Klausel. Kein Lock,
  * kein Durable Object, keine Warteschlange, keine Versionsspalte und damit
- * auch keine Migration.
+ * auch keine Versionsspalte.
  *
  * DER RÜCKGABEWERT IST `changes` UND NICHT `success`. D1 meldet eine
  * erfolgreich AUSGEFÜHRTE Anweisung auch dann als erfolgreich, wenn sie null
@@ -247,11 +250,21 @@ export async function updateOrderStatus(
   const { meta } = await db
     .prepare(
       `UPDATE orders
-          SET status = ?, updated_at = ?
+          SET status = ?,
+              updated_at = ?,
+              status_changed_by_account_id = ?,
+              status_changed_at = ?
         WHERE order_number = ?
           AND status = ?`,
     )
-    .bind(update.newStatus, update.updatedAt, update.orderNumber, update.expectedStatus)
+    .bind(
+      update.newStatus,
+      update.updatedAt,
+      update.actorAccountId,
+      update.statusChangedAt,
+      update.orderNumber,
+      update.expectedStatus,
+    )
     .run();
 
   return meta.changes === 1;

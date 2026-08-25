@@ -19,6 +19,7 @@ function bestellung(over: Partial<ProductionOrder> = {}): ProductionOrder {
     status: 'confirmed',
     fulfillmentType: 'delivery',
     note: null,
+    lastStatusChange: null,
     items: [
       { productId: 1, productName: 'Beispiel Käsekuchen', productUnit: 'Stück', sortOrder: 10, quantity: 3 },
     ],
@@ -45,6 +46,43 @@ describe('toProductionDayView — deutsche Labels', () => {
 
     expect(view.orders[0]?.statusLabel).toBe('Bestätigt');
     expect(view.orders[0]?.fulfillmentLabel).toBe('Lieferung');
+  });
+});
+
+describe('toProductionDayView — letzter Statuswechsel', () => {
+  it('formatiert Zeitpunkt und Actor für die dezente operative Anzeige', () => {
+    const view = toProductionDayView(
+      tag({
+        orders: [
+          bestellung({
+            lastStatusChange: {
+              changedAt: '2026-08-25T12:32:00.000Z',
+              changedBy: 'admin-a@example.test',
+            },
+          }),
+        ],
+      }),
+    );
+
+    expect(view.orders[0]?.lastStatusChange).toEqual({
+      changedAtLabel: '25.08.2026, 14:32',
+      changedBy: 'admin-a@example.test',
+    });
+  });
+
+  it('erfindet ohne vollständiges Audit keine Anzeige', () => {
+    expect(toProductionDayView(tag()).orders[0]?.lastStatusChange).toBeNull();
+    expect(
+      toProductionDayView(
+        tag({
+          orders: [
+            bestellung({
+              lastStatusChange: { changedAt: '2026-08-25T12:32:00.000Z', changedBy: null },
+            }),
+          ],
+        }),
+      ).orders[0]?.lastStatusChange,
+    ).toBeNull();
   });
 });
 

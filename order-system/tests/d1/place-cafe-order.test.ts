@@ -121,6 +121,25 @@ describe('placeCafeOrder — der gute Fall', () => {
     expect(placed.total().cents).toBe(1305);
   });
 
+  it('legt eine neue Customer-Bestellung ohne behaupteten Status-Actor an', async () => {
+    await order();
+
+    const row = await env.DB.prepare(
+      `SELECT status, status_changed_by_account_id, status_changed_at
+         FROM orders WHERE order_number = 'BUS-2026-000001'`,
+    ).first<{
+      status: string;
+      status_changed_by_account_id: number | null;
+      status_changed_at: string | null;
+    }>();
+
+    expect(row).toEqual({
+      status: 'new',
+      status_changed_by_account_id: null,
+      status_changed_at: null,
+    });
+  });
+
   it('speichert die Bestellung mit allen Positionen', async () => {
     await order({ items: [{ product_id: 1, quantity: 3 }, { product_id: 2, quantity: 2 }] });
 

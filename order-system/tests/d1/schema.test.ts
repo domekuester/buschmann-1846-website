@@ -57,6 +57,23 @@ beforeEach(async () => {
 });
 
 describe('Migrationen', () => {
+  it('ergänzt nullable Last-Status-Auditfelder ohne spekulativen Index', async () => {
+    const { results: spalten } = await env.DB.prepare(`PRAGMA table_info(orders)`).all<{
+      name: string;
+      notnull: number;
+    }>();
+
+    expect(spalten.filter((spalte) => spalte.name.startsWith('status_changed_'))).toEqual([
+      expect.objectContaining({ name: 'status_changed_by_account_id', notnull: 0 }),
+      expect.objectContaining({ name: 'status_changed_at', notnull: 0 }),
+    ]);
+
+    const { results: indizes } = await env.DB.prepare(
+      `SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE '%status_changed%'`,
+    ).all<{ name: string }>();
+    expect(indizes).toEqual([]);
+  });
+
   it('haben alle Tabellen angelegt', async () => {
     const { results } = await env.DB.prepare(
       `SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
@@ -99,6 +116,37 @@ describe('Migrationen', () => {
 });
 
 describe('Fremdschlüssel', () => {
+  it('setzt den letzten Status-Actor beim Löschen des Admin-Kontos auf NULL', async () => {
+    await seedCustomer();
+    await seedOrder();
+    await env.DB.prepare(
+      `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations,
+                                  credential_salt, credential_verifier, is_active,
+                                  failed_attempts, created_at, updated_at)
+       VALUES (7, 'admin-a@example.test', 'admin', NULL, 'pbkdf2-sha256', 600000,
+               ?, ?, 1, 0, ?, ?)`,
+    )
+      .bind('a'.repeat(32), 'b'.repeat(64), NOW, NOW)
+      .run();
+    await env.DB.prepare(
+      `UPDATE orders
+          SET status_changed_by_account_id = 7,
+              status_changed_at = '2026-08-25T12:32:00.000Z'
+        WHERE id = 1`,
+    ).run();
+
+    await env.DB.prepare(`DELETE FROM auth_accounts WHERE id = 7`).run();
+
+    const row = await env.DB.prepare(
+      `SELECT status_changed_by_account_id, status_changed_at FROM orders WHERE id = 1`,
+    ).first<{ status_changed_by_account_id: number | null; status_changed_at: string | null }>();
+    expect(row).toEqual({
+      status_changed_by_account_id: null,
+      status_changed_at: '2026-08-25T12:32:00.000Z',
+    });
+  });
+
   it('werden von D1 durchgesetzt', async () => {
     const { results } = await env.DB.prepare('PRAGMA foreign_keys').all<{ foreign_keys: number }>();
     expect(results[0]?.foreign_keys).toBe(1);

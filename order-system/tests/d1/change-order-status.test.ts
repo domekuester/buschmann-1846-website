@@ -30,6 +30,7 @@ const ANGELEGT = '2026-08-20T06:00:00.000Z';
 const JETZT = new Date('2026-08-25T09:30:00.000Z');
 const NUMMER = 'BUS-2026-000042';
 const TAG = '2026-08-26';
+const ACTOR = 7;
 
 function nummer(value = NUMMER): OrderNumber {
   return OrderNumber.fromString(value);
@@ -70,7 +71,7 @@ async function positionen(): Promise<Record<string, unknown>[]> {
 }
 
 beforeEach(async () => {
-  for (const tabelle of ['order_items', 'orders', 'products', 'customers']) {
+  for (const tabelle of ['order_items', 'orders', 'auth_accounts', 'products', 'customers']) {
     await env.DB.prepare(`DELETE FROM ${tabelle}`).run();
   }
 
@@ -88,6 +89,17 @@ beforeEach(async () => {
   )
     .bind(ANGELEGT)
     .run();
+
+  await env.DB.prepare(
+    `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                credential_algorithm, credential_iterations,
+                                credential_salt, credential_verifier, is_active,
+                                failed_attempts, created_at, updated_at)
+     VALUES (?, 'admin-a@example.test', 'admin', NULL, 'pbkdf2-sha256', 600000,
+             ?, ?, 1, 0, ?, ?)`,
+  )
+    .bind(ACTOR, 'a'.repeat(32), 'b'.repeat(64), ANGELEGT, ANGELEGT)
+    .run();
 });
 
 describe('changeOrderStatus — der erlaubte Wechsel', () => {
@@ -98,6 +110,7 @@ describe('changeOrderStatus — der erlaubte Wechsel', () => {
       orderNumber: nummer(),
       target: 'confirmed',
       now: JETZT,
+      actorAccountId: ACTOR,
     });
 
     expect(ergebnis.outcome).toBe('changed');
@@ -110,7 +123,7 @@ describe('changeOrderStatus — der erlaubte Wechsel', () => {
   it('schreibt den Status tatsächlich nach D1', async () => {
     await bestellung('new');
 
-    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT });
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT, actorAccountId: ACTOR });
 
     expect((await zeile())['status']).toBe('confirmed');
   });
@@ -118,11 +131,35 @@ describe('changeOrderStatus — der erlaubte Wechsel', () => {
   it('setzt updated_at auf den übergebenen Zeitpunkt', async () => {
     await bestellung('new');
 
-    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT });
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT, actorAccountId: ACTOR });
 
     const nachher = await zeile();
-    expect(nachher['updated_at']).toBe(JETZT.toISOString());
-    expect(nachher['updated_at']).not.toBe(ANGELEGT);
+    expect(nachher['status_changed_by_account_id']).toBe(ACTOR);
+    expect(nachher['status_changed_at']).toBe(JETZT.toISOString());
+    expect(nachher['updated_at']).toBe(nachher['status_changed_at']);
+  });
+
+  it('ersetzt Actor und Zeitpunkt beim zweiten erfolgreichen Wechsel', async () => {
+    await bestellung('new');
+    await env.DB.prepare(
+      `INSERT INTO auth_accounts (id, login_identifier_normalized, role, customer_id,
+                                  credential_algorithm, credential_iterations,
+                                  credential_salt, credential_verifier, is_active,
+                                  failed_attempts, created_at, updated_at)
+       VALUES (8, 'admin-b@example.test', 'admin', NULL, 'pbkdf2-sha256', 600000,
+               ?, ?, 1, 0, ?, ?)`,
+    )
+      .bind('c'.repeat(32), 'd'.repeat(64), ANGELEGT, ANGELEGT)
+      .run();
+
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT, actorAccountId: ACTOR });
+    const spaeter = new Date('2026-08-25T10:45:00.000Z');
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'in_production', now: spaeter, actorAccountId: 8 });
+
+    const nachher = await zeile();
+    expect(nachher['status']).toBe('in_production');
+    expect(nachher['status_changed_by_account_id']).toBe(8);
+    expect(nachher['status_changed_at']).toBe(spaeter.toISOString());
   });
 
   /**
@@ -136,7 +173,7 @@ describe('changeOrderStatus — der erlaubte Wechsel', () => {
     await bestellung('new');
     const vorher = await zeile();
 
-    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT });
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT, actorAccountId: ACTOR });
     const nachher = await zeile();
 
     for (const spalte of [
@@ -160,7 +197,7 @@ describe('changeOrderStatus — der erlaubte Wechsel', () => {
     await bestellung('new');
     const vorher = await positionen();
 
-    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT });
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT, actorAccountId: ACTOR });
 
     expect(await positionen()).toEqual(vorher);
     expect(vorher[0]?.['unit_price_cents']).toBe(435);
@@ -170,7 +207,7 @@ describe('changeOrderStatus — der erlaubte Wechsel', () => {
   it('legt keine zweite Bestellung an', async () => {
     await bestellung('new');
 
-    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT });
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'confirmed', now: JETZT, actorAccountId: ACTOR });
 
     const row = await env.DB.prepare(`SELECT COUNT(*) AS n FROM orders`).first<{ n: number }>();
     expect(row?.n).toBe(1);
@@ -185,6 +222,7 @@ describe('changeOrderStatus — was nicht geht', () => {
       orderNumber: nummer('BUS-2026-999999'),
       target: 'confirmed',
       now: JETZT,
+      actorAccountId: ACTOR,
     });
 
     expect(ergebnis.outcome).toBe('unknown_order');
@@ -197,6 +235,7 @@ describe('changeOrderStatus — was nicht geht', () => {
       orderNumber: nummer(),
       target: 'in_production',
       now: JETZT,
+      actorAccountId: ACTOR,
     });
 
     expect(ergebnis.outcome).toBe('invalid_transition');
@@ -206,7 +245,7 @@ describe('changeOrderStatus — was nicht geht', () => {
     await bestellung('completed');
     const vorher = await zeile();
 
-    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'in_production', now: JETZT });
+    await changeOrderStatus(env.DB, { orderNumber: nummer(), target: 'in_production', now: JETZT, actorAccountId: ACTOR });
 
     expect(await zeile()).toEqual(vorher);
   });
@@ -219,6 +258,7 @@ describe('changeOrderStatus — was nicht geht', () => {
       orderNumber: nummer(),
       target: 'confirmed',
       now: JETZT,
+      actorAccountId: ACTOR,
     });
 
     expect(ergebnis.outcome).toBe('invalid_transition');
@@ -244,6 +284,7 @@ describe('changeOrderStatus — was nicht geht', () => {
           orderNumber: nummer(),
           target: nach,
           now: JETZT,
+          actorAccountId: ACTOR,
         });
 
         expect({ von, nach, outcome: ergebnis.outcome }).toEqual({
@@ -279,11 +320,15 @@ describe('changeOrderStatus — gleichzeitige Änderungen', () => {
       expectedStatus: 'new',
       newStatus: 'cancelled',
       updatedAt: JETZT.toISOString(),
+      actorAccountId: ACTOR,
+      statusChangedAt: JETZT.toISOString(),
     });
 
     expect(geschrieben).toBe(false);
     expect((await zeile())['status']).toBe('confirmed');
     expect((await zeile())['updated_at']).toBe(ANGELEGT);
+    expect((await zeile())['status_changed_by_account_id']).toBeNull();
+    expect((await zeile())['status_changed_at']).toBeNull();
   });
 
   it('schreibt, wenn der Ausgangsstatus noch stimmt', async () => {
@@ -294,6 +339,8 @@ describe('changeOrderStatus — gleichzeitige Änderungen', () => {
       expectedStatus: 'confirmed',
       newStatus: 'in_production',
       updatedAt: JETZT.toISOString(),
+      actorAccountId: ACTOR,
+      statusChangedAt: JETZT.toISOString(),
     });
 
     expect(geschrieben).toBe(true);
@@ -308,9 +355,29 @@ describe('changeOrderStatus — gleichzeitige Änderungen', () => {
       expectedStatus: 'confirmed',
       newStatus: 'in_production',
       updatedAt: JETZT.toISOString(),
+      actorAccountId: ACTOR,
+      statusChangedAt: JETZT.toISOString(),
     });
 
     expect(geschrieben).toBe(false);
+  });
+
+  it('hinterlässt bei einem DB-Fehler keinen halben Status- oder Auditstand', async () => {
+    await bestellung('confirmed');
+    const vorher = await zeile();
+
+    await expect(
+      updateOrderStatus(env.DB, {
+        orderNumber: NUMMER,
+        expectedStatus: 'confirmed',
+        newStatus: 'in_production',
+        updatedAt: JETZT.toISOString(),
+        actorAccountId: 999,
+        statusChangedAt: JETZT.toISOString(),
+      }),
+    ).rejects.toThrow(/FOREIGN KEY/i);
+
+    expect(await zeile()).toEqual(vorher);
   });
 
   /**
@@ -326,7 +393,7 @@ describe('changeOrderStatus — gleichzeitige Änderungen', () => {
   it('lässt bei zwei gleichzeitigen Versuchen genau einen durch', async () => {
     await bestellung('new');
 
-    const befehl = { orderNumber: nummer(), target: 'confirmed' as const, now: JETZT };
+    const befehl = { orderNumber: nummer(), target: 'confirmed' as const, now: JETZT, actorAccountId: ACTOR };
     const [a, b] = await Promise.all([
       changeOrderStatus(env.DB, befehl),
       changeOrderStatus(env.DB, befehl),

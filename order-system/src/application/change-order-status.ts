@@ -7,7 +7,7 @@ import { findOrderByNumber, updateOrderStatus } from '../infrastructure/d1/order
  * „Setze diese Bestellung auf jenen Status."
  *
  * Der erste SCHREIBENDE Adminvorgang des Systems — und bewusst der kleinste,
- * den es geben kann: eine Bestellung, eine Spalte, ein Zeitstempel.
+ * den es geben kann: eine Bestellung, ein Status und sein Last-Change-Audit.
  *
  * DIESE FUNKTION ENTSCHEIDET NICHT, OB SIE AUFGERUFEN WERDEN DARF.
  *
@@ -15,7 +15,9 @@ import { findOrderByNumber, updateOrderStatus } from '../infrastructure/d1/order
  * ausschließlich dort — dieselbe Trennung wie bei placeCafeOrder. Hier noch
  * einmal zu prüfen hieße, die Autorisierung an zwei Stellen zu führen, und
  * zwei Stellen weichen irgendwann voneinander ab. Der Parameter, über den
- * sich hier eine Rolle behaupten ließe, existiert deshalb gar nicht.
+ * sich hier eine Rolle behaupten ließe, existiert deshalb gar nicht. Die
+ * Actor-ID ist keine Behauptung aus dem Request, sondern ein Wert aus dem
+ * dort bereits validierten Admin-AuthContext.
  *
  * ES GIBT KEINE ZWEITE STATE MACHINE.
  *
@@ -76,13 +78,15 @@ export interface ChangeOrderStatusCommand {
   /** Der gewünschte Zielstatus, bereits als solcher erkannt. */
   readonly target: OrderStatus;
   readonly now: Date;
+  /** Konto-ID aus dem bereits validierten Admin-AuthContext. */
+  readonly actorAccountId: number;
 }
 
 export async function changeOrderStatus(
   db: D1Database,
   command: ChangeOrderStatusCommand,
 ): Promise<ChangeOrderStatusResult> {
-  const { orderNumber, target, now } = command;
+  const { orderNumber, target, now, actorAccountId } = command;
 
   const order = await findOrderByNumber(db, orderNumber.value);
   if (order === null) {
@@ -123,6 +127,8 @@ export async function changeOrderStatus(
     expectedStatus: order.status,
     newStatus: geaendert.status,
     updatedAt: geaendert.updatedAt,
+    actorAccountId,
+    statusChangedAt: geaendert.updatedAt,
   });
 
   /**

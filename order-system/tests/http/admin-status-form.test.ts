@@ -295,6 +295,8 @@ describe('Finaler Storno-POST', () => {
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe(`/admin?date=${TAG}`);
     expect(await status()).toBe('cancelled');
+    expect((await zeile())['status_changed_by_account_id']).toBe(2);
+    expect((await zeile())['status_changed_at']).toBe((await zeile())['updated_at']);
   });
 
   it('speichert nicht, wenn der Übergang seit der Bestätigungsseite ungültig wurde', async () => {

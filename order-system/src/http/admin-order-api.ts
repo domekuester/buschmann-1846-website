@@ -173,7 +173,12 @@ export async function changeOrderStatusEndpoint(
       return alsFormular ? fehlerRedirect('not_found', null) : nichtGefunden();
     }
 
-    const ergebnis = await changeOrderStatus(db, { orderNumber, target, now });
+    const ergebnis = await changeOrderStatus(db, {
+      orderNumber,
+      target,
+      now,
+      actorAccountId: wache.context.accountId,
+    });
 
     switch (ergebnis.outcome) {
       case 'changed':

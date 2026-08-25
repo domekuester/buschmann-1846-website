@@ -190,6 +190,13 @@ function bestellkarte(order: ProductionOrderView, csrfToken: string): string {
             <span aria-hidden="true"> · </span>
             <span class="marke-uebergabe">${escapeHtml(order.fulfillmentLabel)}</span>
           </p>
+          ${
+            order.lastStatusChange === null
+              ? ''
+              : `<p class="bestellung__status-audit">Zuletzt geändert: ${escapeHtml(
+                  order.lastStatusChange.changedAtLabel,
+                )} <span aria-hidden="true">·</span> ${escapeHtml(order.lastStatusChange.changedBy)}</p>`
+          }
           <ul class="bestellung__positionen">
 ${order.items.map(position).join('\n')}
           </ul>${order.note === null ? '' : notiz(order.note)}${aktionsflaeche(order, csrfToken)}

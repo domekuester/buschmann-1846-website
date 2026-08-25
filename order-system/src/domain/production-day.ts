@@ -77,6 +77,10 @@ export interface ProductionOrder {
   readonly status: OrderStatus;
   readonly fulfillmentType: FulfillmentType;
   readonly note: string | null;
+  readonly lastStatusChange: {
+    readonly changedAt: string;
+    readonly changedBy: string | null;
+  } | null;
   readonly items: readonly ProductionOrderItem[];
 }
 

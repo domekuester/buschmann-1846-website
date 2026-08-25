@@ -97,3 +97,21 @@ export function formatGermanDate(day: string): string {
   }
   return GERMAN_DATE.format(parsed);
 }
+
+const GERMAN_TIMESTAMP = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'Europe/Berlin',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+export function formatGermanTimestamp(timestamp: string): string {
+  const parsed = new Date(timestamp);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString() !== timestamp) {
+    throw new InvalidArgumentError('Der Zeitpunkt muss ein ISO-8601-UTC-Zeitstempel sein.');
+  }
+  return GERMAN_TIMESTAMP.format(parsed);
+}

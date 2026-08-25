@@ -46,6 +46,7 @@ function bestellung(
     status: options.status ?? 'confirmed',
     fulfillmentType: 'delivery',
     note: options.note ?? null,
+    lastStatusChange: null,
     items,
   };
 }
@@ -401,6 +402,7 @@ describe('aggregateProductionDay — Status und Fulfillment', () => {
       status: 'confirmed',
       fulfillmentType: 'delivery',
       note: null,
+      lastStatusChange: null,
       items: [position(1, 'Beispiel Käsekuchen', 3)],
     };
     const abholung: ProductionOrder = {
@@ -409,6 +411,7 @@ describe('aggregateProductionDay — Status und Fulfillment', () => {
       status: 'confirmed',
       fulfillmentType: 'pickup',
       note: null,
+      lastStatusChange: null,
       items: [position(1, 'Beispiel Käsekuchen', 4)],
     };
 
