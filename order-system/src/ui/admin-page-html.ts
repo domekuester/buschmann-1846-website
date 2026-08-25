@@ -41,6 +41,7 @@ export interface AdminPageView {
   csrfToken: string;
   /** Der aufbereitete Produktionstag. */
   day: ProductionDayView;
+  readonly statusMessage?: string | null;
 }
 
 export function renderAdminPage(view: AdminPageView): string {
@@ -50,6 +51,7 @@ export function renderAdminPage(view: AdminPageView): string {
     `
       ${renderDayHeading(view.day)}
       ${renderDayNavigation(view.day)}
+      ${view.statusMessage ? `<p class="banner statusmeldung" role="alert">${escapeHtml(view.statusMessage)}</p>` : ''}
       ${renderProductionSummary(view.day)}
       ${renderMetrics(view.day)}
       ${renderOrderBreakdown(view.day, view.csrfToken)}`,

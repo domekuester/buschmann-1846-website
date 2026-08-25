@@ -548,11 +548,20 @@ describe('renderOrderBreakdown — Statusaktionen', () => {
     expect(html).toContain('Bestätigen');
   });
 
-  it('erzeugt für jede erlaubte Aktion genau ein Formular', () => {
+  it('lässt normale Aktionen weiterhin als Ein-Klick-Formulare stehen', () => {
     const html = mitAktionen(BESTAETIGEN, STORNIEREN);
 
-    expect(html.match(/<form/g)).toHaveLength(2);
-    expect(html.match(/<button/g)).toHaveLength(2);
+    expect(html.match(/<form/g)).toHaveLength(1);
+    expect(html).toContain('<input type="hidden" name="status" value="confirmed">');
+  });
+
+  it('öffnet für Stornieren zuerst die Bestätigungsseite statt zu posten', () => {
+    const html = mitAktionen(STORNIEREN);
+
+    expect(html).toContain('href="/admin/orders/BUS-2026-000123/cancel"');
+    expect(html).toContain('>Stornieren<span class="hinweis">');
+    expect(html).not.toContain('<form');
+    expect(html).not.toContain('name="status" value="cancelled"');
   });
 
   it('erzeugt ohne erlaubte Aktion kein Formular und keine Aktionsfläche', () => {

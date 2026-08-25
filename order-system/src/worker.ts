@@ -9,6 +9,7 @@ import { toSafeResponse } from './http/error-boundary';
 import { createOrder } from './http/order-api';
 import { orderPage } from './http/order-page';
 import { productionDay } from './http/production-api';
+import { cancelOrderPage, matchCancelOrderPath } from './http/admin-cancel-page';
 import { methodNotAllowed, notFound } from './http/responses';
 import { privateHeaders } from './http/security';
 
@@ -108,6 +109,14 @@ export default {
           return methodNotAllowed('GET');
         }
         return await adminPage(env.DB, config, request, now);
+      }
+
+      const cancelOrderNumber = matchCancelOrderPath(pathname);
+      if (cancelOrderNumber !== null) {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await cancelOrderPage(env.DB, config, request, now, cancelOrderNumber);
       }
 
       if (pathname === '/api/auth/session') {

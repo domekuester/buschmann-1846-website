@@ -1043,6 +1043,9 @@ textarea[aria-invalid='true'] {
    und Schriftgröße, niemals in die Fläche, die ein Daumen treffen muss:
    getroffen wird sie in derselben Backstube wie alles andere. */
 .statustaste {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-height: var(--tap);
   padding: .4rem .9rem;
   font: inherit;
@@ -1054,6 +1057,7 @@ textarea[aria-invalid='true'] {
   border-radius: var(--radius);
   cursor: pointer;
   touch-action: manipulation;
+  text-decoration: none;
 }
 
 .statustaste:hover { background: var(--leinen); border-color: var(--champagner); }
@@ -1084,6 +1088,113 @@ textarea[aria-invalid='true'] {
 }
 
 .statustaste--abbruch:active { background: var(--fehler-grund); }
+
+/* ---------- Storno-Bestätigung (Phase 4B.1) ---------- */
+
+.stornobestaetigung {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 1.75rem var(--rand, 1rem) 3rem;
+}
+
+.stornobestaetigung__kicker {
+  margin: 0 0 .35rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.stornobestaetigung h1 {
+  margin: 0 0 1.5rem;
+  font-family: var(--serif);
+  font-size: clamp(1.6rem, 7vw, 2.15rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--navy);
+}
+
+.stornobestaetigung__daten {
+  margin: 0 0 1.25rem;
+  border-top: var(--spur);
+}
+
+.stornobestaetigung__daten div {
+  padding: .8rem 0;
+  border-bottom: var(--spur);
+}
+
+.stornobestaetigung__daten dt {
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.stornobestaetigung__daten dd {
+  margin: .15rem 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.stornobestaetigung__warnung {
+  margin: 0 0 1.5rem;
+  padding: .85rem .9rem;
+  color: var(--fehler);
+  background: var(--fehler-grund);
+  border: 1px solid rgba(141, 43, 28, .45);
+  border-left: 4px solid var(--fehler);
+  border-radius: var(--radius);
+}
+
+.stornobestaetigung__aktionen {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: .75rem;
+}
+
+.stornobestaetigung__aktionen form { margin: 0; }
+
+.stornobestaetigung__zurueck,
+.stornobestaetigung__zurueck:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap);
+  padding: .5rem .9rem;
+  color: var(--blau);
+  font-weight: 600;
+  text-align: center;
+  text-underline-offset: 3px;
+}
+
+.statustaste--final {
+  width: 100%;
+  color: #fff;
+  background: var(--fehler);
+  border-color: var(--fehler);
+}
+
+.statustaste--final:hover,
+.statustaste--final:active {
+  color: #fff;
+  background: #742216;
+  border-color: #742216;
+}
+
+.statusmeldung { margin: 0 0 1.5rem; }
+
+@media (min-width: 600px) {
+  .stornobestaetigung { padding-top: 2.5rem; }
+  .stornobestaetigung__aktionen {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .statustaste--final { width: auto; }
+}
 
 /* ---------- Breiten ---------- */
 

@@ -76,6 +76,7 @@ export async function adminPage(
    * die Bestellseite seit Phase 2.
    */
   const tag = angefragt ?? plusDays(businessDay(now), 1);
+  const statusMessage = readStatusMessage(request);
 
   const seite: AdminPageView = {
     loginIdentifier: wache.context.loginIdentifier,
@@ -87,6 +88,7 @@ export async function adminPage(
       products: [],
       orders: [],
     }),
+    statusMessage,
   };
 
   let produktionstag;
@@ -118,6 +120,22 @@ export async function adminPage(
     renderAdminPage({ ...seite, day: toProductionDayView(produktionstag) }),
     { status: 200, headers: pageHeaders() },
   );
+}
+
+const STATUS_MESSAGES = {
+  conflict: 'Der Status wurde zwischenzeitlich geändert. Bitte prüfe die Bestellung noch einmal.',
+  invalid_transition: 'Diese Statusänderung ist nicht mehr möglich.',
+  not_found: 'Die Bestellung konnte nicht gefunden werden.',
+  internal: 'Die Änderung konnte gerade nicht gespeichert werden.',
+} as const;
+
+function readStatusMessage(request: Request): string | null {
+  const values = new URL(request.url).searchParams.getAll('status_error');
+  if (values.length !== 1) return null;
+  const code = values[0] ?? '';
+  return Object.prototype.hasOwnProperty.call(STATUS_MESSAGES, code)
+    ? STATUS_MESSAGES[code as keyof typeof STATUS_MESSAGES]
+    : null;
 }
 
 /**

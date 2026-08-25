@@ -218,7 +218,7 @@ function aktionsflaeche(order: ProductionOrderView, csrfToken: string): string {
 
   return `
           <div class="bestellung__aktionen">
-${order.actions.map((aktion) => statusFormular(order, aktion, csrfToken)).join('\n')}
+${order.actions.map((aktion) => statusAktion(order, aktion, csrfToken)).join('\n')}
           </div>`;
 }
 
@@ -257,19 +257,25 @@ ${order.actions.map((aktion) => statusFormular(order, aktion, csrfToken)).join('
  * die Backliste ihre Tabellenbeschriftung für Screenreader trägt; eine zweite
  * Utility mit denselben Regeln wäre eine Kopie ohne Gewinn.
  */
-function statusFormular(
+function statusAktion(
   order: ProductionOrderView,
   action: StatusActionView,
   csrfToken: string,
 ): string {
-  const klasse = action.destructive ? 'statustaste statustaste--abbruch' : 'statustaste';
+  if (action.destructive) {
+    return `            <a class="statustaste statustaste--abbruch" href="/admin/orders/${escapeHtml(
+      encodeURIComponent(order.orderNumber),
+    )}/cancel">${escapeHtml(action.label)}<span class="hinweis"> — Bestellung ${escapeHtml(
+      order.orderNumber,
+    )}</span></a>`;
+  }
 
   return `            <form class="statusaktion" method="post" action="/api/admin/orders/${escapeHtml(
     encodeURIComponent(order.orderNumber),
   )}/status">
               <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
               <input type="hidden" name="status" value="${escapeHtml(action.target)}">
-              <button type="submit" class="${klasse}">${escapeHtml(action.label)}<span class="hinweis"> — Bestellung ${escapeHtml(
+              <button type="submit" class="statustaste">${escapeHtml(action.label)}<span class="hinweis"> — Bestellung ${escapeHtml(
                 order.orderNumber,
               )}</span></button>
             </form>`;

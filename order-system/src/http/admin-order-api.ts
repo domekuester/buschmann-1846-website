@@ -4,10 +4,6 @@ import { isCalendarDay } from '../domain/clock';
 import { OrderNumber } from '../domain/order-number';
 import { isOrderStatus, type OrderStatus } from '../domain/order-status';
 import {
-  renderStatusChangeFailurePage,
-  type StatusChangeFailure,
-} from '../ui/admin-page-html';
-import {
   ForbiddenError,
   UnauthenticatedError,
   assertCsrf,
@@ -16,7 +12,7 @@ import {
 } from './guard';
 import { RequestError, readBody, readJsonObject } from './json-body';
 import { json } from './responses';
-import { pageHeaders, privateHeaders } from './security';
+import { privateHeaders } from './security';
 
 /**
  * POST /api/admin/orders/:orderNumber/status
@@ -174,7 +170,7 @@ export async function changeOrderStatusEndpoint(
      */
     const orderNumber = OrderNumber.parse(orderNumberSegment);
     if (orderNumber === null) {
-      return alsFormular ? fehlerseite('unknown_order', null, 404) : nichtGefunden();
+      return alsFormular ? fehlerRedirect('not_found', null) : nichtGefunden();
     }
 
     const ergebnis = await changeOrderStatus(db, { orderNumber, target, now });
@@ -193,7 +189,7 @@ export async function changeOrderStatusEndpoint(
             );
 
       case 'unknown_order':
-        return alsFormular ? fehlerseite('unknown_order', null, 404) : nichtGefunden();
+        return alsFormular ? fehlerRedirect('not_found', null) : nichtGefunden();
 
       /**
        * 409 und nicht 400: Die Anfrage ist in Ordnung, sie passt nur nicht
@@ -208,7 +204,7 @@ export async function changeOrderStatusEndpoint(
        */
       case 'invalid_transition':
         return alsFormular
-          ? fehlerseite('invalid_transition', ergebnis.fulfillmentDate, 409)
+          ? fehlerRedirect('invalid_transition', ergebnis.fulfillmentDate)
           : json({ error: 'invalid_transition' }, 409, privateHeaders());
 
       /**
@@ -219,13 +215,13 @@ export async function changeOrderStatusEndpoint(
        */
       case 'conflict':
         return alsFormular
-          ? fehlerseite('conflict', ergebnis.fulfillmentDate, 409)
+          ? fehlerRedirect('conflict', ergebnis.fulfillmentDate)
           : json({ error: 'conflict' }, 409, privateHeaders());
     }
   } catch (error) {
     if (error instanceof RequestError) {
       return alsFormular
-        ? fehlerseite('unavailable', null, error.status)
+        ? fehlerRedirect('internal', null)
         : json({ error: error.code }, error.status, privateHeaders());
     }
 
@@ -262,7 +258,7 @@ export async function changeOrderStatusEndpoint(
      * zuständig — das `throw` ist der Normalfall.
      */
     if (alsFormular) {
-      return fehlerseite('unavailable', null, 500);
+      return fehlerRedirect('internal', null);
     }
     throw error;
   }
@@ -315,14 +311,14 @@ function zurueckZumProduktionstag(fulfillmentDate: string): Response {
  * derselbe wie im JSON-Weg: 404 bleibt 404, 409 bleibt 409. Eine Seite ist
  * eine andere Darstellung und keine andere Semantik.
  */
-function fehlerseite(
-  reason: StatusChangeFailure,
-  day: string | null,
-  status: number,
-): Response {
-  return new Response(renderStatusChangeFailurePage(reason, day), {
-    status,
-    headers: pageHeaders(),
+type StatusErrorCode = 'conflict' | 'invalid_transition' | 'not_found' | 'internal';
+
+function fehlerRedirect(code: StatusErrorCode, day: string | null): Response {
+  const base = day !== null && isCalendarDay(day) ? `/admin?date=${day}` : '/admin?';
+  const separator = base.endsWith('?') ? '' : '&';
+  return new Response(null, {
+    status: 303,
+    headers: privateHeaders({ location: `${base}${separator}status_error=${code}` }),
   });
 }
 

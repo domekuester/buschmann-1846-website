@@ -166,6 +166,38 @@ describe('GET /admin — Zugriff', () => {
   });
 });
 
+describe('GET /admin — Statusfehlermeldung nach PRG', () => {
+  it.each([
+    ['conflict', 'Der Status wurde zwischenzeitlich geändert. Bitte prüfe die Bestellung noch einmal.'],
+    ['invalid_transition', 'Diese Statusänderung ist nicht mehr möglich.'],
+    ['not_found', 'Die Bestellung konnte nicht gefunden werden.'],
+    ['internal', 'Die Änderung konnte gerade nicht gespeichert werden.'],
+  ])('zeigt den allowlist-Code %s als verständliche Meldung', async (code, message) => {
+    const response = await call(
+      `/admin?date=2026-08-25&status_error=${code}`,
+      await anmelden('admin@example.test', PASSWORT),
+    );
+    const text = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(text).toContain(message);
+    expect(text).not.toContain(`status_error=${code}`);
+  });
+
+  it('ignoriert unbekannte und mehrfach angegebene Fehlercodes ohne sie zu spiegeln', async () => {
+    const cookie = await anmelden('admin@example.test', PASSWORT);
+    for (const query of [
+      'status_error=<script>alert(1)</script>',
+      'status_error=conflict&status_error=internal',
+    ]) {
+      const text = await (await call(`/admin?date=2026-08-25&${query}`, cookie)).text();
+
+      expect(text).not.toContain('role="alert"');
+      expect(text).not.toContain('<script>alert(1)</script>');
+    }
+  });
+});
+
 describe('GET /admin — Inhalt', () => {
   /**
    * Phase 3C zeigt Produktionsdaten — aber ausdruecklich KEINE Finanz- und

@@ -487,8 +487,8 @@ describe('Bestellungen', () => {
     expect(text).not.toContain('Testcafé Storniert');
     expect(text).not.toContain('Abgeschlossen');
     expect(text).not.toContain('Storniert');
-    expect(text).not.toContain('99');
-    expect(text).not.toContain('77');
+    expect(text).not.toContain('<span class="backliste__zahl">99</span>');
+    expect(text).not.toContain('<span class="backliste__zahl">77</span>');
   });
 
   it('zeigt nur Bestellungen des angefragten Tages', async () => {
@@ -1024,7 +1024,8 @@ describe('Statusaktionen', () => {
     expect(text).toContain('Bestätigen');
     expect(text).toContain('Stornieren');
     expect(text).toContain('value="confirmed"');
-    expect(text).toContain('value="cancelled"');
+    expect(text).toContain('href="/admin/orders/BUS-2026-000123/cancel"');
+    expect(text).not.toContain('value="cancelled"');
     expect(text).not.toContain('value="in_production"');
     expect(text).not.toContain('value="completed"');
   });
@@ -1069,7 +1070,7 @@ describe('Statusaktionen', () => {
    * Wert, nicht der einer anderen Sitzung, nicht leer. Ohne diese Prüfung
    * bliebe der Test grün, während jeder Klick an der CSRF-Wache scheitert.
    */
-  it('setzt den CSRF-Token der eigenen Sitzung in jedes Statusformular', async () => {
+  it('setzt den CSRF-Token der eigenen Sitzung in Abmeldung und Ein-Klick-Statusformular', async () => {
     await seedBestellung({
       id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'new',
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
@@ -1088,7 +1089,7 @@ describe('Statusaktionen', () => {
     ).text();
 
     const token = [...text.matchAll(/name="csrf_token" value="([^"]+)"/g)].map((t) => t[1]);
-    expect(token.length).toBeGreaterThanOrEqual(3); // Abmeldung + zwei Aktionen
+    expect(token.length).toBeGreaterThanOrEqual(2); // Abmeldung + normale Statusaktion
     for (const wert of token) {
       expect(wert).toBe(sitzung.csrfToken);
     }

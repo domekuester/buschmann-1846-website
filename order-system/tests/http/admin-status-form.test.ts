@@ -32,6 +32,7 @@ const NUMMER = 'BUS-2026-000042';
 const ZWEITE = 'BUS-2026-000043';
 const TAG = '2026-09-26';
 const PFAD = `/api/admin/orders/${NUMMER}/status`;
+const STORNO_BESTAETIGUNG = `/admin/orders/${NUMMER}/cancel`;
 
 const CONFIG: AppConfig = { environment: 'production', appOrigin: ORIGIN, pepper: PEPPER };
 
@@ -216,6 +217,98 @@ beforeEach(async () => {
   Object.assign(admin, await anmelden('admin@example.test', PASSWORT));
 
   await bestellung(42, NUMMER, 'new');
+});
+
+describe('GET Storno-Bestätigung — erster Klick', () => {
+  it('ändert die Bestellung nicht', async () => {
+    const vorher = await zeile();
+
+    const response = await seite(STORNO_BESTAETIGUNG);
+
+    expect(response.status).toBe(200);
+    expect(await zeile()).toEqual(vorher);
+  });
+
+  it('zeigt ausschließlich die nötigen Bestelldaten und den finalen POST', async () => {
+    const response = await seite(STORNO_BESTAETIGUNG);
+    const text = await response.text();
+
+    expect(text).toContain('Bestellung wirklich stornieren?');
+    expect(text).toContain(NUMMER);
+    expect(text).toContain('Testcafé Nord');
+    expect(text).toContain(`href="/admin?date=${TAG}"`);
+    expect(text).toContain(`action="${PFAD}"`);
+    expect(text).toContain('<input type="hidden" name="status" value="cancelled">');
+    expect(text).toContain('<button type="submit"');
+    expect(text).toContain('Bestellung stornieren');
+    for (const sensitiv of ['1740', 'demo-passwort', 'account_id', 'customer_id', 'session']) {
+      expect(text).not.toContain(sensitiv);
+    }
+  });
+
+  it('ist nur für Admins erreichbar', async () => {
+    expect((await seite(STORNO_BESTAETIGUNG, cafe.cookie)).status).toBe(403);
+  });
+
+  it('schickt nicht angemeldete Aufrufer zum Login', async () => {
+    const response = await seite(STORNO_BESTAETIGUNG, '');
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('/login');
+  });
+
+  it('trägt no-store', async () => {
+    expect((await seite(STORNO_BESTAETIGUNG)).headers.get('cache-control')).toBe('no-store');
+  });
+
+  it('zeigt keine Bestätigung, wenn canTransitionTo den Übergang nicht mehr erlaubt', async () => {
+    await env.DB.prepare(`UPDATE orders SET status = 'completed' WHERE id = 42`).run();
+
+    const response = await seite(STORNO_BESTAETIGUNG);
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(
+      `/admin?date=${TAG}&status_error=invalid_transition`,
+    );
+    expect(await status()).toBe('completed');
+  });
+});
+
+describe('Finaler Storno-POST', () => {
+  it('benötigt den gültigen CSRF-Token', async () => {
+    const response = await absenden('cancelled', { csrf: null });
+
+    expect(response.status).toBe(403);
+    expect(await status()).toBe('new');
+  });
+
+  it('benötigt den korrekten Origin', async () => {
+    const response = await absenden('cancelled', { origin: 'https://angreifer.test' });
+
+    expect(response.status).toBe(403);
+    expect(await status()).toBe('new');
+  });
+
+  it('setzt über die bestehende Mutation tatsächlich cancelled', async () => {
+    const response = await absenden('cancelled');
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(`/admin?date=${TAG}`);
+    expect(await status()).toBe('cancelled');
+  });
+
+  it('speichert nicht, wenn der Übergang seit der Bestätigungsseite ungültig wurde', async () => {
+    expect((await seite(STORNO_BESTAETIGUNG)).status).toBe(200);
+    await env.DB.prepare(`UPDATE orders SET status = 'completed' WHERE id = 42`).run();
+
+    const response = await absenden('cancelled');
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(
+      `/admin?date=${TAG}&status_error=invalid_transition`,
+    );
+    expect(await status()).toBe('completed');
+  });
 });
 
 describe('Formular-POST — der erlaubte Weg', () => {
@@ -422,7 +515,8 @@ describe('Formular-POST — wer nicht darf', () => {
     for (const unsinn of ['geliefert', 'CONFIRMED', ' confirmed', '', 'null']) {
       const response = await absenden(unsinn);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(303);
+      expect(response.headers.get('location')).toBe('/admin?status_error=internal');
       await unveraendert();
     }
   });
@@ -441,7 +535,8 @@ describe('Formular-POST — wer nicht darf', () => {
       umgebung(),
     );
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('/admin?status_error=internal');
     await unveraendert();
   });
 });
@@ -454,23 +549,40 @@ describe('Formular-POST — wer nicht darf', () => {
  * Anzeigefehler und klickt noch einmal. Es gibt deshalb eine eigene Antwort,
  * und sie sagt in einem Satz, dass NICHTS geändert wurde.
  */
-describe('Formular-POST — kontrollierte Fehler', () => {
-  it('antwortet auf einen unmöglichen Übergang mit 409 und einer Seite', async () => {
+describe('Formular-POST — kontrollierte Fehler mit PRG', () => {
+  it('leitet einen unmöglichen Übergang mit 303 und festem Fehlercode um', async () => {
     await env.DB.prepare(`UPDATE orders SET status = 'completed' WHERE id = 42`).run();
 
     const response = await absenden('in_production');
 
-    expect(response.status).toBe(409);
-    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(
+      `/admin?date=${TAG}&status_error=invalid_transition`,
+    );
   });
 
-  it('sagt bei einem unmöglichen Übergang deutsch, dass nichts geändert wurde', async () => {
+  it('zeigt die verständliche Meldung erst nach dem Redirect-GET', async () => {
     await env.DB.prepare(`UPDATE orders SET status = 'completed' WHERE id = 42`).run();
 
-    const text = await (await absenden('in_production')).text();
+    const post = await absenden('in_production');
+    const get = await seite(post.headers.get('location') ?? '');
+    const text = await get.text();
 
-    expect(text).toContain('nicht geändert');
-    expect(text).toContain('/admin?date=');
+    expect(get.status).toBe(200);
+    expect(text).toContain('Diese Statusänderung ist nicht mehr möglich.');
+  });
+
+  it('wiederholt beim Reload nach einem Fehler keinen POST', async () => {
+    await env.DB.prepare(`UPDATE orders SET status = 'completed' WHERE id = 42`).run();
+    const post = await absenden('in_production');
+    const ziel = post.headers.get('location') ?? '';
+
+    const firstGet = await seite(ziel);
+    const secondGet = await seite(ziel);
+
+    expect(firstGet.status).toBe(200);
+    expect(secondGet.status).toBe(200);
+    expect(await status()).toBe('completed');
   });
 
   it('schreibt bei einem unmöglichen Übergang nichts', async () => {
@@ -492,46 +604,40 @@ describe('Formular-POST — kontrollierte Fehler', () => {
 
     const spaet = await absenden('confirmed');
 
-    expect(spaet.status).toBe(409);
+    expect(spaet.status).toBe(303);
+    expect(spaet.headers.get('location')).toBe(
+      `/admin?date=${TAG}&status_error=invalid_transition`,
+    );
     expect(await status()).toBe('in_production');
   });
 
   it('lässt von zwei gleichzeitigen Formularen genau eines durch', async () => {
     const [a, b] = await Promise.all([absenden('confirmed'), absenden('confirmed')]);
 
-    expect([a.status, b.status].sort()).toEqual([303, 409]);
+    expect([a.status, b.status]).toEqual([303, 303]);
+    expect([a.headers.get('location'), b.headers.get('location')]).toContain(
+      `/admin?date=${TAG}&status_error=conflict`,
+    );
     expect(await status()).toBe('confirmed');
   });
 
-  it('erklärt den Konflikt und bietet den Weg zurück an', async () => {
-    await absenden('confirmed');
-    await absenden('in_production');
-
-    const text = await (await absenden('confirmed')).text();
-
-    expect(text).toContain('nicht geändert');
-    expect(text).toContain(`/admin?date=${TAG}`);
-    expect(text).toContain('Buschmann');
-  });
-
-  it('antwortet auf eine unbekannte Bestellung mit 404 und einer Seite', async () => {
+  it('leitet eine unbekannte Bestellung ohne sensitive Daten im Ziel um', async () => {
     const response = await absenden('confirmed', {
       pfad: '/api/admin/orders/BUS-2026-999999/status',
     });
 
-    expect(response.status).toBe(404);
-    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
-    expect(await response.text()).toContain('/admin');
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('/admin?status_error=not_found');
+    expect(response.headers.get('location')).not.toContain('BUS-2026-999999');
   });
 
   it('gibt in keiner Fehlerseite technische Einzelheiten preis', async () => {
     await env.DB.prepare(`UPDATE orders SET total_amount_cents = 9999 WHERE id = 42`).run();
 
     const response = await absenden('confirmed');
-    const text = await response.text();
-
-    expect(response.status).toBe(500);
-    expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
+    expect(response.status).toBe(303);
+    const ziel = response.headers.get('location') ?? '';
+    expect(ziel).toBe('/admin?status_error=internal');
     for (const verboten of [
       'SELECT',
       'UPDATE',
@@ -544,11 +650,11 @@ describe('Formular-POST — kontrollierte Fehler', () => {
       admin.csrf,
       admin.cookie,
     ]) {
-      expect(text).not.toContain(verboten);
+      expect(ziel).not.toContain(verboten);
     }
   });
 
-  it('setzt no-store auf jede Fehlerseite', async () => {
+  it('setzt no-store auf jede Fehlerweiterleitung', async () => {
     await env.DB.prepare(`UPDATE orders SET status = 'cancelled' WHERE id = 42`).run();
 
     const antworten = [
@@ -564,12 +670,12 @@ describe('Formular-POST — kontrollierte Fehler', () => {
     }
   });
 
-  it('nennt in keiner Fehlerseite den CSRF-Token', async () => {
+  it('nennt in keiner Fehlerweiterleitung den CSRF-Token', async () => {
     await env.DB.prepare(`UPDATE orders SET status = 'completed' WHERE id = 42`).run();
 
-    const text = await (await absenden('in_production')).text();
+    const ziel = (await absenden('in_production')).headers.get('location') ?? '';
 
-    expect(text).not.toContain(admin.csrf);
+    expect(ziel).not.toContain(admin.csrf);
   });
 });
 
