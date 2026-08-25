@@ -1,9 +1,19 @@
 import { describe, expect, it } from 'vitest';
-import { renderAdminCatalogPage } from '../../src/ui/admin-catalog-html';
+import { renderAdminCatalogPage, type AdminCatalogPageView } from '../../src/ui/admin-catalog-html';
 
-const VIEW = {
+/**
+ * Seit Phase 5D trägt dieselbe Seite einen zweiten Bereich. Diese Datei prüft
+ * unverändert den ERSTEN — die read-only Katalogpreise; der Zuordnungsbereich
+ * hat seine eigene Datei (admin-catalog-link-html.test.ts). Die drei neuen
+ * Felder stehen hier leer, damit genau das sichtbar bleibt: Der Preisbereich
+ * hängt an keinem von ihnen.
+ */
+const VIEW: AdminCatalogPageView = {
   loginIdentifier: 'admin@example.test',
   csrfToken: 'csrf-testwert',
+  productLinks: [],
+  catalogChoices: [],
+  noticeCode: null,
   products: [
     {
       name: 'Fiktiver Kuchen',
@@ -93,11 +103,7 @@ describe('Admin-Katalog HTML', () => {
   });
 
   it('benutzt das gemeinsame Listenmuster der Adminseiten', () => {
-    const html = renderAdminCatalogPage({
-      loginIdentifier: 'admin@example.test',
-      csrfToken: 'fiktiver-csrf-token',
-      products: [],
-    });
+    const html = renderAdminCatalogPage({ ...VIEW, products: [] });
     expect(html).toContain('class="bereichskopf"');
     expect(html).toContain('class="leerzustand"');
   });

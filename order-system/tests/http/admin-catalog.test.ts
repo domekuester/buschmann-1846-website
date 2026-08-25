@@ -45,8 +45,8 @@ async function call(path: string, cookie: string | null = null): Promise<Respons
 
 beforeEach(async () => {
   for (const table of [
-    'catalog_product_prices', 'catalog_products', 'order_items', 'orders',
-    'auth_sessions', 'auth_accounts', 'products', 'customers',
+    'order_items', 'orders', 'auth_sessions', 'auth_accounts',
+    'products', 'catalog_product_prices', 'catalog_products', 'customers',
   ]) await env.DB.prepare(`DELETE FROM ${table}`).run();
 
   await env.DB.prepare(
@@ -80,6 +80,21 @@ beforeEach(async () => {
     ).bind(NOW, NOW),
   ]);
 });
+
+/**
+ * Zwei bestellbare Produkte für den Zuordnungsbereich aus Phase 5D: eines
+ * bereits mit dem Katalog verknüpft, eines bewusst nicht. Die 99999 in
+ * price_cents ist Absicht — verwendet irgendjemand den alten Einheitspreis
+ * doch noch, fällt der Betrag in jeder Zusicherung auf.
+ */
+async function seedBestellprodukte(): Promise<void> {
+  await env.DB.prepare(
+    `INSERT INTO products (id, name, price_cents, unit, is_active, sort_order,
+                           catalog_product_id, created_at, updated_at)
+     VALUES (1, 'Bestellbarer Kuchen', 99999, 'Stück', 1, 10, 1, ?1, ?1),
+            (2, 'Bestellbares Gebäck', 99999, 'Stück', 1, 20, NULL, ?1, ?1)`,
+  ).bind(NOW).run();
+}
 
 describe('GET /admin/catalog', () => {
   it('zeigt einem Admin Sortiment, Einheit, Variante und Preise', async () => {
@@ -136,5 +151,175 @@ describe('GET /admin/catalog', () => {
     const response = await call('/admin', await login('admin@example.test', 'fiktives-admin-passwort-123'));
     expect(response.status).toBe(200);
     expect(await response.text()).toContain('href="/admin/catalog"');
+  });
+});
+
+/**
+ * DER ZUORDNUNGSBEREICH AUF DER ECHTEN SEITE — §26 des Auftrags.
+ *
+ * Die Bausteine sind bereits einzeln geprüft (admin-catalog-link-html.test.ts);
+ * hier geht es um die Seite, wie der Worker sie ausliefert: mit echten Daten
+ * aus D1, echten Kopfzeilen und echter Rollenprüfung.
+ */
+describe('GET /admin/catalog — Zuordnungsbereich (Phase 5D)', () => {
+  async function seite(): Promise<{ status: number; html: string; headers: Headers }> {
+    const response = await call('/admin/catalog', await login('admin@example.test', 'fiktives-admin-passwort-123'));
+    return { status: response.status, html: await response.text(), headers: response.headers };
+  }
+
+  /** §26.19 und §26.20 */
+  it('bleibt für den Admin 200 und zeigt den Zuordnungsbereich', async () => {
+    await seedBestellprodukte();
+    const { status, html } = await seite();
+
+    expect(status).toBe(200);
+    expect(html).toContain('Bestellprodukte verknüpfen');
+    expect(html).toContain('id="zuordnung"');
+  });
+
+  /** §26.21 und §26.22 */
+  it('zeigt jedes Bestellprodukt mit seiner aktuellen Zuordnung', async () => {
+    await seedBestellprodukte();
+    const { html } = await seite();
+
+    expect(html).toContain('Bestellbarer Kuchen');
+    expect(html).toContain('Bestellbares Gebäck');
+    expect(html).toContain('Verknüpft');
+    expect(html).toContain('Fiktiver Kuchen · Ring · 26 cm Ring');
+  });
+
+  /** §26.23 */
+  it('sagt bei einem unverknüpften Produkt „Nicht verknüpft"', async () => {
+    await seedBestellprodukte();
+    expect((await seite()).html).toContain('Nicht verknüpft');
+  });
+
+  /** §26.24 — die Optionen sind aus Name, Variante und Einheit gebildet. */
+  it('beschriftet die Katalogoptionen eindeutig', async () => {
+    await seedBestellprodukte();
+    const { html } = await seite();
+
+    expect(html).toContain('<option value="1"');
+    expect(html).toContain('Fiktives Gebäck · 100 g');
+  });
+
+  /** §5 — ein bereits vergebenes Katalogprodukt steht nicht in fremder Auswahl. */
+  it('bietet dem zweiten Produkt das belegte Katalogprodukt nicht an', async () => {
+    await seedBestellprodukte();
+    const { html } = await seite();
+
+    const start = html.indexOf('action="/api/admin/products/2/catalog-link"');
+    const form = html.slice(start, html.indexOf('</form>', start));
+    expect(form).not.toContain('<option value="1"');
+    expect(form).toContain('<option value="2"');
+  });
+
+  /** §20 */
+  it('zeigt die operative Zusammenfassung', async () => {
+    await seedBestellprodukte();
+    const { html } = await seite();
+
+    expect(html).toContain('2 Bestellprodukte');
+    expect(html).toContain('1 verknüpft');
+    expect(html).toContain('1 nicht verknüpft');
+  });
+
+  /** §26.25 */
+  it('zeigt die Erfolgsmeldung nach der Weiterleitung', async () => {
+    await seedBestellprodukte();
+    const response = await call(
+      '/admin/catalog?notice=saved',
+      await login('admin@example.test', 'fiktives-admin-passwort-123'),
+    );
+    const html = await response.text();
+
+    expect(html).toContain('Die Zuordnung wurde gespeichert.');
+    expect(html).toContain('zuordnungsmeldung--erfolg');
+  });
+
+  /** §26.26 */
+  it('erklärt den Konflikt verständlich und ohne Technik', async () => {
+    await seedBestellprodukte();
+    const response = await call(
+      '/admin/catalog?notice=catalog_product_taken',
+      await login('admin@example.test', 'fiktives-admin-passwort-123'),
+    );
+    const html = await response.text();
+
+    expect(html).toContain('gehört bereits zu einem anderen Bestellprodukt');
+    for (const wort of ['UNIQUE', 'SQLITE', 'D1_ERROR', 'idx_products_catalog_product']) {
+      expect(html).not.toContain(wort);
+    }
+  });
+
+  it('zeigt einen erfundenen Meldungscode gar nicht erst an', async () => {
+    await seedBestellprodukte();
+    const response = await call(
+      '/admin/catalog?notice=%3Cscript%3Ealert(1)%3C/script%3E',
+      await login('admin@example.test', 'fiktives-admin-passwort-123'),
+    );
+    const html = await response.text();
+
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).not.toContain('&lt;script&gt;');
+  });
+
+  /** §26.27 */
+  it('escaped dynamische Produktnamen', async () => {
+    await env.DB.prepare(
+      `INSERT INTO products (id, name, price_cents, unit, is_active, sort_order, created_at, updated_at)
+       VALUES (1, '<img src=x onerror=alert(1)>', 99999, 'Stück', 1, 10, ?1, ?1)`,
+    ).bind(NOW).run();
+    const { html } = await seite();
+
+    expect(html).not.toContain('<img src=x');
+    expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
+  });
+
+  /** §26.28 und §26.29 */
+  it('behält no-store und die Security Header', async () => {
+    await seedBestellprodukte();
+    const { headers } = await seite();
+
+    expect(headers.get('cache-control')).toBe('no-store');
+    expect(headers.get('content-security-policy')).toContain("default-src 'none'");
+    expect(headers.get('x-frame-options')).toBe('DENY');
+    expect(headers.get('x-content-type-options')).toBe('nosniff');
+  });
+
+  /** §26.30 */
+  it('gibt weder Zugangsdaten noch überflüssige interne Werte preis', async () => {
+    await seedBestellprodukte();
+    const { html } = await seite();
+
+    for (const forbidden of [
+      'credential_', 'token_hash', 'session_id', 'account_id',
+      'price_cents', '99999', 'source_key', 'fixture:',
+    ]) {
+      expect(html).not.toContain(forbidden);
+    }
+  });
+
+  /** §26 in Verbindung mit §16 — ein Customer sieht den Bereich gar nicht. */
+  it('zeigt einem Customer den Zuordnungsbereich nicht', async () => {
+    await seedBestellprodukte();
+    const response = await call('/admin/catalog', await login('testcafe', 'fiktive-kunden-pin-123'));
+    const html = await response.text();
+
+    expect(response.status).toBe(403);
+    expect(html).not.toContain('Bestellprodukte verknüpfen');
+    expect(html).not.toContain('catalog-link');
+  });
+
+  it('kommt ohne JavaScript aus', async () => {
+    await seedBestellprodukte();
+    const { html } = await seite();
+
+    expect(html).not.toContain('<script');
+    expect(html).not.toMatch(/\son(click|change|submit)=/);
+  });
+
+  it('zeigt einen klaren Leerzustand, solange es keine Bestellprodukte gibt', async () => {
+    expect((await seite()).html).toContain('Noch keine Bestellprodukte');
   });
 });

@@ -7,6 +7,10 @@ import {
   changeCustomerPriceGroupEndpoint,
   matchCustomerPriceListPath,
 } from './http/admin-customer-api';
+import {
+  changeProductCatalogLinkEndpoint,
+  matchProductCatalogLinkPath,
+} from './http/admin-product-catalog-api';
 import { loginPage, loginSubmit, logout } from './http/auth-routes';
 import { requireSession } from './http/guard';
 import { sessionInfo } from './http/session-api';
@@ -62,6 +66,14 @@ import { privateHeaders } from './http/security';
  *                      CSRF-Token, danach 303 zurück auf die Kundenliste. Er
  *                      wählt KEINEN Bestellpreis: Das bestehende Pricing
  *                      bleibt in dieser Phase unberührt.
+ *   POST /api/admin/products/:productId/catalog-link
+ *                      die Verknüpfung eines bestellbaren Produkts mit seinem
+ *                      Katalogprodukt. Der dritte schreibende Adminvorgang —
+ *                      Origin, Rolle, CSRF-Token, danach 303 zurück auf den
+ *                      Katalog. Er schreibt AUSSCHLIESSLICH
+ *                      products.catalog_product_id und keinen Preis: Welchen
+ *                      Preis ein verknüpftes Produkt hat, entscheidet
+ *                      unverändert der Resolver aus Phase 5C.
  *   GET  /bestellen    die Bestellseite. Das Café kommt aus der Sitzung, nicht
  *                      mehr aus einem Link.
  *   POST /api/orders   die Bestellung. Sitzung, Origin und CSRF-Token.
@@ -204,6 +216,25 @@ export default {
           request,
           now,
           customerIdSegment,
+        );
+      }
+
+      /**
+       * Die dritte Route mit einem veränderlichen Pfadteil — erkannt von der
+       * Datei, die auch den Endpunkt enthält. Die 405 trägt privateHeaders(),
+       * damit auch die abweisende Antwort no-store trägt.
+       */
+      const productIdSegment = matchProductCatalogLinkPath(pathname);
+      if (productIdSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await changeProductCatalogLinkEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          productIdSegment,
         );
       }
 

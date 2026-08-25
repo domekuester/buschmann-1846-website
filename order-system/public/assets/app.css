@@ -834,7 +834,8 @@ textarea[aria-invalid='true'] {
 
 /* Die eine Zahl der Seite: wie viel noch offen ist. Ruhig gesetzt — sie ist
    eine Standortbestimmung und keine Warnung. */
-.kundenoffen {
+.kundenoffen,
+.zuordnungsstand {
   margin: 0 0 1.25rem;
   padding: .7rem .9rem;
   color: var(--text-leise);
@@ -844,14 +845,17 @@ textarea[aria-invalid='true'] {
   border-radius: var(--radius);
 }
 
-.kundenoffen strong { color: var(--navy); }
+.kundenoffen strong,
+.zuordnungsstand strong { color: var(--navy); }
 
-.kundenmeldung { margin-bottom: 1.25rem; }
+.kundenmeldung,
+.zuordnungsmeldung { margin-bottom: 1.25rem; }
 
 /* Die Erfolgsmeldung trägt bewusst NICHT .banner: Das ist im ganzen System
    die Fehlerdarstellung samt ⚠. Ein Häkchen statt eines Warndreiecks — und
    auch hier steht ein ZEICHEN neben der Farbe, nicht die Farbe allein. */
-.kundenmeldung--erfolg {
+.kundenmeldung--erfolg,
+.zuordnungsmeldung--erfolg {
   margin-top: 0;
   padding: .7rem .8rem;
   color: var(--erfolg);
@@ -862,10 +866,12 @@ textarea[aria-invalid='true'] {
   border-radius: var(--radius);
 }
 
-.kundenmeldung--erfolg::before { content: '✓ '; font-weight: 700; }
+.kundenmeldung--erfolg::before,
+.zuordnungsmeldung--erfolg::before { content: '✓ '; font-weight: 700; }
 
 /* Eine fehlende Zuordnung ist ein Zustand, kein Fehler: gedeckt, nicht rot. */
-.kundengruppe--offen { color: var(--text-leise); }
+.kundengruppe--offen,
+.zuordnungsziel--offen { color: var(--text-leise); }
 
 /* „Inaktiv" und „nicht mehr aktiv" — ein Wort, klein gesetzt, mit Rahmen
    statt Fläche. Es soll erkennbar sein, ohne die Zeile zu dominieren. */
@@ -886,12 +892,14 @@ textarea[aria-invalid='true'] {
    Karte, sondern über die ganze Kartenbreite: Dort ist ein Auswahlfeld mit
    drei Preisgruppen lesbar und der Speichern-Knopf muss nicht umbrechen.
    Die Beschriftung rutscht dafür über die Bedienung statt daneben. */
-.datentabelle td.kundenaktion {
+.datentabelle td.kundenaktion,
+.datentabelle td.zuordnungaktion {
   display: block;
   padding-top: .8rem;
 }
 
-.datentabelle td.kundenaktion::before {
+.datentabelle td.kundenaktion::before,
+.datentabelle td.zuordnungaktion::before {
   display: block;
   margin-bottom: .45rem;
 }
@@ -899,14 +907,16 @@ textarea[aria-invalid='true'] {
 /* Ein echtes Formular je Zeile: Auswahl und Speichern, sonst nichts.
    Auf dem Telefon untereinander mit voller Breite — der Daumen trifft dort
    nichts Kleines. */
-.preisgruppe {
+.preisgruppe,
+.zuordnung {
   display: flex;
   flex-wrap: wrap;
   gap: .5rem;
   margin: 0;
 }
 
-.preisgruppe__wahl {
+.preisgruppe__wahl,
+.zuordnung__wahl {
   flex: 1 1 11rem;
   min-width: 0;
   /* Nicht kleiner als jede andere Tippfläche des Systems. */
@@ -921,9 +931,11 @@ textarea[aria-invalid='true'] {
      vertraute Hinweis darauf, dass hier eine Auswahl steht. */
 }
 
-.preisgruppe__wahl:hover { border-color: var(--champagner); }
+.preisgruppe__wahl:hover,
+.zuordnung__wahl:hover { border-color: var(--champagner); }
 
-.preisgruppe__senden { flex: 0 0 auto; }
+.preisgruppe__senden,
+.zuordnung__senden { flex: 0 0 auto; }
 
 /* Ein Label, das nur vorgelesen wird: „Preisgruppe für Fiktives Café Nord".
    Sehende lesen die Spaltenüberschrift, ein Screenreader braucht je Zeile
@@ -940,6 +952,48 @@ textarea[aria-invalid='true'] {
   clip-path: inset(50%);
 }
 
+/* ---------- Katalogseite: zwei Bereiche, eine Seite ----------
+
+   Seit Phase 5D trägt /admin/catalog zwei Fragen übereinander: „Was kostet
+   was" (lesend) und „Was ist was" (der einzige Schreibvorgang der Seite).
+   Sie brauchen keine zwei Layouts — dieselbe Tabelle, die auf dem Telefon zu
+   Karten wird. Getrennt werden sie durch Luft und eine Überschrift, nicht
+   durch Rahmen, Kästen oder Farbe.                                          */
+
+.katalogbereich + .katalogbereich { margin-top: 2.75rem; }
+
+.katalogbereich__titel {
+  margin: 0 0 .35rem;
+  color: var(--navy);
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.katalogbereich__vorspann {
+  margin: 0 0 1.1rem;
+  max-width: 46ch;
+  color: var(--text-leise);
+  font-size: .92rem;
+}
+
+/* „Verknüpft" steht als WORT vor dem Katalogprodukt — §19. Klein und gedeckt
+   gesetzt: Es ordnet ein, was daneben steht, und ist nicht selbst die
+   Nachricht. Die Farbe ist Zugabe, nie die Aussage. */
+.zuordnungsziel--gesetzt {
+  display: block;
+  margin-bottom: .15rem;
+  color: var(--text-leise);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.zuordnungsziel__name { color: var(--text); }
+
 .leerzustand {
   margin-top: 0;
   padding: 1.25rem;
@@ -948,7 +1002,8 @@ textarea[aria-invalid='true'] {
   border-radius: var(--radius);
 }
 
-.leerzustand h2 {
+.leerzustand h2,
+.leerzustand h3 {
   margin-bottom: .35rem;
   color: var(--navy);
   font-size: 1rem;
@@ -1488,11 +1543,14 @@ textarea[aria-invalid='true'] {
 
   /* Ab Tablet steht die Zeile als Tabellenzeile, und das Formular passt
      nebeneinander in seine Zelle. */
-  .preisgruppe { flex-wrap: nowrap; align-items: center; }
-  .preisgruppe__wahl { flex: 1 1 auto; }
+  .preisgruppe,
+  .zuordnung { flex-wrap: nowrap; align-items: center; }
+  .preisgruppe__wahl,
+  .zuordnung__wahl { flex: 1 1 auto; }
 
   /* Ab Tablet ist die Zelle wieder eine Tabellenzelle wie jede andere. */
-  .datentabelle td.kundenaktion { display: table-cell; padding-top: .8rem; }
+  .datentabelle td.kundenaktion,
+  .datentabelle td.zuordnungaktion { display: table-cell; padding-top: .8rem; }
 }
 
 /* Desktop bekommt KEINE zweite Gestaltung — nur die begrenzte Spalte, die
