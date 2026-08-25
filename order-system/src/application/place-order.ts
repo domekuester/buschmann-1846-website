@@ -2,6 +2,7 @@ import { businessDay } from '../domain/clock';
 import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
+import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
 import { findCustomer } from '../infrastructure/d1/customer-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
 import { saveOrder } from '../infrastructure/d1/order-repository';
@@ -26,8 +27,8 @@ export interface PlaceOrderCommand {
  *      erst angefasst.
  *   2. Kunde und Katalog laden, beides parallel.
  *   3. Bestellnummer ziehen.
- *   4. Order.place() rechnet — mit Preisen aus dem Katalog, nie aus der
- *      Anfrage.
+ *   4. Preiswelt des Kunden laden und Order.place() rechnen lassen — mit
+ *      Preisen aus der Preisliste dieses Kunden, nie aus der Anfrage.
  *   5. Atomar speichern.
  *
  * Schritt 3 liegt VOR Schritt 4, weil Order.place() die Nummer bereits zum
@@ -57,10 +58,17 @@ export async function placeOrder(db: D1Database, command: PlaceOrderCommand): Pr
     throw ValidationError.field('customer', 'Dieser Kunde ist nicht bekannt.');
   }
 
+  /**
+   * Die Preiswelt braucht den fertigen Kunden und lässt sich deshalb nicht
+   * mit den beiden Abfragen darüber parallelisieren — sie hängt an
+   * customer.price_list_id.
+   */
+  const priceBook = await loadCustomerPriceBook(db, customer);
+
   const year = Number(businessDay(command.now).slice(0, 4));
   const orderNumber = await reserveOrderNumber(db, year);
 
-  const order = Order.place({ customer, catalog, draft, orderNumber, now: command.now });
+  const order = Order.place({ customer, catalog, priceBook, draft, orderNumber, now: command.now });
   await saveOrder(db, order);
 
   return order;

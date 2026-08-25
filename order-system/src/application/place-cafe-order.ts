@@ -3,6 +3,7 @@ import type { Customer } from '../domain/customer';
 import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
+import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
 import {
   findOrderBySubmission,
@@ -94,11 +95,30 @@ export async function placeCafeOrder(
   const draft = OrderDraft.fromInput(withServerDecisions(command.input, customer.defaultFulfillment), command.now);
   assertWithinLeadTime(draft.fulfillmentDate.value, command.now);
 
-  const catalog = await loadCatalog(db);
+  /**
+   * SORTIMENT UND PREISWELT WERDEN HIER GELADEN — BEIM SCHREIBEN, NICHT BEIM
+   * RENDERN DER SEITE.
+   *
+   * Das ist §14 des Auftrags. Zwischen dem Aufruf der Bestellseite und dem
+   * Absenden können Minuten oder Stunden liegen; in dieser Zeit kann ein
+   * Katalogpreis geändert oder eine Preisgruppe umgestellt worden sein. Der
+   * Server nimmt deshalb den Preis, der im Moment des Schreibens gilt, und
+   * NICHT den, der im Browser steht — der Browser sendet ohnehin keinen.
+   *
+   * Eine Bestätigung „der Preis hat sich geändert, bitte prüfen" wird
+   * bewusst nicht gebaut: Sie wäre ein zweiter Absendeweg mit eigener
+   * Idempotenz, und die Antwort nennt den tatsächlich gespeicherten Preis
+   * ohnehin.
+   */
+  const [catalog, priceBook] = await Promise.all([
+    loadCatalog(db),
+    loadCustomerPriceBook(db, customer),
+  ]);
+
   const year = Number(businessDay(command.now).slice(0, 4));
   const orderNumber = await reserveOrderNumber(db, year);
 
-  const order = Order.place({ customer, catalog, draft, orderNumber, now: command.now });
+  const order = Order.place({ customer, catalog, priceBook, draft, orderNumber, now: command.now });
 
   try {
     await saveOrder(db, order, command.submissionId);

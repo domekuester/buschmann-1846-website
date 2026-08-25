@@ -1,4 +1,4 @@
-import type { CatalogItemView } from '../application/catalog-view';
+import type { CatalogItemPrice, CatalogItemView } from '../application/catalog-view';
 import { escapeHtml, formatEuro } from './format';
 
 /**
@@ -34,6 +34,15 @@ export interface OrderPageView {
   today: string;
   /** Vorbelegung des Datumsfeldes: in aller Regel morgen. */
   defaultDate: string;
+  /**
+   * Ob dem Kunden überhaupt eine gültige Preisgruppe zugeordnet ist.
+   *
+   * EIN BOOLESCHER WERT UND KEINE PREISLISTEN-ID: Die Seite muss wissen, OB
+   * sie Preise zeigen kann, nicht WELCHE Liste dahintersteht. Der Code
+   * „gastro" oder die Zahl 2 hätten auf dieser Seite nichts zu suchen — ein
+   * Café erfährt nicht, in welche Schublade Buschmann es einsortiert hat.
+   */
+  hasPriceGroup: boolean;
 }
 
 export function renderOrderPage(view: OrderPageView): string {
@@ -55,6 +64,8 @@ export function renderOrderPage(view: OrderPageView): string {
 
     <main id="inhalt">
       <form class="formular" id="bestellformular" data-order-form data-submission-id="${escapeHtml(view.submissionId)}" data-csrf="${escapeHtml(view.csrfToken)}" novalidate>
+        ${view.hasPriceGroup ? '' : priceGroupNotice()}
+
         <section aria-labelledby="titel-sortiment">
           <h2 id="titel-sortiment">Sortiment</h2>
           <ul class="produkte">
@@ -132,6 +143,79 @@ export function renderOrderPage(view: OrderPageView): string {
 }
 
 /**
+ * Der Hinweis für einen Kunden ohne nutzbare Preisgruppe.
+ *
+ * Er steht ÜBER dem Sortiment und nicht darunter: Wer die Seite öffnet und
+ * bei keinem Produkt einen Preis findet, soll den Grund lesen, bevor er
+ * sucht.
+ *
+ * role="status" statt role="alert": Das ist kein Fehler des Cafés und keine
+ * Warnung, sondern eine Auskunft über einen Verwaltungsstand. Ein alert
+ * unterbricht Screenreader-Nutzer mitten im Vorlesen.
+ *
+ * Der Text nennt weder Preislisten-ID noch Code noch den Unterschied zwischen
+ * „nicht zugeordnet" und „stillgelegt" — für das Café ist beides derselbe
+ * Vorgang mit derselben Lösung.
+ */
+function priceGroupNotice(): string {
+  return `
+        <section class="banner banner--statisch" role="status" aria-labelledby="titel-preisgruppe" data-price-group-notice>
+          <h2 id="titel-preisgruppe">Noch keine Preisgruppe hinterlegt</h2>
+          <p>
+            Für dein Kundenkonto ist noch keine Preisgruppe hinterlegt. Deshalb
+            können wir hier gerade keine Preise anzeigen und keine Bestellung
+            entgegennehmen. Bitte wende dich an Buschmann 1846 — wir tragen das
+            kurz nach.
+          </p>
+        </section>`;
+}
+
+/**
+ * Der Preis einer Zeile in deutscher Schreibweise.
+ *
+ * VIER FORMEN, WEIL DIE PREISLISTEN VIER FORMEN KENNEN. „ab 55,00 €" wird
+ * NICHT zu „55,00 €", und eine Spanne wird nicht zu ihrem unteren Ende: Beides
+ * wäre ein Betrag, den niemand vereinbart hat.
+ *
+ * Bei der Spanne entfällt das Eurozeichen der Untergrenze — „55,00–75,00 €"
+ * statt „55,00 €–75,00 €". Dieselbe Schreibweise wie im Adminkatalog.
+ */
+function priceLabel(price: CatalogItemPrice): string {
+  switch (price.kind) {
+    case 'fixed':
+      return formatEuro(price.priceCents);
+    case 'from':
+      return `ab ${formatEuro(price.minPriceCents)}`;
+    case 'range':
+      return `${formatEuro(price.minPriceCents).slice(0, -2)}–${formatEuro(price.maxPriceCents)}`;
+    case 'on_request':
+      return 'Auf Anfrage';
+    default:
+      /**
+       * §38: NIEMALS „0,00 €".
+       *
+       * Ein fehlender Preis ist kein Preis von null. Ein Café, das „0,00 €"
+       * liest, denkt an ein Geschenk und nicht an eine Lücke in der
+       * Stammdatenpflege — und bestellt.
+       */
+      return 'Preis auf Anfrage';
+  }
+}
+
+/**
+ * Warum eine Zeile keine Mengenauswahl hat.
+ *
+ * Der Text ist nicht technisch und nennt keinen Preistyp: „price_type = from"
+ * ist eine Datenbankangabe, kein Satz für einen Menschen.
+ */
+function unorderableHint(price: CatalogItemPrice): string {
+  if (price.kind === 'unavailable') {
+    return 'Für dieses Produkt können wir hier gerade keinen Preis anzeigen. Bitte sprich uns an.';
+  }
+  return 'Für dieses Produkt ist keine direkte Online-Preisberechnung möglich. Bitte sprich uns an.';
+}
+
+/**
  * Eine Produktzeile.
  *
  * Der Stepper ist die einzige Interaktion der Seite und deshalb der einzige
@@ -140,23 +224,48 @@ export function renderOrderPage(view: OrderPageView): string {
  * möglich), und beide Buttons tragen den Produktnamen in ihrem aria-label —
  * „eins mehr" allein wäre in einer Liste von zwölf Produkten wertlos.
  *
- * data-price-cents ist der Preis in ganzzahligen Cent. Der Client rechnet die
- * Zwischensumme damit — und nur für die Anzeige. Verbindlich ist ausschließlich,
- * was der Server aus D1 nimmt.
+ * ES GIBT IHN AB PHASE 5C NUR NOCH BEI EINEM FESTPREIS.
+ *
+ * Ein Produkt mit „ab", einer Spanne, „auf Anfrage" oder ganz ohne Preis für
+ * diesen Kunden bekommt KEINE Mengenauswahl — kein deaktiviertes Feld,
+ * sondern gar keines. Das ist der Unterschied zwischen „du darfst gerade
+ * nicht" und „das gibt es hier nicht": Ein deaktiviertes Feld lässt sich im
+ * Browser wieder aktivieren, ein fehlendes nicht.
+ *
+ * DAS IST TROTZDEM KEINE SICHERHEITSMASSNAHME. Der Server lehnt dieselbe
+ * Bestellung auch dann ab, wenn jemand die Zeile von Hand ins Formular
+ * schreibt — siehe Order.place(). Das Weglassen hier ist Bedienbarkeit, nicht
+ * Schutz.
+ *
+ * data-price-cents steht ebenfalls nur an bepreisbaren Zeilen. Der Client
+ * rechnet damit die Zwischensumme — und nur für die Anzeige. Verbindlich ist
+ * ausschließlich, was der Server aus D1 nimmt.
  */
 function productRow(product: CatalogItemView): string {
   const name = escapeHtml(product.name);
   const unit = escapeHtml(product.unit);
   const inputId = `menge-${product.id}`;
+  const orderable = product.price.kind === 'fixed';
+  const preis = priceLabel(product.price);
 
   return `
-            <li class="produkt" data-product-row>
+            <li class="produkt${orderable ? '' : ' produkt--ohne-preis'}" data-product-row${orderable ? '' : ' data-unorderable'}>
               <div class="produkt__text">
                 <p class="produkt__name" id="produkt-${product.id}">${name}</p>
-                <p class="produkt__preis">${formatEuro(product.priceCents)} / ${unit}</p>
+                <p class="produkt__preis">${escapeHtml(preis)}${orderable ? ` / ${unit}` : ''}</p>
                 ${product.description === null ? '' : `<p class="produkt__beschreibung">${escapeHtml(product.description)}</p>`}
+                ${orderable ? '' : `<p class="produkt__hinweis" id="hinweis-${product.id}">${escapeHtml(unorderableHint(product.price))}</p>`}
               </div>
-              <div class="stepper">
+              ${orderable ? stepper(product, inputId, name, unit) : ''}
+            </li>`;
+}
+
+/** Die Mengenauswahl — nur für Zeilen mit exaktem Preis. */
+function stepper(product: CatalogItemView, inputId: string, name: string, unit: string): string {
+  // Nur der Zweig 'fixed' trägt einen Betrag; der Aufrufer stellt das sicher.
+  const priceCents = product.price.kind === 'fixed' ? product.price.priceCents : 0;
+
+  return `<div class="stepper">
                 <button
                   type="button"
                   class="stepper__taste"
@@ -176,7 +285,7 @@ function productRow(product: CatalogItemView): string {
                   autocomplete="off"
                   data-quantity
                   data-product-id="${product.id}"
-                  data-price-cents="${product.priceCents}"
+                  data-price-cents="${priceCents}"
                   data-product-name="${name}"
                   data-product-unit="${unit}"
                   aria-label="Menge ${name}"
@@ -187,8 +296,7 @@ function productRow(product: CatalogItemView): string {
                   data-step="1"
                   aria-label="${name}: eins mehr"
                 >+</button>
-              </div>
-            </li>`;
+              </div>`;
 }
 
 /**

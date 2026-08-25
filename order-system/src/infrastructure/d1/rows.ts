@@ -24,11 +24,16 @@ export interface CustomerRow {
   price_list_id: number | null;
 }
 
+/**
+ * Eine Produktzeile, WIE SIE GELADEN WIRD — und price_cents steht nicht mehr
+ * darin. Die Spalte existiert in der Tabelle weiter (siehe 0002), wird vom
+ * Bestellfluss seit Phase 5C aber nicht mehr ausgewählt. Ein Typ, der sie
+ * noch führte, wäre eine Einladung, sie wieder zu selektieren.
+ */
 export interface ProductRow {
   id: number;
   name: string;
   description: string | null;
-  price_cents: number;
   unit: string;
   is_active: number;
   sort_order: number;

@@ -5,6 +5,7 @@ import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
 import { findValidSession } from '../../src/infrastructure/d1/auth-session-repository';
+import { GASTRO, PRICING_TABLES, assignPriceGroup, priceProduct, resetPriceLists } from '../support/pricing';
 
 /**
  * Der Bestell-Endpunkt an der HTTP-Grenze.
@@ -111,15 +112,7 @@ async function countOrders(): Promise<number> {
 }
 
 beforeEach(async () => {
-  for (const table of [
-    'order_items',
-    'orders',
-    'auth_sessions',
-    'auth_accounts',
-    'products',
-    'customers',
-    'order_number_sequences',
-  ]) {
+  for (const table of PRICING_TABLES) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
 
@@ -139,6 +132,16 @@ beforeEach(async () => {
        VALUES (2, 'Beispiel Streuselblech', 280, 'Blech', 1, 20, ?1, ?1)`,
     ).bind(NOW),
   ]);
+
+  // Phase 5C: Preiswelt aufbauen. Die Beträge sind dieselben wie zuvor —
+  // sie stehen nur nicht mehr in products, sondern in der Gastronomie-Liste.
+  await resetPriceLists(env.DB);
+  await priceProduct(env.DB, { productId: 1, gastro: 435, privat: 520 });
+  await priceProduct(env.DB, { productId: 2, gastro: 280, privat: 330 });
+  const { results: kunden } = await env.DB.prepare('SELECT id FROM customers').all<{ id: number }>();
+  for (const row of kunden) {
+    await assignPriceGroup(env.DB, row.id, GASTRO);
+  }
 
   const cafeCredential = await deriveCredential(PIN, PEPPER, { iterations: MIN_ITERATIONS });
   const adminCredential = await deriveCredential(PASSWORT, PEPPER, { iterations: MIN_ITERATIONS });

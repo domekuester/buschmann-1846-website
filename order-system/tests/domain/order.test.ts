@@ -9,16 +9,33 @@ import { Product } from '../../src/domain/product';
 import { ProductCatalog } from '../../src/domain/product-catalog';
 import { Address } from '../../src/domain/address';
 import { Money } from '../../src/domain/money';
+import { CustomerPriceBook } from '../../src/domain/order-pricing';
+import type { CatalogPrice } from '../../src/domain/catalog-pricing';
 import { DomainError, ValidationError } from '../../src/domain/errors';
 import type { FulfillmentType } from '../../src/domain/fulfillment-type';
 
 const now = new Date('2026-08-23T07:00:00Z');
 
-function catalog(priceA = 435, priceB = 280, bActive = true): ProductCatalog {
+function catalog(bActive = true): ProductCatalog {
   return ProductCatalog.fromList([
-    new Product({ id: 1, name: 'Zitronen-Cheesecake', description: null, unitPrice: Money.fromCents(priceA), unit: 'Stück', isActive: true, sortOrder: 10 }),
-    new Product({ id: 2, name: 'Butterkuchen', description: null, unitPrice: Money.fromCents(priceB), unit: 'Blech', isActive: bActive, sortOrder: 20 }),
+    new Product({ id: 1, name: 'Zitronen-Cheesecake', description: null, unit: 'Stück', isActive: true, sortOrder: 10 }),
+    new Product({ id: 2, name: 'Butterkuchen', description: null, unit: 'Blech', isActive: bActive, sortOrder: 20 }),
   ]);
+}
+
+/**
+ * Die Preise stehen ab Phase 5C NICHT mehr am Produkt, sondern in der
+ * Preiswelt des Kunden. Dass diese Testdatei sie getrennt übergeben MUSS, ist
+ * kein Umstand, sondern die Aussage: Ein Produkt trägt keinen Preis mehr, den
+ * jemand versehentlich verwenden könnte.
+ */
+function priceBook(priceA: number | CatalogPrice = 435, priceB: number | CatalogPrice = 280): CustomerPriceBook {
+  const toPrice = (v: number | CatalogPrice): CatalogPrice =>
+    typeof v === 'number' ? { type: 'fixed', priceCents: v } : v;
+  return CustomerPriceBook.forPriceList(1, new Map<number, CatalogPrice>([
+    [1, toPrice(priceA)],
+    [2, toPrice(priceB)],
+  ]));
 }
 
 function customer(
@@ -51,10 +68,17 @@ function draft(overrides: Record<string, unknown> = {}): OrderDraft {
   );
 }
 
-function place(d = draft(), c = customer(), cat = catalog(), seq = 1): Order {
+function place(
+  d = draft(),
+  c = customer(),
+  cat = catalog(),
+  seq = 1,
+  prices = priceBook(),
+): Order {
   return Order.place({
     customer: c,
     catalog: cat,
+    priceBook: prices,
     draft: d,
     orderNumber: OrderNumber.fromYearAndSequence(2026, seq),
     now,
@@ -114,14 +138,21 @@ describe('Order.place', () => {
   /** Regel 10 im Zusammenspiel: viele krumme Beträge, kein Rundungsfehler. */
   it('summiert viele krumme Beträge ohne Abweichung', () => {
     const odd = ProductCatalog.fromList([
-      new Product({ id: 1, name: 'A', description: null, unitPrice: Money.fromCents(7), unit: 'Stück', isActive: true, sortOrder: 1 }),
-      new Product({ id: 2, name: 'B', description: null, unitPrice: Money.fromCents(10), unit: 'Stück', isActive: true, sortOrder: 2 }),
-      new Product({ id: 3, name: 'C', description: null, unitPrice: Money.fromCents(20), unit: 'Stück', isActive: true, sortOrder: 3 }),
+      new Product({ id: 1, name: 'A', description: null, unit: 'Stück', isActive: true, sortOrder: 1 }),
+      new Product({ id: 2, name: 'B', description: null, unit: 'Stück', isActive: true, sortOrder: 2 }),
+      new Product({ id: 3, name: 'C', description: null, unit: 'Stück', isActive: true, sortOrder: 3 }),
     ]);
+    const oddPrices = CustomerPriceBook.forPriceList(1, new Map<number, CatalogPrice>([
+      [1, { type: 'fixed', priceCents: 7 }],
+      [2, { type: 'fixed', priceCents: 10 }],
+      [3, { type: 'fixed', priceCents: 20 }],
+    ]));
     const order = place(
       draft({ items: [{ product_id: 1, quantity: 100 }, { product_id: 2, quantity: 3 }, { product_id: 3, quantity: 3 }] }),
       customer(),
       odd,
+      1,
+      oddPrices,
     );
     expect(order.total().cents).toBe(790);
     expect(order.total().toDecimalString()).toBe('7.90');
@@ -132,13 +163,12 @@ describe('Order.place', () => {
     const order = place();
     expect(order.total().cents).toBe(1305);
 
-    const teurer = catalog(500);
-    expect(teurer.get(1).unitPrice.cents).toBe(500);
+    const teurer = priceBook(500);
 
     expect(order.total().cents).toBe(1305);
     expect(order.items[0]?.unitPrice.cents).toBe(435);
 
-    expect(place(draft(), customer(), teurer, 2).total().cents).toBe(1500);
+    expect(place(draft(), customer(), catalog(), 2, teurer).total().cents).toBe(1500);
   });
 
   it('hält den Namens-Snapshot nach einer Umbenennung fest', () => {
@@ -155,7 +185,7 @@ describe('Order.place', () => {
   /** Regel 3: Inaktive Produkte dürfen nicht neu bestellt werden. */
   it('lehnt inaktive Produkte ab', () => {
     const errors = errorsOf(() =>
-      place(draft({ items: [{ product_id: 2, quantity: 1 }] }), customer(), catalog(435, 280, false)),
+      place(draft({ items: [{ product_id: 2, quantity: 1 }] }), customer(), catalog(false)),
     );
     expect(errors).toHaveProperty('items.0.product_id');
   });
@@ -163,7 +193,7 @@ describe('Order.place', () => {
   /** Aber: Ein inaktives Produkt bleibt in einer bestehenden Bestellung sichtbar. */
   it('lässt eine bestehende Bestellung mit deaktiviertem Produkt unberührt', () => {
     const order = place(draft({ items: [{ product_id: 2, quantity: 4 }] }));
-    const ohne = catalog(435, 280, false);
+    const ohne = catalog(false);
     expect(ohne.get(2).isActive).toBe(false);
     expect(ohne.orderable()).toHaveLength(1);
 
@@ -182,7 +212,7 @@ describe('Order.place', () => {
       place(
         draft({ items: [{ product_id: 999, quantity: 1 }, { product_id: 2, quantity: 1 }] }),
         customer(),
-        catalog(435, 280, false),
+        catalog(false),
       ),
     );
     expect(Object.keys(errors)).toHaveLength(2);
@@ -205,6 +235,131 @@ describe('Order.place', () => {
   /** Regel 1: Eine Bestellung ohne Positionen ist ungültig. */
   it('lässt eine Bestellung ohne Positionen nicht entstehen', () => {
     expect(() => draft({ items: [] })).toThrow(ValidationError);
+  });
+
+  /**
+   * PHASE 5C: DER PREIS KOMMT AUS DER PREISWELT DES KUNDEN.
+   *
+   * Diese Tests sind die Domänenseite von §22 des Auftrags. Sie prüfen nicht,
+   * dass ein Preis „richtig übernommen" wird, sondern dass es für jeden
+   * Zustand außer `fixed` KEINEN Weg in eine Bestellung gibt.
+   */
+  describe('Preisauflösung', () => {
+    it('bepreist dasselbe Produkt je Preisliste unterschiedlich', () => {
+      const gastro = place(draft(), customer(), catalog(), 1, priceBook(1000));
+      const privat = place(draft(), customer(), catalog(), 2, priceBook(1500));
+
+      expect(gastro.items[0]?.unitPrice.cents).toBe(1000);
+      expect(gastro.total().cents).toBe(3000);
+      expect(privat.items[0]?.unitPrice.cents).toBe(1500);
+      expect(privat.total().cents).toBe(4500);
+    });
+
+    it('lässt einen Kunden ohne Preisgruppe nicht bestellen', () => {
+      const errors = errorsOf(() =>
+        place(draft(), customer(), catalog(), 1, CustomerPriceBook.unassigned()),
+      );
+
+      expect(errors).toHaveProperty('price_list');
+      // Kein Positionsfehler: Das Problem liegt am Kunden, nicht am Produkt.
+      expect(Object.keys(errors)).toEqual(['price_list']);
+    });
+
+    it('lässt einen Kunden mit stillgelegter Preisgruppe nicht bestellen', () => {
+      const errors = errorsOf(() =>
+        place(draft(), customer(), catalog(), 1, CustomerPriceBook.inactive(1)),
+      );
+
+      expect(errors).toHaveProperty('price_list');
+    });
+
+    it('fällt bei fehlendem Katalogpreis NICHT auf einen anderen Preis zurück', () => {
+      const ohnePreis = CustomerPriceBook.forPriceList(1, new Map());
+      const errors = errorsOf(() => place(draft(), customer(), catalog(), 1, ohnePreis));
+
+      expect(errors).toHaveProperty('items.0.product_id');
+    });
+
+    it('macht aus „ab 55,00 €" keine Bestellung über 55,00 €', () => {
+      const errors = errorsOf(() =>
+        place(draft(), customer(), catalog(), 1, priceBook({ type: 'from', minPriceCents: 5500 })),
+      );
+
+      expect(errors).toHaveProperty('items.0.product_id');
+    });
+
+    it('macht aus einer Preisspanne keine Bestellung', () => {
+      const errors = errorsOf(() =>
+        place(
+          draft(),
+          customer(),
+          catalog(),
+          1,
+          priceBook({ type: 'range', minPriceCents: 5500, maxPriceCents: 7500 }),
+        ),
+      );
+
+      expect(errors).toHaveProperty('items.0.product_id');
+    });
+
+    it('macht aus „auf Anfrage" keine Bestellung', () => {
+      const errors = errorsOf(() =>
+        place(draft(), customer(), catalog(), 1, priceBook({ type: 'on_request' })),
+      );
+
+      expect(errors).toHaveProperty('items.0.product_id');
+    });
+
+    /**
+     * §30: EINE GEMISCHTE BESTELLUNG WIRD NICHT HALB ANGENOMMEN.
+     *
+     * Vier gültige Positionen und eine ungültige ergeben keine Bestellung mit
+     * vier Positionen. Das Aggregat entsteht gar nicht erst — es gibt keinen
+     * Zwischenzustand, den jemand speichern könnte.
+     */
+    it('nimmt eine gemischte Bestellung nicht teilweise an', () => {
+      const gemischt = priceBook(1000, { type: 'on_request' });
+      const errors = errorsOf(() =>
+        place(
+          draft({ items: [{ product_id: 1, quantity: 2 }, { product_id: 2, quantity: 3 }] }),
+          customer(),
+          catalog(),
+          1,
+          gemischt,
+        ),
+      );
+
+      expect(errors).toHaveProperty('items.1.product_id');
+      expect(errors).not.toHaveProperty('items.0.product_id');
+    });
+
+    it('meldet mehrere nicht bepreisbare Positionen auf einmal', () => {
+      const keine = CustomerPriceBook.forPriceList(1, new Map());
+      const errors = errorsOf(() =>
+        place(
+          draft({ items: [{ product_id: 1, quantity: 2 }, { product_id: 2, quantity: 3 }] }),
+          customer(),
+          catalog(),
+          1,
+          keine,
+        ),
+      );
+
+      expect(Object.keys(errors).sort()).toEqual(['items.0.product_id', 'items.1.product_id']);
+    });
+
+    /** §31: Menge mal Preis darf nicht still überlaufen. */
+    it('lässt einen Positionsbetrag jenseits der Geldgrenze nicht entstehen', () => {
+      expect(() =>
+        place(
+          draft({ items: [{ product_id: 1, quantity: 9999 }] }),
+          customer(),
+          catalog(),
+          1,
+          priceBook(9_999_999),
+        ),
+      ).toThrow();
+    });
   });
 });
 

@@ -2,14 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { Product } from '../../src/domain/product';
 import { ProductCatalog } from '../../src/domain/product-catalog';
 import { InvalidArgumentError } from '../../src/domain/errors';
-import { Money } from '../../src/domain/money';
 
 function product(id: number, name: string, isActive = true, sortOrder = 0): Product {
   return new Product({
     id,
     name,
     description: null,
-    unitPrice: Money.fromCents(400),
     unit: 'Stück',
     isActive,
     sortOrder,

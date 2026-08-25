@@ -20,13 +20,14 @@ function setUpPage(): void {
   document.documentElement.innerHTML = renderOrderPage({
     customerName: 'Testcafé Nord',
     products: [
-      { id: 1, name: 'Beispiel Käsekuchen', description: 'Mit Sahne', priceCents: 435, unit: 'Stück' },
-      { id: 2, name: 'Beispiel Streuselblech', description: null, priceCents: 280, unit: 'Blech' },
+      { id: 1, name: 'Beispiel Käsekuchen', description: 'Mit Sahne', unit: 'Stück', price: { kind: 'fixed', priceCents: 435 } },
+      { id: 2, name: 'Beispiel Streuselblech', description: null, unit: 'Blech', price: { kind: 'fixed', priceCents: 280 } },
     ],
     submissionId: 'sub-0123-4567-89ab',
     csrfToken: CSRF,
     today: '2026-08-24',
     defaultDate: '2026-08-25',
+    hasPriceGroup: true,
   })
     // Nur <html>-Inhalt; doctype und äußeres Tag gehören nicht in innerHTML.
     .replace(/^[\s\S]*?<html[^>]*>/, '')

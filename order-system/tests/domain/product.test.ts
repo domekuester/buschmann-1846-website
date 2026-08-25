@@ -1,14 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { Product } from '../../src/domain/product';
 import { InvalidArgumentError } from '../../src/domain/errors';
-import { Money } from '../../src/domain/money';
 
 function product(overrides: Partial<ConstructorParameters<typeof Product>[0]> = {}): Product {
   return new Product({
     id: 1,
     name: 'Zitronen-Cheesecake',
     description: null,
-    unitPrice: Money.fromCents(435),
     unit: 'Stück',
     isActive: true,
     sortOrder: 10,
@@ -21,7 +19,6 @@ describe('Product', () => {
     const p = product();
     expect(p.id).toBe(1);
     expect(p.name).toBe('Zitronen-Cheesecake');
-    expect(p.unitPrice.cents).toBe(435);
     expect(p.unit).toBe('Stück');
     expect(p.isActive).toBe(true);
     expect(p.sortOrder).toBe(10);

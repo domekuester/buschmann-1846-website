@@ -3,13 +3,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { placeOrder } from '../../src/application/place-order';
 import { findOrderByNumber } from '../../src/infrastructure/d1/order-repository';
 import { ValidationError } from '../../src/domain/errors';
+import { GASTRO, PRICING_TABLES, changeCatalogPrice, assignPriceGroup, priceProduct, resetPriceLists } from '../support/pricing';
 
 const NOW = new Date('2026-08-23T07:00:00Z');
 
 beforeEach(async () => {
-  for (const table of ['order_items', 'orders', 'products', 'customers', 'order_number_sequences']) {
+  for (const table of PRICING_TABLES) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
+  await resetPriceLists(env.DB);
   const ts = NOW.toISOString();
   await env.DB.batch([
     env.DB.prepare(
@@ -34,6 +36,15 @@ beforeEach(async () => {
        VALUES (9, 'Saisonartikel E', 350, 'Stück', 0, 50, ?1, ?1)`,
     ).bind(ts),
   ]);
+
+  // Phase 5C: Preise stehen in der Preisliste des Kunden, nicht am Produkt.
+  await priceProduct(env.DB, { productId: 1, gastro: 435 });
+  await priceProduct(env.DB, { productId: 2, gastro: 280 });
+  await priceProduct(env.DB, { productId: 9, gastro: 350 });
+  const { results } = await env.DB.prepare('SELECT id FROM customers').all<{ id: number }>();
+  for (const row of results) {
+    await assignPriceGroup(env.DB, row.id, GASTRO);
+  }
 });
 
 function request(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -143,7 +154,7 @@ describe('placeOrder', () => {
   /** Regel 8 vollständig durchgespielt: bestellen, Preis ändern, erneut bestellen. */
   it('lässt eine Preisänderung nicht rückwirkend wirken', async () => {
     await placeOrder(env.DB, { customerId: 1, input: request(), now: NOW });
-    await env.DB.prepare('UPDATE products SET price_cents = 520 WHERE id = 1').run();
+    await changeCatalogPrice(env.DB, 1001, GASTRO, 520);
     await placeOrder(env.DB, { customerId: 1, input: request(), now: NOW });
 
     const { results } = await env.DB.prepare(

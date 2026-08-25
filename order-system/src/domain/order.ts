@@ -7,19 +7,32 @@ import type { FulfillmentDate } from './fulfillment-date';
 import { OrderItem } from './order-item';
 import type { OrderDraft } from './order-draft';
 import type { OrderNumber } from './order-number';
+import type { CustomerPriceBook } from './order-pricing';
 import { canTransitionTo, orderStatusLabel, type OrderStatus } from './order-status';
 import type { ProductCatalog } from './product-catalog';
 import { optionalText } from './text';
 
 /**
- * Die Signatur von place() IST das Sicherheitsmodell: Kunde und Produktkatalog
- * kommen aus der Datenbank, der Entwurf aus der Anfrage — und der Entwurf
- * enthält nur Produkt-IDs und Mengen. Der Preis kann deshalb nicht aus der
- * Anfrage stammen, weil es dort nichts gibt, aus dem er stammen könnte.
+ * Die Signatur von place() IST das Sicherheitsmodell: Kunde, Produktkatalog
+ * und Preiswelt kommen aus der Datenbank, der Entwurf aus der Anfrage — und
+ * der Entwurf enthält nur Produkt-IDs und Mengen. Der Preis kann deshalb
+ * nicht aus der Anfrage stammen, weil es dort nichts gibt, aus dem er stammen
+ * könnte.
+ *
+ * SEIT PHASE 5C IST DIE PREISWELT EIN EIGENER PARAMETER — und zwar ein
+ * PFLICHTPARAMETER. Optional wäre er der bequemere Weg gewesen und zugleich
+ * die Lücke: Ein Aufrufer, der ihn vergisst, hätte eine Bestellung ohne
+ * Preisprüfung erzeugt. So bekommt er einen Typfehler.
+ *
+ * Der ProductCatalog beantwortet weiterhin „gibt es dieses Produkt, und ist
+ * es bestellbar?", das CustomerPriceBook „was kostet es DIESEN Kunden?".
+ * Zwei Fragen, zwei Objekte — die Vermischung beider wäre der Anfang einer
+ * zweiten Preislogik.
  */
 export interface PlaceOrderInput {
   customer: Customer;
   catalog: ProductCatalog;
+  priceBook: CustomerPriceBook;
   draft: OrderDraft;
   orderNumber: OrderNumber;
   now: Date;
@@ -94,7 +107,7 @@ export class Order {
   }
 
   static place(input: PlaceOrderInput): Order {
-    const { customer, catalog, draft, orderNumber, now } = input;
+    const { customer, catalog, priceBook, draft, orderNumber, now } = input;
     const errors: Record<string, string> = {};
 
     if (!customer.isActive) {
@@ -111,21 +124,61 @@ export class Order {
     }
 
     const items: OrderItem[] = [];
-    draft.items.forEach((draftItem, index) => {
-      const product = catalog.find(draftItem.productId);
 
-      if (product === null) {
-        errors[`items.${index}.product_id`] = 'Dieses Produkt gibt es nicht.';
-        return;
-      }
-      if (!product.isActive) {
-        errors[`items.${index}.product_id`] = 'Dieses Produkt ist derzeit nicht bestellbar.';
-        return;
-      }
+    /**
+     * ZUERST DIE FRAGE AN DEN KUNDEN, DANN DIE AN DIE PRODUKTE.
+     *
+     * Ob der Kunde überhaupt eine gültige Preiswelt hat, gilt für jede
+     * Position gleich. Würde man es je Position prüfen, bekäme ein nicht
+     * zugeordneter Kunde zwölf Meldungen „dieses Produkt ist nicht bepreist"
+     * — zwölfmal am falschen Ort, und die eigentliche Ursache stünde
+     * nirgends.
+     */
+    if (!priceBook.isResolvable()) {
+      errors['price_list'] = priceListMessage();
+    } else {
+      draft.items.forEach((draftItem, index) => {
+        const field = `items.${index}.product_id`;
+        const product = catalog.find(draftItem.productId);
 
-      // Der Preis kommt aus dem Produkt — der einzige Ort, an dem er stehen darf.
-      items.push(OrderItem.forProduct(product, draftItem.quantity));
-    });
+        if (product === null) {
+          errors[field] = 'Dieses Produkt gibt es nicht.';
+          return;
+        }
+        if (!product.isActive) {
+          errors[field] = 'Dieses Produkt ist derzeit nicht bestellbar.';
+          return;
+        }
+
+        /**
+         * Der Preis kommt aus der Preiswelt des Kunden — der einzige Ort, an
+         * dem er stehen darf. `price` ist ein discriminated union; nur der
+         * Zweig `fixed` trägt überhaupt einen Betrag.
+         */
+        const price = priceBook.priceFor(product.id);
+
+        if (price.kind === 'product_not_priced') {
+          errors[field] = 'Für dieses Produkt ist derzeit kein Preis hinterlegt.';
+          return;
+        }
+        if (price.kind === 'price_not_fixed') {
+          errors[field] =
+            'Für dieses Produkt ist keine direkte Online-Preisberechnung möglich. ' +
+            'Bitte wende dich für dieses Produkt an Buschmann 1846.';
+          return;
+        }
+        if (price.kind !== 'fixed') {
+          // Kunde ohne bzw. mit stillgelegter Preisgruppe. Oben bereits
+          // abgefangen; der Zweig hält den Union vollständig, damit ein
+          // künftiger fünfter Zustand hier einen Typfehler auslöst und nicht
+          // stillschweigend zu einer Position wird.
+          errors['price_list'] = priceListMessage();
+          return;
+        }
+
+        items.push(OrderItem.forProduct(product, price.unitPrice, draftItem.quantity));
+      });
+    }
 
     if (items.length === 0 && Object.keys(errors).length === 0) {
       errors['items'] = 'Bitte mindestens ein Produkt bestellen.';
@@ -197,4 +250,23 @@ export class Order {
       updatedAt: this.updatedAt,
     };
   }
+}
+
+/**
+ * Die Meldung für einen Kunden, dessen Preiswelt nicht auflösbar ist.
+ *
+ * Sie unterscheidet NICHT zwischen „keine Preisgruppe" und „Preisgruppe
+ * stillgelegt", und das ist Absicht: Für das Café ist beides derselbe
+ * Vorgang mit derselben Lösung — jemand bei Buschmann muss etwas eintragen.
+ * „Ihre Preisliste ist inaktiv" wäre eine Auskunft über eine interne
+ * Verwaltungsentscheidung, mit der niemand am Tresen etwas anfangen kann.
+ *
+ * Sie nennt keine Preislisten-ID, keinen Preislistencode und keinen internen
+ * Zustand.
+ */
+function priceListMessage(): string {
+  return (
+    'Für dein Kundenkonto ist noch keine Preisgruppe hinterlegt. ' +
+    'Bitte wende dich an Buschmann 1846.'
+  );
 }

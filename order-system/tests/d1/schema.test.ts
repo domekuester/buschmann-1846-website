@@ -111,6 +111,7 @@ describe('Migrationen', () => {
       'idx_order_items_product',
       'idx_orders_customer_day',
       'idx_orders_day',
+      'idx_products_catalog_product',
       'idx_products_orderable',
     ]);
   });

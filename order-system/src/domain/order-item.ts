@@ -63,13 +63,28 @@ export class OrderItem {
     this.lineTotal = data.unitPrice.multipliedBy(data.quantity);
   }
 
-  /** Der einzige Weg, der in einer Bestellung tatsächlich benutzt wird. */
-  static forProduct(product: Product, quantity: number): OrderItem {
+  /**
+   * Der einzige Weg, der in einer Bestellung tatsächlich benutzt wird.
+   *
+   * DER PREIS IST EIN EIGENER PARAMETER, KEINE EIGENSCHAFT DES PRODUKTS.
+   *
+   * Bis Phase 5B stand hier `product.unitPrice` — und das war genau so lange
+   * richtig, wie es einen Preis je Produkt gab. Seit 5C gibt es einen Preis
+   * je Produkt UND Preiswelt, und die Preiswelt kennt nur der Kunde. Diese
+   * Signatur zwingt den Aufrufer deshalb, den aufgelösten Preis mitzubringen;
+   * sie kann ihn nicht selbst besorgen, weil ihr dazu der Kunde fehlt.
+   *
+   * Der Preis MUSS aus CustomerPriceBook.priceFor() stammen. Dass er hier als
+   * Money hereinkommt und nicht als Zahl, ist der Rest der Absicherung: Eine
+   * Zahl aus einem Anfragekörper ist kein Money, und Money entsteht nur über
+   * Money.fromCents mit seinen Grenzen.
+   */
+  static forProduct(product: Product, unitPrice: Money, quantity: number): OrderItem {
     return new OrderItem({
       productId: product.id,
       productNameSnapshot: product.name,
       productUnitSnapshot: product.unit,
-      unitPrice: product.unitPrice,
+      unitPrice,
       quantity,
     });
   }

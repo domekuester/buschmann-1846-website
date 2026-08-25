@@ -5,6 +5,15 @@ import type { Customer } from '../../src/domain/customer';
 import { ValidationError } from '../../src/domain/errors';
 import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
 import { findOrderByNumber } from '../../src/infrastructure/d1/order-repository';
+import {
+  GASTRO,
+  PRIVAT,
+  PRICING_TABLES,
+  changeCatalogPrice,
+  assignPriceGroup,
+  priceProduct,
+  resetPriceLists,
+} from '../support/pricing';
 
 /**
  * Der vollständige Bestellvorgang eines Cafés gegen eine echte D1 — vom
@@ -57,17 +66,10 @@ async function order(
 }
 
 beforeEach(async () => {
-  for (const table of [
-    'order_items',
-    'orders',
-    'auth_sessions',
-    'auth_accounts',
-    'products',
-    'customers',
-    'order_number_sequences',
-  ]) {
+  for (const table of PRICING_TABLES) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
+  await resetPriceLists(env.DB);
 
   const ts = NOW.toISOString();
   await env.DB.batch([
@@ -100,6 +102,20 @@ beforeEach(async () => {
        VALUES (9, 'Beispiel Saisontorte', 350, 'Torte', 0, 50, ?1, ?1)`,
     ).bind(ts),
   ]);
+
+  /**
+   * PHASE 5C: PREISWELT AUFBAUEN.
+   *
+   * products.price_cents ist oben bewusst noch gefüllt, wird aber nicht mehr
+   * gelesen. Die Preise, mit denen dieser Test rechnet, stehen ausschließlich
+   * hier — in der Gastronomie-Preisliste, der alle drei Cafés angehören.
+   */
+  await priceProduct(env.DB, { productId: 1, gastro: 435, privat: 500 });
+  await priceProduct(env.DB, { productId: 2, gastro: 280, privat: 330 });
+  await priceProduct(env.DB, { productId: 9, gastro: 350, privat: 400 });
+  for (const id of [1, 2, 3]) {
+    await assignPriceGroup(env.DB, id, GASTRO);
+  }
 
   // Im Betrieb kommen diese drei aus der geprüften Sitzung; hier werden sie
   // direkt geladen, weil dieser Test den Bestellvorgang prüft und nicht die
@@ -234,14 +250,40 @@ describe('placeCafeOrder — Preise kommen ausschließlich aus D1', () => {
     expect(row).toEqual({ total_amount_cents: 1305, unit_price_cents: 435, line_total_cents: 1305 });
   });
 
-  it('nimmt den Preis aus der Produkttabelle', async () => {
-    await env.DB.prepare('UPDATE products SET price_cents = 520 WHERE id = 1').run();
+  it('nimmt den Preis aus der Preisliste des Kunden', async () => {
+    await changeCatalogPrice(env.DB, 1001, GASTRO, 520);
     expect((await order()).order.total().cents).toBe(1560);
   });
 
-  it('hält den Preis-Snapshot fest, wenn sich der Preis danach ändert', async () => {
+  /**
+   * DIE GEGENPROBE: products.price_cents wirkt seit Phase 5C NICHT MEHR.
+   *
+   * Bis 5B war genau diese Spalte der Preis. Dass ihre Änderung jetzt
+   * folgenlos ist, ist die schärfste Formulierung von §10 („kein stiller
+   * Fallback") — und die stehende Fassung von Mutation B aus §29.
+   */
+  it('lässt eine Änderung an products.price_cents wirkungslos', async () => {
+    await env.DB.prepare('UPDATE products SET price_cents = 1 WHERE id = 1').run();
+    expect((await order()).order.total().cents).toBe(1305);
+  });
+
+  it('hält den Preis-Snapshot fest, wenn sich der Katalogpreis danach ändert', async () => {
     await order();
-    await env.DB.prepare('UPDATE products SET price_cents = 520 WHERE id = 1').run();
+    await changeCatalogPrice(env.DB, 1001, GASTRO, 520);
+
+    const stored = await findOrderByNumber(env.DB, 'BUS-2026-000001');
+    expect(stored?.items[0]?.unitPrice.cents).toBe(435);
+    expect(stored?.total().cents).toBe(1305);
+  });
+
+  /**
+   * §26 DER TESTMATRIX: Auch eine spätere Umgruppierung des KUNDEN ändert
+   * eine bestehende Bestellung nicht. Der Preis ist ein Dokument, keine
+   * Sicht auf den heutigen Stand.
+   */
+  it('hält den Preis-Snapshot fest, wenn der Kunde später umgruppiert wird', async () => {
+    await order();
+    await assignPriceGroup(env.DB, 1, PRIVAT);
 
     const stored = await findOrderByNumber(env.DB, 'BUS-2026-000001');
     expect(stored?.items[0]?.unitPrice.cents).toBe(435);

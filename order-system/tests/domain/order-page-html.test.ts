@@ -3,8 +3,8 @@ import { renderOrderPage } from '../../src/ui/order-page-html';
 import type { CatalogItemView } from '../../src/application/catalog-view';
 
 const PRODUCTS: CatalogItemView[] = [
-  { id: 1, name: 'Beispiel Käsekuchen', description: 'Mit Sahne', priceCents: 435, unit: 'Stück' },
-  { id: 2, name: 'Beispiel Streuselblech', description: null, priceCents: 280, unit: 'Blech' },
+  { id: 1, name: 'Beispiel Käsekuchen', description: 'Mit Sahne', unit: 'Stück', price: { kind: 'fixed', priceCents: 435 } },
+  { id: 2, name: 'Beispiel Streuselblech', description: null, unit: 'Blech', price: { kind: 'fixed', priceCents: 280 } },
 ];
 
 function page(overrides: Partial<Parameters<typeof renderOrderPage>[0]> = {}): string {
@@ -15,6 +15,7 @@ function page(overrides: Partial<Parameters<typeof renderOrderPage>[0]> = {}): s
     csrfToken: 'C'.repeat(43),
     today: '2026-08-24',
     defaultDate: '2026-08-25',
+    hasPriceGroup: true,
     ...overrides,
   });
 }
@@ -143,8 +144,8 @@ describe('renderOrderPage — nichts tritt nach außen, was nicht soll', () => {
           id: 1,
           name: 'Kuchen "A" & B',
           description: '<img src=x onerror=alert(1)>',
-          priceCents: 100,
           unit: 'Stück',
+          price: { kind: 'fixed', priceCents: 100 },
         },
       ],
     });
@@ -211,5 +212,129 @@ describe('renderOrderPage — nichts tritt nach außen, was nicht soll', () => {
 describe('Referrer-Policy steht nur an einer Stelle', () => {
   it('trägt keine eigene Referrer-Policy im Markup', () => {
     expect(page()).not.toContain('name="referrer"');
+  });
+});
+
+/**
+ * §25 DER TESTMATRIX: DIE VIER PREISFORMEN AUF DER BESTELLSEITE.
+ *
+ * Der Kern dieser Gruppe ist nicht, dass „ab 55,00 €" dasteht, sondern dass
+ * an derselben Zeile KEINE Mengenauswahl steht — und zwar keine deaktivierte,
+ * sondern gar keine. Ein deaktiviertes Feld lässt sich in den Entwicklerwerk-
+ * zeugen wieder aktivieren; ein fehlendes nicht.
+ */
+describe('renderOrderPage — Preisformen', () => {
+  function mitPreis(price: CatalogItemView['price'], overrides: Partial<CatalogItemView> = {}): string {
+    return page({
+      products: [
+        { id: 1, name: 'Hochzeitstorte', description: null, unit: 'Torte', price, ...overrides },
+      ],
+    });
+  }
+
+  it('zeigt einen Festpreis mit Einheit und Mengenauswahl', () => {
+    const html = mitPreis({ kind: 'fixed', priceCents: 3250 });
+
+    expect(html).toContain('32,50 €');
+    expect(html).toContain('data-quantity');
+    expect(html).toContain('data-price-cents="3250"');
+    expect(html).not.toContain('data-unorderable');
+  });
+
+  it('zeigt „ab …" und bietet keine Mengenauswahl an', () => {
+    const html = mitPreis({ kind: 'from', minPriceCents: 5500 });
+
+    expect(html).toContain('ab 55,00 €');
+    expect(html).toContain('data-unorderable');
+    expect(html).not.toContain('data-quantity');
+    expect(html).not.toContain('data-price-cents');
+    expect(html).toContain('keine direkte Online-Preisberechnung');
+  });
+
+  it('zeigt eine Preisspanne und bietet keine Mengenauswahl an', () => {
+    const html = mitPreis({ kind: 'range', minPriceCents: 5500, maxPriceCents: 7500 });
+
+    expect(html).toContain('55,00–75,00 €');
+    expect(html).toContain('data-unorderable');
+    expect(html).not.toContain('data-quantity');
+  });
+
+  it('zeigt „Auf Anfrage" und bietet keine Mengenauswahl an', () => {
+    const html = mitPreis({ kind: 'on_request' });
+
+    expect(html).toContain('Auf Anfrage');
+    expect(html).toContain('data-unorderable');
+    expect(html).not.toContain('data-quantity');
+  });
+
+  /** §38: Ein fehlender Preis erscheint NIEMALS als 0,00 €. */
+  it('stellt einen fehlenden Preis nicht als 0,00 € dar', () => {
+    const html = mitPreis({ kind: 'unavailable' });
+
+    expect(html).not.toContain('0,00 € / Torte');
+    expect(html).toContain('data-unorderable');
+    expect(html).not.toContain('data-quantity');
+    expect(html).toContain('keinen Preis anzeigen');
+  });
+
+  it('mischt bestellbare und nicht bestellbare Zeilen in einer Liste', () => {
+    const html = page({
+      products: [
+        { id: 1, name: 'Käsekuchen', description: null, unit: 'Stück', price: { kind: 'fixed', priceCents: 435 } },
+        { id: 2, name: 'Hochzeitstorte', description: null, unit: 'Torte', price: { kind: 'on_request' } },
+      ],
+    });
+
+    expect(html).toContain('data-price-cents="435"');
+    expect(html).toContain('Auf Anfrage');
+    // Genau EINE Mengenauswahl, nämlich die des Käsekuchens.
+    expect(html.match(/data-quantity/g)).toHaveLength(1);
+  });
+
+  /**
+   * §16 / §39: Ein Gastronomiekunde sieht keine Privatpreise, und niemand
+   * sieht eine interne Kennung. Die Seite bekommt beides gar nicht erst —
+   * dieser Test hält fest, dass sie es auch nicht erfindet.
+   */
+  it('nennt weder Preislisten-ID noch Preislistencode noch Preistyp', () => {
+    const html = mitPreis({ kind: 'from', minPriceCents: 5500 });
+
+    for (const intern of ['price_list', 'priceListId', 'gastro', 'private', 'price_type', 'catalog_product']) {
+      expect(html).not.toContain(intern);
+    }
+  });
+});
+
+describe('renderOrderPage — Kunde ohne Preisgruppe', () => {
+  it('erklärt verständlich, warum keine Preise dastehen', () => {
+    const html = page({
+      hasPriceGroup: false,
+      products: [
+        { id: 1, name: 'Käsekuchen', description: null, unit: 'Stück', price: { kind: 'unavailable' } },
+      ],
+    });
+
+    expect(html).toContain('data-price-group-notice');
+    expect(html).toContain('Preisgruppe');
+    expect(html).toContain('Buschmann 1846');
+    expect(html).not.toContain('data-quantity');
+  });
+
+  it('zeigt den Hinweis nicht, wenn eine Preisgruppe hinterlegt ist', () => {
+    expect(page()).not.toContain('data-price-group-notice');
+  });
+
+  /** Der Hinweis ist eine Auskunft, kein Fehler — und unterbricht keinen Screenreader. */
+  it('meldet den Hinweis als status und nicht als alert', () => {
+    const html = page({ hasPriceGroup: false });
+
+    expect(html).toContain('role="status" aria-labelledby="titel-preisgruppe"');
+  });
+
+  it('nennt keine internen Verwaltungszustände', () => {
+    const html = page({ hasPriceGroup: false });
+
+    expect(html).not.toContain('inaktiv');
+    expect(html).not.toContain('price_list');
   });
 });

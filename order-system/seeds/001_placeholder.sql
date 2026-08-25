@@ -10,6 +10,21 @@
 --  Echte Kundendaten gehören in die produktive Datenbank, niemals in ein
 --  Repository.
 --
+--  ┌──────────────────────────────────────────────────────────────────────┐
+--  │  SEIT PHASE 5C UNVOLLSTÄNDIG — für den Bestellfluss 002 VERWENDEN.    │
+--  │                                                                      │
+--  │  Diese Datei legt Produkte OHNE Katalogbezug an                      │
+--  │  (products.catalog_product_id bleibt NULL) und Kunden OHNE           │
+--  │  Preisgruppe. Beides ist seit Phase 5C ein gültiger, aber            │
+--  │  unbepreisbarer Zustand: Die Bestellseite zeigt dann bei jedem       │
+--  │  Produkt „Preis auf Anfrage" und nimmt keine Bestellung an.          │
+--  │                                                                      │
+--  │  Das ist KEIN Fehler dieser Datei, sondern genau das Verhalten, das  │
+--  │  5C verlangt — geraten wird kein Preis. Wer den Bestellfluss lokal   │
+--  │  ausprobieren will, nimmt 002_cafe_ordering_dev.sql: Dort sind       │
+--  │  Katalog, Preise, Verknüpfungen und Preisgruppen vollständig.        │
+--  └──────────────────────────────────────────────────────────────────────┘
+--
 --  Anwenden:  npm run db:seed:local
 -- ============================================================================
 

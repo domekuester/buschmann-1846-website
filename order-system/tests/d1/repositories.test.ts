@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../src/infrastructure/d1/product-repository';
+import { loadCustomerPriceBook } from '../../src/infrastructure/d1/customer-price-book-repository';
 import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
 import { reserveOrderNumber } from '../../src/infrastructure/d1/order-number-sequence';
 import {
@@ -33,26 +34,64 @@ async function seed(): Promise<void> {
                               is_active, default_fulfillment, created_at, updated_at)
        VALUES (3, 'Ehemaliges Beispielcafé', 'Beispielweg 9', '40210', 'Düsseldorf', 0, 'delivery', ?1, ?1)`,
     ).bind(ts),
+    /**
+     * KATALOG UND VERKNÜPFUNG — seit Phase 5C die Preisquelle.
+     *
+     * products.price_cents steht weiterhin in den Zeilen, wird aber nicht
+     * mehr gelesen. Die Werte sind deshalb absichtlich UNSINNIG (99999): Wenn
+     * jemand den Preis doch wieder von dort nimmt, ist das kein knapper
+     * Unterschied, sondern ein Test, der laut scheitert.
+     */
     env.DB.prepare(
-      `INSERT INTO products (id, name, description, price_cents, unit, is_active, sort_order, created_at, updated_at)
-       VALUES (1, 'Beispielkuchen A', 'Platzhalter', 435, 'Stück', 1, 10, ?1, ?1)`,
+      `INSERT INTO catalog_products (id, source_key, name, is_active, sort_order, created_at, updated_at)
+       VALUES (101, 'kuchen-a', 'Beispielkuchen A', 1, 10, ?1, ?1),
+              (102, 'kuchen-b', 'Beispielkuchen B', 1, 20, ?1, ?1),
+              (109, 'saison-e', 'Saisonartikel E',  1, 50, ?1, ?1)`,
     ).bind(ts),
     env.DB.prepare(
-      `INSERT INTO products (id, name, description, price_cents, unit, is_active, sort_order, created_at, updated_at)
-       VALUES (2, 'Beispielkuchen B', NULL, 280, 'Blech', 1, 20, ?1, ?1)`,
+      `INSERT INTO catalog_product_prices
+         (product_id, price_list_id, price_type, price_cents, created_at, updated_at)
+       VALUES (101, 1, 'fixed', 435, ?1, ?1),
+              (102, 1, 'fixed', 280, ?1, ?1),
+              (109, 1, 'fixed', 350, ?1, ?1)`,
     ).bind(ts),
     env.DB.prepare(
-      `INSERT INTO products (id, name, description, price_cents, unit, is_active, sort_order, created_at, updated_at)
-       VALUES (9, 'Saisonartikel E', NULL, 350, 'Stück', 0, 50, ?1, ?1)`,
+      `INSERT INTO products (id, name, description, price_cents, unit, is_active, sort_order,
+                             catalog_product_id, created_at, updated_at)
+       VALUES (1, 'Beispielkuchen A', 'Platzhalter', 99999, 'Stück', 1, 10, 101, ?1, ?1)`,
     ).bind(ts),
+    env.DB.prepare(
+      `INSERT INTO products (id, name, description, price_cents, unit, is_active, sort_order,
+                             catalog_product_id, created_at, updated_at)
+       VALUES (2, 'Beispielkuchen B', NULL, 99999, 'Blech', 1, 20, 102, ?1, ?1)`,
+    ).bind(ts),
+    env.DB.prepare(
+      `INSERT INTO products (id, name, description, price_cents, unit, is_active, sort_order,
+                             catalog_product_id, created_at, updated_at)
+       VALUES (9, 'Saisonartikel E', NULL, 99999, 'Stück', 0, 50, 109, ?1, ?1)`,
+    ).bind(ts),
+    // Die beiden bestellenden Kunden gehören zur Gastronomie-Preisliste.
+    // Kunde 3 bleibt ABSICHTLICH unzugeordnet: Ein Bestand, in dem jeder
+    // eine Preisgruppe hat, prüft den Zustand „nicht zugeordnet" nicht.
+    env.DB.prepare(`UPDATE customers SET price_list_id = 1 WHERE id IN (1, 2)`),
   ]);
 }
 
+/** Die Preiswelt eines Kunden — genau so, wie der Bestellfluss sie lädt. */
+async function priceBookOf(customerId = 1) {
+  const customer = await findCustomer(env.DB, customerId);
+  return loadCustomerPriceBook(env.DB, customer!);
+}
+
 beforeEach(async () => {
+  // Reihenfolge wegen der Fremdschlüssel: products hängt seit 0014 an
+  // catalog_products, catalog_product_prices ebenfalls.
   for (const table of [
     'order_items',
     'orders',
     'products',
+    'catalog_product_prices',
+    'catalog_products',
     'customers',
     'order_number_sequences',
   ]) {
@@ -62,10 +101,12 @@ beforeEach(async () => {
 });
 
 describe('loadCatalog', () => {
-  it('lädt alle Produkte mit Preisen in ganzzahligen Cent', async () => {
+  it('lädt alle Produkte — den Preis trägt seit 5C die Preiswelt des Kunden', async () => {
     const catalog = await loadCatalog(env.DB);
+    const buch = await priceBookOf();
     expect(catalog.count()).toBe(3);
-    expect(catalog.get(1).unitPrice.cents).toBe(435);
+    const preis = buch.priceFor(1);
+    expect(preis.kind === 'fixed' && preis.unitPrice.cents).toBe(435);
     expect(catalog.get(1).name).toBe('Beispielkuchen A');
     expect(catalog.get(1).description).toBe('Platzhalter');
     expect(catalog.get(2).description).toBeNull();
@@ -115,14 +156,12 @@ describe('findCustomer', () => {
    * brauchen. Der geladene Kunde BERECHNET damit weiterhin nichts.
    */
   it('trägt eine fehlende Preisgruppe als „nicht zugeordnet"', async () => {
-    expect((await findCustomer(env.DB, 1))?.priceListId).toBeNull();
+    expect((await findCustomer(env.DB, 3))?.priceListId).toBeNull();
   });
 
   it('trägt eine gesetzte Preisgruppe mit', async () => {
     const gastro = await env.DB.prepare("SELECT id FROM price_lists WHERE code = 'gastro'")
       .first<{ id: number }>();
-    await env.DB.prepare('UPDATE customers SET price_list_id = ? WHERE id = 1')
-      .bind(gastro?.id).run();
 
     expect((await findCustomer(env.DB, 1))?.priceListId).toBe(gastro?.id);
   });
@@ -166,6 +205,7 @@ describe('saveOrder', () => {
     return Order.place({
       customer: customer!,
       catalog,
+      priceBook: await priceBookOf(1),
       draft: OrderDraft.fromInput(
         { fulfillment_type: 'delivery', fulfillment_date: '2026-08-28', items, note: 'Bitte kühl stellen' },
         NOW,
@@ -237,11 +277,13 @@ describe('saveOrder', () => {
    * Preisänderung im Stammdatensatz. Das ist der Test, den die reine
    * Domänenfassung nicht führen kann.
    */
-  it('hält den Preis-Snapshot fest, wenn sich der Produktpreis danach ändert', async () => {
+  it('hält den Preis-Snapshot fest, wenn sich der Katalogpreis danach ändert', async () => {
     await saveOrder(env.DB, await order(1));
     expect((await findOrderByNumber(env.DB, 'BUS-2026-000001'))?.total().cents).toBe(1305);
 
-    await env.DB.prepare('UPDATE products SET price_cents = 520 WHERE id = 1').run();
+    await env.DB.prepare(
+      'UPDATE catalog_product_prices SET price_cents = 520 WHERE product_id = 101 AND price_list_id = 1',
+    ).run();
 
     const alt = await findOrderByNumber(env.DB, 'BUS-2026-000001');
     expect(alt?.items[0]?.unitPrice.cents).toBe(435);
@@ -251,6 +293,25 @@ describe('saveOrder', () => {
     const neu = await findOrderByNumber(env.DB, 'BUS-2026-000002');
     expect(neu?.items[0]?.unitPrice.cents).toBe(520);
     expect(neu?.total().cents).toBe(1560);
+  });
+
+  /**
+   * DIE GEGENPROBE ZUR VORIGEN: products.price_cents IST KEIN PREIS MEHR.
+   *
+   * Die Spalte steht noch in der Tabelle, und der Seed füllt sie absichtlich
+   * mit 99999. Ändert man sie, darf sich WEDER eine bestehende NOCH eine neue
+   * Bestellung dadurch verändern. Dieser Test ist die stehende Fassung von
+   * Mutation B aus §29 — er würde rot, sobald jemand einen Rückfall auf den
+   * alten Einheitspreis einbaut.
+   */
+  it('lässt products.price_cents auch auf NEUE Bestellungen ohne Wirkung', async () => {
+    await env.DB.prepare('UPDATE products SET price_cents = 1 WHERE id = 1').run();
+
+    await saveOrder(env.DB, await order(1));
+    const neu = await findOrderByNumber(env.DB, 'BUS-2026-000001');
+
+    expect(neu?.items[0]?.unitPrice.cents).toBe(435);
+    expect(neu?.total().cents).toBe(1305);
   });
 });
 
@@ -267,6 +328,7 @@ describe('saveOrder mit Absendekennung', () => {
     return Order.place({
       customer: customer!,
       catalog,
+      priceBook: await priceBookOf(customerId),
       draft: OrderDraft.fromInput(
         {
           fulfillment_type: customer!.defaultFulfillment,

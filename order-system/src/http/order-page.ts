@@ -1,6 +1,7 @@
 import { toCatalogView } from '../application/catalog-view';
 import type { AppConfig } from '../config/app-config';
 import { businessDay, plusDays } from '../domain/clock';
+import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
 import { loadCatalog } from '../infrastructure/d1/product-repository';
 import { renderOrderPage } from '../ui/order-page-html';
 import { requireRole } from './guard';
@@ -37,12 +38,33 @@ export async function orderPage(
   }
 
 
-  const catalog = await loadCatalog(db);
+  /**
+   * Sortiment UND Preiswelt in einem Rutsch — beides hängt nicht voneinander
+   * ab. Die Preiswelt kommt aus dem Kunden der SITZUNG; es gibt auf dieser
+   * Seite keinen Parameter, mit dem sich eine andere wählen ließe.
+   */
+  const [catalog, priceBook] = await Promise.all([
+    loadCatalog(db),
+    loadCustomerPriceBook(db, wache.context.customer),
+  ]);
   const today = businessDay(now);
 
   const html = renderOrderPage({
     customerName: wache.context.customer.name,
-    products: toCatalogView(catalog),
+
+    /**
+     * DIESELBE PREISWELT, DIE AUCH DIE BESTELLUNG BEPREIST.
+     *
+     * Die Seite rechnet nicht selbst und bekommt keine zweite Preisquelle:
+     * toCatalogView fragt dasselbe CustomerPriceBook, das placeCafeOrder beim
+     * Speichern befragt. Was hier steht, kann deshalb nicht aus einer anderen
+     * Logik stammen als das, was gespeichert wird — es kann nur ÄLTER sein,
+     * und genau dafür löst der Server beim Schreiben neu auf (§14).
+     */
+    products: toCatalogView(catalog, priceBook),
+
+    /** Ob überhaupt Preise angezeigt werden können — kein Listencode, keine ID. */
+    hasPriceGroup: priceBook.isResolvable(),
 
     /**
      * Serverseitig erzeugt, einmal je Seitenaufruf. Nicht im Client: Ein

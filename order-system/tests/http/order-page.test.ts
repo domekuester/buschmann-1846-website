@@ -4,6 +4,7 @@ import worker from '../../src/worker';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
+import { GASTRO, PRICING_TABLES, assignPriceGroup, priceProduct, resetPriceLists } from '../support/pricing';
 
 /**
  * Die Bestellseite an der HTTP-Grenze. Geprüft wird, was tatsächlich über die
@@ -89,9 +90,10 @@ async function seedKonto(
 }
 
 beforeEach(async () => {
-  for (const table of ['order_items', 'orders', 'auth_sessions', 'auth_accounts', 'products', 'customers']) {
+  for (const table of PRICING_TABLES) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
+  await resetPriceLists(env.DB);
 
   await env.DB.batch([
     env.DB.prepare(
@@ -120,6 +122,15 @@ beforeEach(async () => {
        VALUES (9, 'Beispiel Saisontorte', 350, 'Torte', 0, 50, ?1, ?1)`,
     ).bind(NOW),
   ]);
+
+  // Phase 5C: dieselben Beträge, aber aus der Gastronomie-Preisliste.
+  await priceProduct(env.DB, { productId: 1, gastro: 435, privat: 520 });
+  await priceProduct(env.DB, { productId: 2, gastro: 280, privat: 330 });
+  await priceProduct(env.DB, { productId: 9, gastro: 350 });
+  const { results: kunden } = await env.DB.prepare('SELECT id FROM customers').all<{ id: number }>();
+  for (const row of kunden) {
+    await assignPriceGroup(env.DB, row.id, GASTRO);
+  }
 
   await seedKonto(1, 'testcafe', 'customer', PIN, 1);
   await seedKonto(2, 'ehemalig', 'customer', PIN, 2);
