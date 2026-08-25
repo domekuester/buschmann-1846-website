@@ -99,12 +99,20 @@ beforeEach(async () => {
 });
 
 describe('GET /admin — Zugriff', () => {
-  it('zeigt einem Admin die Shell', async () => {
+  /**
+   * PHASE 3C HAT DEN VERTRAG DIESER SEITE GEAENDERT.
+   *
+   * Bis Phase 3A stand hier „Adminbereich ist bereit." — eine leere Schale,
+   * deren einziger Zweck der Nachweis der Auth-Grenze war. Der Nachweis steht
+   * weiter unten unveraendert; die Schale traegt jetzt das, wofuer sie Platz
+   * gehalten hat.
+   */
+  it('zeigt einem Admin die Produktionsansicht', async () => {
     const response = await call('/admin', await anmelden('admin@example.test', PASSWORT));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toContain('text/html');
-    expect(await response.text()).toContain('Adminbereich ist bereit.');
+    expect(await response.text()).toContain('Produktion');
   });
 
   it('nennt die Kennung des angemeldeten Admins', async () => {
@@ -127,7 +135,7 @@ describe('GET /admin — Zugriff', () => {
     const response = await call('/admin', await anmelden('testcafe', PIN));
 
     expect(response.status).toBe(403);
-    expect(await response.text()).not.toContain('Adminbereich ist bereit.');
+    expect(await response.text()).not.toContain('Produktion');
   });
 
   it('meldet ein abgewiesenes Café nicht ab', async () => {
@@ -160,14 +168,22 @@ describe('GET /admin — Zugriff', () => {
 
 describe('GET /admin — Inhalt', () => {
   /**
-   * Phase 3A baut KEIN Dashboard. Die Shell beweist die Auth-Grenze und sonst
-   * nichts — keine Bestellungen, keine Produkte, keine Kunden, keine Zahlen.
-   * Was hier nicht steht, kann auch nicht versehentlich falsch stehen.
+   * Phase 3C zeigt Produktionsdaten — aber ausdruecklich KEINE Finanz- und
+   * KEINE Kontaktdaten. Der Test ist der Nachfolger von „zeigt keine
+   * Betriebsdaten" aus Phase 3A: Die Liste der verbotenen Werte ist dieselbe
+   * geblieben, soweit sie fachlich verboten ist, und um die Werte gekuerzt,
+   * die jetzt der Sinn der Seite sind.
+   *
+   * Der Seed dieser Datei enthaelt einen Preis (435) und eine Adresse — beide
+   * duerfen nirgends auftauchen.
    */
-  it('zeigt keine Betriebsdaten', async () => {
+  it('zeigt weder Preise noch Kontaktdaten', async () => {
     const text = await (await call('/admin', await anmelden('admin@example.test', PASSWORT))).text();
 
-    for (const verboten of ['Testcafé Nord', 'Beispiel Käsekuchen', 'Bestellung', 'BUS-2026', '€', 'Umsatz']) {
+    for (const verboten of [
+      '€', 'Umsatz', 'Marge', 'Kosten', '4,35', '435',
+      'Beispielweg', '40213', 'Düsseldorf', 'admin@example.test'.replace('admin', 'kunde'),
+    ]) {
       expect(text).not.toContain(verboten);
     }
   });
@@ -222,5 +238,17 @@ describe('GET /admin — Inhalt', () => {
     expect(text).not.toContain('<script');
     expect(text).not.toContain('http://');
     expect(text).not.toContain('https://');
+  });
+});
+
+describe('GET /admin — Produktionstag', () => {
+  it('zeigt ohne date-Parameter den naechsten Kalendertag', async () => {
+    const text = await (await call('/admin', await anmelden('admin@example.test', PASSWORT))).text();
+
+    const morgen = new Date();
+    morgen.setUTCDate(morgen.getUTCDate() + 1);
+    const erwartet = morgen.toISOString().slice(0, 10);
+
+    expect(text).toContain(erwartet);
   });
 });
