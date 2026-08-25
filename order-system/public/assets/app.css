@@ -661,3 +661,344 @@ textarea[aria-invalid='true'] {
 
 /* Damit die Überschrift nicht unter die Schaltfläche läuft. */
 .kopf h1 { padding-right: 6.5rem; }
+
+/* ==========================================================================
+   Produktions-Tagesansicht (Adminbereich)
+
+   Dieselbe Marke, dieselben Werte, dasselbe Werkzeugverständnis wie
+   Bestellseite und Anmeldung. KEIN zweites Designsystem: Es kommt keine neue
+   Farbe hinzu, kein neues Radiusmaß, keine neue Schriftfamilie und keine
+   Animation — nur die vorhandenen Tokens in einer neuen Anordnung.
+
+   Der Bildschirm hängt neben einem Ofen und wird um halb fünf morgens mit
+   mehligen Händen bedient. Was zählt, ist eine Zahl, die man aus zwei Metern
+   Entfernung lesen kann.
+
+   Mobile First. Die Grundgestaltung gilt ab 375px; breitere Geräte bekommen
+   mehr Luft und kein zweites Layout.
+   ========================================================================== */
+
+/* Diese Seite hat keine klebende Fußleiste — wie die Anmeldeseite. */
+.adminseite { padding-bottom: 0; }
+
+.admin {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1.5rem var(--rand, 1rem) 3rem;
+}
+
+/* Die Kennung ist Auskunft, keine Überschrift: klein, gedeckt, im Kopf. */
+.kopf__kennung {
+  margin: .35rem 0 0;
+  font-size: .85rem;
+  color: rgba(243, 237, 223, .78);
+  /* Damit sie nicht unter die Abmelden-Schaltfläche läuft. */
+  padding-right: 6.5rem;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Überschrift ---------- */
+
+/* Das Datum ist die zweitwichtigste Information der Seite und wird deshalb
+   groß gesetzt — aber in der Serife der Marke, nicht in Fettschrift. */
+.tag {
+  margin: 0 0 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+
+.tag__label {
+  font-family: var(--sans);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.tag__datum {
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--navy);
+}
+
+/* ---------- Datumsnavigation ---------- */
+
+/* Auf dem Telefon zwei Reihen: Pfeile links und rechts, das Datumsfeld
+   darunter über die volle Breite. Drei Elemente nebeneinander ergäben auf
+   375px ein Datumsfeld von 120px — bedienbar wäre das nicht. */
+.tagnav {
+  display: grid;
+  grid-template-columns: var(--tap) 1fr var(--tap);
+  gap: .5rem;
+  align-items: start;
+  margin-bottom: 1.75rem;
+}
+
+.tagnav__pfeil {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--tap);
+  height: var(--tap);
+  font-size: 1.35rem;
+  line-height: 1;
+  text-decoration: none;
+  color: var(--navy);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  touch-action: manipulation;
+}
+
+.tagnav__pfeil:hover { background: var(--elfenbein); border-color: var(--champagner); }
+
+.tagnav__formular {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+}
+
+/* Das Label steht sichtbar da und nicht nur für Screenreader: Ein nacktes
+   Datumsfeld zwischen zwei Pfeilen lässt offen, was es tut. */
+.tagnav__formular label {
+  flex: 0 0 100%;
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.tagnav__formular input[type='date'] {
+  flex: 1 1 9rem;
+  min-width: 0;
+}
+
+.tagnav__senden {
+  flex: 0 0 auto;
+  font-size: .9rem;
+}
+
+/* ---------- Backliste ---------- */
+
+.produktion { margin-bottom: 1.75rem; }
+
+.backliste {
+  width: 100%;
+  border-collapse: collapse;
+  /* Feste Aufteilung, damit die Mengenspalte nicht mit dem längsten
+     Produktnamen wandert: Die Zahlen sollen untereinander stehen. */
+  table-layout: fixed;
+}
+
+.backliste thead th {
+  padding: 0 .55rem .5rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+  text-align: left;
+  border-bottom: var(--spur);
+}
+
+.backliste__spalte-menge { text-align: right; }
+
+.backliste__produkt {
+  width: auto;
+  padding: .85rem .55rem;
+  text-align: left;
+  font-weight: 500;
+  vertical-align: baseline;
+  border-bottom: var(--spur);
+}
+
+.backliste__name {
+  display: block;
+  font-size: 1.05rem;
+  /* Ein langer Produktname bricht um, statt die Seite breit zu machen. */
+  overflow-wrap: anywhere;
+}
+
+/* Der Hinweis auf den Umbenennungsfall: erklärend, nicht alarmierend. Kein
+   Rot, kein Warnzeichen — es ist kein Fehler, sondern eine Auskunft. */
+.backliste__abweichung {
+  display: block;
+  margin-top: .2rem;
+  font-size: .8rem;
+  font-weight: 400;
+  color: var(--text-leise);
+  overflow-wrap: anywhere;
+}
+
+.backliste__menge {
+  /* Feste Spaltenbreite: Die Zahl darf nie umbrechen und nie abgeschnitten
+     werden, egal wie lang der Produktname ist. */
+  width: 7.5rem;
+  padding: .85rem .55rem;
+  text-align: right;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-bottom: var(--spur);
+}
+
+/* DIE ZAHL IST DIE ANTWORT DER SEITE und wird entsprechend gesetzt:
+   tabular-nums, damit 8 / 11 / 5 als Spalte lesbar sind statt Ziffer für
+   Ziffer. */
+.backliste__zahl {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+}
+
+.backliste__einheit {
+  font-size: .9rem;
+  color: var(--text-leise);
+}
+
+/* ---------- Leerer Tag ---------- */
+
+.leer {
+  margin: 0;
+  padding: 1.5rem .55rem;
+  color: var(--text-leise);
+  border-top: var(--spur);
+  border-bottom: var(--spur);
+}
+
+/* ---------- Kennzahlen ---------- */
+
+/* Zwei Zahlen zur Einordnung, bewusst leise und unter der Backliste. */
+.kennzahlen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1.5rem;
+  margin: 0 0 2rem;
+  padding: 0 .55rem;
+  font-size: .92rem;
+  color: var(--text-leise);
+}
+
+.kennzahl strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* ---------- Bestellungen ---------- */
+
+.bestellungen { margin-top: 0; }
+
+/* Kleiner, ruhiger, weniger Kontrast als die Backliste: Die Aufteilung darf
+   die Summe nicht überstimmen. */
+.bestellung {
+  margin-bottom: .75rem;
+  padding: 1rem .9rem;
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+}
+
+.bestellung__kunde {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bestellung__nummer {
+  margin: .1rem 0 0;
+  font-size: .85rem;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  /* Die Nummer wird am Telefon vorgelesen — wie auf der Bestätigung. */
+  user-select: all;
+}
+
+.bestellung__merkmale {
+  margin: .35rem 0 .75rem;
+  font-size: .85rem;
+  color: var(--champagner-text);
+  font-weight: 600;
+}
+
+.bestellung__positionen {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: var(--spur);
+}
+
+.bestellung__positionen li {
+  padding: .4rem 0;
+  border-bottom: var(--spur);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.bestellung__notiz {
+  margin-top: .75rem;
+  padding: .7rem .8rem;
+  background: var(--elfenbein);
+  border-radius: var(--radius);
+}
+
+.bestellung__notiz-titel {
+  margin: 0 0 .15rem;
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+/* Zeilenumbrüche der Notiz bleiben erhalten, lange Zeilen brechen trotzdem
+   um — pre-wrap statt <pre>, sonst entstünde horizontales Scrollen. */
+.bestellung__notiz-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Breiten ---------- */
+
+/* Ab Tablet passen Pfeile, Label und Datumsfeld in eine Zeile, und die
+   Tippflächen wachsen über --tap auf 48px mit. */
+@media (min-width: 600px) {
+  .tag__datum { font-size: 1.85rem; }
+
+  .tagnav { align-items: center; }
+  .tagnav__formular { flex-wrap: nowrap; }
+  .tagnav__formular label { flex: 0 0 auto; }
+
+  .backliste__menge { width: 9rem; }
+  .backliste__zahl { font-size: 1.75rem; }
+
+  .bestellung { padding: 1.15rem 1.1rem; }
+}
+
+/* Desktop bekommt KEINE zweite Gestaltung — nur die begrenzte Spalte, die
+   .admin ohnehin trägt. Eine 1600px breite Datenwüste ist schwerer zu lesen
+   als eine Spalte, auf dem Bildschirm wie auf Papier. */
+@media (min-width: 780px) {
+  .kopf--schmal { padding-inline: calc((100% - 44rem) / 2); }
+  .admin { padding-top: 2.25rem; }
+}
+
+/* ---------- Druck ---------- */
+
+/* Die Backliste wird gelegentlich ausgedruckt und abgehakt. Kopf,
+   Navigation und Abmeldung gehören dann nicht aufs Papier. */
+@media print {
+  .kopf, .tagnav, .abmelden { display: none !important; }
+
+  .admin { max-width: none; padding: 0; }
+  .bestellung { break-inside: avoid; }
+}
