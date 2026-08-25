@@ -343,11 +343,17 @@ export function renderStatusChangeFailurePage(
  * und Virenscannern ausgelöst und meldet dann jemanden ab, der nichts getan
  * hat.
  *
- * KEINE SIDEBAR, KEINE NAVIGATION. Es gibt genau eine Adminfunktion; eine
- * Leiste mit „Dashboard / Bestellungen / Kunden / Produkte / Auswertung /
- * Einstellungen" wäre Attrappe.
+ * KEINE SIDEBAR. Seit Phase 5A gibt es genau zwei echte Ziele: Produktion
+ * und Sortiment & Preise. Mehr Navigation wäre weiterhin Attrappe.
  */
-function seitengeruest(title: string, view: AdminPageView, body: string): string {
+export type AdminArea = 'production' | 'catalog';
+
+export function renderAdminShell(
+  title: string,
+  view: Pick<AdminPageView, 'loginIdentifier' | 'csrfToken'>,
+  activeArea: AdminArea,
+  body: string,
+): string {
   return `<!doctype html>
 <html lang="de">
 <head>
@@ -361,6 +367,10 @@ function seitengeruest(title: string, view: AdminPageView, body: string): string
 <body class="adminseite">
 <header class="kopf kopf--schmal">
   <p class="marke">Buschmann <span>1846</span></p>
+  <nav class="adminnav" aria-label="Adminbereich">
+    <a href="/admin"${activeArea === 'production' ? ' aria-current="page"' : ''}>Produktion</a>
+    <a href="/admin/catalog"${activeArea === 'catalog' ? ' aria-current="page"' : ''}>Sortiment &amp; Preise</a>
+  </nav>
   <p class="kopf__kennung">Angemeldet als ${escapeHtml(view.loginIdentifier)}</p>
 
   <form method="post" action="/logout" class="abmelden">
@@ -374,4 +384,8 @@ function seitengeruest(title: string, view: AdminPageView, body: string): string
 </body>
 </html>
 `;
+}
+
+function seitengeruest(title: string, view: AdminPageView, body: string): string {
+  return renderAdminShell(title, view, 'production', body);
 }

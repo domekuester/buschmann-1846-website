@@ -44,6 +44,8 @@ async function seedOrder(id = 1, customerId = 1, total = 1305): Promise<void> {
 beforeEach(async () => {
   // Reihenfolge wegen der Fremdschlüssel.
   for (const table of [
+    'catalog_product_prices',
+    'catalog_products',
     'order_items',
     'orders',
     'auth_sessions',
@@ -83,10 +85,13 @@ describe('Migrationen', () => {
     expect(results.map((r) => r.name)).toEqual([
       'auth_accounts',
       'auth_sessions',
+      'catalog_product_prices',
+      'catalog_products',
       'customers',
       'order_items',
       'order_number_sequences',
       'orders',
+      'price_lists',
       'products',
     ]);
   });

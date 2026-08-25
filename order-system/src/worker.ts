@@ -1,5 +1,6 @@
 import { readAppConfig } from './config/app-config';
 import { adminPage } from './http/admin-page';
+import { adminCatalogPage } from './http/admin-catalog-page';
 import { changeOrderStatusEndpoint, matchOrderStatusPath } from './http/admin-order-api';
 import { loginPage, loginSubmit, logout } from './http/auth-routes';
 import { requireSession } from './http/guard';
@@ -109,6 +110,13 @@ export default {
           return methodNotAllowed('GET');
         }
         return await adminPage(env.DB, config, request, now);
+      }
+
+      if (pathname === '/admin/catalog') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminCatalogPage(env.DB, config, request, now);
       }
 
       const cancelOrderNumber = matchCancelOrderPath(pathname);

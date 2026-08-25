@@ -718,6 +718,128 @@ textarea[aria-invalid='true'] {
   overflow-wrap: anywhere;
 }
 
+/* Zwei reale Adminfunktionen, daher zwei echte Ziele und keine Attrappen. */
+.adminnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25rem .75rem;
+  margin: .75rem 0 .25rem;
+  padding-right: 6.5rem;
+}
+
+.adminnav a,
+.adminnav a:visited {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  color: var(--elfenbein);
+  font-size: .9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.adminnav a:hover { color: var(--champagner); }
+.adminnav a[aria-current='page'] { border-bottom-color: var(--champagner); }
+
+/* ---------- Sortiment & Preise ---------- */
+
+.katalogkopf { margin-bottom: 1.5rem; }
+
+.katalogkopf__kicker {
+  margin: 0 0 .3rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.katalogkopf h1 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.65rem, 7vw, 2.15rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--navy);
+}
+
+.katalogkopf__vorspann {
+  margin: .45rem 0 0;
+  color: var(--text-leise);
+}
+
+.katalogtabelle-wrap { width: 100%; }
+
+.katalogtabelle {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+}
+
+.katalogtabelle th,
+.katalogtabelle td { overflow-wrap: anywhere; }
+
+.katalogtabelle thead { display: none; }
+
+.katalogtabelle tbody,
+.katalogtabelle tr,
+.katalogtabelle th,
+.katalogtabelle td { display: block; }
+
+.katalogtabelle tr {
+  margin-bottom: .9rem;
+  padding: .9rem;
+  border: var(--spur);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+}
+
+.katalogtabelle th[scope='row'] {
+  padding-bottom: .65rem;
+  color: var(--navy);
+  font-size: 1.05rem;
+  text-align: left;
+  border-bottom: var(--spur);
+}
+
+.katalogtabelle td {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, .8fr) 1fr;
+  gap: .75rem;
+  padding-top: .6rem;
+  color: var(--text);
+}
+
+.katalogtabelle td::before {
+  content: attr(data-label);
+  color: var(--text-leise);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.katalogpreis { font-variant-numeric: tabular-nums; }
+
+.katalogleer {
+  margin-top: 0;
+  padding: 1.25rem;
+  background: #fff;
+  border: var(--spur);
+  border-radius: var(--radius);
+}
+
+.katalogleer h2 {
+  margin-bottom: .35rem;
+  color: var(--navy);
+  font-size: 1rem;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.katalogleer p { margin: 0; color: var(--text-leise); }
+
 /* ---------- Überschrift ---------- */
 
 /* Das Datum ist die zweitwichtigste Information der Seite und wird deshalb
@@ -1218,6 +1340,33 @@ textarea[aria-invalid='true'] {
   .backliste__zahl { font-size: 1.75rem; }
 
   .bestellung { padding: 1.15rem 1.1rem; }
+
+  .katalogtabelle thead { display: table-header-group; }
+  .katalogtabelle tbody { display: table-row-group; }
+  .katalogtabelle tr { display: table-row; }
+  .katalogtabelle th,
+  .katalogtabelle td { display: table-cell; }
+  .katalogtabelle tr { margin: 0; padding: 0; border: 0; }
+  .katalogtabelle th,
+  .katalogtabelle td {
+    padding: .8rem .65rem;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: var(--spur);
+  }
+  .katalogtabelle thead th {
+    color: var(--text-leise);
+    font-size: .75rem;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    border-top: var(--spur);
+  }
+  .katalogtabelle th[scope='row'] {
+    color: var(--navy);
+    font-size: .95rem;
+    border-bottom: var(--spur);
+  }
+  .katalogtabelle td::before { content: none; }
 }
 
 /* Desktop bekommt KEINE zweite Gestaltung — nur die begrenzte Spalte, die
