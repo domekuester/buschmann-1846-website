@@ -990,6 +990,12 @@ textarea[aria-invalid='true'] {
 @media (min-width: 780px) {
   .kopf--schmal { padding-inline: calc((100% - 44rem) / 2); }
   .admin { padding-top: 2.25rem; }
+
+  /* Die Abmeldung ist absolut positioniert und klebte deshalb am
+     Fensterrand, waehrend der uebrige Kopfinhalt schon in der Spalte stand.
+     Auf einem breiten Bildschirm sassen dazwischen mehrere hundert Pixel
+     Nichts. Sie richtet sich jetzt an derselben Spalte aus wie die Marke. */
+  .adminseite .abmelden { right: calc((100% - 44rem) / 2); }
 }
 
 /* ---------- Druck ---------- */

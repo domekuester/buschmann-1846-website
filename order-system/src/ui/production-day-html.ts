@@ -45,6 +45,12 @@ import type {
  *
  * Sortiert wird NICHT. Die Reihenfolge kommt aus Phase 3B und steht im
  * Ansichtsmodell bereits fest.
+ *
+ * DIE ÜBERSCHRIFT HEISST „Zu produzieren" UND NICHT „Produktion". Der Grund
+ * kam aus dem Browser und nicht aus dem Entwurf: Die h1 trägt bereits das
+ * Wort „Produktion" als Bereichslabel, und beide standen im Abstand von zwei
+ * Zeilen wörtlich übereinander. Zweimal dasselbe Wort liest sich wie ein
+ * Fehler im Aufbau.
  */
 export function renderProductionSummary(view: ProductionDayView): string {
   if (view.isEmpty) {
@@ -53,7 +59,7 @@ export function renderProductionSummary(view: ProductionDayView): string {
 
   return `
       <section class="produktion" aria-labelledby="titel-produktion">
-        <h2 id="titel-produktion">Produktion</h2>
+        <h2 id="titel-produktion">Zu produzieren</h2>
         <table class="backliste">
           <caption class="hinweis">Zu produzierende Mengen für ${escapeHtml(view.dayLabel)}</caption>
           <thead>
@@ -117,7 +123,7 @@ function produktZeile(line: ProductionLineView, index: number): string {
 function renderEmptyState(): string {
   return `
       <section class="produktion produktion--leer" aria-labelledby="titel-produktion">
-        <h2 id="titel-produktion">Produktion</h2>
+        <h2 id="titel-produktion">Zu produzieren</h2>
         <p class="leer">Für diesen Tag sind keine offenen Bestellungen vorhanden.</p>
       </section>`;
 }
