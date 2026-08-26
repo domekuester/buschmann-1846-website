@@ -1,6 +1,7 @@
 import { getDashboardDay } from '../application/get-dashboard-day';
 import type { AppConfig } from '../config/app-config';
 import { businessDay, plusDays } from '../domain/clock';
+import { aggregateDashboardDay } from '../domain/dashboard-day';
 import { renderInvalidDatePage } from '../ui/admin-page-html';
 import {
   renderAdminDashboardPage,
@@ -93,19 +94,16 @@ export async function adminDashboardPage(
   const geruest: AdminDashboardPageView = {
     loginIdentifier: wache.context.loginIdentifier,
     csrfToken: wache.context.csrfToken,
-    day: toDashboardView({
-      date: tag,
-      orderCount: 0,
-      cancelledCount: 0,
-      revenueCents: 0,
-      openCount: 0,
-      customerCount: 0,
-      totalUnits: 0,
-      unpaidCents: 0,
-      unpaidCount: 0,
-      orders: [],
-      topProducts: [],
-    }),
+    /**
+     * DER LEERE TAG WIRD AGGREGIERT UND NICHT ABGESCHRIEBEN.
+     *
+     * Vorher stand hier eine Literalfassung mit neun Nullen. Sie war eine
+     * zweite Stelle, an der die Form eines Tages festgelegt ist — und beim
+     * ersten neuen Feld in DashboardDay fiel sie auseinander. Ein leerer Tag
+     * IST das Ergebnis der Aggregation über keine Bestellung; es gibt keinen
+     * Grund, das noch einmal von Hand hinzuschreiben.
+     */
+    day: toDashboardView(aggregateDashboardDay(tag, [])),
     noticeCode: readNotice(request),
   };
 

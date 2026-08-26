@@ -201,7 +201,7 @@ describe('GET /admin/dashboard — Zahlen', () => {
 
     expect(html).toContain('56,40 €');
     expect(html).not.toContain('156,39');
-    expect(html).toContain('davon 1 storniert');
+    expect(html).toContain('zusätzlich 1 storniert');
   });
 
   it('weist eine abgeschlossene, unbezahlte Bestellung als offenen Betrag aus', async () => {

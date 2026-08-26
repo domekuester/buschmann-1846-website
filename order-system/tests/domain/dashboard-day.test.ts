@@ -5,7 +5,7 @@ import {
   type DashboardOrder,
   type DashboardOrderItem,
 } from '../../src/domain/dashboard-day';
-import type { OrderStatus } from '../../src/domain/order-status';
+import { ORDER_STATUSES, type OrderStatus } from '../../src/domain/order-status';
 import type { PaymentStatus } from '../../src/domain/payment-status';
 
 const TAG = '2026-08-28';
@@ -51,9 +51,93 @@ describe('aggregateDashboardDay — der leere Tag', () => {
       totalUnits: 0,
       unpaidCents: 0,
       unpaidCount: 0,
+      paidCents: 0,
+      paidCount: 0,
+      statusCounts: {
+        new: 0,
+        confirmed: 0,
+        in_production: 0,
+        completed: 0,
+        cancelled: 0,
+      },
       orders: [],
       topProducts: [],
     });
+  });
+
+  /**
+   * DIE AUFTEILUNG NACH STATUS HAT AUCH AN EINEM LEEREN TAG FÜNF EINTRÄGE.
+   *
+   * Sie wird aus ORDER_STATUSES aufgebaut und nicht aus den vorkommenden
+   * Status. Eine Aufteilung, die an ruhigen Tagen Einträge weglässt, ist von
+   * Tag zu Tag nicht vergleichbar — und eine Anzeige darüber müsste raten,
+   * ob eine fehlende Zahl „null" oder „unbekannt" heißt.
+   */
+  it('kennt jeden Status auch dann, wenn er an diesem Tag nicht vorkommt', () => {
+    const tag = aggregateDashboardDay(TAG, []);
+    expect(Object.keys(tag.statusCounts).sort()).toEqual([...ORDER_STATUSES].sort());
+  });
+});
+
+describe('aggregateDashboardDay — Aufteilungen für die Anzeige', () => {
+  /**
+   * DIE AUFTEILUNG DARF DER SUMME NICHT WIDERSPRECHEN.
+   *
+   * `paidCents` und `unpaidCents` entstehen im selben Durchlauf und hinter
+   * demselben Stornofilter wie `revenueCents`. Dieser Test hält genau das
+   * fest: Wer später einen der drei Zweige verschiebt, sieht es hier und
+   * nicht erst auf dem Dashboard.
+   */
+  it('teilt den Umsatz vollständig in bezahlt und offen', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ paymentStatus: 'paid_cash', totalCents: 1500 }),
+      bestellung({ paymentStatus: 'unpaid', totalCents: 2500 }),
+      bestellung({ paymentStatus: 'paid_bank', totalCents: 1000 }),
+    ]);
+
+    expect(tag.paidCents + tag.unpaidCents).toBe(tag.revenueCents);
+    expect(tag.paidCount + tag.unpaidCount).toBe(tag.orderCount);
+    expect(tag.paidCents).toBe(2500);
+    expect(tag.paidCount).toBe(2);
+  });
+
+  /**
+   * EINE STORNIERTE BESTELLUNG IST IN KEINER ZAHLUNGSHÄLFTE — sie hat keinen
+   * Zahlungsanspruch, und der Umsatz kennt sie nicht. In der Aufteilung nach
+   * PRODUKTIONSSTATUS taucht sie dagegen auf: Dort ist sie ein Status wie
+   * jeder andere.
+   */
+  it('lässt eine stornierte Bestellung aus beiden Zahlungshälften heraus', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ paymentStatus: 'unpaid', totalCents: 2500 }),
+      bestellung({ status: 'cancelled', paymentStatus: 'unpaid', totalCents: 9900 }),
+    ]);
+
+    expect(tag.paidCount + tag.unpaidCount).toBe(1);
+    expect(tag.unpaidCents).toBe(2500);
+    expect(tag.statusCounts.cancelled).toBe(1);
+  });
+
+  /**
+   * Die Aufteilung nach Status zählt ALLE Bestellungen des Tages — und
+   * `statusCounts.cancelled` ist dieselbe Zahl wie `cancelledCount`. Zwei
+   * Zahlen für dieselbe Sache dürfen nicht auseinanderlaufen.
+   */
+  it('zählt in der Statusaufteilung jede Bestellung des Tages genau einmal', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ status: 'new' }),
+      bestellung({ status: 'in_production' }),
+      bestellung({ status: 'completed' }),
+      bestellung({ status: 'cancelled' }),
+      bestellung({ status: 'cancelled' }),
+    ]);
+
+    const summe = ORDER_STATUSES.reduce((s, status) => s + tag.statusCounts[status], 0);
+
+    expect(summe).toBe(tag.orderCount + tag.cancelledCount);
+    expect(summe).toBe(5);
+    expect(tag.statusCounts.cancelled).toBe(tag.cancelledCount);
+    expect(tag.statusCounts.new).toBe(1);
   });
 });
 

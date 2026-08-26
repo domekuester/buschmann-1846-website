@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { DashboardDay, DashboardOrder } from '../../src/domain/dashboard-day';
+import {
+  aggregateDashboardDay,
+  type DashboardDay,
+  type DashboardOrder,
+} from '../../src/domain/dashboard-day';
 import { PAYMENT_STATUSES } from '../../src/domain/payment-status';
 import { renderAdminDashboardPage } from '../../src/ui/admin-dashboard-html';
 import { toDashboardView } from '../../src/ui/dashboard-view';
@@ -29,21 +33,20 @@ function bestellung(overrides: Partial<DashboardOrder> = {}): DashboardOrder {
   };
 }
 
+/**
+ * Der Prüftag entsteht aus der ECHTEN Aggregation und nicht aus einer
+ * abgeschriebenen Zahlenliste.
+ *
+ * Vorher stand hier ein Literal mit neun von Hand gesetzten Summen. Es ließ
+ * Prüffälle zu, die es in der Anwendung nicht geben kann — etwa „eine
+ * stornierte Bestellung, und orderCount ist trotzdem 1" —, und es fiel beim
+ * ersten neuen Feld in DashboardDay auseinander. Jetzt zählt dieselbe
+ * Funktion wie im Betrieb; `overrides` gewinnt weiterhin, wo ein Test eine
+ * bestimmte Zahl braucht.
+ */
 function tag(overrides: Partial<DashboardDay> = {}): DashboardDay {
   return {
-    date: TAG,
-    orderCount: 1,
-    cancelledCount: 0,
-    revenueCents: 4350,
-    openCount: 1,
-    customerCount: 1,
-    totalUnits: 2,
-    unpaidCents: 4350,
-    unpaidCount: 1,
-    orders: [bestellung()],
-    topProducts: [
-      { productId: 1, productName: 'Fiktiver Käsekuchen', productUnit: 'Stück', quantity: 2 },
-    ],
+    ...aggregateDashboardDay(TAG, overrides.orders ?? [bestellung()]),
     ...overrides,
   };
 }
@@ -220,12 +223,26 @@ describe('renderAdminDashboardPage — Kennzahlen', () => {
   it('schweigt über die Stornozahl, wenn es keine gibt', () => {
     // Der Dauerhinweis „ohne stornierte" an der Umsatzkarte bleibt: Er
     // erklärt, WAS die Zahl ist, und gilt an jedem Tag. Was verschwinden
-    // soll, ist die ZÄHLUNG — „davon 0 storniert" wäre Rauschen.
-    expect(seite({ cancelledCount: 0 })).not.toMatch(/davon \d+ storniert/);
-    expect(seite({ cancelledCount: 3 })).toMatch(/davon 3 storniert/);
+    // soll, ist die ZÄHLUNG — „zusätzlich 0 storniert" wäre Rauschen.
+    //
+    // „ZUSÄTZLICH" UND NICHT „DAVON" seit Phase 6A.1: orderCount zählt die
+    // stornierten gar nicht mit (siehe domain/dashboard-day.ts). „davon 1
+    // storniert" unter einer 5 behauptete, es seien vier übrig.
+    expect(seite({ cancelledCount: 0 })).not.toMatch(/\d+ storniert/);
+    expect(seite({ cancelledCount: 3 })).toMatch(/zusätzlich 3 storniert/);
+    expect(seite({ cancelledCount: 3 })).not.toMatch(/davon 3 storniert/);
   });
 
-  it('zeigt für einen Tag ohne Bestellungen keine Kennzahlenwand', () => {
+  /**
+   * SEIT PHASE 6A.1 STEHT DIE WAND AUCH AN EINEM LEEREN TAG.
+   *
+   * Vorher verschwand sie, und die Seite bestand aus einem Satz. Das sah aus
+   * wie ein Ladefehler und nicht wie ein ruhiger Dienstag — und wer den Tag
+   * durchblätterte, bekam bei jedem leeren Tag eine ANDERE Seite. Sechs
+   * Nullen sind die ehrliche Antwort und stehen an derselben Stelle wie
+   * sechs Zahlen.
+   */
+  it('zeigt für einen Tag ohne Bestellungen alle sechs Karten mit Null', () => {
     const html = seite({
       orders: [],
       orderCount: 0,
@@ -238,8 +255,209 @@ describe('renderAdminDashboardPage — Kennzahlen', () => {
       topProducts: [],
     });
 
-    expect(html).not.toContain('Noch nicht bezahlt');
+    for (const label of [
+      'Bestellungen',
+      'Umsatz',
+      'Offen / in Arbeit',
+      'Kunden',
+      'Einheiten',
+      'Noch nicht bezahlt',
+    ]) {
+      expect(html).toContain(label);
+    }
+
+    expect(html).toContain('0,00 €');
     expect(html).toContain('Für diesen Tag liegt noch keine Bestellung vor');
+  });
+
+  /**
+   * Ein leerer Tag ist kein Fehler. Die Seite darf ihn nicht wie einen
+   * darstellen — `.banner` ist im ganzen System die Fehlerdarstellung.
+   */
+  it('stellt einen leeren Tag nicht als Fehler dar', () => {
+    const html = seite({
+      orders: [],
+      orderCount: 0,
+      revenueCents: 0,
+      openCount: 0,
+      customerCount: 0,
+      totalUnits: 0,
+      unpaidCents: 0,
+      unpaidCount: 0,
+      topProducts: [],
+    });
+
+    expect(html).not.toContain('class="banner"');
+    expect(html).not.toContain('kennzahlkarte--betont');
+  });
+});
+
+describe('renderAdminDashboardPage — Reihenfolge der Abschnitte', () => {
+  /**
+   * DIE SEITE FOLGT DEM ARBEITSTAG UND NICHT DEM DATENMODELL.
+   *
+   * Erst der Tag, dann die Zahlen, dann die Bestellungen — und zuletzt, wovon
+   * am meisten weggeht. „Meistbestellt" stand bis Phase 6A.3 vor den
+   * Bestellungen und schob damit die einzige Liste, an der etwas ZU TUN ist,
+   * unter eine, die nur einordnet.
+   *
+   * Der Test misst Positionen im Quelltext, nicht Aussehen: Eine spätere
+   * Umsortierung im Renderer fällt damit auf, auch wenn niemand die Seite
+   * dabei ansieht.
+   */
+  it('stellt die Bestellungen vor die meistbestellten Produkte', () => {
+    const html = seite();
+
+    const kennzahlen = html.indexOf('kennzahlen-titel');
+    const bestellungen = html.indexOf('bestellliste-titel');
+    const topProdukte = html.indexOf('topprodukte-titel');
+
+    expect(kennzahlen).toBeGreaterThan(-1);
+    expect(bestellungen).toBeGreaterThan(kennzahlen);
+    expect(topProdukte).toBeGreaterThan(bestellungen);
+  });
+
+  /**
+   * Auch an einem Tag ohne Bestellungen: Der leere Abschnitt steht an
+   * derselben Stelle wie der volle. Wer den Tag wechselt, soll dieselbe Seite
+   * wiederfinden und nicht eine zweite.
+   */
+  it('behält die Reihenfolge an einem leeren Tag', () => {
+    const html = seite({
+      orders: [],
+      orderCount: 0,
+      revenueCents: 0,
+      openCount: 0,
+      customerCount: 0,
+      totalUnits: 0,
+      unpaidCents: 0,
+      unpaidCount: 0,
+      topProducts: [],
+    });
+
+    expect(html.indexOf('bestellliste-titel')).toBeGreaterThan(html.indexOf('kennzahlen-titel'));
+    expect(html.indexOf('topprodukte-titel')).toBeGreaterThan(html.indexOf('bestellliste-titel'));
+  });
+});
+
+describe('renderAdminDashboardPage — Ringe', () => {
+  /**
+   * DER RING IST DIE ZWEITFASSUNG, DIE LEGENDE IST DER INHALT.
+   *
+   * Jede Angabe des Diagramms muss als TEXT auf der Seite stehen. Wer die
+   * Grafik nicht sieht — Screenreader, abgeschaltete Bilder, ein verwaschener
+   * Tresenbildschirm — darf keine einzige Zahl verlieren.
+   */
+  it('nennt jede Angabe des Zahlungsrings als Text', () => {
+    const html = seite({
+      orders: [
+        bestellung({ orderNumber: 'BUS-2026-000001', paymentStatus: 'paid_cash', totalCents: 1500 }),
+        bestellung({ orderNumber: 'BUS-2026-000002', paymentStatus: 'unpaid', totalCents: 2500 }),
+        bestellung({ orderNumber: 'BUS-2026-000003', paymentStatus: 'unpaid', totalCents: 1000 }),
+      ],
+    });
+
+    expect(html).toContain('Bezahlt');
+    expect(html).toContain('Noch offen');
+    expect(html).toContain('1 Bestellung<');
+    expect(html).toContain('2 Bestellungen');
+    expect(html).toContain('15,00 €');
+    expect(html).toContain('35,00 €');
+  });
+
+  /**
+   * Der Statusring nennt jeden vorkommenden Status mit seinem deutschen Wort
+   * und seiner Anzahl — und die stornierte Bestellung MIT, weil sie einen
+   * Produktionsstatus hat, auch wenn sie in keiner Summe steht.
+   */
+  it('nennt jeden vorkommenden Bestellstatus als Text', () => {
+    const html = seite({
+      orders: [
+        bestellung({ orderNumber: 'BUS-2026-000001', status: 'new' }),
+        bestellung({ orderNumber: 'BUS-2026-000002', status: 'in_production' }),
+        bestellung({ orderNumber: 'BUS-2026-000003', status: 'cancelled' }),
+      ],
+    });
+
+    expect(html).toContain('ring__stueck--new');
+    expect(html).toContain('ring__stueck--in_production');
+    expect(html).toContain('ring__stueck--cancelled');
+    expect(html).toContain('In Produktion');
+  });
+
+  /**
+   * Ein Status, an dem heute keine Bestellung steht, bekommt kein Stück und
+   * keine Legendenzeile. „Bestätigt: 0 Bestellungen" beantwortet keine Frage.
+   */
+  it('zeichnet keinen Status, an dem an diesem Tag nichts steht', () => {
+    const html = seite({ orders: [bestellung({ status: 'new' })] });
+
+    expect(html).toContain('ring__stueck--new');
+    expect(html).not.toContain('ring__stueck--confirmed');
+    expect(html).not.toContain('ring__stueck--completed');
+  });
+
+  /**
+   * DIE STORNIERTE BESTELLUNG IST KEIN STÜCK DES ZAHLUNGSRINGS.
+   *
+   * Sie hat keinen Zahlungsanspruch und steht in keiner Summe des Tages. Wäre
+   * sie ein drittes Stück, wäre die Gesamtzahl in der Mitte des Rings eine
+   * Zahl, die auf dieser Seite sonst nirgends vorkommt. Sie steht deshalb als
+   * Fußnote darunter — mit demselben Wort wie auf der Kennzahlenkarte.
+   */
+  it('führt eine stornierte Bestellung als Fußnote und nicht als Ringstück', () => {
+    const html = seite({
+      orders: [
+        bestellung({ orderNumber: 'BUS-2026-000001', paymentStatus: 'unpaid' }),
+        bestellung({ orderNumber: 'BUS-2026-000002', status: 'cancelled' }),
+      ],
+    });
+
+    expect(html).toContain('zusätzlich 1 Bestellung storniert');
+    expect(html).toContain('ringlegende__fussnote');
+  });
+
+  /**
+   * DIE GRAFIK IST FÜR SCREENREADER NICHT DA.
+   *
+   * Sie trägt keine Angabe, die nicht daneben steht; vorgelesen ergäbe sie
+   * „Grafik" ohne Inhalt. `focusable="false"` hält sie zusätzlich aus dem
+   * Tabulaturweg.
+   */
+  it('hält die Grafik aus Vorlesereihenfolge und Tabulaturweg heraus', () => {
+    const html = seite();
+
+    expect(html).toContain('<svg class="ring__grafik" viewBox="0 0 42 42" aria-hidden="true" focusable="false">');
+  });
+
+  /**
+   * DIE GEOMETRIE STEHT IN ATTRIBUTEN UND NICHT IN STILEN.
+   *
+   * Die CSP dieser Anwendung kennt `style-src 'self'` und kein
+   * `'unsafe-inline'`. Ein `style="stroke-dasharray:…"` würde vom Browser
+   * verworfen, und der Ring wäre leer — ohne Fehlermeldung und ohne dass ein
+   * Test es merkt. Deshalb merkt es dieser.
+   */
+  it('kommt ohne ein einziges style-Attribut aus', () => {
+    const html = seite();
+
+    expect(html).toContain('stroke-dasharray="');
+    expect(html).toContain('stroke-dashoffset="');
+    expect(html).not.toContain('style="');
+  });
+
+  /**
+   * DER LEERE TAG BEHÄLT BEIDE RINGE. Ein Diagramm, das an einem stillen Tag
+   * verschwindet, macht die Seite an genau dem Tag unvollständig, an dem
+   * jemand zum ersten Mal nachsieht, ob überhaupt etwas los ist.
+   */
+  it('zeigt an einem leeren Tag beide Ringe ohne Stücke', () => {
+    const html = seite({ orders: [], topProducts: [] });
+
+    expect(html).toContain('Zahlungen');
+    expect(html).toContain('Bestellstatus');
+    expect(html).toContain('ring__spur');
+    expect(html).not.toContain('ring__stueck');
   });
 });
 
@@ -354,7 +572,17 @@ describe('renderAdminDashboardPage — Meistbestellt', () => {
     expect(html.indexOf('Fiktive Tarte')).toBeLessThan(html.indexOf('Fiktiver Käsekuchen'));
   });
 
-  it('lässt den Abschnitt weg, wenn es nichts zu zeigen gibt', () => {
-    expect(seite({ topProducts: [] })).not.toContain('Meistbestellt');
+  /**
+   * SEIT PHASE 6A.1 BLEIBT DIE TAFEL STEHEN. Ein Abschnitt, der an leeren
+   * Tagen verschwindet, ist an leeren Tagen unbekannt: Wer die Seite zum
+   * ersten Mal an einem ruhigen Dienstag sieht, weiß nicht, dass es ihn
+   * gibt. Ein Satz an derselben Stelle sagt, was fehlt.
+   */
+  it('behält den Abschnitt mit einem ruhigen Satz, wenn es nichts zu zeigen gibt', () => {
+    const html = seite({ topProducts: [] });
+
+    expect(html).toContain('Meistbestellt');
+    expect(html).toContain('Für diesen Tag ist noch kein Produkt bestellt');
+    expect(html).not.toContain('class="topliste"');
   });
 });

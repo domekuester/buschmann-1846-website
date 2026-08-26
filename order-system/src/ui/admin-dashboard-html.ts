@@ -3,6 +3,7 @@ import {
   PAYMENT_OPTIONS,
   type DashboardDayView,
   type DashboardOrderRowView,
+  type DonutView,
 } from './dashboard-view';
 import { escapeHtml } from './format';
 
@@ -21,6 +22,14 @@ import { escapeHtml } from './format';
  * Liniendiagramm über sieben Tage sähe nach Auswertung aus und wäre keine —
  * bei drei bis vierzig Bestellungen am Tag ist jede Kurve Rauschen. Die
  * Zahlen stehen groß da, weil sie groß dastehen sollen.
+ *
+ * DIE REIHENFOLGE IST DIE DES ARBEITSTAGS: Tag, Zahlen, Verteilung,
+ * Bestellungen, Meistbestellt. Erst wie der Tag steht, dann wie er sich
+ * aufteilt, dann was zu tun ist, zuletzt was einordnet. „Meistbestellt" stand bis Phase 6A.3 zwischen den Zahlen und
+ * den Bestellungen — und schob damit die einzige Liste, an der etwas ZU TUN
+ * ist, unter eine Liste, die nur einordnet. Wer morgens auf diese Seite
+ * kommt, sucht zuerst, was offen ist; wovon am meisten weggeht, ist die
+ * Frage danach.
  *
  * SIE IST NICHT DIE PRODUKTIONSANSICHT. Dort steht, WAS zu backen ist; hier
  * steht, WIE der Tag steht. Beide zeigen denselben Tag, und ein Link führt
@@ -66,9 +75,12 @@ export function renderAdminDashboardPage(view: AdminDashboardPageView): string {
     view,
     'dashboard',
     `${kopf(view.day)}
-    ${tagnavigation(view.day)}
+    ${steuerung(view.day)}
     ${meldung(view.noticeCode)}
-    ${view.day.isEmpty ? leererTag() : inhalt(view)}`,
+    ${kennzahlen(view.day)}
+    ${ringzone(view.day)}
+    ${view.day.isEmpty ? leereBestellliste() : bestellliste(view)}
+    ${topProdukte(view.day)}`,
   );
 }
 
@@ -92,14 +104,14 @@ export function renderDashboardUnavailablePage(
     view,
     'dashboard',
     `${kopf(view.day)}
-    ${tagnavigation(view.day)}
+    ${steuerung(view.day)}
     <p class="banner" role="alert">Die Tagesdaten konnten gerade nicht geladen werden.</p>
     <p class="leer">Bitte versuche es gleich noch einmal. Wenn es bleibt, melde dich bei Buschmann 1846.</p>`,
   );
 }
 
 /**
- * Der Kopf — und die EINZIGE h1.
+ * Der Seitenkopf — und die EINZIGE h1.
  *
  * Der TAG steht groß und ausgeschrieben, nicht das Wort „Dashboard": Wer
  * hier ankommt, weiß, auf welcher Seite er ist, und will wissen, welcher Tag
@@ -107,33 +119,51 @@ export function renderDashboardUnavailablePage(
  * Wochentags — in einem Betrieb ist der Wochentag die eigentliche
  * Information.
  *
+ * DER KICKER SAGT, WELCHE ART SEITE DAS IST. „Dashboard · Tagesübersicht"
+ * unterscheidet diese Seite in einem Wort von der Produktionsansicht: hier
+ * der Überblick über einen Tag, dort die Liste, nach der gebacken wird.
+ *
  * DER SATZ DARUNTER IST KEINE ZIERDE. Er sagt, worauf sich jede Zahl dieser
  * Seite bezieht: auf den PRODUKTIONSTAG und nicht auf den Bestelleingang.
  * Ohne ihn wäre „Umsatz 1.234 €" zweideutig — und zwar auf die Art, die
- * niemandem auffällt.
+ * niemandem auffällt. Er WIEDERHOLT DAS DATUM NICHT mehr: Es steht eine
+ * Zeile darüber in doppelter Größe, und ein zweites Mal genannt machte den
+ * Satz lang, ohne ihn genauer zu machen.
+ *
+ * DER WEG ZUR PRODUKTION IST EINE NEBENAKTION. Er führt woandershin und tut
+ * nichts — deshalb ein Textlink und keine Schaltfläche, und deshalb steht er
+ * ab Tablet neben dem Kopf statt darunter: Was den Blick zuerst bekommt, ist
+ * der Tag und nicht der Weg von ihm fort.
  */
 function kopf(day: DashboardDayView): string {
-  return `<header class="bereichskopf">
-      <p class="bereichskopf__kicker">Dashboard</p>
-      <h1 class="tag">
-        <span class="tag__datum">${escapeHtml(day.dayLabel)}</span>
-      </h1>
-      <p class="bereichskopf__vorspann">
-        Alle Zahlen auf dieser Seite gehören zum Produktionstag
-        ${escapeHtml(day.dayLabel)} — nicht dazu, wann bestellt wurde.
-      </p>
-      <p class="dashboard__wechsel">
-        <a href="/admin?date=${escapeHtml(day.day)}">Produktionsansicht für diesen Tag</a>
+  return `<header class="dashkopf">
+      <div class="dashkopf__text">
+        <p class="dashkopf__kicker">Dashboard <span aria-hidden="true">·</span> Tagesübersicht</p>
+        <h1 class="dashkopf__tag">${escapeHtml(day.dayLabel)}</h1>
+        <p class="dashkopf__vorspann">
+          Alle Zahlen dieser Seite gehören zum Produktionstag — nicht dazu,
+          wann bestellt wurde.
+        </p>
+      </div>
+      <p class="dashkopf__aktion">
+        <a href="/admin?date=${escapeHtml(day.day)}"
+          >Produktionsansicht für diesen Tag<span aria-hidden="true"> &rarr;</span></a>
       </p>
     </header>`;
 }
 
 /**
- * Die Tagesnavigation — dieselbe Bauart wie in der Produktionsansicht.
+ * Der Steuerbereich — die Tageswahl, und sonst nichts.
  *
- * DREI ECHTE HTML-ELEMENTE, KEIN SKRIPT: zwei <a> und ein
- * <form method="get">. Der Tag steht in der URL, also im Lesezeichen, und der
- * Browser-Zurückpfeil tut das Erwartete.
+ * SIE STEHT IN EINEM EIGENEN FELD und nicht frei im Fluss. Der Unterschied
+ * ist keine Zierde: Alles unterhalb dieser Leiste ist ANZEIGE, alles darin
+ * ist BEDIENUNG. Auf einer Seite, die sonst nur Zahlen zeigt, ist das die
+ * einzige Stelle, an der etwas eingestellt wird — und sie soll als solche
+ * erkennbar sein, ohne dass jemand es liest.
+ *
+ * DER INHALT IST UNVERÄNDERT die Bauart der Produktionsansicht: zwei <a> und
+ * ein <form method="get">, kein Skript. Der Tag steht in der URL, also im
+ * Lesezeichen, und der Browser-Zurückpfeil tut das Erwartete.
  *
  * DIE PFEILE NENNEN IHR ZIEL. „Zurück" allein sagt in einem Screenreader
  * nichts; „Vorheriger Tag, Donnerstag, 27. August 2026" sagt alles.
@@ -142,48 +172,52 @@ function kopf(day: DashboardDayView): string {
  * Formular, dessen action aus einem Parameter käme, wäre die Vorlage für eine
  * Weiterleitung nach draußen.
  */
-function tagnavigation(day: DashboardDayView): string {
-  return `<nav class="tagnav" aria-label="Tag wechseln">
-      <a
-        class="tagnav__pfeil"
-        href="/admin/dashboard?date=${escapeHtml(day.previousDay)}"
-        rel="prev"
-        aria-label="Vorheriger Tag, ${escapeHtml(day.previousDayLabel)}"
-      ><span aria-hidden="true">&larr;</span></a>
+function steuerung(day: DashboardDayView): string {
+  return `<div class="tagleiste">
+      <nav class="tagnav tagnav--leiste" aria-label="Tag wechseln">
+        <a
+          class="tagnav__pfeil"
+          href="/admin/dashboard?date=${escapeHtml(day.previousDay)}"
+          rel="prev"
+          aria-label="Vorheriger Tag, ${escapeHtml(day.previousDayLabel)}"
+        ><span aria-hidden="true">&larr;</span></a>
 
-      <form class="tagnav__formular" method="get" action="/admin/dashboard">
-        <label for="dashboardtag">Tag wählen</label>
-        <input type="date" id="dashboardtag" name="date" value="${escapeHtml(day.day)}" required>
-        <button type="submit" class="senden tagnav__senden">Anzeigen</button>
-      </form>
+        <form class="tagnav__formular" method="get" action="/admin/dashboard">
+          <label for="dashboardtag">Tag wählen</label>
+          <input type="date" id="dashboardtag" name="date" value="${escapeHtml(day.day)}" required>
+          <button type="submit" class="senden tagnav__senden">Anzeigen</button>
+        </form>
 
-      <a
-        class="tagnav__pfeil"
-        href="/admin/dashboard?date=${escapeHtml(day.nextDay)}"
-        rel="next"
-        aria-label="Nächster Tag, ${escapeHtml(day.nextDayLabel)}"
-      ><span aria-hidden="true">&rarr;</span></a>
-    </nav>`;
-}
-
-function inhalt(view: AdminDashboardPageView): string {
-  return `${kennzahlen(view.day)}
-    ${topProdukte(view.day)}
-    ${bestellliste(view)}`;
+        <a
+          class="tagnav__pfeil"
+          href="/admin/dashboard?date=${escapeHtml(day.nextDay)}"
+          rel="next"
+          aria-label="Nächster Tag, ${escapeHtml(day.nextDayLabel)}"
+        ><span aria-hidden="true">&rarr;</span></a>
+      </nav>
+    </div>`;
 }
 
 /**
- * SECHS KARTEN, EINE ZAHL JE KARTE.
+ * SECHS KARTEN, EINE ZAHL JE KARTE — ABER NICHT SECHS GLEICH LAUTE.
  *
- * Die Reihenfolge ist die des Blicks und nicht die des Datenmodells: Erst
- * „wie viel ist los" (Bestellungen), dann „was bringt es" (Umsatz), dann „was
- * ist noch zu tun" (Offen). Kunden, Einheiten und der offene Betrag folgen —
- * sie sind Einordnung, keine Alarmzahlen.
+ * VIER FRAGEN ZUERST, ZWEI DANACH. Bis Phase 6B standen alle sechs Karten
+ * gleichberechtigt nebeneinander, und sechs gleich große Zahlen sind keine
+ * Rangfolge, sondern eine Wand. Vorn stehen jetzt die vier, nach denen
+ * morgens tatsächlich jemand sucht: wie viel ist los, was bringt es, was ist
+ * noch zu tun, was ist noch nicht bezahlt. Kunden und Einheiten ordnen ein
+ * und stehen dahinter — in derselben Tafel, aber leiser gesetzt. Sie sind
+ * nicht unwichtig; sie sind nur nicht die Frage des Morgens.
  *
- * DER OFFENE BETRAG STEHT ZULETZT UND WIRD HERVORGEHOBEN, solange er nicht
- * null ist. Er ist die einzige Zahl der Seite, die zu einer Handlung auffordert
- * — und die einzige, die bei null verschwinden dürfte, es aber nicht tut:
- * „0,00 € offen" ist eine gute Nachricht und soll lesbar sein.
+ * DER OFFENE BETRAG SCHLIESST DIE ERSTE REIHE UND WIRD HERVORGEHOBEN, solange
+ * er nicht null ist. Er ist die einzige Zahl der Seite, die zu einer Handlung
+ * auffordert — und die einzige, die bei null verschwinden dürfte, es aber
+ * nicht tut: „0,00 € offen" ist eine gute Nachricht und soll lesbar sein.
+ *
+ * DIE WAND STEHT AUCH AN EINEM LEEREN TAG. Sechs Nullen sind keine schöne
+ * Antwort, aber sie sind DIE Antwort — und eine Seite, die an einem ruhigen
+ * Tag die Hälfte ihres Aufbaus verliert, sieht aus wie ein Ladefehler. Wer
+ * den Tag wechselt, soll dieselbe Seite wiederfinden und nicht eine zweite.
  *
  * KEINE FARBEN ALS EINZIGE AUSSAGE. Was hervorgehoben ist, sagt es auch im
  * Text; ein Betrieb, der die Seite auf einem verwaschenen Tresenbildschirm
@@ -194,22 +228,49 @@ function kennzahlen(day: DashboardDayView): string {
       <h2 id="kennzahlen-titel" class="nur-vorlesen">Kennzahlen des Tages</h2>
       <div class="kennzahlwand__gitter">
         ${karte('Bestellungen', String(day.orderCount), storniertHinweis(day))}
-        ${karte('Umsatz', day.revenueLabel, 'ohne stornierte')}
+        ${karte('Umsatz', day.revenueLabel, 'ohne stornierte', 'haupt')}
         ${karte('Offen / in Arbeit', String(day.openCount), 'noch nicht abgeschlossen')}
-        ${karte('Kunden', String(day.customerCount), '')}
-        ${karte('Einheiten', String(day.totalUnits), 'bestellte Menge')}
         ${karte(
           'Noch nicht bezahlt',
           day.unpaidLabel,
           `${day.unpaidCount} ${day.unpaidCount === 1 ? 'Bestellung' : 'Bestellungen'}`,
-          day.unpaidCount > 0,
+          day.unpaidCount > 0 ? 'betont' : null,
         )}
+        ${karte('Kunden', String(day.customerCount), 'verschiedene Betriebe', 'zweit')}
+        ${karte('Einheiten', String(day.totalUnits), 'bestellte Menge', 'zweit')}
       </div>
     </section>`;
 }
 
-function karte(label: string, wert: string, hinweis: string, betont = false): string {
-  return `<div class="kennzahlkarte${betont ? ' kennzahlkarte--betont' : ''}">
+/**
+ * Eine Zelle der Wand — und die einzige Stelle, an der eine Kennzahl ein
+ * anderes Gewicht bekommt als ihre Nachbarn.
+ *
+ * ES GIBT GENAU DREI ABWEICHUNGEN, und jede ist begründet:
+ *
+ *   `haupt` (Umsatz) trägt die Zahl, nach der auf dieser Seite zuerst
+ *   gesucht wird. Sie steht eine Stufe größer da — und sonst identisch:
+ *   keine zweite Farbe, kein Rahmen, kein Symbol. Eine Rangfolge, die man
+ *   sieht, ohne sie zu bemerken.
+ *
+ *   `betont` (Noch nicht bezahlt) ist die einzige Zahl der Seite, die zu
+ *   einer Handlung auffordert — und nur, solange sie nicht null ist.
+ *
+ *   `zweit` (Kunden, Einheiten) sind die beiden Zahlen, die einordnen statt
+ *   zu treiben. Sie stehen kleiner und auf gedecktem Grund in der zweiten
+ *   Reihe derselben Tafel — nicht ausgelagert, nicht versteckt, nur leiser.
+ *
+ * Weitere Modifikatoren wären die Absage an die Aussage „das hier ist EIN
+ * Block": Wenn jede Zelle anders aussieht, sieht man sechs Zellen und keine
+ * Wand.
+ */
+function karte(
+  label: string,
+  wert: string,
+  hinweis: string,
+  variante: 'haupt' | 'betont' | 'zweit' | null = null,
+): string {
+  return `<div class="kennzahlkarte${variante === null ? '' : ` kennzahlkarte--${variante}`}">
           <p class="kennzahlkarte__label">${escapeHtml(label)}</p>
           <p class="kennzahlkarte__wert">${escapeHtml(wert)}</p>
           ${hinweis === '' ? '' : `<p class="kennzahlkarte__hinweis">${escapeHtml(hinweis)}</p>`}
@@ -217,14 +278,159 @@ function karte(label: string, wert: string, hinweis: string, betont = false): st
 }
 
 /**
- * „davon 1 storniert" — und nur dann, wenn es stimmt.
+ * DIE VERTEILUNG DES TAGES — zwei Ringe und kein drittes Diagramm.
  *
- * Eine Zeile „davon 0 storniert" wäre Rauschen an der Stelle, an der ein
+ * WARUM ÜBERHAUPT EIN DIAGRAMM, wo diese Datei ein Liniendiagramm über sieben
+ * Tage ausdrücklich ablehnt? Weil der Unterschied nicht „Diagramm ja/nein"
+ * ist, sondern was gezeigt wird. Eine Kurve über sieben Tage BEHAUPTET einen
+ * Verlauf, den drei bis vierzig Bestellungen am Tag nicht hergeben — sie
+ * zeigt Rauschen und sieht nach Auswertung aus. Ein Ring über EINEN Tag
+ * behauptet nichts: Er zeigt ein Verhältnis, das ohnehin feststeht, und zwar
+ * schneller, als man zwei Zahlen im Kopf ins Verhältnis setzt. „Vier von
+ * fünf sind bezahlt" ist auf einen Blick da; aus „Umsatz 130,50 €" und
+ * „offen 69,60 €" muss man es rechnen.
+ *
+ * ZWEI RINGE UND NICHT FÜNF. Es gibt genau zwei Fragen, deren Antwort ein
+ * Verhältnis ist: Wie viel vom Tag ist bezahlt, und wo stehen die
+ * Bestellungen. Alles andere auf dieser Seite ist eine einzelne Zahl oder
+ * eine Liste, und beides wird durch einen Kreis nicht besser.
+ *
+ * KEINE BIBLIOTHEK. Zwei Ringe sind zwei <circle> mit `stroke-dasharray` —
+ * das ist der ganze Aufwand. Eine Diagrammbibliothek brächte JavaScript auf
+ * eine Seite, die keines hat, und stünde damit gegen `script-src 'self'`
+ * ebenso wie gegen den Grundsatz dieser Oberfläche, dass die Kernbedienung
+ * ohne Skript funktioniert. Sie wäre zudem der erste fremde Code im
+ * Auslieferungspfad einer Seite, die einen Bäckereibetrieb anmeldet.
+ *
+ * DIE GRAFIK TRÄGT KEINE INFORMATION, DIE NICHT DANEBEN STEHT. Das <svg> ist
+ * `aria-hidden`; jede Zahl, jeder Anteil und jede Beschriftung steht als Text
+ * in der Legende. Damit ist der Ring genau das, was er sein soll — eine
+ * schnellere Lesart derselben Angaben — und niemals die einzige.
+ */
+function ringzone(day: DashboardDayView): string {
+  return `<div class="ringzone">
+      ${ringtafel('Zahlungen', 'zahlungsring', day.paymentDonut, 'Für diesen Tag ist noch keine Bestellung eingegangen. Sobald eine vorliegt, steht hier, wie viel davon bezahlt ist.')}
+      ${ringtafel('Bestellstatus', 'statusring', day.statusDonut, 'Für diesen Tag ist noch keine Bestellung eingegangen. Sobald eine vorliegt, steht hier, wo sie steht.')}
+    </div>`;
+}
+
+/**
+ * Eine Ringtafel: Kopf, Ring, Legende.
+ *
+ * DER LEERE TAG BEKOMMT DENSELBEN RING, nur ohne Stücke — eine vollständige
+ * Spur in der ruhigen Leinenfarbe, eine 0 in der Mitte und ein Satz statt der
+ * Legende. Ein Diagramm, das an einem stillen Tag verschwindet, macht die
+ * Seite an genau dem Tag unvollständig, an dem jemand zum ersten Mal
+ * nachsieht, ob überhaupt etwas los ist.
+ */
+function ringtafel(titel: string, id: string, ring: DonutView, leerText: string): string {
+  return `<section class="tafel ringtafel" aria-labelledby="${escapeHtml(id)}-titel">
+        <div class="tafel__kopf">
+          <h2 id="${escapeHtml(id)}-titel" class="tafel__titel">${escapeHtml(titel)}</h2>
+          ${
+            ring.isEmpty
+              ? ''
+              : `<p class="tafel__meta">${escapeHtml(ring.totalCountLabel)}</p>`
+          }
+        </div>
+        <div class="ringtafel__inhalt">
+          <div class="ring">
+            ${ringGrafik(ring)}
+            <p class="ring__mitte">
+              <span class="ring__zahl">${escapeHtml(ring.totalLabel)}</span>
+              <span class="ring__wort">${escapeHtml(ring.totalCaption)}</span>
+            </p>
+          </div>
+          ${ring.isEmpty ? `<p class="ringlegende__leer">${escapeHtml(leerText)}</p>` : ringLegende(ring)}
+        </div>
+      </section>`;
+}
+
+/**
+ * Der Ring als SVG.
+ *
+ * `aria-hidden` und `focusable="false"`: Die Grafik ist die Zweitfassung der
+ * Legende und soll in keiner Vorlesereihenfolge und in keinem Tabulaturweg
+ * auftauchen — der Internet Explorer machte SVGs sonst fokussierbar, und
+ * einige Screenreader lesen sonst „Grafik" ohne jeden Inhalt vor.
+ *
+ * `stroke-dasharray` und `stroke-dashoffset` stehen als ATTRIBUTE da und
+ * nicht als Stil. Die Begründung steht in dashboard-view.ts: Die CSP dieser
+ * Anwendung kennt kein `'unsafe-inline'` für Stile, und ein `style="…"` am
+ * Segment würde stillschweigend verworfen.
+ */
+function ringGrafik(ring: DonutView): string {
+  const stuecke = ring.isEmpty
+    ? ''
+    : ring.segments
+        .filter((segment) => segment.count > 0)
+        .map(
+          (segment) => `<circle
+            class="ring__stueck ring__stueck--${escapeHtml(segment.key)}"
+            cx="21" cy="21" r="15.9155"
+            stroke-dasharray="${escapeHtml(segment.dashArray)}"
+            stroke-dashoffset="${escapeHtml(segment.dashOffset)}"
+          />`,
+        )
+        .join('\n          ');
+
+  return `<svg class="ring__grafik" viewBox="0 0 42 42" aria-hidden="true" focusable="false">
+              <g transform="rotate(-90 21 21)">
+                <circle class="ring__spur" cx="21" cy="21" r="15.9155" />
+                ${stuecke}
+              </g>
+            </svg>`;
+}
+
+/**
+ * Die Legende — und der eigentliche Inhalt der Tafel.
+ *
+ * Jede Zeile nennt das Wort, die Anzahl und, wo es einen gibt, den Betrag.
+ * Die Farbmarke davor ist `aria-hidden`: Sie ordnet dem Ring zu, sie sagt
+ * nichts. Wer die Farben nicht unterscheiden kann — oder die Seite auf einem
+ * verwaschenen Tresenbildschirm liest —, verliert damit keine Angabe.
+ */
+function ringLegende(ring: DonutView): string {
+  return `<ul class="ringlegende">
+            ${ring.segments
+              .map(
+                (segment) => `<li class="ringlegende__zeile">
+              <span class="ringlegende__marke ringlegende__marke--${escapeHtml(
+                segment.key,
+              )}" aria-hidden="true"></span>
+              <span class="ringlegende__wort">${escapeHtml(segment.label)}</span>
+              <span class="ringlegende__zahl">${escapeHtml(segment.countLabel)}</span>
+              ${
+                segment.detailLabel === ''
+                  ? ''
+                  : `<span class="ringlegende__betrag">${escapeHtml(segment.detailLabel)}</span>`
+              }
+            </li>`,
+              )
+              .join('\n            ')}
+            ${
+              ring.footnote === ''
+                ? ''
+                : `<li class="ringlegende__fussnote">${escapeHtml(ring.footnote)}</li>`
+            }
+          </ul>`;
+}
+
+/**
+ * „zusätzlich 1 storniert" — und nur dann, wenn es stimmt.
+ *
+ * „ZUSÄTZLICH" UND NICHT „DAVON": orderCount zählt die stornierten gar nicht
+ * mit (siehe domain/dashboard-day.ts). „davon 1 storniert" unter einer 5
+ * behauptete, es seien vier übrig — tatsächlich sind es fünf und eine sechste
+ * ist zurückgezogen. Ein Wort, das die Summe falsch erklärt, ist schlimmer
+ * als keines.
+ *
+ * Eine Zeile „zusätzlich 0 storniert" wäre Rauschen an der Stelle, an der ein
  * Betrieb eine Zahl sucht. Sie erscheint, solange die Antwort nicht null ist —
  * dieselbe Regel wie bei den offenen Zuordnungen auf der Kundenseite.
  */
 function storniertHinweis(day: DashboardDayView): string {
-  return day.cancelledCount === 0 ? '' : `davon ${day.cancelledCount} storniert`;
+  return day.cancelledCount === 0 ? '' : `zusätzlich ${day.cancelledCount} storniert`;
 }
 
 /**
@@ -232,26 +438,52 @@ function storniertHinweis(day: DashboardDayView): string {
  *
  * Die Begründung steht in domain/dashboard-day.ts: Auf einer Seite, die ein
  * Betrieb morgens liest, ist „wovon geht am meisten weg" die brauchbare
- * Aussage; nach Umsatz sortiert stünde oben, was teuer ist.
+ * Aussage; nach Umsatz sortiert stünde oben, was teuer ist. Weil man das der
+ * Liste nicht ansieht, steht es als kleine Angabe im Kopf der Tafel — nicht
+ * als Fußnote unter der Seite, wo es niemand mit der Liste verbindet.
  *
- * DER ABSCHNITT VERSCHWINDET, WENN ES NICHTS ZU ZEIGEN GIBT. Eine leere
- * Überschrift mit einem Strich darunter ist schlechter als kein Abschnitt.
+ * DIE RANGZIFFER STEHT SEIT PHASE 6B WIEDER DA — als Ziffer und nicht als
+ * Medaille. Die frühere Fassung ließ die Nummerierung des <ol> ausblenden mit
+ * der Begründung, ein „1." vor dem meistbestellten Kuchen lese sich wie eine
+ * Platzierung in einem Wettbewerb. Das stimmt für ein fettes „1." am
+ * Zeilenanfang; es stimmt nicht für eine schmale, gedeckte Ziffer in einer
+ * eigenen Spalte. Die tut etwas anderes: Sie gibt fünf verschieden langen
+ * Produktnamen eine gemeinsame linke Kante und macht die Liste als Reihenfolge
+ * lesbar, statt sie wie eine zufällige Aufzählung aussehen zu lassen.
+ *
+ * Sie ist `aria-hidden`: Das <ol> trägt die Reihenfolge bereits, und ein
+ * vorgelesenes „eins Beispiel Käsekuchen elf Stück" wäre eine Zahl zu viel.
+ *
+ * DER ABSCHNITT BLEIBT STEHEN, AUCH WENN ER LEER IST. Die frühere Fassung
+ * ließ ihn verschwinden; das machte die Seite an einem ruhigen Tag kürzer und
+ * unvollständiger, und wer sie zum ersten Mal an so einem Tag sah, wusste
+ * nicht, dass es diesen Abschnitt gibt. Ein Satz sagt, was fehlt, und nimmt
+ * denselben Platz ein wie die Liste, die morgen dort steht.
  */
 function topProdukte(day: DashboardDayView): string {
-  if (day.topProducts.length === 0) return '';
-
-  return `<section class="topprodukte" aria-labelledby="topprodukte-titel">
-      <h2 id="topprodukte-titel" class="abschnitt__titel">Meistbestellt</h2>
-      <ol class="topliste">
+  const inhalt =
+    day.topProducts.length === 0
+      ? `<p class="tafel__leer">Für diesen Tag ist noch kein Produkt bestellt. Sobald eine Bestellung eingeht, steht hier, wovon am meisten gebraucht wird.</p>`
+      : `<ol class="topliste">
         ${day.topProducts
           .map(
-            (line) => `<li class="topliste__zeile">
+            (line, index) => `<li class="topliste__zeile">
+          <span class="topliste__rang" aria-hidden="true">${index + 1}</span>
           <span class="topliste__name">${escapeHtml(line.name)}</span>
-          <span class="topliste__menge">${line.quantity} ${escapeHtml(line.unit)}</span>
+          <span class="topliste__menge"><span class="topliste__zahl">${
+            line.quantity
+          }</span> <span class="topliste__einheit">${escapeHtml(line.unit)}</span></span>
         </li>`,
           )
           .join('\n        ')}
-      </ol>
+      </ol>`;
+
+  return `<section class="tafel topprodukte" aria-labelledby="topprodukte-titel">
+      <div class="tafel__kopf">
+        <h2 id="topprodukte-titel" class="tafel__titel">Meistbestellt</h2>
+        <p class="tafel__meta">nach Menge</p>
+      </div>
+      ${inhalt}
     </section>`;
 }
 
@@ -264,6 +496,11 @@ function topProdukte(day: DashboardDayView): string {
  * breiten wird sie zur Tabelle. Ein geschrumpfter Desktop-Tabellenkörper mit
  * seitlichem Scrollen wäre auf einem Tresengerät unbenutzbar.
  *
+ * DIE TAFEL UM DIE TABELLE GILT ERST AB TABLET. Darunter ist die Tabelle
+ * selbst schon eine Reihe von Karten; eine Karte in einer Karte ist ein
+ * Rahmen zu viel. Der Kopf mit der Überschrift steht auf beiden Breiten —
+ * er ist es, der den Abschnitt zum Abschnitt macht.
+ *
  * DIE BESTELLNUMMER STEHT IN EINEM <th scope="row">: Sie benennt die Zeile.
  * Ein Screenreader liest damit bei jeder Zelle mit, um welche Bestellung es
  * geht.
@@ -273,15 +510,20 @@ function topProdukte(day: DashboardDayView): string {
  * wissen will, warum der Tag dünn aussieht, muss die Stornierung sehen.
  */
 function bestellliste(view: AdminDashboardPageView): string {
-  return `<section class="bestellliste" aria-labelledby="bestellliste-titel">
-      <h2 id="bestellliste-titel" class="abschnitt__titel">Bestellungen</h2>
+  return `<section class="tafel tafel--tabelle bestellliste" aria-labelledby="bestellliste-titel">
+      <div class="tafel__kopf">
+        <h2 id="bestellliste-titel" class="tafel__titel">Bestellungen</h2>
+        <p class="tafel__meta">${view.day.orders.length} ${
+          view.day.orders.length === 1 ? 'Eintrag' : 'Einträge'
+        }</p>
+      </div>
       <div class="datentabelle-wrap">
         <table class="datentabelle">
           <thead><tr>
             <th scope="col">Bestellung</th>
             <th scope="col">Kunde</th>
             <th scope="col">Produktion</th>
-            <th scope="col">Betrag</th>
+            <th scope="col" class="spalte-betrag">Betrag</th>
             <th scope="col">Zahlung</th>
             <th scope="col">Zahlungsstatus ändern</th>
           </tr></thead>
@@ -290,6 +532,30 @@ function bestellliste(view: AdminDashboardPageView): string {
             .join('')}</tbody>
         </table>
       </div>
+    </section>`;
+}
+
+/**
+ * Der Tag, an dem nichts bestellt wurde.
+ *
+ * ER SIEHT AUS WIE JEDER ANDERE TAG, nur mit Nullen. Kopf, Steuerung,
+ * Kennzahlenwand und beide Tafeln stehen an derselben Stelle; was fehlt, sind
+ * die Zeilen — und an ihrer Stelle steht ein Satz, der sagt, dass hier nichts
+ * fehlt, sondern nichts ist.
+ *
+ * KEINE ALARMÄSTHETIK. Ein ruhiger Tag ist kein Fehler: kein Warnzeichen,
+ * kein roter Grund, kein „Achtung". Dieselbe Tafel, derselbe Rahmen, ein
+ * gedeckter Satz.
+ */
+function leereBestellliste(): string {
+  return `<section class="tafel bestellliste" aria-labelledby="bestellliste-titel">
+      <div class="tafel__kopf">
+        <h2 id="bestellliste-titel" class="tafel__titel">Bestellungen</h2>
+      </div>
+      <p class="tafel__leer">
+        Für diesen Tag liegt noch keine Bestellung vor. Sobald eine Bestellung
+        für diesen Produktionstag eingeht, erscheint sie hier.
+      </p>
     </section>`;
 }
 
@@ -388,22 +654,4 @@ function meldung(code: string | null): string {
     code === 'payment_saved' ? 'kundenmeldung kundenmeldung--erfolg' : 'banner kundenmeldung';
 
   return `<p class="${klasse}" role="status">${escapeHtml(text)}</p>`;
-}
-
-/**
- * Der Tag, an dem nichts bestellt wurde.
- *
- * SECHS NULLEN WÄREN DIE SCHLECHTERE ANTWORT. Eine Kennzahlenwand aus
- * lauter Nullen sieht aus wie ein Ladefehler und zwingt zum Nachdenken über
- * etwas, worüber es nichts nachzudenken gibt. Ein Satz sagt dasselbe in
- * einem Blick.
- *
- * DIE NAVIGATION BLEIBT DARÜBER STEHEN: Der nächste Klick ist fast immer der
- * nächste Tag.
- */
-function leererTag(): string {
-  return `<section class="leerzustand" aria-labelledby="dashboardleer-titel">
-      <h2 id="dashboardleer-titel">Für diesen Tag liegt noch keine Bestellung vor</h2>
-      <p>Sobald eine Bestellung für diesen Produktionstag eingeht, erscheint sie hier.</p>
-    </section>`;
 }

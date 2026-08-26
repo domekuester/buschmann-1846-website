@@ -1617,7 +1617,13 @@ textarea[aria-invalid='true'] {
    Zahl und nicht deren Namen. Der Name steht trotzdem da — nur leiser.
 
    KEINE DIAGRAMME. Bei drei bis vierzig Bestellungen am Tag ist jede Kurve
-   Rauschen mit Achsenbeschriftung. Sechs Karten und eine Liste sagen mehr.
+   Rauschen mit Achsenbeschriftung. Sechs Karten und zwei Tafeln sagen mehr.
+
+   DREI EBENEN UND NICHT SIEBEN. Der Aufbau ist bewusst flach: Kopf (welcher
+   Tag), Steuerung (welchen Tag), Zahlen und Tafeln. Alles darin trägt genau
+   eine von drei Rollen — Überschrift, Zahl, Hilfstext — und jede Rolle hat
+   überall dieselbe Größe, dieselbe Farbe und dasselbe Gewicht. Eine vierte
+   Zwischengröße wäre die erste, bei der der Blick nicht mehr weiß, wohin.
 
    FARBE TRÄGT KEINE AUSSAGE ALLEIN. Die einzige hervorgehobene Karte — der
    offene Betrag — sagt im TEXT, worum es geht; die Farbe verstärkt nur. Auf
@@ -1626,107 +1632,796 @@ textarea[aria-invalid='true'] {
    KEIN NEUES LAYOUTSYSTEM. Die Bestellliste ist dieselbe .datentabelle, die
    Kunden- und Katalogseite benutzen: auf dem Telefon Karten, ab Tablet eine
    Tabelle. Ein zweites Tabellenlayout wäre eine zweite Stelle, an der
-   horizontales Scrollen entstehen kann. */
+   horizontales Scrollen entstehen kann.
 
-/* Der Weg zur Produktionsansicht desselben Tages — ein Link und keine
-   Schaltfläche: Er führt woandershin, er tut nichts. */
-.dashboard__wechsel { margin: .6rem 0 0; }
+   KEIN GOLDENER RAND AN JEDER KARTE. Die übrigen Adminseiten setzen ihn an
+   jede Zeile; auf einer Seite mit sechs Karten nebeneinander wären es sechs
+   goldene Striche in einer Reihe, und Gold, das überall steht, betont nichts
+   mehr. Hier tragen Fläche, Haarlinie und ein sehr flacher Schatten — und
+   der einzige farbige Rand der Seite gehört der einzigen Karte, die zu einer
+   Handlung auffordert. */
 
-.dashboard__wechsel a,
-.dashboard__wechsel a:visited {
-  color: var(--blau);
-  font-weight: 600;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
+/* Der Schatten steht auf dem Body und nicht in :root: Er ist eine Eigenschaft
+   dieser einen Seite, und die übrigen Oberflächen des Systems sollen ihn
+   nicht versehentlich erben. Flach und navy-getönt — die Karte liegt auf dem
+   Porzellan, sie schwebt nicht darüber. */
+.adminseite--breit {
+  --schatten: 0 1px 2px rgba(10, 33, 57, .05), 0 8px 20px -14px rgba(10, 33, 57, .35);
 }
 
-.dashboard__wechsel a:hover { color: var(--champagner-text); }
+/* --- Seitenkopf --- */
 
-/* Die Kennzahlenwand: SECHS Karten, und die Spaltenzahl teilt sechs.
+/* Ab Tablet zwei Spalten: links der Tag, rechts der Weg zur Produktion.
+   Untereinander wäre der Weg fort vom Tag das Letzte, was vor den Zahlen
+   steht — und damit betonter, als er es verdient. */
+.dashkopf {
+  display: grid;
+  gap: .75rem;
+  margin-bottom: 1rem;
+}
 
-   Der erste Entwurf benutzte auto-fit mit minmax — und der Browser hat
-   gezeigt, warum das hier falsch ist: In der breiten Dashboardspalte passten
-   FÜNF Karten in die erste Zeile, und „Noch nicht bezahlt" stand allein in
-   der zweiten. Ausgerechnet die einzige Karte, die zu einer Handlung
-   auffordert, sah aus wie ein Nachtrag.
+/* Der Kicker sagt in zwei Wörtern, welche Art Seite das ist. Er ist die
+   einzige Stelle des Kopfes, die Gold trägt — klein, aber unverwechselbar. */
+.dashkopf__kicker {
+  margin: 0 0 .3rem;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--champagner-text);
+}
 
-   Feste Spaltenzahlen sind hier deshalb keine Breakpoint-Kaskade um ihrer
-   selbst willen, sondern die Aussage „drei mal zwei": 1 × 6 auf dem Telefon,
-   2 × 3 auf dem Tablet, 3 × 2 auf dem Desktop. Jede Zeile ist voll, keine
-   Karte steht allein. */
-.kennzahlwand { margin: 1.75rem 0 0; }
+.dashkopf__tag {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 5.4vw, 1.95rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--navy);
+}
+
+/* HILFSINFORMATION, KEIN VORSPANN.
+
+   Der Satz sagt, worauf sich jede Zahl der Seite bezieht — das muss einmal
+   dastehen, aber es wird nach dem ersten Besuch nie wieder gelesen. Bis
+   Phase 6A.3 stand er in .88rem über zwei Zeilen und nahm damit fast so viel
+   Kopfhöhe ein wie das Datum selbst. Jetzt ist er die kleinste Schrift des
+   Kopfes und auf 58 Zeichen gefasst, damit er auf dem Desktop eine Zeile
+   bleibt. Die Breitenbegrenzung selbst ist älter: Ohne sie liefe er in der
+   60rem-Spalte über die ganze Seite. */
+.dashkopf__vorspann {
+  margin: .35rem 0 0;
+  max-width: 58ch;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--text-leise);
+}
+
+/* DIE ZWEITE AKTION DER SEITE — und sie sieht ab Phase 6A.3 auch danach aus.
+
+   Vorher war es ein unterstrichener Textlink. Auf einer Seite, die sonst
+   keinen einzigen unterstrichenen Fließtextlink trägt, war ausgerechnet die
+   Nebenaktion die auffälligste Textstelle des Kopfes — eine Unterstreichung
+   zieht mehr Blick als jede Fläche in dieser Größe.
+
+   Jetzt ist es ein umrandetes Feld ohne Füllung: als Bedienelement sofort
+   erkennbar (das ist der Punkt — es ist der Weg in die Produktionsansicht),
+   aber ohne Gold und ohne Grund, also klar nachgeordnet gegenüber
+   „Anzeigen" in der Tagesleiste. Es bleibt ein <a>: Es führt woandershin
+   und tut nichts.
+
+   Die Tippfläche ist --tap hoch wie jede andere des Systems. */
+.dashkopf__aktion { margin: 0; }
+
+.dashkopf__aktion a,
+.dashkopf__aktion a:visited {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 .85rem;
+  color: var(--blau);
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  background: #fff;
+  /* Die Kante eines Bedienelements muss sich vom Grund abheben — die
+     Haarlinie --leinen tut das mit 1,3:1 nicht. Navy bei 50% ergibt 3,3:1
+     gegen Weiß und damit die Grenze, die WCAG 1.4.11 für die Umrandung
+     eines Bedienelements verlangt. Sie ist immer noch leiser als jede
+     gefüllte Fläche. */
+  border: 1px solid rgba(10, 33, 57, .5);
+  border-radius: var(--radius);
+}
+
+.dashkopf__aktion a:hover {
+  color: var(--champagner-text);
+  border-color: var(--champagner);
+}
+
+/* --- Steuerbereich --- */
+
+/* Die Tageswahl steht in einem eigenen Feld: Alles darin ist BEDIENUNG, alles
+   darunter ist ANZEIGE. Der beige Grund ist derselbe --elfenbein, den die
+   Marke ohnehin trägt; er trennt die beiden Rollen, ohne eine Farbe
+   hinzuzufügen. */
+.tagleiste {
+  margin: 0 0 1.75rem;
+  padding: .7rem .75rem;
+  background: var(--elfenbein);
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+}
+
+.tagleiste .tagnav { margin-bottom: 0; }
+
+/* Auf dem beigen Grund brauchen Pfeile und Datumsfeld eine weiße Fläche,
+   sonst verschwinden sie darin. */
+.tagleiste .tagnav__pfeil { border-color: rgba(197, 154, 82, .45); }
+
+.tagnav--leiste .tagnav__formular label { color: var(--text-leise); }
+
+/* AB TABLET IST DIE TAGESWAHL EIN ZUSAMMENHÄNGENDES BEDIENELEMENT.
+
+   Der Befund kam aus dem Browser: Die geerbte Rasterform der
+   Produktionsansicht (`--tap 1fr --tap`) zog die beiden Pfeile auf 1440px an
+   die äußersten Enden einer 912px breiten Leiste, mit einem halben Meter
+   Beige zwischen Pfeil und Datumsfeld. Drei Bedienelemente, die zusammen
+   EINE Sache tun — den Tag wechseln —, sahen aus wie drei Sachen.
+
+   Deshalb hier eine Reihe statt eines Rasters: Pfeil, Beschriftung, Feld,
+   „Anzeigen", Pfeil — linksbündig und in einem Zug lesbar. Die Regel gilt
+   ausdrücklich nur für `--leiste`, also nur für das Dashboard; die
+   Produktionsansicht behält ihre Rasterform mit den Pfeilen an den Rändern.
+   Das ist kein Zufall, sondern der Unterschied der beiden Seiten: dort ein
+   Tagesblatt, das man durchblättert, hier ein Kopf, an dem man einstellt.
+
+   Unter 600px bleibt alles, wie es war — zwei Reihen, Pfeile außen, das Feld
+   über die volle Breite darunter. Auf 375px ist das die einzige Aufteilung,
+   in der das Datumsfeld bedienbar bleibt. */
+/* UNTER 600px BLEIBT DIE RASTERFORM — aber sie zerfällt nicht mehr.
+
+   Der Befund kam aus dem Browser: Die Pfeile standen oben ausgerichtet auf
+   Höhe der Beschriftung, das Datumsfeld eine Zeile tiefer, und „Anzeigen"
+   hing als 94px breiter Knopf allein und linksbündig unter einem 215px
+   breiten Feld. Drei Bedienelemente, drei Kanten, kein Zusammenhang.
+
+   Jetzt sitzen die Pfeile auf der MITTE des Stapels, und „Anzeigen" ist so
+   breit wie das Feld darüber. Aus drei losen Teilen wird eine Säule mit zwei
+   Pfeilen daneben. Die Reihenfolge im Quelltext bleibt dabei unangetastet —
+   Pfeil, Beschriftung, Feld, Anzeigen, Pfeil —, also stimmt die
+   Tabulatorreihenfolge weiterhin mit dem überein, was man sieht. Das ist der
+   Grund, warum hier kein Flächenraster mit `display: contents` steht: Es
+   hätte „Anzeigen" unter die Pfeile geschoben und die Fokusreihenfolge von
+   der Lesereihenfolge getrennt. */
+@media (max-width: 599px) {
+  .tagnav--leiste { align-items: center; }
+
+  .tagnav--leiste .tagnav__senden {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
+
+@media (min-width: 600px) {
+  .tagnav--leiste {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+  }
+
+  .tagnav--leiste .tagnav__formular {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+  }
+
+  /* Die Beschriftung steht jetzt IN der Reihe und nicht mehr als eigene
+     Zeile darüber. */
+  .tagnav--leiste .tagnav__formular label { flex: 0 0 auto; }
+}
+
+/* --- Kennzahlen --- */
+
+/* DIE KENNZAHLENWAND IST EINE TAFEL, KEINE SAMMLUNG VON KÄSTCHEN.
+
+   Der Browser hat den Befund geliefert: sechs freistehende weiße Karten, jede
+   mit eigenem Rand, eigenem Schatten und 16px Luft dazwischen, lasen sich auf
+   1440px wie sechs Formularfelder, die zufällig nebeneinander liegen. Ein
+   Betrieb liest hier aber EINE Aussage — „so steht der Tag" —, und sie soll
+   auch wie eine aussehen.
+
+   Die Wand ist deshalb eine einzige Fläche mit Haarlinien darin: Das GITTER
+   trägt Rand, Radius und Schatten, die Zellen sind weiß, und der 1px-Abstand
+   zwischen ihnen lässt den Grund des Gitters durchscheinen. Das ist die
+   Trennlinie — eine Linie ZWISCHEN zwei Feldern statt sechs Rändern UM sechs
+   Karten. Die Bauart eines Anzeigefeldes und nicht die eines Formulars.
+
+   DIE SPALTENZAHL TEILT WEITERHIN SECHS: 1 × 6 auf dem Telefon, 2 × 3 auf dem
+   Tablet, 3 × 2 auf dem Desktop. Der erste Entwurf benutzte auto-fit mit
+   minmax, und der Browser zeigte, warum das hier falsch ist: In der breiten
+   Dashboardspalte passten FÜNF Karten in die erste Zeile, und „Noch nicht
+   bezahlt" stand allein in der zweiten. Ausgerechnet die einzige Karte, die zu
+   einer Handlung auffordert, sah aus wie ein Nachtrag. */
+.kennzahlwand { margin: 0 0 1.75rem; }
 
 .kennzahlwand__gitter {
   display: grid;
   grid-template-columns: 1fr;
-  gap: .75rem;
+
+  /* Der Abstand IST die Trennlinie. Er bleibt auf jeder Breite 1px — ein
+     Gitter, dessen Fugen mitwachsen, ist wieder eine Sammlung von Kästchen. */
+  gap: 1px;
+  background: var(--leinen);
+  border: var(--spur);
+  border-radius: var(--radius);
+  box-shadow: var(--schatten);
+
+  /* Ohne das säßen vier weiße Rechtecke in den runden Ecken der Tafel. */
+  overflow: hidden;
 }
 
 @media (min-width: 480px) {
   .kennzahlwand__gitter { grid-template-columns: repeat(2, 1fr); }
 }
 
+/* AB DESKTOP VIER SPALTEN — UND SIE SIND ABSICHTLICH NICHT GLEICH BREIT.
+
+   Vier gleiche Viertel von 912px lassen jeder Karte 191px Innenraum. „1.284,50 €"
+   steht in der Umsatzgröße aber 208px breit, und Geldbeträge brechen auf dieser
+   Seite nicht um — vier gleiche Spalten hätten die wichtigste Zahl der Seite
+   also aus ihrer Karte geschoben. Im Browser nachgemessen, nicht geschätzt.
+
+   Die Gewichte geben jeder Karte den Platz, den ihr Inhalt braucht: die beiden
+   GELDKARTEN am meisten, die beiden ZÄHLKARTEN am wenigsten — eine einstellige
+   Zahl braucht keine Spaltenbreite. Die Maße sind gemessen und nicht geraten:
+   Bei 1.35fr fasst „Noch nicht bezahlt" auch „48.500,00 €", und genau daran ist
+   der erste Entwurf mit 1.15fr gescheitert — er schnitt fünfstellige Beträge ab,
+   und zwar lautlos, weil die Tafel ihre Ecken abrundet und dafür `overflow:
+   hidden` trägt.
+
+   Nebeneffekt und keine Nebensache: Eine Reihe aus vier verschieden breiten
+   Feldern liest sich als komponiert und nicht als Raster.
+
+   DIE ZWEITE REIHE GEHÖRT DEN BEIDEN EINORDNENDEN ZAHLEN. Jede spannt zwei
+   Spalten, damit die Tafel unten glatt abschließt. */
 @media (min-width: 780px) {
-  .adminseite--breit .kennzahlwand__gitter { grid-template-columns: repeat(3, 1fr); }
+  .adminseite--breit .kennzahlwand__gitter {
+    grid-template-columns: 1fr 1.4fr 1fr 1.35fr;
+  }
+
+  .adminseite--breit .kennzahlkarte--zweit { grid-column: span 2; }
 }
 
+/* DIE ZELLE IST AUF DEM TELEFON EINE ABLESEZEILE und ab Tablet eine Karte.
+
+   Gestapelt brauchte jede der sechs Zellen auf einem 375px-Telefon rund
+   127px; sechs davon sind 760px — ein ganzer Bildschirm nur für die
+   Kopfzahlen, bevor die erste Bestellung sichtbar wird. Nebeneinander gesetzt
+   — Beschriftung links, Zahl rechts — sind es rund 70px je Zeile, und die
+   sechs Zahlen stehen als SPALTE untereinander. Genau die Form, in der man
+   eine Liste von Kennzahlen abliest.
+
+   Die Zahl bleibt dabei das dominante Element: Sie ist mehr als doppelt so
+   groß wie die Beschriftung und steht an der Kante, an der das Auge auf einer
+   Zahlenspalte ohnehin entlangläuft.
+
+   `minmax(0, 1fr)` und nicht `1fr`: Ohne die Null als Untergrenze verweigerte
+   die Textspalte das Schrumpfen unter ihre längste Beschriftung, und die
+   Zeile liefe bei 200% Zoom aus der Tafel heraus. */
 .kennzahlkarte {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'label wert'
+    'hinweis wert';
+  align-items: center;
+  column-gap: 1rem;
   min-width: 0;
-  padding: .95rem 1rem;
+  padding: .8rem 1rem;
   background: #fff;
-  border: var(--spur);
-  border-left: 3px solid var(--champagner);
-  border-radius: var(--radius);
 }
 
-/* Die einzige Karte, die zu etwas auffordert. Sie bekommt einen anderen
-   Rand und einen anderen Grund — und trotzdem KEINE eigene Schriftgröße:
-   Größer als die übrigen wäre sie eine Alarmmeldung, und ein offener Betrag
-   am Monatsanfang ist keine. */
-.kennzahlkarte--betont {
-  border-left-color: var(--fehler);
-  background: var(--fehler-grund);
+@media (min-width: 480px) {
+  /* Ab hier stehen Zellen NEBENEINANDER, und die Ablesezeile wird zur Karte:
+     Beschriftung, darunter die Zahl, am Fuß der Hilfstext. Die Mindesthöhe
+     verabredet, dass die beiden Zeilen der Tafel gleich hoch sind — eine
+     Reihe unterschiedlich hoher Felder liest sich als Unordnung, bevor
+     irgendeine Zahl gelesen ist. */
+  .kennzahlkarte {
+    display: flex;
+    flex-direction: column;
+
+    /* Die Ablesezeile zentrierte ihre beiden Spalten gegeneinander; als
+       Karte gestapelt muss dieselbe Regel zurückgenommen werden, sonst
+       stehen Beschriftung, Zahl und Hilfstext mittig — der Browser hat es
+       sofort gezeigt. */
+    align-items: stretch;
+    min-height: 6.75rem;
+    padding: 1rem 1.15rem 1.05rem;
+  }
 }
 
+/* Die Beschriftung tritt zurück: klein, gesperrt, in Versalien und in der
+   leisen Textfarbe. Sie sagt, WORÜBER die Zahl spricht — sie spricht nicht
+   selbst. */
 .kennzahlkarte__label {
+  grid-area: label;
   margin: 0;
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .05em;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  line-height: 1.3;
   text-transform: uppercase;
   color: var(--text-leise);
 }
 
-/* tabular-nums: Untereinanderstehende Beträge sollen untereinander stehen.
-   Ohne diese Zeile wandert das Komma je nach Ziffer, und eine Spalte aus
-   Geldbeträgen wird unlesbar. */
+/* DIE ZAHL IST DIE ANTWORT DER SEITE. Sie steht in der Serife der Marke, in
+   der Farbe der Marke und größer als alles andere auf der Seite außer dem
+   Datum.
+
+   GELDBETRÄGE BRECHEN NICHT. Die frühere Regel `overflow-wrap: anywhere`
+   erlaubte genau das: „130,50" auf der einen und „€" auf der nächsten Zeile
+   ist kein Betrag mehr, sondern zwei Zeilen Rätsel. `nowrap` verbietet es;
+   dass die Zahl trotzdem in jede Zelle passt, besorgt das clamp() — auf
+   schmalen Geräten fällt sie mit der Breite, statt umzubrechen.
+
+   font-variant-numeric ist hier eine VORSORGE und keine Wirkung: Das Georgia
+   der Systeme, auf denen diese Seite läuft, führt weder `tnum` noch `lnum`
+   (im Browser nachgemessen: „111" ist dort schmaler als „000"). Wo eine
+   Serife mit Tabellenziffern steht, greift die Zeile; wo nicht, kostet sie
+   nichts. Die sechs Zahlen stehen in getrennten Feldern und nicht in einer
+   Spalte — es hängt an dieser Zeile also keine Ausrichtung. */
 .kennzahlkarte__wert {
-  margin: .3rem 0 0;
+  grid-area: wert;
+  margin: 0;
   font-family: var(--serif);
-  font-size: clamp(1.55rem, 6.5vw, 2rem);
+  font-size: clamp(1.45rem, 6.2vw, 1.85rem);
   font-weight: 500;
   line-height: 1.1;
   color: var(--navy);
-  font-variant-numeric: tabular-nums;
-  overflow-wrap: anywhere;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
-.kennzahlkarte--betont .kennzahlkarte__wert { color: var(--fehler); }
-
+/* Der Hilfstext ordnet ein und darf mit der Zahl nie konkurrieren: kleiner
+   als der Fließtext, in der leisen Textfarbe, ohne eigenes Gewicht. */
 .kennzahlkarte__hinweis {
-  margin: .3rem 0 0;
-  font-size: .82rem;
+  grid-area: hinweis;
+  margin: .1rem 0 0;
+  font-size: .76rem;
+  line-height: 1.35;
   color: var(--text-leise);
 }
 
-/* Die Überschriften der beiden unteren Abschnitte. Kleiner als die h1 und
-   deutlich als Abschnittsanfang erkennbar — ohne Linie, die Luft reicht. */
-.abschnitt__titel {
-  margin: 2.25rem 0 .75rem;
+@media (min-width: 480px) {
+  .kennzahlkarte__wert {
+    margin: .45rem 0 0;
+    font-size: clamp(1.8rem, 4.2vw, 2.3rem);
+    text-align: left;
+  }
+
+  /* margin-top: auto — der Hilfstext sitzt am Fuß der Zelle. Damit stehen die
+     Hilfstexte einer Reihe auf einer Linie, statt jeder unter seiner Zahl zu
+     hängen. */
+  .kennzahlkarte__hinweis {
+    margin-top: auto;
+    padding-top: .5rem;
+    font-size: .78rem;
+  }
+}
+
+/* UMSATZ DARF EINE STUFE LAUTER SEIN — und nur eine.
+
+   Es ist die Zahl, nach der auf dieser Seite zuerst gesucht wird. Sie steht
+   deshalb rund 12% größer da und sonst identisch: keine zweite Farbe, kein
+   Rahmen, kein Symbol. Eine Rangfolge, die man sieht, ohne sie zu bemerken.
+
+   ERST AB TABLET. Auf dem Telefon stehen die sechs Zahlen als Spalte
+   untereinander; eine einzelne größere Zahl darin wäre nicht Rangfolge,
+   sondern eine Unruhe in der Kante, an der das Auge entlangläuft. */
+@media (min-width: 480px) {
+  /* 2,5rem und nicht 2,6rem: Bei 2,6rem lief „48.500,00 €" um ein Pixel über
+     die Umsatzkarte hinaus — ein Maß, das man nicht sieht und das trotzdem
+     eine Ziffer abschneidet. Der Unterschied zwischen 40px und 41,6px ist
+     keiner, den jemand bemerkt; der zwischen einem vollständigen und einem
+     angeschnittenen Betrag schon. */
+  .kennzahlkarte--haupt .kennzahlkarte__wert {
+    font-size: clamp(2rem, 4.7vw, 2.5rem);
+  }
+
+  .kennzahlkarte--zweit .kennzahlkarte__wert {
+    font-size: clamp(1.5rem, 3.4vw, 1.85rem);
+  }
+}
+
+/* DIE EINZIGE ZELLE, DIE ZU ETWAS AUFFORDERT.
+
+   KEIN ROTER GRUND UND KEINE ROTE ZAHL MEHR. Eine ausgefüllte Fehlerbox
+   zwischen fünf weißen Feldern schrie, und „noch nicht bezahlt" am Morgen ist
+   kein Fehler, sondern eine Aufgabe. Die Zelle trägt jetzt drei sehr leise
+   Zeichen: einen fast weißen warmen Grund, eine schmale Kante an ihrer
+   Vorderkante und die BESCHRIFTUNG in der dunklen Tonfarbe.
+
+   DIE ZAHL BLEIBT NAVY wie die fünf anderen. Das ist der Kern des
+   Unterschieds zur früheren Fassung: Die sechs Zahlen sind weiterhin eine
+   Reihe und nicht eine Reihe mit einem Ausrufezeichen darin. Was Aufmerksamkeit
+   bekommt, ist das FELD — nicht der Betrag, als wäre er falsch.
+
+   Der Streifen ist ein INNERER Schatten und kein Rand: Ein 3px-Rand verschöbe
+   den Inhalt dieser einen Zelle gegen die fünf anderen, und genau das sähe
+   man.
+
+   KEINE FARBE ALS EINZIGE AUSSAGE. „Noch nicht bezahlt" und „2 Bestellungen"
+   stehen als Wörter da; auf einem verwaschenen Tresenbildschirm bleibt die
+   Aussage vollständig. */
+/* DIE BEIDEN EINORDNENDEN ZAHLEN — leiser, aber nicht kleingedruckt.
+
+   „Kunden" und „Einheiten" beantworten keine Frage, die jemand morgens um
+   sechs stellt; sie beantworten die Frage danach. Sie stehen deshalb auf dem
+   Porzellanton der Seite statt auf Weiß und tragen ihre Zahl eine Stufe
+   kleiner. Mehr braucht es nicht: Zwei Felder, die sich vom Grund der Tafel
+   absetzen, sind als zweite Reihe erkannt, bevor man ein Wort gelesen hat.
+
+   WAS SIE NICHT SIND: ausgelagert, ausgeklappt oder weggelassen. Wer wissen
+   will, für wie viele Betriebe der Tag gebacken wird, findet es an derselben
+   Stelle wie bisher. */
+.kennzahlkarte--zweit { background: var(--porzellan); }
+
+.kennzahlkarte--betont {
+  background: var(--fehler-grund);
+  box-shadow: inset 3px 0 0 rgba(141, 43, 28, .5);
+}
+
+.kennzahlkarte--betont .kennzahlkarte__label { color: var(--fehler); }
+
+/* --- Ringe: Zahlungen und Bestellstatus --- */
+
+/* ZWEI RINGE NEBENEINANDER, EINER UNTER DEM ANDEREN AUF DEM TELEFON.
+
+   Sie stehen zwischen den Kennzahlen und der Arbeitsliste, weil sie genau
+   dazwischen gehören: Die Kennzahlen sagen, WIE VIEL, die Ringe sagen, WIE ES
+   SICH TEILT, die Liste sagt, WAS ZU TUN IST.
+
+   Keine dritte Tafelform: Es sind dieselben `.tafel`n wie „Bestellungen" und
+   „Meistbestellt", nur zu zweit in einer Reihe. */
+.ringzone {
+  display: grid;
+  gap: .75rem;
+  margin: 0 0 1.75rem;
+}
+
+/* Beide Tafeln sind so hoch wie die höhere — das macht das Raster. Damit der
+   Inhalt der kürzeren nicht oben klebt und darunter ein leeres Feld steht,
+   füllt er die Tafel und sitzt mittig darin. */
+.ringzone .tafel {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ringzone .ringtafel__inhalt { flex: 1 1 auto; }
+
+@media (min-width: 780px) {
+  .adminseite--breit .ringzone {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Ring links, Legende rechts — auch auf dem Telefon. Untereinander gestapelt
+   stünde ein 150px-Kreis allein über seiner eigenen Beschriftung und die
+   Tafel wäre doppelt so hoch, ohne mehr zu sagen. `flex-wrap` bleibt als
+   Notausgang für sehr schmale Geräte stehen. */
+.ringtafel__inhalt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem 1.15rem;
+  padding: 1.05rem 1.15rem 1.15rem;
+}
+
+.ring {
+  position: relative;
+  flex: 0 0 auto;
+  width: 7.5rem;
+  height: 7.5rem;
+}
+
+@media (min-width: 480px) {
+  .ring { width: 8.5rem; height: 8.5rem; }
+}
+
+@media (min-width: 780px) {
+  .ring { width: 9.5rem; height: 9.5rem; }
+}
+
+.ring__grafik {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* DER RADIUS 15.9155 IST KEIN GESCHMACK, SONDERN ARITHMETIK: 2πr ist damit
+   genau 100, und eine `stroke-dasharray`-Länge IST ein Prozentsatz. Die
+   Rechnung steht in dashboard-view.ts; hier steht nur, wie es aussieht.
+
+   `fill: none` gehört ins CSS und nicht ans Element: Ein <circle> ohne
+   Füllungsangabe wäre eine schwarze Scheibe, und zwar in genau dem Moment, in
+   dem dieses Stylesheet einmal nicht lädt. */
+.ring__spur,
+.ring__stueck {
+  fill: none;
+  stroke-width: 4.2;
+}
+
+/* Die Spur ist nur an einem Tag ohne Bestellung zu sehen — dann aber als
+   vollständiger, ruhiger Kreis und nicht als Loch. */
+.ring__spur { stroke: var(--elfenbein); }
+
+/* GOLD IST, WAS HEREINKAM. ROT IST, WAS AUSSTEHT.
+
+   Zwei warme Töne der Marke, und der gesättigte gehört der einzigen Hälfte,
+   die zu einer Handlung auffordert — dieselbe Farbe wie die Kante der
+   Kennzahlenkarte „Noch nicht bezahlt". Kein Grün: Das System trägt Grün als
+   Erfolgsfarbe, und ein grün-roter Kreis wäre eine Ampel. Ein Betrieb soll
+   hier keine Ampel lesen, sondern ein Verhältnis.
+
+   Die beiden Töne trennen sich auch OHNE Farbe: Gold hat rund die fünffache
+   Helligkeit des Rots. Auf einem verwaschenen Tresenbildschirm und für ein
+   Auge, das Rot und Grün nicht trennt, bleiben es zwei verschiedene Stücke. */
+.ring__stueck--bezahlt { stroke: var(--champagner); }
+.ring__stueck--offen { stroke: var(--fehler); }
+
+/* DER STATUSRING IST KÜHL, DER ZAHLUNGSRING WARM — und das ist die erste
+   Auskunft, die beide geben: Man sieht am Ton, welche Frage man vor sich hat,
+   bevor man die Überschrift gelesen hat.
+
+   Innerhalb des Statusrings läuft eine EINZIGE Farbe von hell nach dunkel,
+   und die Richtung ist die des Arbeitstags: „Neu" ist das hellste Blau,
+   „Abgeschlossen" das Navy der Marke. Ein Ring, der überwiegend dunkel ist,
+   heißt „der Tag ist durch" — ohne dass man eine Zahl gelesen hat. Fünf
+   BUNTE Farben könnten dasselbe Verhältnis zeigen und würden diese Aussage
+   nicht machen; sie sähen aus wie ein Tortendiagramm aus einer
+   Tabellenkalkulation.
+
+   Storniert fällt aus der Reihe heraus, weil es aus der Reihe fällt: warmes
+   Leinen statt Blau, hell statt dunkel. Es ist der einzige Status, der in
+   keiner Summe des Tages steht.
+
+   Der erste Entwurf gab „Neu" das reine --leinen. Der Browser hat gezeigt,
+   warum das nicht geht: Auf weißem Grund war das Stück praktisch unsichtbar,
+   und der Ring sah aus, als fehle ein Teil davon. */
+.ring__stueck--new { stroke: #a9bccd; }
+.ring__stueck--confirmed { stroke: #6b8fae; }
+.ring__stueck--in_production { stroke: #35678f; }
+.ring__stueck--completed { stroke: var(--navy); }
+.ring__stueck--cancelled { stroke: #e0d6c0; }
+
+/* Die Mitte trägt die Gesamtzahl — die Zahl, gegen die sich die Legende
+   nachrechnen lässt. Sie liegt als HTML über dem SVG und nicht als <text>
+   darin: So trägt sie dieselbe Serife, dieselben Ziffern und dieselbe
+   Farbe wie jede andere Zahl der Seite. */
+.ring__mitte {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  text-align: center;
+}
+
+.ring__zahl {
   font-family: var(--serif);
-  font-size: 1.25rem;
+  font-size: 1.85rem;
   font-weight: 500;
+  line-height: 1;
   color: var(--navy);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.ring__wort {
+  margin-top: .25rem;
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+/* DIE LEGENDE IST DER INHALT, DER RING IST DIE ZWEITFASSUNG.
+
+   Zwei Zeilen je Eintrag: oben das Wort und — wo es einen gibt — der Betrag,
+   darunter die Anzahl. Damit steht rechts eine Spalte aus Geldbeträgen
+   untereinander und links eine aus Wörtern; beides liest sich als Spalte und
+   nicht als Fließtext. */
+.ringlegende {
+  flex: 1 1 10rem;
+  min-width: 0;
+  /* Zwischen 600 und 780px steht eine Ringtafel allein über die volle Breite,
+     und die Legende zog sich auf 534px auseinander: „Bezahlt" links, der
+     Betrag zwei Handbreit weiter rechts. Eine Legende ist eine Liste und kein
+     Spaltensatz — mehr als 26rem macht sie nicht lesbarer, nur weiter. */
+  max-width: 26rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ringlegende__zeile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    'marke wort betrag'
+    '.     zahl zahl';
+  align-items: baseline;
+  gap: .1rem .55rem;
+  padding: .45rem 0;
+  border-bottom: var(--spur);
+}
+
+.ringlegende__zeile:last-child { border-bottom: 0; }
+
+/* AUF DEM TELEFON STEHT JEDE ANGABE AUF EINER EIGENEN ZEILE.
+
+   Zweimal im Browser nachgesehen, zweimal korrigiert: Neben dem Ring bleiben
+   rund 185px für die Legende. Wort und Betrag nebeneinander — „Noch offen"
+   brach um. Anzahl und Betrag nebeneinander — „4 Bestellungen" brach um. Beide
+   zusammen brauchen mehr Platz, als da ist, und jede Anordnung, die sie
+   nebeneinander zwingt, bricht eine der beiden.
+
+   Also untereinander: Wort, Anzahl, Betrag. Drei kurze Zeilen, von denen keine
+   umbricht — und die Einrückung unter der Farbmarke hält sie als einen Eintrag
+   zusammen. Ab 480px ist wieder Platz, und der Betrag steht wie gewohnt rechts
+   neben dem Wort. */
+@media (max-width: 479px) {
+  .ringlegende__zeile {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'marke wort'
+      '.     zahl'
+      '.     betrag';
+    gap: 0 .55rem;
+    padding: .5rem 0;
+  }
+
+  .ringlegende__zahl { margin-top: .1rem; }
+
+  .ringlegende__betrag {
+    margin-top: .15rem;
+    justify-self: start;
+  }
+}
+
+/* Die Farbmarke ordnet der Legende ihr Stück im Ring zu und sagt sonst
+   nichts — deshalb aria-hidden im HTML. Ein Quadrat mit weicher Ecke und
+   nicht ein Punkt: Ein Punkt von 10px trägt zu wenig Fläche, um zwei ähnliche
+   Töne unterscheidbar zu zeigen. */
+.ringlegende__marke {
+  grid-area: marke;
+  align-self: center;
+  width: .7rem;
+  height: .7rem;
+  border-radius: 3px;
+  background: var(--leinen);
+}
+
+.ringlegende__marke--bezahlt { background: var(--champagner); }
+.ringlegende__marke--offen { background: var(--fehler); }
+.ringlegende__marke--new { background: #a9bccd; }
+.ringlegende__marke--confirmed { background: #6b8fae; }
+.ringlegende__marke--in_production { background: #35678f; }
+.ringlegende__marke--completed { background: var(--navy); }
+.ringlegende__marke--cancelled { background: #e0d6c0; }
+
+.ringlegende__wort {
+  grid-area: wort;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+.ringlegende__zahl {
+  grid-area: zahl;
+  font-size: .78rem;
+  line-height: 1.35;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+.ringlegende__betrag {
+  grid-area: betrag;
+  font-size: .9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--navy);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* „zusätzlich 1 Bestellung storniert" — dasselbe Wort wie auf der
+   Kennzahlenkarte. Es steht unter dem Strich und ohne Farbmarke, weil es
+   kein Stück des Rings ist: Eine stornierte Bestellung hat keinen
+   Zahlungsanspruch und darf die Gesamtzahl in der Mitte nicht verändern. */
+.ringlegende__fussnote {
+  margin-top: .45rem;
+  padding-top: .55rem;
+  font-size: .78rem;
+  line-height: 1.4;
+  color: var(--text-leise);
+  border-top: var(--spur);
+}
+
+.ringlegende__leer {
+  flex: 1 1 10rem;
+  min-width: 0;
+  margin: 0;
+  font-size: .85rem;
+  line-height: 1.55;
+  color: var(--text-leise);
+}
+
+/* --- Tafeln: Meistbestellt und Bestellungen --- */
+
+/* Eine Tafel ist ein Abschnitt mit eigener Fläche: Kopf mit Titel, darunter
+   der Inhalt. Sie ersetzt die frühere freistehende Überschrift mit einer
+   losen Liste darunter — die sah aus wie ein Rest der Seite und nicht wie
+   einer ihrer Teile. */
+.tafel {
+  margin: 0 0 1.75rem;
+  background: #fff;
+  border: var(--spur);
+  border-radius: var(--radius);
+  box-shadow: var(--schatten);
+}
+
+.tafel:last-child { margin-bottom: 0; }
+
+.tafel__kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .2rem .75rem;
+  padding: .85rem 1.15rem;
+  border-bottom: var(--spur);
+}
+
+.tafel__titel {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--navy);
+}
+
+/* Die kleine Angabe rechts im Tafelkopf sagt, WAS in der Tafel steht —
+   „nach Menge" bei Meistbestellt, die Zahl der Einträge bei den Bestellungen.
+   Sie ist in derselben Schriftgröße gesetzt wie die Kartenbeschriftungen:
+   dieselbe Rolle, dasselbe Aussehen. */
+.tafel__meta {
+  margin: 0;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Der Leerzustand einer Tafel. Kein Warnzeichen, kein roter Grund, keine
+   eigene Fläche: derselbe Rahmen wie im vollen Fall, nur ein Satz statt
+   Zeilen. Ein ruhiger Tag ist kein Fehler. */
+.tafel__leer {
+  margin: 0;
+  padding: 1.15rem;
+  max-width: 52ch;
+  font-size: .9rem;
+  line-height: 1.55;
+  color: var(--text-leise);
 }
 
 /* Meistbestellt: eine geordnete Liste, keine Tabelle. Zwei Angaben je Zeile
@@ -1739,13 +2434,30 @@ textarea[aria-invalid='true'] {
   list-style: none;
 }
 
+/* DREI SPALTEN: Rang, Name, Menge.
+
+   Vorher waren es zwei Kanten und ein `space-between` dazwischen. Das reichte,
+   solange man nur die Menge suchte; als Reihenfolge war die Liste nicht
+   lesbar, weil fünf verschieden lange Namen fünf verschiedene Anfänge hatten
+   — sie hatten es nur zufällig nicht, weil alle mit „Beispiel" beginnen. Die
+   Rangspalte gibt ihnen eine gemeinsame linke Kante. */
 .topliste__zeile {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: baseline;
-  justify-content: space-between;
-  gap: .75rem;
-  padding: .6rem .2rem;
+  gap: .9rem;
+  padding: .7rem 1.15rem;
   border-bottom: var(--spur);
+}
+
+/* Eine Ziffer, keine Medaille: schmal, in der Serife der Marke, im gedeckten
+   Gold der Kicker. Sie ordnet, sie prämiert nicht. */
+.topliste__rang {
+  font-family: var(--serif);
+  font-size: .95rem;
+  line-height: 1.4;
+  color: var(--champagner-text);
+  font-variant-numeric: lining-nums tabular-nums;
 }
 
 .topliste__zeile:last-child { border-bottom: 0; }
@@ -1758,10 +2470,42 @@ textarea[aria-invalid='true'] {
 
 .topliste__menge {
   flex: 0 0 auto;
-  font-weight: 700;
+  white-space: nowrap;
   color: var(--navy);
+}
+
+/* Dieselbe Bauart wie in der Backliste der Produktionsansicht: die Zahl in
+   der Serife, die Einheit klein daneben. Die Menge ist die Antwort der
+   Zeile — der Name ist die Frage. */
+.topliste__zahl {
+  font-family: var(--serif);
+  font-size: 1.15rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
+
+.topliste__einheit {
+  font-size: .8rem;
+  color: var(--text-leise);
+}
+
+/* Unter Tablet ist die Bestelltabelle selbst schon eine Reihe von Karten.
+   Eine Karte in einer Karte ist ein Rahmen zu viel — die Tafel gibt ihre
+   Fläche deshalb ab und behält nur ihren Kopf. */
+.tafel--tabelle {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tafel--tabelle .tafel__kopf {
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0;
+}
+
+/* --- Bestellzeilen --- */
 
 /* Die Bestellzeile.
 
@@ -1782,6 +2526,31 @@ textarea[aria-invalid='true'] {
   font-variant-numeric: tabular-nums;
 }
 
+/* DIE BESTELLNUMMER IST DIE KENNUNG DER ZEILE, NICHT IHR THEMA.
+
+   Sie steht in einem <th scope="row">, weil sie die Zeile benennt — für einen
+   Screenreader bleibt das richtig. Für das Auge war es das nicht: Als
+   1,05rem-Fettschrift in Navy war „BUS-2026-000901" das Auffälligste jeder
+   Zeile, und danach sucht niemand. Gesucht wird nach dem KUNDEN, dem BETRAG
+   und danach, was noch offen ist; die Nummer braucht man erst, wenn man am
+   Telefon eine bestimmte Bestellung nennt.
+
+   Sie tritt deshalb auf Fließtextgröße zurück. Nebenwirkung, und keine
+   kleine: Ihre Spalte forderte in der sechsspaltigen Tabelle 169px an —
+   gemessen —, und genau diese Breite fehlte am rechten Rand. */
+.bestellliste .datentabelle th[scope='row'] {
+  font-size: .875rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* Der Kunde ist das, wonach eine Zeile gesucht wird. Er trägt deshalb das
+   Gewicht, das vorher die Nummer trug. */
+.bestellzeile__kunde {
+  font-weight: 600;
+  color: var(--navy);
+}
+
 .bestellzeile__zeit {
   display: block;
   white-space: nowrap;
@@ -1790,6 +2559,36 @@ textarea[aria-invalid='true'] {
   font-weight: 400;
   color: var(--text-leise);
 }
+
+/* DAS SICHERHEITSNETZ FÜR DIE SCHMALE MITTE.
+
+   Zwischen 780px (ab da ist die Tabelle eine Tabelle) und rund 950px ist die
+   Spalte schmaler als das, was sechs Spalten mit einem Formular brauchen.
+   Ohne diese Zeile GEWINNT `main { overflow-x: hidden }`: Die letzte Spalte
+   wird abgeschnitten, und „Speichern" ist auf einem 820px-Fenster nicht mehr
+   erreichbar — unsichtbar kaputt, die schlechteste Sorte.
+
+   Der seitliche Lauf ist ausdrücklich NICHT der Normalfall, sondern greift
+   nur in diesem Band; ab etwa 950px steht die Tabelle wieder vollständig.
+   Er gilt nur für diese eine Tabelle und nicht für `.datentabelle-wrap`
+   überall — Kunden- und Katalogseite haben drei Spalten und brauchen ihn
+   nicht. */
+.bestellliste .datentabelle-wrap { overflow-x: auto; }
+
+/* DIE KUNDENSPALTE BRAUCHT EIN MINDESTMASS — ein Befund aus dem Browser.
+
+   `.datentabelle` erlaubt zeichenweisen Umbruch (overflow-wrap: anywhere),
+   damit ein „Konditorei am langen Namen im Herzen von Düsseldorf-Oberkassel"
+   überhaupt umbrechen darf. Für die Tabellenberechnung heißt das aber: Die
+   Mindestbreite dieser Spalte ist EIN ZEICHEN. In sechs Spalten hat Chrome
+   ihr daraufhin 50px gegeben und den Kundennamen senkrecht gestellt, Buchstabe
+   unter Buchstabe — die einzige Spalte der Seite, die nachgeben KANN, gibt
+   alles nach.
+
+   11rem sind kein Wunschmaß, sondern die Untergrenze, unterhalb derer die
+   Spalte kippt. Der Platz kommt aus der Aktionsspalte, die ihr Auswahlfeld
+   ohnehin schrumpfen lassen darf. */
+.bestellliste .datentabelle td[data-label='Kunde'] { min-width: 10rem; }
 
 /* Kunde und Abholart stehen UNTEREINANDER, nicht durch einen Punkt getrennt.
 
@@ -1801,14 +2600,25 @@ textarea[aria-invalid='true'] {
 
 .bestellzeile__art {
   display: block;
+  /* Auf dem Telefon ist die Zelle ein Raster aus Beschriftung und Wert. Ohne
+     diese Zeile rutscht „Abholung" in die Beschriftungsspalte und steht
+     unter „KUNDE" statt unter dem Kundennamen — ein Befund aus dem Browser.
+     Ab Tablet ist die Zelle wieder eine Tabellenzelle, und die Regel wirkt
+     nicht mehr. */
+  grid-column: 2;
   margin-top: .15rem;
   font-size: .8rem;
   color: var(--text-leise);
 }
 
+/* Der Betrag ist die zweite Antwort der Zeile und steht als solche da:
+   Navy und halbfett wie der Kundenname, damit die beiden zusammen die Zeile
+   tragen. */
 .bestellzeile__betrag {
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--navy);
 }
 
 /* Der Produktionsstatus ist ein Wort und wird nicht zerlegt. „In Produktion"
@@ -1835,18 +2645,241 @@ textarea[aria-invalid='true'] {
   font-weight: 600;
 }
 
+/* … außer in der sechsspaltigen Bestelltabelle des Dashboards. Dort ist
+   „Überweisung bezahlt" in einer Zeile 124px breit, und diese 124px fehlen
+   der Kundenspalte. Zwei Wörter dürfen umbrechen; zerlegt wird keines davon
+   (overflow-wrap: normal hebt den zeichenweisen Umbruch der Tabelle auf). */
+.bestellliste .zahlstand {
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+/* ACHT GOLDENE SCHALTFLÄCHEN SIND SIEBEN ZU VIEL.
+
+   Gold ist im ganzen System die Hauptaktion. Auf dieser Seite ist das
+   „Anzeigen" in der Tagesleiste — die eine Sache, die man tut, wenn man
+   ankommt. Das Nachtragen eines Zahlungsstands ist etwas anderes: eine
+   Nebenbuchung, die je Zeile einmal vorkommt und bei vierzig Bestellungen
+   vierzigmal. Als goldene Spalte war sie das Auffälligste der Tabelle und
+   ließ sie wie ein Verwaltungsformular aussehen statt wie eine Übersicht.
+
+   Sie trägt deshalb hier — und NUR hier, in der Bestellliste des Dashboards
+   — die stille Form: weiße Fläche, Haarlinie, Navy. Eindeutig als
+   Schaltfläche erkennbar, in Höhe und Radius unverändert, aber nicht mehr
+   das Erste, was man sieht. Beim Überfahren und beim Tastaturfokus wird sie
+   golden — dann ist sie das, was man gerade tut.
+
+   Die übrigen Zeilenformulare des Systems (Preisgruppe, Zuordnung) bleiben
+   unverändert: Sie stehen auf Seiten, deren einzige Aufgabe genau dieses
+   Speichern ist. */
+.bestellliste .zahlung__senden {
+  color: var(--navy);
+  background: #fff;
+  /* Dieselbe 3:1-Kante wie beim Weg zur Produktionsansicht — siehe dort. */
+  border-color: rgba(10, 33, 57, .5);
+}
+
+.bestellliste .zahlung__senden:hover:not(:disabled) {
+  background: var(--elfenbein);
+  border-color: var(--champagner);
+}
+
 .zahlstand--offen { color: var(--fehler); }
 
 .zahlstand--bezahlt { color: var(--erfolg); }
 
-@media (min-width: 600px) {
-  /* Ab Tablet trägt die Zeile ihren Zeitpunkt neben der Nummer nicht besser
-     als darunter — die Zelle bleibt, wie sie ist. Was sich ändert, ist die
-     Ausrichtung der Zahlenspalten: rechtsbündig lesen sich Beträge als
-     Spalte und nicht als Aufzählung. */
-  .datentabelle td.bestellzeile__betrag { text-align: right; }
+/* IM DASHBOARD IST NUR EIN ZAHLUNGSSTAND EINE NACHRICHT.
 
-  .kennzahlwand__gitter { gap: 1rem; }
+   Bis Phase 6A.3 stand jede bezahlte Bestellung in halbfettem Grün und jede
+   offene in halbfettem Rot. Bei acht Zeilen ergab das eine Ampel über die
+   halbe Tabelle, in der das eine Wort, auf das es ankommt, nicht mehr
+   herausstach — alles war laut, also nichts.
+
+   „Bezahlt" ist der erledigte Normalfall und tritt zurück: gedeckte
+   Textfarbe, kein Fettdruck. „Offen" behält Farbe und Gewicht. Die Aussage
+   hängt weiterhin an keiner Farbe: In beiden Fällen steht das Wort da, und
+   der Zahlungsweg („Überweisung bezahlt") steht mit. */
+.bestellliste .zahlstand--bezahlt {
+  font-weight: 400;
+  color: var(--text-leise);
+}
+
+@media (min-width: 600px) {
+  /* Das Datumsfeld nimmt nur, was es braucht. Über die halbe Tafelbreite
+     gezogen sah die Leiste aus, als fehle ihr etwas. */
+  .tagnav--leiste .tagnav__formular input[type='date'] { flex: 0 1 11rem; }
+}
+
+/* DIE SCHMALE MITTE: TABLET UND KLEINER DESKTOP (600px–979px).
+
+   Ab 600px werden `.datentabelle`n systemweit zu echten Tabellen. Für die
+   drei Spalten von Kunden- und Katalogseite ist das ab 600px richtig; für die
+   SECHS Spalten der Bestellliste — eine davon mit einem Formular — ist es zu
+   früh. Auf einem 834px-Tablet blieben der Tabelle rund 780px; sie braucht
+   910px. Das Ergebnis war ein seitlich laufender Tabellenkörper, in dem
+   ausgerechnet „Speichern" außerhalb des sichtbaren Bereichs stand.
+
+   DIESE EINE TABELLE BLEIBT DESHALB LÄNGER EINE KARTENLISTE. Kein Kompromiss
+   und kein Zusammenquetschen: dieselbe Darstellung, die auf dem Telefon
+   ohnehin die richtige ist, gilt bis 980px — ab da ist Platz für sechs
+   Spalten, und die Tabelle wird eine.
+
+   Es ist KEIN drittes Layout: Diese Regeln stellen nur den Zustand wieder
+   her, den `.datentabelle` unterhalb von 600px ohnehin hat. */
+@media (min-width: 600px) and (max-width: 979px) {
+  .bestellliste .datentabelle thead { display: none; }
+
+  .bestellliste .datentabelle tbody,
+  .bestellliste .datentabelle tr,
+  .bestellliste .datentabelle th,
+  .bestellliste .datentabelle td { display: block; }
+
+  .bestellliste .datentabelle tr {
+    margin-bottom: .9rem;
+    padding: .9rem;
+    border: var(--spur);
+    border-left: 3px solid var(--champagner);
+    border-radius: var(--radius);
+  }
+
+  .bestellliste .datentabelle tr:last-child { margin-bottom: 0; }
+
+  .bestellliste .datentabelle th[scope='row'] {
+    padding: 0 0 .65rem;
+    font-size: 1.05rem;
+    border-bottom: var(--spur);
+  }
+
+  .bestellliste .datentabelle td {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, .8fr) 1fr;
+    gap: .75rem;
+    padding: .6rem 0 0;
+    border-bottom: 0;
+  }
+
+  .bestellliste .datentabelle td::before { content: attr(data-label); }
+
+  .bestellliste .datentabelle td.zahlungaktion {
+    display: block;
+    padding-top: .8rem;
+  }
+
+  .bestellliste .datentabelle td.zahlungaktion::before {
+    display: block;
+    margin-bottom: .45rem;
+  }
+
+  .bestellliste .zahlung { flex-wrap: wrap; }
+}
+
+@media (min-width: 780px) {
+  /* Auf dem Desktop steht der Weg zur Produktion neben dem Tag statt darunter
+     — auf einer Zeile mit dem Kicker, damit die beiden Kopfhälften eine
+     gemeinsame Oberkante haben. */
+  .dashkopf {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+    column-gap: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .dashkopf__aktion { justify-self: end; }
+
+  .tagleiste { padding: .8rem .9rem; }
+}
+
+
+/* --- Ab 980px: die Bestellliste wird eine Tabelle --- */
+
+/* Erst hier ist Platz für sechs Spalten samt Formular. Was in diesem Block
+   steht, gilt ausschließlich für diesen Zustand — darunter ist die Liste
+   eine Kartenliste und braucht nichts davon. */
+@media (min-width: 980px) {
+  /* Die Zahlenspalte steht rechtsbündig: So lesen sich Beträge als Spalte
+     und nicht als Aufzählung. Die Überschrift geht mit — eine linksbündige
+     Beschriftung über einer rechtsbündigen Spalte sieht aus wie ein
+     Versehen. */
+  .datentabelle td.bestellzeile__betrag,
+  .datentabelle thead th.spalte-betrag { text-align: right; }
+
+  /* Jetzt darf die Tafel ihre Fläche haben, und die Tabelle sitzt bündig
+     darin. */
+  .tafel--tabelle {
+    background: #fff;
+    border: var(--spur);
+    border-radius: var(--radius);
+    box-shadow: var(--schatten);
+  }
+
+  /* Die Zellen rücken auf dieselbe Kante wie der Tafelkopf. Ohne das stünde
+     die Tabelle einen halben Zentimeter weiter innen als ihre Überschrift. */
+  .tafel--tabelle .tafel__kopf,
+  .tafel--tabelle .datentabelle th,
+  .tafel--tabelle .datentabelle td { padding-inline: .65rem; }
+
+  .tafel--tabelle .tafel__kopf { padding-block: .85rem; }
+
+  /* Die Kopfzeile der Tabelle steht direkt unter dem Tafelkopf; eine zweite
+     Linie dazwischen wäre eine Linie zu viel. */
+  .tafel--tabelle .datentabelle thead th { border-top: 0; }
+
+  /* EIN LANGER KUNDENNAME MACHT DIE GANZE ZEILE HOCH — und der Rest der
+     Zeile soll dann nicht oben kleben.
+
+     „Konditorei am langen Namen im Herzen von Düsseldorf-Oberkassel" braucht
+     in seiner Spalte sechs Zeilen; die Zeile wird 168px hoch. Oben
+     ausgerichtet hingen Status, Betrag und Zahlungsfeld danach in der
+     obersten Zeile und darunter stand ein halber Zentimeter Nichts —
+     im Browser gesehen, und es sah nach Fehler aus. Mittig ausgerichtet
+     stehen sie neben der MITTE des Namens, und die Zeile liest sich als
+     eine. Auf einzeiligen Zeilen — also fast allen — ändert die Regel
+     nichts, weil die Zeilenhöhe dort die Inhaltshöhe ist. */
+  .bestellliste .datentabelle tbody th,
+  .bestellliste .datentabelle tbody td { vertical-align: middle; }
+
+  /* Die letzte Zeile braucht keine Unterkante — die Tafel hat schon eine. */
+  .tafel--tabelle .datentabelle tbody tr:last-child th,
+  .tafel--tabelle .datentabelle tbody tr:last-child td { border-bottom: 0; }
+
+  /* DER PLATZ FÜR DIE KUNDENSPALTE KOMMT AUS DEM AUSWAHLFELD.
+
+     EIN <select> IST SO BREIT WIE SEINE LÄNGSTE OPTION, und zwar auch dann,
+     wenn es als Flex-Element mit min-width: 0 dasteht: Für die Tabellen-
+     berechnung meldet Chrome „Überweisung bezahlt" als Mindestbreite an. Mit
+     „Speichern" daneben forderte die Aktionsspalte allein 252px, und die sechs
+     Spalten zusammen 1086px in einer 910px breiten Tafel — die Tabelle stand
+     sichtbar über ihren Rahmen hinaus. Gemessen, nicht vermutet.
+
+     Eine feste `width` nimmt dem Feld diesen Anspruch. Es SCHRUMPFT dadurch
+     nicht auf 7rem: flex-grow lässt es weiterhin in den freien Platz der
+     Spalte wachsen — es fordert ihn nur nicht mehr ein. Die Tippfläche bleibt
+     --tap hoch, und der aktuelle Stand steht als Wort ohnehin in der Spalte
+     davor. */
+
+  .bestellliste .zahlung__wahl {
+    width: 6.25rem;
+    flex: 1 1 6.25rem;
+  }
+
+  /* UND DIE SPALTE MUSS DIESE BREITE AUCH BEKOMMEN.
+
+     Die Tabellenberechnung rechnet das Auswahlfeld mit null: Es darf
+     schrumpfen, also fordert die Spalte seinetwegen nichts. Sie bekam 201px,
+     das Formular brauchte 236px, und „Speichern" lief über den Rand der
+     Zelle hinaus — dieselbe Sorte Befund wie bei der Kundenspalte, nur von
+     der anderen Seite. 15rem sind Feld + Abstand + Schaltfläche + Polster und
+     damit das Maß, bei dem die Zeile genau aufgeht. */
+  .bestellliste .datentabelle td.zahlungaktion { min-width: 12.5rem; }
+
+  /* Die Schaltfläche in dieser Zeile ist die einzige des Systems, die in
+     eine sechsspaltige Tabelle muss. Sie bleibt --tap hoch — die Tippfläche
+     wird nicht angetastet —, gibt aber seitlich Polster ab. Die 26px, die
+     das spart, sind genau die 26px, die der Kundenspalte gefehlt haben. */
+  .bestellliste .zahlung__senden {
+    padding-inline: .6rem;
+    font-size: .875rem;
+  }
 }
 
 @media print {
@@ -1854,8 +2887,15 @@ textarea[aria-invalid='true'] {
      Zahlungsstand steht als Wort weiterhin daneben — die Liste bleibt
      vollständig lesbar. */
   .zahlungaktion,
-  .dashboard__wechsel { display: none !important; }
+  .dashkopf__aktion,
+  .tagleiste { display: none !important; }
 
-  .kennzahlkarte { break-inside: avoid; }
+  /* Der Schatten der Kennzahlenwand sitzt seit der Tafel-Fassung am GITTER
+     und nicht mehr an der einzelnen Zelle. */
+  .kennzahlwand__gitter,
+  .tafel { box-shadow: none; }
+
+  .kennzahlwand__gitter { break-inside: avoid; }
+  .tafel { break-inside: avoid; }
   .datentabelle tr { break-inside: avoid; }
 }

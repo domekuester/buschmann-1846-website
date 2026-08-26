@@ -1,5 +1,10 @@
 import type { FulfillmentType } from './fulfillment-type';
-import { countsTowardsRevenue, isOpenProduction, type OrderStatus } from './order-status';
+import {
+  ORDER_STATUSES,
+  countsTowardsRevenue,
+  isOpenProduction,
+  type OrderStatus,
+} from './order-status';
 import { isPaid, type PaymentStatus } from './payment-status';
 
 /**
@@ -121,6 +126,34 @@ export interface DashboardDay {
   readonly unpaidCents: number;
   /** Wie viele Bestellungen das sind. */
   readonly unpaidCount: number;
+  /**
+   * Die GEGENSEITE von unpaid — und keine neue Kennzahl.
+   *
+   * `paidCents + unpaidCents === revenueCents` gilt hier per Bauart und nicht
+   * per Absprache: Beide werden in DEMSELBEN Durchlauf und hinter DEMSELBEN
+   * Stornofilter gezählt wie der Umsatz. Sie stehen nur deshalb hier und
+   * nicht in der Ansicht: Eine Ansicht, die „bezahlt" aus `revenueCents -
+   * unpaidCents` selbst ausrechnet, ist eine zweite Summe — und die auf dem
+   * Bildschirm sichtbare wäre die falsche, sobald sich an dieser Datei etwas
+   * ändert.
+   */
+  readonly paidCents: number;
+  readonly paidCount: number;
+  /**
+   * Wie viele Bestellungen in welchem Produktionsstatus stehen — ALLE, die
+   * stornierten eingeschlossen.
+   *
+   * KEINE NEUE FACHFRAGE, nur eine feinere Auflösung einer bereits
+   * beantworteten: `openCount` sagt, wie viel die Backstube noch vor sich
+   * hat; diese Aufteilung sagt, WO es steht. Die Summe über alle Einträge ist
+   * `orderCount + cancelledCount`, und `statusCounts.cancelled` ist
+   * `cancelledCount` — beides prüfbar und geprüft.
+   *
+   * Die Schlüssel kommen aus ORDER_STATUSES und sind keine eigene Liste: Ein
+   * sechster Status wäre sonst ein Status, den diese Aufteilung stillschweigend
+   * verschwiegen hätte.
+   */
+  readonly statusCounts: Readonly<Record<OrderStatus, number>>;
   /** ALLE Bestellungen des Tages, stornierte eingeschlossen. */
   readonly orders: readonly DashboardOrder[];
   readonly topProducts: readonly DashboardProductLine[];
@@ -162,8 +195,27 @@ export function aggregateDashboardDay(
   let totalUnits = 0;
   let unpaidCents = 0;
   let unpaidCount = 0;
+  let paidCents = 0;
+  let paidCount = 0;
+
+  /**
+   * Aus ORDER_STATUSES aufgebaut und nicht aus den vorkommenden Status: Ein
+   * Status, an dem heute keine Bestellung steht, ist eine 0 und keine Lücke.
+   * Sonst hätte die Aufteilung an einem ruhigen Tag drei Einträge und an
+   * einem vollen fünf — und wäre von Tag zu Tag nicht vergleichbar.
+   */
+  const statusCounts: Record<OrderStatus, number> = Object.fromEntries(
+    ORDER_STATUSES.map((status) => [status, 0]),
+  ) as Record<OrderStatus, number>;
 
   for (const order of orders) {
+    /**
+     * VOR dem Stornofilter. Die Aufteilung nach Produktionsstatus ist die
+     * einzige Zahl dieser Datei, die den Storno MITZÄHLT — er ist dort ein
+     * Status wie jeder andere und nicht das, was hinten herunterfällt.
+     */
+    statusCounts[order.status] += 1;
+
     if (!countsTowardsRevenue(order.status)) {
       cancelledCount += 1;
       continue;
@@ -183,7 +235,10 @@ export function aggregateDashboardDay(
      * Es gibt keinen Zweig, in dem eine unbezahlte Bestellung den Umsatz
      * verpasst.
      */
-    if (!isPaid(order.paymentStatus)) {
+    if (isPaid(order.paymentStatus)) {
+      paidCents += order.totalCents;
+      paidCount += 1;
+    } else {
       unpaidCents += order.totalCents;
       unpaidCount += 1;
     }
@@ -228,6 +283,9 @@ export function aggregateDashboardDay(
     totalUnits,
     unpaidCents,
     unpaidCount,
+    paidCents,
+    paidCount,
+    statusCounts,
     orders,
     topProducts: topProdukte(mengen),
   };
