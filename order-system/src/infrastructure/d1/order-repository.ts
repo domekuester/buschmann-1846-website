@@ -6,6 +6,7 @@ import { Order } from '../../domain/order';
 import { OrderItem } from '../../domain/order-item';
 import { OrderNumber } from '../../domain/order-number';
 import { isOrderStatus, type OrderStatus } from '../../domain/order-status';
+import type { PaymentStatus } from '../../domain/payment-status';
 import type { OrderItemRow, OrderRow } from './rows';
 
 /**
@@ -268,4 +269,102 @@ export async function updateOrderStatus(
     .run();
 
   return meta.changes === 1;
+}
+
+/**
+ * Was ein Zahlungseintrag schreiben darf — und die Feldliste IST die Regel,
+ * genau wie bei OrderStatusUpdate.
+ *
+ * Es gibt keinen Parameter für Betrag, Kunde, Liefertag, Positionen oder
+ * Produktionsstatus, weil der UPDATE unten sie nicht nennt. Eine weitere
+ * Spalte wäre eine bewusste Änderung an dieser Datei und kein Nebeneffekt
+ * eines Aufrufers — und ein Betragsfeld an dieser Stelle wäre der Anfang
+ * eines Kassensystems.
+ */
+export interface OrderPaymentUpdate {
+  readonly orderNumber: string;
+  readonly paymentStatus: PaymentStatus;
+  /**
+   * Der Zeitpunkt des Eintrags — oder null.
+   *
+   * Er wird HIER NICHT ABGELEITET. Welcher Wert zu welchem Status gehört,
+   * entscheidet paymentRecordedAtFor() in der Domäne; diese Datei schreibt,
+   * was sie bekommt. Zwei Stellen mit derselben Regel wären eine zu viel —
+   * und die CHECK-Bedingung aus Migration 0015 fängt eine Abweichung ab,
+   * statt sie zu speichern.
+   */
+  readonly paymentRecordedAt: string | null;
+  readonly updatedAt: string;
+}
+
+/**
+ * Trägt den Zahlungsstand einer Bestellung ein.
+ *
+ * KEIN BEDINGTER UPDATE, ANDERS ALS BEIM STATUSWECHSEL — und das ist eine
+ * fachliche Entscheidung, keine Nachlässigkeit.
+ *
+ * Beim Status ist das `AND status = ?` der ganze Punkt: Dort gibt es einen
+ * Lebenszyklus, und zwei gleichzeitige Admins könnten eine Bestellung an
+ * verschiedene Stellen dieses Zyklus setzen — der verlorene Schreibvorgang
+ * wäre eine verschwundene Entscheidung.
+ *
+ * Der Zahlungsstand hat keinen Lebenszyklus. Er ist ein EINTRAG: „ich habe
+ * gerade gesehen, dass bar bezahlt wurde." Wenn zwei Leute nacheinander
+ * eintragen, ist der letzte Eintrag der richtige — er ist der jüngere Blick
+ * auf denselben Sachverhalt. Ein Konflikt mit einer Fehlerseite zwänge hier
+ * jemanden, eine Seite neu zu laden, um dasselbe noch einmal einzutragen.
+ *
+ * Der Rückgabewert ist trotzdem `changes === 1` und nicht `void`: Er
+ * unterscheidet „geschrieben" von „diese Bestellnummer gibt es nicht".
+ * order_number ist UNIQUE (Migration 0003), mehr als eine Zeile kann es
+ * nicht sein.
+ */
+export async function updateOrderPayment(
+  db: D1Database,
+  update: OrderPaymentUpdate,
+): Promise<boolean> {
+  const { meta } = await db
+    .prepare(
+      `UPDATE orders
+          SET payment_status = ?,
+              payment_recorded_at = ?,
+              updated_at = ?
+        WHERE order_number = ?`,
+    )
+    .bind(
+      update.paymentStatus,
+      update.paymentRecordedAt,
+      update.updatedAt,
+      update.orderNumber,
+    )
+    .run();
+
+  return meta.changes === 1;
+}
+
+/**
+ * Der Liefertag einer Bestellung — und sonst nichts.
+ *
+ * WOZU EINE EIGENE ABFRAGE, WO ES findOrderByNumber() GIBT: Jene lädt das
+ * ganze Aggregat samt Positionen, prüft den Gesamtbetrag gegen die Summe der
+ * Positionen und wirft, wenn beides nicht zusammenpasst. Für einen
+ * Zahlungseintrag wäre das zweierlei zu viel — eine zweite Abfrage für
+ * Positionen, die niemand braucht, und eine Prüfung, die den Eintrag an einer
+ * Bestellung verhindern würde, die man gerade deswegen anfassen will.
+ *
+ * WOZU ÜBERHAUPT: Nach dem Eintrag muss die Oberfläche auf den Tag
+ * zurückführen, auf dem die Bestellung steht. Dieser Tag kommt aus der
+ * DATENBANK und niemals aus der Anfrage — sonst wäre das Rückkehrziel vom
+ * Aufrufer bestimmt, und genau daraus entsteht ein Open Redirect.
+ */
+export async function findOrderFulfillmentDate(
+  db: D1Database,
+  orderNumber: string,
+): Promise<string | null> {
+  const row = await db
+    .prepare('SELECT fulfillment_date FROM orders WHERE order_number = ?')
+    .bind(orderNumber)
+    .first<{ fulfillment_date: string }>();
+
+  return row === null ? null : row.fulfillment_date;
 }

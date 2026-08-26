@@ -891,15 +891,21 @@ textarea[aria-invalid='true'] {
 /* Auf dem Telefon steht die Bedienung NICHT in der schmalen Wertespalte der
    Karte, sondern über die ganze Kartenbreite: Dort ist ein Auswahlfeld mit
    drei Preisgruppen lesbar und der Speichern-Knopf muss nicht umbrechen.
-   Die Beschriftung rutscht dafür über die Bedienung statt daneben. */
+   Die Beschriftung rutscht dafür über die Bedienung statt daneben.
+
+   Seit Phase 6A gilt dasselbe für den Zahlungsstand im Dashboard: dieselbe
+   Bauart, dieselbe Zeile — deshalb steht sie in DIESEN Selektoren und nicht
+   in einer zweiten Kopie mit denselben Regeln. */
 .datentabelle td.kundenaktion,
-.datentabelle td.zuordnungaktion {
+.datentabelle td.zuordnungaktion,
+.datentabelle td.zahlungaktion {
   display: block;
   padding-top: .8rem;
 }
 
 .datentabelle td.kundenaktion::before,
-.datentabelle td.zuordnungaktion::before {
+.datentabelle td.zuordnungaktion::before,
+.datentabelle td.zahlungaktion::before {
   display: block;
   margin-bottom: .45rem;
 }
@@ -908,7 +914,8 @@ textarea[aria-invalid='true'] {
    Auf dem Telefon untereinander mit voller Breite — der Daumen trifft dort
    nichts Kleines. */
 .preisgruppe,
-.zuordnung {
+.zuordnung,
+.zahlung {
   display: flex;
   flex-wrap: wrap;
   gap: .5rem;
@@ -916,7 +923,8 @@ textarea[aria-invalid='true'] {
 }
 
 .preisgruppe__wahl,
-.zuordnung__wahl {
+.zuordnung__wahl,
+.zahlung__wahl {
   flex: 1 1 11rem;
   min-width: 0;
   /* Nicht kleiner als jede andere Tippfläche des Systems. */
@@ -932,10 +940,12 @@ textarea[aria-invalid='true'] {
 }
 
 .preisgruppe__wahl:hover,
-.zuordnung__wahl:hover { border-color: var(--champagner); }
+.zuordnung__wahl:hover,
+.zahlung__wahl:hover { border-color: var(--champagner); }
 
 .preisgruppe__senden,
-.zuordnung__senden { flex: 0 0 auto; }
+.zuordnung__senden,
+.zahlung__senden { flex: 0 0 auto; }
 
 /* Ein Label, das nur vorgelesen wird: „Preisgruppe für Fiktives Café Nord".
    Sehende lesen die Spaltenüberschrift, ein Screenreader braucht je Zeile
@@ -1544,13 +1554,16 @@ textarea[aria-invalid='true'] {
   /* Ab Tablet steht die Zeile als Tabellenzeile, und das Formular passt
      nebeneinander in seine Zelle. */
   .preisgruppe,
-  .zuordnung { flex-wrap: nowrap; align-items: center; }
+  .zuordnung,
+  .zahlung { flex-wrap: nowrap; align-items: center; }
   .preisgruppe__wahl,
-  .zuordnung__wahl { flex: 1 1 auto; }
+  .zuordnung__wahl,
+  .zahlung__wahl { flex: 1 1 auto; }
 
   /* Ab Tablet ist die Zelle wieder eine Tabellenzelle wie jede andere. */
   .datentabelle td.kundenaktion,
-  .datentabelle td.zuordnungaktion { display: table-cell; padding-top: .8rem; }
+  .datentabelle td.zuordnungaktion,
+  .datentabelle td.zahlungaktion { display: table-cell; padding-top: .8rem; }
 }
 
 /* Desktop bekommt KEINE zweite Gestaltung — nur die begrenzte Spalte, die
@@ -1559,6 +1572,18 @@ textarea[aria-invalid='true'] {
 @media (min-width: 780px) {
   .kopf--schmal { padding-inline: calc((100% - 44rem) / 2); }
   .admin { padding-top: 2.25rem; }
+
+  /* Die eine Ausnahme von der 44rem-Spalte: das Dashboard.
+
+     Seine Bestelltabelle hat sechs Spalten — doppelt so viele wie Kunden-
+     und Katalogseite. In 44rem brach der Browser Bestellnummern und Beträge
+     Zeichen für Zeichen um; das war ein Befund aus dem Browser und keine
+     Vermutung. 60rem sind immer noch eine SPALTE und keine Datenwüste über
+     die ganze Fensterbreite — Kopf, Inhalt und Abmeldung richten sich
+     gemeinsam an ihr aus, damit nichts auseinanderläuft. */
+  .adminseite--breit .admin { max-width: 60rem; }
+  .adminseite--breit .kopf--schmal { padding-inline: calc((100% - 60rem) / 2); }
+  .adminseite--breit .abmelden { right: calc((100% - 60rem) / 2); }
 
   /* Die Abmeldung ist absolut positioniert und klebte deshalb am
      Fensterrand, waehrend der uebrige Kopfinhalt schon in der Spalte stand.
@@ -1581,4 +1606,256 @@ textarea[aria-invalid='true'] {
 
   .admin { max-width: none; padding: 0; }
   .bestellung { break-inside: avoid; }
+}
+
+/* ---------- Dashboard ----------
+
+   Die Seite, die ein Betrieb morgens in drei Sekunden lesen soll. Alles hier
+   dient genau diesem Satz:
+
+   ZAHLEN GROSS, BESCHRIFTUNGEN KLEIN. Wer auf diese Seite sieht, sucht eine
+   Zahl und nicht deren Namen. Der Name steht trotzdem da — nur leiser.
+
+   KEINE DIAGRAMME. Bei drei bis vierzig Bestellungen am Tag ist jede Kurve
+   Rauschen mit Achsenbeschriftung. Sechs Karten und eine Liste sagen mehr.
+
+   FARBE TRÄGT KEINE AUSSAGE ALLEIN. Die einzige hervorgehobene Karte — der
+   offene Betrag — sagt im TEXT, worum es geht; die Farbe verstärkt nur. Auf
+   einem verwaschenen Tresenbildschirm bleibt die Aussage stehen.
+
+   KEIN NEUES LAYOUTSYSTEM. Die Bestellliste ist dieselbe .datentabelle, die
+   Kunden- und Katalogseite benutzen: auf dem Telefon Karten, ab Tablet eine
+   Tabelle. Ein zweites Tabellenlayout wäre eine zweite Stelle, an der
+   horizontales Scrollen entstehen kann. */
+
+/* Der Weg zur Produktionsansicht desselben Tages — ein Link und keine
+   Schaltfläche: Er führt woandershin, er tut nichts. */
+.dashboard__wechsel { margin: .6rem 0 0; }
+
+.dashboard__wechsel a,
+.dashboard__wechsel a:visited {
+  color: var(--blau);
+  font-weight: 600;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.dashboard__wechsel a:hover { color: var(--champagner-text); }
+
+/* Die Kennzahlenwand: SECHS Karten, und die Spaltenzahl teilt sechs.
+
+   Der erste Entwurf benutzte auto-fit mit minmax — und der Browser hat
+   gezeigt, warum das hier falsch ist: In der breiten Dashboardspalte passten
+   FÜNF Karten in die erste Zeile, und „Noch nicht bezahlt" stand allein in
+   der zweiten. Ausgerechnet die einzige Karte, die zu einer Handlung
+   auffordert, sah aus wie ein Nachtrag.
+
+   Feste Spaltenzahlen sind hier deshalb keine Breakpoint-Kaskade um ihrer
+   selbst willen, sondern die Aussage „drei mal zwei": 1 × 6 auf dem Telefon,
+   2 × 3 auf dem Tablet, 3 × 2 auf dem Desktop. Jede Zeile ist voll, keine
+   Karte steht allein. */
+.kennzahlwand { margin: 1.75rem 0 0; }
+
+.kennzahlwand__gitter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .75rem;
+}
+
+@media (min-width: 480px) {
+  .kennzahlwand__gitter { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 780px) {
+  .adminseite--breit .kennzahlwand__gitter { grid-template-columns: repeat(3, 1fr); }
+}
+
+.kennzahlkarte {
+  min-width: 0;
+  padding: .95rem 1rem;
+  background: #fff;
+  border: var(--spur);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+}
+
+/* Die einzige Karte, die zu etwas auffordert. Sie bekommt einen anderen
+   Rand und einen anderen Grund — und trotzdem KEINE eigene Schriftgröße:
+   Größer als die übrigen wäre sie eine Alarmmeldung, und ein offener Betrag
+   am Monatsanfang ist keine. */
+.kennzahlkarte--betont {
+  border-left-color: var(--fehler);
+  background: var(--fehler-grund);
+}
+
+.kennzahlkarte__label {
+  margin: 0;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+/* tabular-nums: Untereinanderstehende Beträge sollen untereinander stehen.
+   Ohne diese Zeile wandert das Komma je nach Ziffer, und eine Spalte aus
+   Geldbeträgen wird unlesbar. */
+.kennzahlkarte__wert {
+  margin: .3rem 0 0;
+  font-family: var(--serif);
+  font-size: clamp(1.55rem, 6.5vw, 2rem);
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.kennzahlkarte--betont .kennzahlkarte__wert { color: var(--fehler); }
+
+.kennzahlkarte__hinweis {
+  margin: .3rem 0 0;
+  font-size: .82rem;
+  color: var(--text-leise);
+}
+
+/* Die Überschriften der beiden unteren Abschnitte. Kleiner als die h1 und
+   deutlich als Abschnittsanfang erkennbar — ohne Linie, die Luft reicht. */
+.abschnitt__titel {
+  margin: 2.25rem 0 .75rem;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--navy);
+}
+
+/* Meistbestellt: eine geordnete Liste, keine Tabelle. Zwei Angaben je Zeile
+   — Name links, Menge rechts — und die Ordnung IST die Aussage, deshalb ein
+   <ol>. Die Zahlen der Liste selbst sind ausgeblendet: Ein „1." vor dem
+   meistbestellten Kuchen liest sich wie eine Platzierung in einem Wettbewerb. */
+.topliste {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.topliste__zeile {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .6rem .2rem;
+  border-bottom: var(--spur);
+}
+
+.topliste__zeile:last-child { border-bottom: 0; }
+
+.topliste__name {
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.topliste__menge {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--navy);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Die Bestellzeile.
+
+   Nummer und Bestellzeitpunkt stehen UNTEREINANDER in derselben Zelle: Sie
+   gehören zusammen („diese Bestellung, damals aufgegeben"), und nebeneinander
+   bräuchten sie auf 375px eine eigene Umbruchregel. */
+/* white-space: nowrap gegen .datentabelle's overflow-wrap: anywhere.
+
+   Der Befund kam aus dem Browser: In sechs Spalten brach Chrome
+   „BUS-2026-000104" zu „BUS- 2026 -000 104" und „26,10 €" zu „26 ,1 0 €".
+   overflow-wrap: anywhere ist für Kundennamen richtig — ein
+   „Konditorei am langen Namen im Herzen von Düsseldorf-Oberkassel" MUSS
+   brechen dürfen. Für eine Bestellnummer und einen Geldbetrag ist es falsch:
+   Beide sind eine Einheit und in Stücken unlesbar. */
+.bestellzeile__nummer {
+  display: block;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.bestellzeile__zeit {
+  display: block;
+  white-space: nowrap;
+  margin-top: .15rem;
+  font-size: .8rem;
+  font-weight: 400;
+  color: var(--text-leise);
+}
+
+/* Kunde und Abholart stehen UNTEREINANDER, nicht durch einen Punkt getrennt.
+
+   Der Befund kam aus dem Browser: Auf 375px brach „Testcafé Nord · Abholung"
+   hinter dem Namen um, und die zweite Zeile begann mit einem einsamen
+   Trennpunkt. Zwei Zeilen sind an dieser Stelle ohnehin die ehrlichere Form —
+   dieselbe Bauart wie Bestellnummer und Bestellzeitpunkt in der Spalte davor. */
+.bestellzeile__kunde { display: block; }
+
+.bestellzeile__art {
+  display: block;
+  margin-top: .15rem;
+  font-size: .8rem;
+  color: var(--text-leise);
+}
+
+.bestellzeile__betrag {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Der Produktionsstatus ist ein Wort und wird nicht zerlegt. „In Produktion"
+   darf zwischen den Wörtern brechen — deshalb nowrap NICHT hier, sondern
+   die Aufhebung des zeichenweisen Umbruchs. */
+.datentabelle td[data-label='Produktion'] { overflow-wrap: normal; }
+
+/* Eine stornierte Bestellung bleibt LESBAR und tritt zurück. Kein
+   Durchstreichen: Ein durchgestrichener Betrag sähe aus wie ein Preisnachlass.
+   Das Wort „Storniert" in der Statusspalte trägt die Aussage — die Farbe
+   verstärkt sie nur. */
+.bestellzeile--storniert { color: var(--text-leise); }
+
+.bestellzeile__storno {
+  font-weight: 700;
+  color: var(--fehler);
+}
+
+/* Der Zahlungsstand als Wort, nicht als Punkt. „Offen" ist die einzige
+   Angabe der Seite, die zu einer Handlung führt, und steht deshalb
+   hervorgehoben; „bezahlt" ist der ruhige Normalfall. */
+.zahlstand {
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.zahlstand--offen { color: var(--fehler); }
+
+.zahlstand--bezahlt { color: var(--erfolg); }
+
+@media (min-width: 600px) {
+  /* Ab Tablet trägt die Zeile ihren Zeitpunkt neben der Nummer nicht besser
+     als darunter — die Zelle bleibt, wie sie ist. Was sich ändert, ist die
+     Ausrichtung der Zahlenspalten: rechtsbündig lesen sich Beträge als
+     Spalte und nicht als Aufzählung. */
+  .datentabelle td.bestellzeile__betrag { text-align: right; }
+
+  .kennzahlwand__gitter { gap: 1rem; }
+}
+
+@media print {
+  /* Auf Papier ist ein Auswahlfeld ein Kasten ohne Funktion. Der aktuelle
+     Zahlungsstand steht als Wort weiterhin daneben — die Liste bleibt
+     vollständig lesbar. */
+  .zahlungaktion,
+  .dashboard__wechsel { display: none !important; }
+
+  .kennzahlkarte { break-inside: avoid; }
+  .datentabelle tr { break-inside: avoid; }
 }

@@ -194,8 +194,21 @@ export function renderDataUnavailablePage(view: AdminPageView): string {
  *
  * Diese Seite kennt weder Sitzung noch Produktionstag: Sie wird gebraucht,
  * BEVOR ein Tag feststeht.
+ *
+ * DER WEG ZURÜCK IST EIN PARAMETER, seit es zwei tagesbezogene Adminseiten
+ * gibt. Er ist KEINE Zeichenkette aus der Anfrage, sondern eine von zwei
+ * Konstanten, die der jeweilige Controller im Quelltext stehen hat — hier
+ * einen Wunsch des Aufrufers zu lesen wäre genau die Bauart, die einen Open
+ * Redirect ergibt. Der Standardwert erhält das Verhalten aus Phase 3C.
  */
-export function renderInvalidDatePage(): string {
+export interface InvalidDateBackLink {
+  readonly href: string;
+  readonly label: string;
+}
+
+export function renderInvalidDatePage(
+  back: InvalidDateBackLink = { href: '/admin', label: 'Zurück zur Produktionsansicht' },
+): string {
   return `<!doctype html>
 <html lang="de">
 <head>
@@ -217,7 +230,7 @@ export function renderInvalidDatePage(): string {
     Das angefragte Datum ist kein gültiger Kalendertag. Bitte wähle einen Tag
     im Format JJJJ-MM-TT.
   </p>
-  <p><a href="/admin">Zurück zur Produktionsansicht</a></p>
+  <p><a href="${escapeHtml(back.href)}">${escapeHtml(back.label)}</a></p>
 </main>
 </body>
 </html>
@@ -343,12 +356,27 @@ export function renderStatusChangeFailurePage(
  * und Virenscannern ausgelöst und meldet dann jemanden ab, der nichts getan
  * hat.
  *
- * KEINE SIDEBAR. Seit Phase 5B gibt es genau drei echte Ziele: Produktion,
- * Sortiment & Preise und Kunden. Mehr Navigation wäre weiterhin Attrappe —
- * ein Menüpunkt „Finanzen", hinter dem keine Seite liegt, ist kein Ausblick,
- * sondern eine Unwahrheit im Kopf jeder Seite.
+ * KEINE SIDEBAR. Seit Phase 6A gibt es genau VIER echte Ziele: Dashboard,
+ * Produktion, Sortiment & Preise und Kunden. Mehr Navigation wäre weiterhin
+ * Attrappe — ein Menüpunkt „Finanzen", hinter dem keine Seite liegt, ist kein
+ * Ausblick, sondern eine Unwahrheit im Kopf jeder Seite. Jeder dieser vier
+ * Einträge führt auf eine Seite, die es gibt und die etwas tut.
+ *
+ * DAS DASHBOARD BEKOMMT ALS EINZIGE SEITE EINE BREITERE SPALTE. Der Grund
+ * kam aus dem Browser: Seine Bestelltabelle hat sechs Spalten — doppelt so
+ * viele wie Kunden- und Katalogseite —, und in der 44rem-Spalte brach der
+ * Browser Bestellnummern und Beträge Zeichen für Zeichen um. Die Alternative
+ * wäre seitliches Scrollen in der Tabelle gewesen; auf einem Tresengerät ist
+ * das die schlechtere von zwei Antworten. Es bleibt bei einer SPALTE — 60rem
+ * statt 44rem, nicht die ganze Fensterbreite.
+ *
+ * DAS DASHBOARD STEHT VORN UND IST TROTZDEM NICHT DIE STARTSEITE. /admin
+ * bleibt die Produktionsansicht: Wer sich als Admin anmeldet, landet weiter
+ * dort, wo die Arbeit anfängt. Das Dashboard ist der Überblick über einen
+ * Tag, nicht das Vorzimmer der übrigen Seiten — eine Zwischenseite mit vier
+ * Kacheln wäre ein Klick ohne Entscheidung.
  */
-export type AdminArea = 'production' | 'catalog' | 'customers';
+export type AdminArea = 'dashboard' | 'production' | 'catalog' | 'customers';
 
 export function renderAdminShell(
   title: string,
@@ -366,10 +394,11 @@ export function renderAdminShell(
 <title>${escapeHtml(title)}</title>
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body class="adminseite">
+<body class="adminseite${activeArea === 'dashboard' ? ' adminseite--breit' : ''}">
 <header class="kopf kopf--schmal">
   <p class="marke">Buschmann <span>1846</span></p>
   <nav class="adminnav" aria-label="Adminbereich">
+    <a href="/admin/dashboard"${activeArea === 'dashboard' ? ' aria-current="page"' : ''}>Dashboard</a>
     <a href="/admin"${activeArea === 'production' ? ' aria-current="page"' : ''}>Produktion</a>
     <a href="/admin/catalog"${activeArea === 'catalog' ? ' aria-current="page"' : ''}>Sortiment &amp; Preise</a>
     <a href="/admin/customers"${activeArea === 'customers' ? ' aria-current="page"' : ''}>Kunden</a>

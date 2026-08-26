@@ -964,7 +964,12 @@ describe('Struktur und Zugänglichkeit', () => {
   it('baut keine Attrappen-Navigation', async () => {
     const text = await alsAdmin(`/admin?date=${TAG}`);
 
-    for (const verboten of ['Dashboard', 'Einstellungen', 'Auswertung', 'Analytics', 'Kunden verwalten']) {
+    // „Dashboard" stand bis Phase 5D in dieser Liste. Seit Phase 6A gibt es
+    // die Seite wirklich — und genau das macht den Eintrag zulässig: Er führt
+    // auf eine Route, die antwortet. Der Test prüft deshalb beides.
+    expect(text).toContain('href="/admin/dashboard"');
+
+    for (const verboten of ['Einstellungen', 'Auswertung', 'Analytics', 'Kunden verwalten']) {
       expect(text).not.toContain(verboten);
     }
   });

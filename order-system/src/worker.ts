@@ -1,4 +1,5 @@
 import { readAppConfig } from './config/app-config';
+import { adminDashboardPage } from './http/admin-dashboard-page';
 import { adminPage } from './http/admin-page';
 import { adminCatalogPage } from './http/admin-catalog-page';
 import { adminCustomersPage } from './http/admin-customers-page';
@@ -11,6 +12,10 @@ import {
   changeProductCatalogLinkEndpoint,
   matchProductCatalogLinkPath,
 } from './http/admin-product-catalog-api';
+import {
+  matchOrderPaymentPath,
+  recordOrderPaymentEndpoint,
+} from './http/admin-payment-api';
 import { loginPage, loginSubmit, logout } from './http/auth-routes';
 import { requireSession } from './http/guard';
 import { sessionInfo } from './http/session-api';
@@ -57,6 +62,21 @@ import { privateHeaders } from './http/security';
  *                      benennt — nicht, weil sie autorisiert: Sie ist
  *                      fortlaufend und damit erratbar (siehe
  *                      domain/order-number.ts).
+ *   GET  /admin/dashboard
+ *                      der Tagesüberblick. Dieselbe Tagesfrage wie /admin und
+ *                      eine andere Antwort: Kennzahlen, Umsatz und offene
+ *                      Beträge statt Backliste. Lesend; der Zahlungseintrag
+ *                      ist ein eigener Endpunkt. Er hat AUSDRÜCKLICH KEINEN
+ *                      JSON-Zwilling — Umsatzzahlen in einer zweiten Form
+ *                      anzubieten, die niemand aufruft, hieße, sie ein
+ *                      zweites Mal absichern zu müssen.
+ *   POST /api/admin/orders/:orderNumber/payment
+ *                      der Zahlungsstand einer Bestellung. Der vierte
+ *                      schreibende Adminvorgang — Origin, Rolle, CSRF-Token,
+ *                      danach 303 zurück auf das Dashboard desselben Tages.
+ *                      Er schreibt AUSSCHLIESSLICH payment_status und
+ *                      payment_recorded_at: keinen Betrag, keinen
+ *                      Produktionsstatus, keinen Kunden.
  *   GET  /admin/customers
  *                      Kunden und ihre Preisgruppen. Lesend; der zugehörige
  *                      Schreibvorgang ist ein eigener Endpunkt.
@@ -136,6 +156,13 @@ export default {
           return methodNotAllowed('GET');
         }
         return await adminPage(env.DB, config, request, now);
+      }
+
+      if (pathname === '/admin/dashboard') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminDashboardPage(env.DB, config, request, now);
       }
 
       if (pathname === '/admin/catalog') {
@@ -235,6 +262,29 @@ export default {
           request,
           now,
           productIdSegment,
+        );
+      }
+
+      /**
+       * Die vierte Route mit einem veränderlichen Pfadteil — erkannt von der
+       * Datei, die auch den Endpunkt enthält. Die 405 trägt privateHeaders(),
+       * damit auch die abweisende Antwort no-store trägt.
+       *
+       * Sie steht NACH matchOrderStatusPath und kann mit ihr nicht
+       * kollidieren: Beide Muster enden auf verschiedene feste Segmente
+       * ('/status' und '/payment'), und ein Pfad kann nicht auf beide passen.
+       */
+      const paymentOrderNumber = matchOrderPaymentPath(pathname);
+      if (paymentOrderNumber !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await recordOrderPaymentEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          paymentOrderNumber,
         );
       }
 

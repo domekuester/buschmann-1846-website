@@ -151,3 +151,47 @@ export interface AuthSessionRow {
   expires_at: string;
   revoked_at: string | null;
 }
+
+/**
+ * Eine Bestellung, wie der Tagesüberblick sie sieht — MEHR als
+ * ProductionOrderRow und weniger als OrderRow.
+ *
+ * Mehr, weil der Überblick Beträge und den Zahlungsstatus braucht: Die Frage
+ * „was hat der Tag umgesetzt und was steht noch aus" ist ohne sie nicht zu
+ * beantworten.
+ *
+ * Weniger, weil Lieferadresse, Kundennotiz, submission_id und updated_at
+ * darin nicht vorkommen. Sie werden nicht gelesen und können deshalb nicht
+ * versehentlich auf einer Seite landen.
+ *
+ * `id` verlässt die Infrastrukturschicht nicht: Sie dient allein dazu,
+ * Positionen ihrer Bestellung zuzuordnen.
+ */
+export interface DashboardOrderRow {
+  id: number;
+  order_number: string;
+  customer_id: number;
+  customer_name_snapshot: string;
+  fulfillment_type: string;
+  status: string;
+  /** Seit 0015 — 'unpaid' oder eine der vier bezahlten Zahlarten. */
+  payment_status: string;
+  total_amount_cents: number;
+  created_at: string;
+}
+
+/**
+ * Eine Position, wie der Tagesüberblick sie sieht.
+ *
+ * Ohne Preise: unit_price_cents und line_total_cents stehen nicht in der
+ * Abfrage, weil der Betrag einer Bestellung aus ihrem eigenen Snapshot kommt
+ * und nicht aus einer zweiten Summe.
+ */
+export interface DashboardItemRow {
+  order_id: number;
+  product_id: number;
+  product_name_snapshot: string;
+  product_unit_snapshot: string;
+  sort_order: number;
+  quantity: number;
+}

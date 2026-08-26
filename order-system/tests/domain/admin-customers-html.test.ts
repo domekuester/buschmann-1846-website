@@ -158,8 +158,9 @@ describe('renderAdminCustomersPage', () => {
     expect(html).not.toContain('<table');
   });
 
-  it('führt die drei echten Adminbereiche', () => {
+  it('führt die vier echten Adminbereiche', () => {
     const html = seite([OFFEN]);
+    expect(html).toContain('href="/admin/dashboard"');
     expect(html).toContain('href="/admin"');
     expect(html).toContain('href="/admin/catalog"');
     expect(html).toContain('href="/admin/customers"');
@@ -167,8 +168,12 @@ describe('renderAdminCustomersPage', () => {
   });
 
   it('zeigt noch keine Attrappen für Bereiche ohne Seite', () => {
+    // „Dashboard" stand bis Phase 5D in dieser Liste und ist seit Phase 6A
+    // eine echte Seite mit echter Route — der Eintrag ist damit keine
+    // Attrappe mehr, sondern ihr Gegenteil. Was hier steht, hat weiterhin
+    // keine Seite.
     const html = seite([OFFEN]);
-    for (const attrappe of ['Dashboard', 'Finanzen', 'Analytics', 'Kosten', 'Einstellungen']) {
+    for (const attrappe of ['Finanzen', 'Analytics', 'Kosten', 'Einstellungen']) {
       expect(html).not.toContain(attrappe);
     }
   });
@@ -205,5 +210,14 @@ describe('renderAdminCustomersPage', () => {
     const html = seite([OFFEN], { noticeCode: '"><script>alert(1)</script>' });
     expect(html).not.toContain('<script>alert(1)');
     expect(html).not.toContain('alert(1)');
+  });
+});
+
+describe('renderAdminCustomersPage — Spaltenbreite', () => {
+  it('bleibt bei der schmalen Adminspalte', () => {
+    // Die breite Spalte gehört ausschließlich dem Dashboard mit seinen sechs
+    // Tabellenspalten. Drei Spalten lesen sich in 44rem besser.
+    expect(seite([OFFEN])).toContain('<body class="adminseite">');
+    expect(seite([OFFEN])).not.toContain('adminseite--breit');
   });
 });

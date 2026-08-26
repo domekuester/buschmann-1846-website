@@ -64,6 +64,33 @@ const ALLOWED_TARGETS: Readonly<Record<OrderStatus, readonly OrderStatus[]>> = {
  */
 export const OPEN_PRODUCTION_STATUSES = ['new', 'confirmed', 'in_production'] as const;
 
+/**
+ * Zählt eine Bestellung in diesem Status kaufmännisch mit?
+ *
+ * DIE FRAGE DES BETRIEBS, NICHT DIE DER BACKSTUBE. Für die Produktion zählt,
+ * was noch zu backen ist (OPEN_PRODUCTION_STATUSES). Für Umsatz, Kundenzahl
+ * und offene Beträge zählt etwas anderes: alles, was bestellt wurde und nicht
+ * storniert ist — eine abgeschlossene Bestellung von gestern hat Umsatz
+ * gemacht, obwohl sie nichts mehr zu backen gibt.
+ *
+ * DIESE REGEL STEHT GENAU HIER, weil sie eine Regel über Status ist. Ein
+ * `status !== 'cancelled'` in einer Aggregation, ein zweites in einer
+ * Oberfläche und ein drittes in einer Abfrage wären drei Fassungen davon —
+ * und die Fassung, die eines Tages den falschen Vergleich enthält, wäre
+ * diejenige, die zu hohe Umsätze meldet. Das ist der Fehler, der als Erstes
+ * geglaubt und als Letztes bemerkt wird.
+ *
+ * SIE IST BEWUSST NICHT ALS LISTE FORMULIERT. Eine Liste ['new', 'confirmed',
+ * 'in_production', 'completed'] müsste bei jedem neuen Status ergänzt werden
+ * und wäre still falsch, wenn jemand es vergisst: Ein sechster Status zählte
+ * dann nicht mit, ohne dass jemand das entschieden hätte. Die
+ * Ausschlussfassung ist die vorsichtigere — ein neuer Status zählt mit, bis
+ * jemand ausdrücklich etwas anderes bestimmt.
+ */
+export function countsTowardsRevenue(status: OrderStatus): boolean {
+  return status !== 'cancelled';
+}
+
 export function isOrderStatus(value: unknown): value is OrderStatus {
   return typeof value === 'string' && (ORDER_STATUSES as readonly string[]).includes(value);
 }

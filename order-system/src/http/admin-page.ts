@@ -1,6 +1,6 @@
 import { getProductionDay } from '../application/get-production-day';
 import type { AppConfig } from '../config/app-config';
-import { businessDay, isCalendarDay, plusDays } from '../domain/clock';
+import { businessDay, plusDays } from '../domain/clock';
 import {
   renderAdminPage,
   renderDataUnavailablePage,
@@ -8,6 +8,7 @@ import {
   type AdminPageView,
 } from '../ui/admin-page-html';
 import { toProductionDayView } from '../ui/production-day-view';
+import { readDayParam } from './day-param';
 import { requireRole } from './guard';
 import { pageHeaders } from './security';
 
@@ -49,7 +50,7 @@ export async function adminPage(
     return wache.response;
   }
 
-  const angefragt = readDay(request);
+  const angefragt = readDayParam(request);
   if (angefragt === 'invalid') {
     return new Response(renderInvalidDatePage(), { status: 400, headers: pageHeaders() });
   }
@@ -136,48 +137,4 @@ function readStatusMessage(request: Request): string | null {
   return Object.prototype.hasOwnProperty.call(STATUS_MESSAGES, code)
     ? STATUS_MESSAGES[code as keyof typeof STATUS_MESSAGES]
     : null;
-}
-
-/**
- * Liest den angefragten Kalendertag aus der URL.
- *
- * Drei Ergebnisse, und alle drei sind verschieden:
- *
- *   string      ein gültiger Tag wurde angefragt.
- *   null        es wurde keiner angefragt — der Standardtag greift.
- *   'invalid'   es wurde etwas angefragt, das kein Kalendertag ist.
- *
- * Der Unterschied zwischen null und 'invalid' ist der Kern dieser Funktion:
- * Ein fehlender Parameter ist der Normalfall und bekommt den Standardtag; ein
- * FALSCHER Parameter darf ihn NICHT bekommen. Sonst zeigte ein Lesezeichen
- * mit einem Tippfehler eine korrekt aussehende Backliste für einen anderen
- * Tag, ohne es zu sagen — und jemand backt nach der falschen Liste.
- *
- * MEHRFACHE PARAMETER WERDEN ABGELEHNT, statt still den ersten zu nehmen —
- * wie in production-api.ts. Welcher der erste ist, hängt an der Reihenfolge
- * in der URL; ein Endpunkt, dessen Antwort von einer solchen Feinheit
- * abhängt, lädt zu Parameter-Schmuggel ein.
- *
- * GEPRÜFT WIRD MIT isCalendarDay — derselben Funktion, die der
- * Produktions-Endpunkt und FulfillmentDate benutzen. Es gibt im System genau
- * eine Stelle, die weiß, ob es einen Tag gibt; '2026-02-30' passt auf das
- * Muster und existiert trotzdem nicht.
- *
- * DAMIT IST AUCH JEDE WEITERLEITUNG NACH DRAUSSEN AUSGESCHLOSSEN: Was diese
- * Funktion zurückgibt, ist entweder null oder eine Zeichenkette der Form
- * JJJJ-MM-TT. '//angreifer.test' und 'https://angreifer.test' sind keine
- * Kalendertage und kommen nicht durch.
- */
-function readDay(request: Request): string | null | 'invalid' {
-  const werte = new URL(request.url).searchParams.getAll('date');
-
-  if (werte.length === 0) {
-    return null;
-  }
-  if (werte.length > 1) {
-    return 'invalid';
-  }
-
-  const wert = werte[0];
-  return isCalendarDay(wert) ? wert : 'invalid';
 }
