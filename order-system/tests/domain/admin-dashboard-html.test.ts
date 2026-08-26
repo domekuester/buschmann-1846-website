@@ -6,9 +6,15 @@ import {
 } from '../../src/domain/dashboard-day';
 import { PAYMENT_STATUSES } from '../../src/domain/payment-status';
 import { renderAdminDashboardPage } from '../../src/ui/admin-dashboard-html';
-import { toDashboardView } from '../../src/ui/dashboard-view';
+import {
+  toDashboardView,
+  toOrderListView,
+  toQuickDaysView,
+  type OrderFilter,
+} from '../../src/ui/dashboard-view';
 
 const TAG = '2026-08-28';
+const HEUTE = '2026-08-26';
 
 function bestellung(overrides: Partial<DashboardOrder> = {}): DashboardOrder {
   return {
@@ -51,12 +57,28 @@ function tag(overrides: Partial<DashboardDay> = {}): DashboardDay {
   };
 }
 
-function seite(overrides: Partial<DashboardDay> = {}, noticeCode: string | null = null): string {
+/**
+ * Der Prüftag als vollständige Seitenansicht.
+ *
+ * Schnellwahl und Bestellliste entstehen aus DENSELBEN Funktionen wie im
+ * Betrieb (toQuickDaysView, toOrderListView) und nicht aus abgeschriebenen
+ * Werten — sonst prüfte die Seite gegen ein Ansichtsmodell, das es so
+ * nirgends gibt.
+ */
+function seite(
+  overrides: Partial<DashboardDay> = {},
+  noticeCode: string | null = null,
+  filter: OrderFilter = 'all',
+): string {
+  const day = toDashboardView(tag(overrides));
+
   return renderAdminDashboardPage({
     loginIdentifier: 'admin@example.test',
     csrfToken: 'test-csrf-token',
-    day: toDashboardView(tag(overrides)),
+    day,
     noticeCode,
+    quickDays: toQuickDaysView(HEUTE, day.day, 'day'),
+    orderList: toOrderListView(day, filter),
   });
 }
 

@@ -1,15 +1,23 @@
 import { getDashboardDay } from '../application/get-dashboard-day';
+import { getDashboardWeek } from '../application/get-dashboard-week';
 import type { AppConfig } from '../config/app-config';
-import { businessDay, plusDays } from '../domain/clock';
+import { businessDay, plusDays, weekStart } from '../domain/clock';
 import { aggregateDashboardDay } from '../domain/dashboard-day';
+import { aggregateDashboardWeek } from '../domain/dashboard-week';
 import { renderInvalidDatePage } from '../ui/admin-page-html';
 import {
   renderAdminDashboardPage,
   renderDashboardUnavailablePage,
   type AdminDashboardPageView,
 } from '../ui/admin-dashboard-html';
-import { toDashboardView } from '../ui/dashboard-view';
-import { readDayParam } from './day-param';
+import {
+  renderAdminDashboardWeekPage,
+  renderWeekUnavailablePage,
+  type AdminDashboardWeekPageView,
+} from '../ui/admin-dashboard-week-html';
+import { toDashboardView, toOrderListView, toQuickDaysView } from '../ui/dashboard-view';
+import { toDashboardWeekView } from '../ui/dashboard-week-view';
+import { readDayParam, readOrderFilterParam, readViewParam } from './day-param';
 import { requireRole } from './guard';
 import { pageHeaders } from './security';
 
@@ -52,8 +60,21 @@ export async function adminDashboardPage(
     return wache.response;
   }
 
+  /**
+   * DREI PARAMETER, EINE PRÜFUNG, EINE ANTWORT.
+   *
+   * Datum, Blickweite und Bestellfilter werden ZUSAMMEN geprüft, bevor
+   * irgendetwas geladen wird. Ein ungültiger Wert in einem von ihnen führt
+   * zur selben 400-Seite; keiner fällt still auf einen Standard zurück.
+   *
+   * Der Grund ist überall derselbe: Eine Seite, die etwas anderes zeigt als
+   * das Angefragte, ohne es zu sagen, wird für das Angefragte gehalten.
+   */
   const angefragt = readDayParam(request);
-  if (angefragt === 'invalid') {
+  const blickweite = readViewParam(request);
+  const filter = readOrderFilterParam(request);
+
+  if (angefragt === 'invalid' || blickweite === 'invalid' || filter === 'invalid') {
     /**
      * KEIN STILLES ZURÜCKFALLEN auf den Standardtag — dieselbe Regel wie in
      * der Produktionsansicht, und hier aus einem zusätzlichen Grund: Ein
@@ -87,10 +108,27 @@ export async function adminDashboardPage(
   const tag = angefragt ?? plusDays(businessDay(now), 1);
 
   /**
+   * DAS GESCHÄFTSDATUM WIRD HIER GEBILDET — einmal, aus der Serveruhr, in
+   * Europe/Berlin. Es geht als fertige Zeichenkette in die Oberfläche.
+   *
+   * Weder das Ansichtsmodell noch der Renderer noch der Browser des
+   * Betrachters bestimmen, was „heute" ist. Ein „heute" aus dem Browser wäre
+   * auf einem Tresengerät mit falsch gestellter Uhr ein anderer Tag als der,
+   * für den gebacken wurde — und diese Seite trägt ohnehin kein Skript.
+   */
+  const heute = businessDay(now);
+
+  if (blickweite === 'week') {
+    return wochenansicht(db, wache.context, weekStart(tag), heute);
+  }
+
+  /**
    * DER LEERE TAG ALS GERÜST — er trägt die Navigation, falls die Abfrage
    * scheitert. Dieselbe Bauart wie in http/admin-page.ts: Wenn ein Tag nicht
    * lädt, ist der nächste Klick oft genau das, was hilft.
    */
+  const leererTag = toDashboardView(aggregateDashboardDay(tag, []));
+
   const geruest: AdminDashboardPageView = {
     loginIdentifier: wache.context.loginIdentifier,
     csrfToken: wache.context.csrfToken,
@@ -103,8 +141,10 @@ export async function adminDashboardPage(
      * IST das Ergebnis der Aggregation über keine Bestellung; es gibt keinen
      * Grund, das noch einmal von Hand hinzuschreiben.
      */
-    day: toDashboardView(aggregateDashboardDay(tag, [])),
+    day: leererTag,
     noticeCode: readNotice(request),
+    quickDays: toQuickDaysView(heute, tag, 'day'),
+    orderList: toOrderListView(leererTag, filter ?? 'all'),
   };
 
   let ueberblick;
@@ -126,8 +166,72 @@ export async function adminDashboardPage(
     });
   }
 
+  const day = toDashboardView(ueberblick);
+
   return new Response(
-    renderAdminDashboardPage({ ...geruest, day: toDashboardView(ueberblick) }),
+    renderAdminDashboardPage({
+      ...geruest,
+      day,
+      orderList: toOrderListView(day, filter ?? 'all'),
+    }),
+    { status: 200, headers: pageHeaders() },
+  );
+}
+
+/**
+ * GET /admin/dashboard?view=week — dieselbe Seite, eine Blickweite weiter.
+ *
+ * SIE IST KEINE EIGENE ROUTE UND KEIN EIGENER BEREICH. Der Wächter ist
+ * derselbe, der Tag ist derselbe Parameter, und die Hauptnavigation bekommt
+ * keinen fünften Punkt: Ein Menüpunkt „Wochenanalyse" hätte die Woche zu
+ * etwas anderem gemacht als dem, was sie ist — dieselbe Frage über einen
+ * längeren Zeitraum.
+ *
+ * DER MONTAG WIRD HIER GEBILDET, nicht in der Ansicht und nicht im
+ * Anwendungsfall: über weekStart() aus dem bereits geprüften Tag. Damit ist
+ * `?date=2026-08-28&view=week` und `?date=2026-08-24&view=week` dieselbe
+ * Woche, und ein Tag, den jemand von Hand eintippt, landet in der Woche, in
+ * der er liegt.
+ *
+ * ES GIBT KEINEN BESTELLFILTER IN DER WOCHE. Sie zeigt keine Bestellungen,
+ * sondern Zahlen je Tag; ein Filter hätte hier nichts zu filtern. Der
+ * Parameter wird trotzdem geprüft — ein unsinniger Wert soll auch hier eine
+ * Antwort bekommen und nicht stillschweigend wirkungslos bleiben.
+ */
+async function wochenansicht(
+  db: D1Database,
+  context: { loginIdentifier: string; csrfToken: string },
+  monday: string,
+  heute: string,
+): Promise<Response> {
+  /**
+   * DIE LEERE WOCHE ALS GERÜST — sie trägt die Navigation, falls die Abfrage
+   * scheitert, und wird AGGREGIERT statt abgeschrieben: Eine Literalfassung
+   * mit sieben Nullreihen wäre eine zweite Stelle, an der die Form einer
+   * Woche festgelegt ist.
+   */
+  const geruest: AdminDashboardWeekPageView = {
+    loginIdentifier: context.loginIdentifier,
+    csrfToken: context.csrfToken,
+    week: toDashboardWeekView(aggregateDashboardWeek(monday, []), heute),
+  };
+
+  let woche;
+  try {
+    woche = await getDashboardWeek(db, monday);
+  } catch {
+    // Der Fehler wird nicht angesehen — dieselbe Regel wie in der Tagesansicht.
+    return new Response(renderWeekUnavailablePage(geruest), {
+      status: 500,
+      headers: pageHeaders(),
+    });
+  }
+
+  return new Response(
+    renderAdminDashboardWeekPage({
+      ...geruest,
+      week: toDashboardWeekView(woche, heute),
+    }),
     { status: 200, headers: pageHeaders() },
   );
 }

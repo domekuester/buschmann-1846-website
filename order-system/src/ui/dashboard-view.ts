@@ -1,4 +1,9 @@
-import { plusDays } from '../domain/clock';
+import { plusDays, weekStart } from '../domain/clock';
+import {
+  dashboardActions,
+  type DashboardAction,
+  type DashboardActionKey,
+} from '../domain/dashboard-actions';
 import type { DashboardDay } from '../domain/dashboard-day';
 import { fulfillmentLabel } from '../domain/fulfillment-type';
 import { ORDER_STATUSES, countsTowardsRevenue, orderStatusLabel } from '../domain/order-status';
@@ -132,6 +137,83 @@ export interface DonutView {
   readonly footnote: string;
 }
 
+/**
+ * EINE ZEILE IM HANDLUNGSBEDARF — fertig beschriftet und fertig verlinkt.
+ *
+ * Die Domäne liefert Schlüssel, Anzahl und Betrag; hier wird daraus Sprache
+ * und ein Ziel. Beides gehört zusammen an EINE Stelle: Ein Renderer, der zu
+ * jedem Schlüssel selbst den Text und die URL zusammensetzte, hätte die
+ * Zuordnung „welche Aktion führt wohin" in einer Zeichenkettenverkettung
+ * stehen — prüfbar nur über HTML.
+ *
+ * DIE ZIELE SIND KONSTANTEN AUS DIESER DATEI, in die genau ein Wert eingesetzt
+ * wird: der bereits geprüfte Kalendertag. Es gibt keinen Weg, über eine dieser
+ * Adressen irgendwohin zu gelangen, was nicht hier steht — kein Rückkehrziel
+ * aus einem Parameter, keine Weiterleitung nach draußen.
+ */
+export interface DashboardActionView {
+  /** 'new_orders', 'open_production', 'unpaid' — er wählt die Marke im CSS. */
+  readonly key: string;
+  readonly count: number;
+  /** Die Ziffer, die vorn steht. */
+  readonly countLabel: string;
+  /** „Neue Bestellungen", „Zahlungen offen". */
+  readonly title: string;
+  /** „69,60 €" bei den Zahlungen, sonst leer. */
+  readonly amountLabel: string;
+  /** Die zweite Zeile: „warten auf Bestätigung". */
+  readonly detail: string;
+  /** „Zur Produktion" — was der Klick tut. */
+  readonly linkLabel: string;
+  readonly href: string;
+}
+
+/** Ein Ziel der Schnellwahl über der Tagesansicht. */
+export interface QuickDayView {
+  readonly label: string;
+  readonly href: string;
+  /** Der betrachtete Tag IST dieser Tag — die Schaltfläche ist die aktive. */
+  readonly isCurrent: boolean;
+}
+
+export interface QuickDaysView {
+  readonly today: QuickDayView;
+  readonly tomorrow: QuickDayView;
+  readonly week: QuickDayView;
+}
+
+/**
+ * Welche Bestellungen die Liste zeigt.
+ *
+ * ZWEI WERTE UND KEIN DRITTER. Ein 'open' für die offene Produktion wäre
+ * naheliegend und wäre falsch: Was zu produzieren ist, steht in der
+ * Produktionsansicht, und die ist dafür die einzige Quelle. Ein zweiter Ort
+ * mit derselben Liste wäre ein zweiter Ort, an dem die Statusregel steht.
+ */
+export type OrderFilter = 'all' | 'unpaid';
+
+/**
+ * Die Bestellliste, wie sie angezeigt wird.
+ *
+ * DER FILTER IST REINE ANZEIGE. Er wählt Zeilen aus einer bereits fertigen
+ * Liste und rechnet nichts nach — die Kennzahlen darüber, die Ringe und die
+ * Wochensumme bleiben unberührt. Ein Filter, der die Kennzahlen mitfilterte,
+ * wäre eine zweite Tagesansicht mit anderen Zahlen unter derselben Adresse.
+ */
+export interface DashboardOrderListView {
+  readonly filter: OrderFilter;
+  readonly isFiltered: boolean;
+  /** „Bestellungen" oder „Offene Zahlungen". */
+  readonly title: string;
+  /** „3 Einträge" — die Angabe im Tafelkopf. */
+  readonly meta: string;
+  readonly rows: readonly DashboardOrderRowView[];
+  /** Der Weg zurück zur ungefilterten Liste. */
+  readonly allHref: string;
+  /** Was dasteht, wenn keine Zeile bleibt. */
+  readonly emptyText: string;
+}
+
 export interface DashboardDayView {
   /** 'JJJJ-MM-TT' — für URLs und das Datumsfeld. */
   readonly day: string;
@@ -168,6 +250,14 @@ export interface DashboardDayView {
   readonly paymentDonut: DonutView;
   /** Wo die Bestellungen des Tages stehen — stornierte eingeschlossen. */
   readonly statusDonut: DonutView;
+
+  /**
+   * Was an diesem Tag zu tun ist — leer, wenn nichts offen ist.
+   *
+   * Sie steht IM Tagesmodell und nicht daneben, weil sie ausschließlich aus
+   * ihm entsteht: derselbe Tag, dieselben Zahlen, kein zweiter Ladevorgang.
+   */
+  readonly actions: readonly DashboardActionView[];
 }
 
 export function toDashboardView(day: DashboardDay): DashboardDayView {
@@ -214,6 +304,152 @@ export function toDashboardView(day: DashboardDay): DashboardDayView {
 
     paymentDonut: zahlungsring(day),
     statusDonut: statusring(day),
+    actions: dashboardActions(day).map((aktion) => aktionsansicht(aktion, day.date)),
+  };
+}
+
+/**
+ * DIE DREI AKTIONSTEXTE — an einer Stelle, samt ihrem Ziel.
+ *
+ * DIE ERSTEN BEIDEN FÜHREN AN DENSELBEN ORT, und das ist kein Versehen: Für
+ * eine neue Bestellung wie für eine halbfertige ist die Produktionsansicht
+ * dieses Tages der Platz, an dem etwas getan wird. Sie sagen nur
+ * Verschiedenes darüber, WARUM man hingeht — und deshalb sind es zwei Zeilen
+ * und nicht eine mit zwei Zahlen.
+ *
+ * DIE ZAHLUNG FÜHRT AUF DIESELBE SEITE ZURÜCK, nur gefiltert. Eine eigene
+ * Seite „offene Zahlungen" wäre eine zweite Bestellliste mit einer zweiten
+ * Fassung des Zahlungsformulars; der Filter ist ein Parameter und kein
+ * Bereich.
+ *
+ * DIE EINZAHL IST KEIN SCHÖNHEITSFEHLER. „1 Neue Bestellungen warten" liest
+ * sich wie ein Platzhalter, und ein Betrieb glaubt einer Seite weniger, die
+ * ihre eigene Zahl nicht lesen kann.
+ */
+function aktionsansicht(aktion: DashboardAction, day: string): DashboardActionView {
+  const eine = aktion.count === 1;
+
+  type Text = Pick<DashboardActionView, 'title' | 'detail' | 'linkLabel' | 'href'>;
+
+  const texte: Readonly<Record<DashboardActionKey, Text>> = {
+    new_orders: {
+      title: eine ? 'Neue Bestellung' : 'Neue Bestellungen',
+      detail: eine ? 'wartet auf Bestätigung' : 'warten auf Bestätigung',
+      linkLabel: 'Zur Produktion',
+      href: `/admin?date=${day}`,
+    },
+    open_production: {
+      title: 'Offen in der Produktion',
+      detail: 'noch nicht abgeschlossen',
+      linkLabel: 'Produktion öffnen',
+      href: `/admin?date=${day}`,
+    },
+    unpaid: {
+      title: eine ? 'Zahlung offen' : 'Zahlungen offen',
+      detail: 'noch nicht eingegangen',
+      linkLabel: 'Offene Zahlungen anzeigen',
+      href: `/admin/dashboard?date=${day}&orders=unpaid#bestellungen`,
+    },
+  };
+
+  return {
+    key: aktion.key,
+    count: aktion.count,
+    countLabel: String(aktion.count),
+    amountLabel: aktion.amountCents === null ? '' : formatEuro(aktion.amountCents),
+    ...texte[aktion.key],
+  };
+}
+
+/**
+ * HEUTE · MORGEN · WOCHE — die drei Sprünge, die morgens gebraucht werden.
+ *
+ * DAS GESCHÄFTSDATUM KOMMT VON AUSSEN. Diese Datei hat keine Uhr — kein
+ * Date.now(), und ausdrücklich auch kein Datum aus dem Browser. Ein „heute",
+ * das der Browser des Betrachters bestimmt, wäre auf einem Tresengerät mit
+ * falsch gestellter Uhr ein anderer Tag als der, für den die Backstube
+ * gebacken hat. Der Server kennt das Berliner Geschäftsdatum über
+ * businessDay(); es wird hier hereingereicht.
+ *
+ * „MORGEN" IST DER TAG NACH HEUTE und nicht der Tag nach dem betrachteten.
+ * Sonst wanderte die Schaltfläche mit jedem Klick weiter, und aus einer
+ * Schnellwahl würde ein zweiter Vorwärtspfeil — den es daneben schon gibt.
+ *
+ * „WOCHE" IST DIE WOCHE DES BETRACHTETEN TAGES und nicht die von heute. Wer
+ * den 28. ansieht und „Woche" drückt, will die Woche, in der der 28. liegt;
+ * eine Schaltfläche, die von einem künftigen Tag zurück in die laufende Woche
+ * spränge, verlöre den Zusammenhang, den der Betrachter gerade aufgebaut hat.
+ */
+export function toQuickDaysView(
+  today: string,
+  viewedDay: string,
+  active: 'day' | 'week',
+): QuickDaysView {
+  const morgen = plusDays(today, 1);
+  const montag = weekStart(viewedDay);
+
+  return {
+    today: {
+      label: 'Heute',
+      href: `/admin/dashboard?date=${today}`,
+      isCurrent: active === 'day' && viewedDay === today,
+    },
+    tomorrow: {
+      label: 'Morgen',
+      href: `/admin/dashboard?date=${morgen}`,
+      isCurrent: active === 'day' && viewedDay === morgen,
+    },
+    week: {
+      label: 'Woche',
+      href: `/admin/dashboard?date=${montag}&view=week`,
+      /**
+       * DER AKTIVE ZUSTAND WIRD ÜBERGEBEN und nicht aus dem Datum geraten:
+       * Tages- und Wochenansicht zeigen denselben Tag, und welche von beiden
+       * gerade offen ist, steht nirgends im Datum.
+       */
+      isCurrent: active === 'week',
+    },
+  };
+}
+
+/**
+ * Die Bestellliste in der Fassung, die angezeigt wird.
+ *
+ * ES WIRD NICHT NEU ENTSCHIEDEN, WAS „UNBEZAHLT" ODER „STORNIERT" HEISST. Der
+ * Filter liest `isPaid` und `isCancelled` von den fertigen Zeilen; beide
+ * stammen aus isPaid() und countsTowardsRevenue() in der Domäne. Ein
+ * `paymentStatus === 'unpaid'` an dieser Stelle wäre eine zweite Fassung
+ * derselben Regel — und die Liste könnte einen Betrag zeigen, den die
+ * Kennzahl darüber nicht mitzählt.
+ *
+ * STORNIERTE BLEIBEN AUSSEN VOR. Eine stornierte Bestellung hat keinen
+ * Zahlungsanspruch; sie steht in keiner offenen Summe des Tages und darf
+ * deshalb auch nicht in der Liste stehen, die diese Summe erklärt. In der
+ * UNGEFILTERTEN Liste bleibt sie sichtbar — dort erklärt sie den Tag.
+ */
+export function toOrderListView(
+  day: DashboardDayView,
+  filter: OrderFilter,
+): DashboardOrderListView {
+  const rows =
+    filter === 'unpaid'
+      ? day.orders.filter((zeile) => !zeile.isCancelled && !zeile.isPaid)
+      : day.orders;
+
+  return {
+    filter,
+    isFiltered: filter !== 'all',
+    title: filter === 'unpaid' ? 'Offene Zahlungen' : 'Bestellungen',
+    meta:
+      filter === 'unpaid'
+        ? bestellungen(rows.length)
+        : `${rows.length} ${rows.length === 1 ? 'Eintrag' : 'Einträge'}`,
+    rows,
+    allHref: `/admin/dashboard?date=${day.day}#bestellungen`,
+    emptyText:
+      filter === 'unpaid'
+        ? 'Für diesen Tag ist keine Zahlung offen. Alles, was nicht storniert wurde, ist bezahlt.'
+        : 'Für diesen Tag liegt noch keine Bestellung vor. Sobald eine Bestellung für diesen Produktionstag eingeht, erscheint sie hier.',
   };
 }
 

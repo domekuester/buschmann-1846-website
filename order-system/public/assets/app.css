@@ -2075,6 +2075,321 @@ textarea[aria-invalid='true'] {
 
 .kennzahlkarte--betont .kennzahlkarte__label { color: var(--fehler); }
 
+/* EINE KENNZAHL, DIE IRGENDWOHIN FÜHRT — und die vier, die es nicht tun.
+
+   Vier der sechs Karten sind ganz ein Link: „Bestellungen" springt zur Liste,
+   „Offen / in Arbeit" führt in die Produktion, „Noch nicht bezahlt" in die
+   gefilterte Liste, „Kunden" auf die Kundenseite. „Umsatz" und „Einheiten"
+   sind keine — sie beantworten sich selbst, und es gibt keinen Ort, an dem
+   mehr über sie stünde.
+
+   DER UNTERSCHIED IST NICHT SICHTBAR, SOLANGE MAN NICHTS TUT. Die Tafel bleibt
+   eine Tafel: gleiche Fläche, gleicher Text, kein Pfeil, kein Unterstrich,
+   keine zweite Farbe. Erst bei Zeiger oder Fokus hebt sich die Karte — die
+   ruhige Bauart von 6B bleibt unangetastet, und niemand muss sich sechs
+   verschiedene Kartenzustände merken.
+
+   `color: inherit` und `text-decoration: none`: Ohne beides färbte der Browser
+   die ganze Karte blau und unterstriche die Zahl. */
+.kennzahlkarte--weg {
+  color: inherit;
+  text-decoration: none;
+  transition: background-color .12s ease-out;
+}
+
+.kennzahlkarte--weg:hover { background: var(--elfenbein); }
+
+.kennzahlkarte--weg:focus-visible {
+  outline: 2px solid var(--champagner-text);
+  outline-offset: -2px;
+}
+
+/* Die betonte Karte hat einen eigenen Grund; ihr Zeigerzustand muss von DIESEM
+   ausgehen, sonst springt sie beim Überfahren von Rot auf Beige. */
+.kennzahlkarte--betont.kennzahlkarte--weg:hover { background: #fbe6e2; }
+
+.kennzahlkarte--zweit.kennzahlkarte--weg:hover { background: var(--elfenbein); }
+
+/* --- Schnellwahl: Heute · Morgen · Woche --- */
+
+/* DREI ZIELE ÜBER DER DATUMSWAHL.
+
+   Sie stehen IN der Tagesleiste und nicht darüber: Was den Zeitraum bestimmt,
+   gehört in dasselbe Feld — sonst hätte die Seite zwei Orte, an denen man
+   einstellt, welcher Tag gemeint ist.
+
+   SIE UMBRECHEN, STATT ZU SCHRUMPFEN. Auf 375px passen drei Ziele nebeneinander
+   (je rund 100px); wären es eines Tages mehr, fällt das vierte in die zweite
+   Zeile, statt dass alle vier unlesbar werden. Deshalb `flex-wrap` und keine
+   Rasterform mit fester Spaltenzahl.
+
+   DIE TIPPFLÄCHE IST --tap HOCH — 46px auf dem Telefon, also über der
+   WCAG-Grenze von 44. */
+.schnellwahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  margin: 0 0 .6rem;
+}
+
+.schnellwahl__ziel {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 .95rem;
+  border: 1px solid rgba(197, 154, 82, .45);
+  border-radius: var(--radius);
+  background: #fff;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--navy);
+  text-decoration: none;
+}
+
+.schnellwahl__ziel:hover { background: var(--elfenbein); }
+
+.schnellwahl__ziel:focus-visible {
+  outline: 2px solid var(--champagner-text);
+  outline-offset: 2px;
+}
+
+/* DER AKTIVE ZUSTAND SAGT ES AUCH OHNE FARBE. Er trägt zusätzlich
+   `aria-current="page"`; das Navy ist die zweite Auskunft und nicht die
+   einzige. */
+.schnellwahl__ziel--aktiv {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--porzellan);
+}
+
+.schnellwahl__ziel--aktiv:hover { background: var(--navy-tief); }
+
+/* --- Handlungsbedarf --- */
+
+/* WAS HEUTE ZU TUN IST — zwischen den Zahlen und den Ringen.
+
+   KEINE ALARMTAFEL. Kein roter Grund, kein Warnzeichen, keine Stufen. Die
+   Tafel ist dieselbe `.tafel` wie „Bestellungen" und „Meistbestellt"; was sie
+   heraushebt, ist ihre Stelle auf der Seite und nicht ihre Farbe. Ein Betrieb,
+   der jeden Morgen dieselbe Warnfarbe sieht, sieht sie nach einer Woche nicht
+   mehr.
+
+   Die Trennung zwischen zwei Punkten ist eine HAARLINIE und kein Kartenrand —
+   dieselbe Sprache wie in der Kennzahlenwand: Linien ZWISCHEN Feldern statt
+   Rändern UM Karten. */
+.handlung { margin: 0 0 1.75rem; }
+
+.handlung__liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.handlung__punkt + .handlung__punkt { border-top: var(--spur); }
+
+/* DIE GANZE ZEILE IST DIE TIPPFLÄCHE. Auf einem Telefon ist das der
+   Unterschied zwischen „irgendwo auf die Zeile" und „genau auf drei Wörter". */
+.handlungszeile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: .9rem;
+  row-gap: .35rem;
+  min-height: var(--tap);
+  padding: .85rem .25rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.handlungszeile:hover { background: var(--porzellan); }
+
+.handlungszeile:focus-visible {
+  outline: 2px solid var(--champagner-text);
+  outline-offset: -2px;
+}
+
+/* DIE ZIFFER IST DIE AUSKUNFT und trägt deshalb die Serife der Marke — wie
+   jede andere führende Zahl dieser Seite. Sie steht in einer eigenen Spalte:
+   Damit haben drei verschieden lange Texte eine gemeinsame linke Kante, und
+   die Zeilen lesen sich als Liste statt als drei Sätze.
+
+   Die feste Mindestbreite hält die Kante auch dann, wenn eine Zahl zweistellig
+   ist und die nächste einstellig. */
+.handlungszeile__zahl {
+  min-width: 1.9rem;
+  font-family: var(--serif);
+  font-size: 1.65rem;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--navy);
+  text-align: right;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.handlungszeile__text { min-width: 0; }
+
+.handlungszeile__sache {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+
+/* Der Betrag gehört zur Sache und nicht in eine eigene Spalte: „Zahlungen
+   offen · 69,60 €" ist EINE Aussage. Der goldene Ton ist derselbe, den die
+   Marke ohnehin führt. */
+.handlungszeile__betrag {
+  color: var(--champagner-text);
+  white-space: nowrap;
+}
+
+.handlungszeile__betrag::before {
+  content: '· ';
+  color: var(--text-leise);
+}
+
+.handlungszeile__detail {
+  display: block;
+  margin-top: .1rem;
+  font-size: .85rem;
+  color: var(--text-leise);
+}
+
+/* DER WEG STEHT AUF DEM TELEFON UNTER DEM TEXT und ab Tablet rechts daneben.
+   Untereinander bleibt er auf 375px vollständig lesbar; nebeneinander gesetzt
+   wäre „Offene Zahlungen anzeigen →" auf 60px gequetscht. */
+.handlungszeile__weg {
+  grid-column: 2;
+  font-size: .85rem;
+  font-weight: 600;
+  color: var(--champagner-text);
+}
+
+@media (min-width: 600px) {
+  .handlungszeile {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    column-gap: 1.1rem;
+  }
+
+  .handlungszeile__weg {
+    grid-column: 3;
+    grid-row: 1;
+    text-align: right;
+    white-space: nowrap;
+  }
+}
+
+/* DER RUHIGE ZUSTAND. Ein Satz, kein Häkchen, keine grüne Fläche, keine
+   Feier. „Nichts offen" ist der Normalfall eines gut geführten Betriebs und
+   nicht ein Ereignis. */
+.handlung__ruhe {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--navy);
+}
+
+.handlung__ruhedetail {
+  margin: .25rem 0 0;
+  font-size: .85rem;
+  color: var(--text-leise);
+}
+
+/* Der Weg aus einer gefilterten Liste zurück in die vollständige. Er steht im
+   Tafelkopf neben der Anzahl, also dort, wo auch steht, was gerade gezeigt
+   wird. */
+.tafel__weg {
+  margin: 0;
+  font-size: .85rem;
+}
+
+.tafel__weg a { color: var(--champagner-text); }
+
+/* --- Wochenübersicht --- */
+
+/* DIE WOCHENNAVIGATION — zwei Pfeile und der Zeitraum dazwischen.
+
+   Kein Datumsfeld: Ein Feld, in das man einen TAG tippt, um eine WOCHE zu
+   bekommen, erklärt sich nicht. Wer einen bestimmten Tag sucht, geht über
+   „Heute" oder über eine Zeile der Tabelle in die Tagesansicht — dort steht
+   das Feld. */
+.wochennav {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.wochennav__zeitraum {
+  flex: 1 1 auto;
+  margin: 0;
+  text-align: center;
+  font-size: .9rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+
+/* DIE WOCHENTABELLE IST DIESELBE `.datentabelle` wie überall sonst — und
+   deshalb auf dem Telefon eine Reihe von Karten mit einer Beschriftung je
+   Zelle, nicht eine gequetschte Fünfspaltentabelle mit Querscrollen. Es gibt
+   hier keine eigene Mobilfassung, die getrennt gepflegt werden müsste. */
+.wochenzeile__tag {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .45rem;
+  color: var(--navy);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.wochenzeile__tag:hover { text-decoration: underline; }
+
+.wochenzeile__datum {
+  font-weight: 400;
+  font-size: .85rem;
+  color: var(--text-leise);
+}
+
+/* „heute" als WORT und nicht nur als Farbton — dieselbe Regel wie überall auf
+   diesen Seiten. */
+.wochenzeile__heute {
+  display: inline-block;
+  margin-left: .45rem;
+  padding: .05rem .4rem;
+  border-radius: 999px;
+  background: var(--navy);
+  color: var(--porzellan);
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.wochenzeile__storno {
+  display: block;
+  font-size: .78rem;
+  color: var(--text-leise);
+}
+
+/* Ein Tag ohne Bestellung wird GEDÄMPFT und nicht weggelassen: Dass am
+   Donnerstag nichts ist, ist eine Auskunft. */
+.wochenzeile--leer td { color: var(--text-leise); }
+
+.wochenzeile--heute { background: var(--elfenbein); }
+
+.wochenzeile--summe {
+  font-weight: 700;
+  background: var(--porzellan);
+}
+
+/* Ab 600px ist die `.datentabelle` wieder eine echte Tabelle — dieselbe
+   Grenze, an der Kunden-, Katalog- und Bestellliste umschalten. */
+@media (min-width: 600px) {
+  /* Die Summenzeile trägt oben eine kräftigere Linie: Sie gehört zur Tabelle
+     und ist doch nicht einer ihrer sieben Tage. */
+  .wochenzeile--summe th,
+  .wochenzeile--summe td { border-top: 2px solid var(--leinen); }
+}
+
 /* --- Ringe: Zahlungen und Bestellstatus --- */
 
 /* ZWEI RINGE NEBENEINANDER, EINER UNTER DEM ANDEREN AUF DEM TELEFON.
@@ -2889,6 +3204,12 @@ textarea[aria-invalid='true'] {
   .zahlungaktion,
   .dashkopf__aktion,
   .tagleiste { display: none !important; }
+
+  /* Auf Papier führt kein Link irgendwohin. Der Handlungsbedarf bleibt
+     lesbar — es ist genau das, was jemand mit in die Backstube nimmt —,
+     verliert aber die Angabe, wohin man klicken würde. */
+  .handlungszeile__weg,
+  .tafel__weg { display: none !important; }
 
   /* Der Schatten der Kennzahlenwand sitzt seit der Tafel-Fassung am GITTER
      und nicht mehr an der einzelnen Zelle. */

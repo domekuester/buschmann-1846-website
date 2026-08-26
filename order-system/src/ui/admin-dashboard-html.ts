@@ -1,9 +1,13 @@
 import { renderAdminShell } from './admin-page-html';
 import {
   PAYMENT_OPTIONS,
+  type DashboardActionView,
   type DashboardDayView,
+  type DashboardOrderListView,
   type DashboardOrderRowView,
   type DonutView,
+  type QuickDayView,
+  type QuickDaysView,
 } from './dashboard-view';
 import { escapeHtml } from './format';
 
@@ -59,6 +63,10 @@ export interface AdminDashboardPageView {
    * Datei steht — dieselbe Regel wie auf der Kundenseite.
    */
   readonly noticeCode: string | null;
+  /** Heute · Morgen · Woche — die drei Sprünge über der Seite. */
+  readonly quickDays: QuickDaysView;
+  /** Die Bestellliste in der Fassung, die angezeigt wird. */
+  readonly orderList: DashboardOrderListView;
 }
 
 const MELDUNGEN: Readonly<Record<string, string>> = {
@@ -75,11 +83,12 @@ export function renderAdminDashboardPage(view: AdminDashboardPageView): string {
     view,
     'dashboard',
     `${kopf(view.day)}
-    ${steuerung(view.day)}
+    ${steuerung(view.day, view.quickDays)}
     ${meldung(view.noticeCode)}
     ${kennzahlen(view.day)}
+    ${handlungsbedarf(view.day)}
     ${ringzone(view.day)}
-    ${view.day.isEmpty ? leereBestellliste() : bestellliste(view)}
+    ${bestellliste(view)}
     ${topProdukte(view.day)}`,
   );
 }
@@ -97,14 +106,14 @@ export function renderAdminDashboardPage(view: AdminDashboardPageView): string {
  * oft genau das, was hilft.
  */
 export function renderDashboardUnavailablePage(
-  view: Pick<AdminDashboardPageView, 'loginIdentifier' | 'csrfToken' | 'day'>,
+  view: Pick<AdminDashboardPageView, 'loginIdentifier' | 'csrfToken' | 'day' | 'quickDays'>,
 ): string {
   return renderAdminShell(
     `Dashboard ${view.day.day} — Buschmann 1846`,
     view,
     'dashboard',
     `${kopf(view.day)}
-    ${steuerung(view.day)}
+    ${steuerung(view.day, view.quickDays)}
     <p class="banner" role="alert">Die Tagesdaten konnten gerade nicht geladen werden.</p>
     <p class="leer">Bitte versuche es gleich noch einmal. Wenn es bleibt, melde dich bei Buschmann 1846.</p>`,
   );
@@ -172,8 +181,9 @@ function kopf(day: DashboardDayView): string {
  * Formular, dessen action aus einem Parameter käme, wäre die Vorlage für eine
  * Weiterleitung nach draußen.
  */
-function steuerung(day: DashboardDayView): string {
+function steuerung(day: DashboardDayView, quick: QuickDaysView): string {
   return `<div class="tagleiste">
+      ${schnellwahl(quick)}
       <nav class="tagnav tagnav--leiste" aria-label="Tag wechseln">
         <a
           class="tagnav__pfeil"
@@ -196,6 +206,41 @@ function steuerung(day: DashboardDayView): string {
         ><span aria-hidden="true">&rarr;</span></a>
       </nav>
     </div>`;
+}
+
+/**
+ * HEUTE · MORGEN · WOCHE.
+ *
+ * DREI SPRÜNGE UND KEINE VIERTE ZEILE. Sie beantworten die drei Fragen, mit
+ * denen ein Betrieb morgens auf diese Seite kommt — „was ist heute?", „was
+ * kommt morgen?", „wie voll ist die Woche?" — und sie ERSETZEN die freie
+ * Datumswahl nicht: Pfeile und Datumsfeld stehen unverändert darunter. Wer
+ * den 14. Oktober braucht, tippt ihn weiterhin ein.
+ *
+ * SIE STEHEN ÜBER DER DATUMSWAHL und nicht daneben. Der häufige Weg soll der
+ * kurze sein; die freie Wahl ist der seltene und darf einen Blick mehr
+ * kosten.
+ *
+ * DER AKTIVE ZUSTAND WIRD NICHT NUR GEFÄRBT. `aria-current="page"` sagt
+ * dasselbe, was die Hervorhebung zeigt — dieselbe Regel wie in der
+ * Hauptnavigation des Adminbereichs. Ein Betrieb, der die Seite auf einem
+ * verwaschenen Tresenbildschirm liest, soll nicht an einem Farbton erkennen
+ * müssen, welchen Tag er ansieht.
+ *
+ * DIE ZIELE SIND FERTIGE ZEICHENKETTEN aus dem Ansichtsmodell. In dieser
+ * Datei wird kein Datum gerechnet und keine Adresse zusammengesetzt.
+ */
+function schnellwahl(quick: QuickDaysView): string {
+  return `<nav class="schnellwahl" aria-label="Zeitraum wählen">
+        ${[quick.today, quick.tomorrow, quick.week].map(schnellziel).join('\n        ')}
+      </nav>`;
+}
+
+function schnellziel(ziel: QuickDayView): string {
+  return `<a
+          class="schnellwahl__ziel${ziel.isCurrent ? ' schnellwahl__ziel--aktiv' : ''}"
+          href="${escapeHtml(ziel.href)}"${ziel.isCurrent ? ' aria-current="page"' : ''}
+        >${escapeHtml(ziel.label)}</a>`;
 }
 
 /**
@@ -227,16 +272,23 @@ function kennzahlen(day: DashboardDayView): string {
   return `<section class="kennzahlwand" aria-labelledby="kennzahlen-titel">
       <h2 id="kennzahlen-titel" class="nur-vorlesen">Kennzahlen des Tages</h2>
       <div class="kennzahlwand__gitter">
-        ${karte('Bestellungen', String(day.orderCount), storniertHinweis(day))}
+        ${karte('Bestellungen', String(day.orderCount), storniertHinweis(day), null, '#bestellungen')}
         ${karte('Umsatz', day.revenueLabel, 'ohne stornierte', 'haupt')}
-        ${karte('Offen / in Arbeit', String(day.openCount), 'noch nicht abgeschlossen')}
+        ${karte(
+          'Offen / in Arbeit',
+          String(day.openCount),
+          'noch nicht abgeschlossen',
+          null,
+          `/admin?date=${day.day}`,
+        )}
         ${karte(
           'Noch nicht bezahlt',
           day.unpaidLabel,
           `${day.unpaidCount} ${day.unpaidCount === 1 ? 'Bestellung' : 'Bestellungen'}`,
           day.unpaidCount > 0 ? 'betont' : null,
+          `/admin/dashboard?date=${day.day}&orders=unpaid#bestellungen`,
         )}
-        ${karte('Kunden', String(day.customerCount), 'verschiedene Betriebe', 'zweit')}
+        ${karte('Kunden', String(day.customerCount), 'verschiedene Betriebe', 'zweit', '/admin/customers')}
         ${karte('Einheiten', String(day.totalUnits), 'bestellte Menge', 'zweit')}
       </div>
     </section>`;
@@ -269,12 +321,104 @@ function karte(
   wert: string,
   hinweis: string,
   variante: 'haupt' | 'betont' | 'zweit' | null = null,
+  href: string | null = null,
 ): string {
-  return `<div class="kennzahlkarte${variante === null ? '' : ` kennzahlkarte--${variante}`}">
-          <p class="kennzahlkarte__label">${escapeHtml(label)}</p>
-          <p class="kennzahlkarte__wert">${escapeHtml(wert)}</p>
-          ${hinweis === '' ? '' : `<p class="kennzahlkarte__hinweis">${escapeHtml(hinweis)}</p>`}
-        </div>`;
+  const klassen = `kennzahlkarte${variante === null ? '' : ` kennzahlkarte--${variante}`}${
+    href === null ? '' : ' kennzahlkarte--weg'
+  }`;
+  const inhalt = `<span class="kennzahlkarte__label">${escapeHtml(label)}</span>
+          <span class="kennzahlkarte__wert">${escapeHtml(wert)}</span>
+          ${hinweis === '' ? '' : `<span class="kennzahlkarte__hinweis">${escapeHtml(hinweis)}</span>`}`;
+
+  return href === null
+    ? `<div class="${klassen}">
+          ${inhalt}
+        </div>`
+    : `<a class="${klassen}" href="${escapeHtml(href)}">
+          ${inhalt}
+        </a>`;
+}
+
+/**
+ * DER HANDLUNGSBEDARF — der Bereich, der sagt, was zu tun ist.
+ *
+ * ER STEHT ZWISCHEN DEN KENNZAHLEN UND DEN RINGEN, und die Stelle ist die
+ * Aussage: Erst wie der Tag steht, dann was zu tun ist, dann wie er sich
+ * aufteilt. Handeln ist wichtiger als Auswerten — ein Bereich, der unter den
+ * Diagrammen stünde, käme nach der Analyse, und morgens um fünf liest niemand
+ * so weit.
+ *
+ * ER IST KEIN ALARM. Kein rotes Feld, kein Warnzeichen, keine Stufen, keine
+ * Zahl in einem Kreis. Ein Betrieb, der jeden Morgen dieselbe Warnfarbe sieht,
+ * sieht sie nach einer Woche nicht mehr — und dann auch nicht, wenn einmal
+ * wirklich etwas ist. Die Zeilen sind deshalb ruhig gesetzt: eine Ziffer,
+ * zwei Zeilen Text, ein Weg.
+ *
+ * JEDE ZEILE IST GANZ EIN LINK und nicht ein Text mit einem kleinen „mehr"
+ * daneben. Auf einem Telefon ist damit die ganze Zeile die Tippfläche; mit
+ * der Tastatur ist es EIN Sprungziel je Aktion und nicht zwei.
+ *
+ * DER RUHIGE ZUSTAND IST EIN SATZ UND KEINE LEERE. Der Bereich verschwindet
+ * nicht, wenn nichts offen ist: Eine Seite, die je nach Tag einen Abschnitt
+ * mehr oder weniger hat, springt beim Tageswechsel — und wer sie zum ersten
+ * Mal an einem ruhigen Tag sieht, weiß nicht, dass es diesen Bereich gibt.
+ * Drei Karten mit einer 0 wären das andere Extrem und wären Rauschen an der
+ * Stelle, an der etwas stehen soll, wenn etwas ist.
+ */
+function handlungsbedarf(day: DashboardDayView): string {
+  const inhalt =
+    day.actions.length === 0
+      ? `<p class="handlung__ruhe">Für diesen Produktionstag ist aktuell nichts offen.</p>
+      <p class="handlung__ruhedetail">Neue Bestellungen, Produktion und Zahlungen sind erledigt.</p>`
+      : `<ul class="handlung__liste">
+        ${day.actions.map(handlungszeile).join('\n        ')}
+      </ul>`;
+
+  return `<section class="tafel handlung" aria-labelledby="handlung-titel">
+      <div class="tafel__kopf">
+        <h2 id="handlung-titel" class="tafel__titel">Handlungsbedarf</h2>
+        ${
+          day.actions.length === 0
+            ? ''
+            : `<p class="tafel__meta">${day.actions.length} ${
+                day.actions.length === 1 ? 'Punkt' : 'Punkte'
+              }</p>`
+        }
+      </div>
+      ${inhalt}
+    </section>`;
+}
+
+/**
+ * Eine Zeile: Ziffer, Sache, Weg.
+ *
+ * DIE ZIFFER IST NICHT `aria-hidden`. Anders als die Rangziffer in
+ * „Meistbestellt", die nur eine Reihenfolge sichtbar macht: Hier IST die Zahl
+ * die Auskunft — wie viele es sind —, und sie steht nirgends sonst in der
+ * Zeile. Vorgelesen ergibt sich „3 Neue Bestellungen warten auf Bestätigung
+ * Zur Produktion", also genau der Satz, den ein Sehender liest.
+ */
+function handlungszeile(aktion: DashboardActionView): string {
+  return `<li class="handlung__punkt">
+          <a class="handlungszeile handlungszeile--${escapeHtml(
+            aktion.key,
+          )}" href="${escapeHtml(aktion.href)}">
+            <span class="handlungszeile__zahl">${escapeHtml(aktion.countLabel)}</span>
+            <span class="handlungszeile__text">
+              <span class="handlungszeile__sache">${escapeHtml(aktion.title)}${
+                aktion.amountLabel === ''
+                  ? ''
+                  : ` <span class="handlungszeile__betrag">${escapeHtml(
+                      aktion.amountLabel,
+                    )}</span>`
+              }</span>
+              <span class="handlungszeile__detail">${escapeHtml(aktion.detail)}</span>
+            </span>
+            <span class="handlungszeile__weg">${escapeHtml(
+              aktion.linkLabel,
+            )}<span aria-hidden="true"> &rarr;</span></span>
+          </a>
+        </li>`;
 }
 
 /**
@@ -508,16 +652,53 @@ function topProdukte(day: DashboardDayView): string {
  * STORNIERTE BESTELLUNGEN BLEIBEN IN DER LISTE und tragen ein WORT, nicht nur
  * eine Farbe. Sie zu verstecken machte die Seite ruhiger und unehrlich: Wer
  * wissen will, warum der Tag dünn aussieht, muss die Stornierung sehen.
+ *
+ * SIE TRÄGT `id="bestellungen"` UND IST DAMIT EIN SPRUNGZIEL. Die Kennzahl
+ * „Bestellungen" und die Aktion „Offene Zahlungen anzeigen" führen hierher;
+ * ohne Anker landete man am Seitenanfang und müsste an der Kennzahlenwand
+ * vorbeiscrollen, die man gerade angeklickt hat.
+ *
+ * DER FILTER IST EINE FASSUNG DERSELBEN LISTE und keine zweite Seite.
+ * Überschrift, Anzahl und der Weg zurück kommen fertig aus dem
+ * Ansichtsmodell; diese Datei entscheidet nicht, welche Zeile bleibt — was
+ * „unbezahlt" heißt, steht in der Domäne. Dass gefiltert ist, sagt die
+ * ÜBERSCHRIFT und nicht eine Farbe: „Offene Zahlungen" statt „Bestellungen".
+ *
+ * DIE KENNZAHLEN ÜBER DER LISTE BLEIBEN UNGEFILTERT. Ein Filter, der auch sie
+ * änderte, wäre eine zweite Tagesansicht mit anderen Zahlen unter derselben
+ * Adresse — und der Umsatz des Tages hinge daran, welchen Knopf jemand zuvor
+ * gedrückt hat.
+ *
+ * DER LEERE FALL STEHT HIER UND NICHT IN EINER ZWEITEN FUNKTION. Vorher gab
+ * es `leereBestellliste()` daneben; mit dem Filter hätte es davon zwei
+ * gebraucht — eine für „an diesem Tag ist nichts bestellt" und eine für „an
+ * diesem Tag ist nichts offen". Der Satz kommt jetzt aus dem Ansichtsmodell,
+ * der Rahmen ist in beiden Fällen derselbe, und der Anker bleibt erreichbar
+ * — auch das war vorher nicht so.
  */
 function bestellliste(view: AdminDashboardPageView): string {
-  return `<section class="tafel tafel--tabelle bestellliste" aria-labelledby="bestellliste-titel">
+  const liste = view.orderList;
+
+  return `<section
+      class="tafel${liste.rows.length === 0 ? '' : ' tafel--tabelle'} bestellliste"
+      id="bestellungen"
+      aria-labelledby="bestellliste-titel"
+    >
       <div class="tafel__kopf">
-        <h2 id="bestellliste-titel" class="tafel__titel">Bestellungen</h2>
-        <p class="tafel__meta">${view.day.orders.length} ${
-          view.day.orders.length === 1 ? 'Eintrag' : 'Einträge'
-        }</p>
+        <h2 id="bestellliste-titel" class="tafel__titel">${escapeHtml(liste.title)}</h2>
+        <p class="tafel__meta">${escapeHtml(liste.meta)}</p>
+        ${
+          liste.isFiltered
+            ? `<p class="tafel__weg"><a href="${escapeHtml(
+                liste.allHref,
+              )}">Alle Bestellungen</a></p>`
+            : ''
+        }
       </div>
-      <div class="datentabelle-wrap">
+      ${
+        liste.rows.length === 0
+          ? `<p class="tafel__leer">${escapeHtml(liste.emptyText)}</p>`
+          : `<div class="datentabelle-wrap">
         <table class="datentabelle">
           <thead><tr>
             <th scope="col">Bestellung</th>
@@ -527,35 +708,12 @@ function bestellliste(view: AdminDashboardPageView): string {
             <th scope="col">Zahlung</th>
             <th scope="col">Zahlungsstatus ändern</th>
           </tr></thead>
-          <tbody>${view.day.orders
+          <tbody>${liste.rows
             .map((order) => bestellzeile(order, view.csrfToken))
             .join('')}</tbody>
         </table>
-      </div>
-    </section>`;
-}
-
-/**
- * Der Tag, an dem nichts bestellt wurde.
- *
- * ER SIEHT AUS WIE JEDER ANDERE TAG, nur mit Nullen. Kopf, Steuerung,
- * Kennzahlenwand und beide Tafeln stehen an derselben Stelle; was fehlt, sind
- * die Zeilen — und an ihrer Stelle steht ein Satz, der sagt, dass hier nichts
- * fehlt, sondern nichts ist.
- *
- * KEINE ALARMÄSTHETIK. Ein ruhiger Tag ist kein Fehler: kein Warnzeichen,
- * kein roter Grund, kein „Achtung". Dieselbe Tafel, derselbe Rahmen, ein
- * gedeckter Satz.
- */
-function leereBestellliste(): string {
-  return `<section class="tafel bestellliste" aria-labelledby="bestellliste-titel">
-      <div class="tafel__kopf">
-        <h2 id="bestellliste-titel" class="tafel__titel">Bestellungen</h2>
-      </div>
-      <p class="tafel__leer">
-        Für diesen Tag liegt noch keine Bestellung vor. Sobald eine Bestellung
-        für diesen Produktionstag eingeht, erscheint sie hier.
-      </p>
+      </div>`
+      }
     </section>`;
 }
 

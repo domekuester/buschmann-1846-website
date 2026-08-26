@@ -1,0 +1,177 @@
+import { plusDays } from '../domain/clock';
+import type { DashboardWeek, DashboardWeekDay, DashboardWeekTotals } from '../domain/dashboard-week';
+import {
+  formatEuro,
+  formatGermanDayMonthYear,
+  formatGermanShortDate,
+  formatGermanWeekday,
+} from './format';
+import { toQuickDaysView, type QuickDayView, type QuickDaysView } from './dashboard-view';
+
+/**
+ * Das Ansichtsmodell der Wochenübersicht.
+ *
+ * DIESELBE SCHICHTUNG WIE BEIM TAG: Das Lesemodell rechnet, diese Datei
+ * schreibt auf. Sie hat keine Uhr, keine Datenbank und keinen Request;
+ * dasselbe Modell ergibt immer dieselbe Ansicht.
+ *
+ * SIE IST BEWUSST KARG. Sieben Zeilen mit vier Zahlen, eine Summe und die
+ * Wege hinaus. Kein Diagramm, kein Vergleich, kein Prozentsatz, keine
+ * Hervorhebung eines „besten Tages" — die Wochenansicht sagt, WO etwas los
+ * ist, und übergibt die Frage nach dem WIE an die Tagesansicht, die es
+ * ausführlich beantwortet. Jede Zeile ist deshalb ein Link.
+ *
+ * EIN STRICH IST KEINE NULL. Ein Tag ohne Bestellung bekommt „—" bei
+ * Produktion und Zahlung und nicht „erledigt"/„bezahlt": Wo nichts bestellt
+ * wurde, ist auch nichts erledigt worden. Der Unterschied klingt klein und
+ * ist der zwischen „der Donnerstag war ruhig" und „am Donnerstag ist alles
+ * geschafft".
+ */
+
+/** Eine Wochentagszeile — fertig beschriftet. */
+export interface DashboardWeekDayView {
+  readonly date: string;
+  /** „Montag". */
+  readonly weekdayLabel: string;
+  /** „24.08." — ohne Jahr, das steht in der Überschrift. */
+  readonly dateLabel: string;
+  /** Die Tagesansicht dieses Tages. */
+  readonly href: string;
+  /** Die Anzahl der Bestellungen ohne stornierte. */
+  readonly ordersLabel: string;
+  readonly revenueLabel: string;
+  /** „2 offen", „erledigt" oder „—". */
+  readonly openLabel: string;
+  /** „35,00 € offen", „bezahlt" oder „—". */
+  readonly unpaidLabel: string;
+  /** „zusätzlich 1 storniert" — oder leer. */
+  readonly cancelledLabel: string;
+  /** An diesem Tag ist überhaupt nichts eingegangen, auch nichts Storniertes. */
+  readonly isEmpty: boolean;
+  readonly isToday: boolean;
+}
+
+/** Die Summenzeile — dieselben Angaben ohne Datum. */
+export type DashboardWeekTotalView = Pick<
+  DashboardWeekDayView,
+  'ordersLabel' | 'revenueLabel' | 'openLabel' | 'unpaidLabel' | 'cancelledLabel'
+>;
+
+export interface DashboardWeekView {
+  readonly monday: string;
+  readonly sunday: string;
+  /** „24. August 2026 – 30. August 2026" — für die Überschrift. */
+  readonly rangeLabel: string;
+  /**
+   * „24.08. – 30.08.2026" — für die Steuerleiste.
+   *
+   * DERSELBE ZEITRAUM IN DER KURZFORM, und das ist kein Doppel: Die
+   * Tagesansicht macht es genauso — dort steht „Mittwoch, 26. August 2026"
+   * als Überschrift und „26.08.2026" im Datumsfeld darunter. Die Überschrift
+   * sagt, WORÜBER die Seite spricht; die Leiste zeigt den EINGESTELLTEN WERT.
+   * Zweimal wörtlich derselbe lange Satz wäre dagegen nur laut — ein Befund
+   * aus dem Browser.
+   */
+  readonly compactRangeLabel: string;
+  readonly previousWeek: QuickDayView;
+  readonly nextWeek: QuickDayView;
+  readonly quickDays: QuickDaysView;
+  readonly days: readonly DashboardWeekDayView[];
+  readonly total: DashboardWeekTotalView;
+}
+
+/**
+ * DER ZEITRAUM STEHT ZWEIMAL VOLLSTÄNDIG DA — mit Monat und Jahr an beiden
+ * Enden.
+ *
+ * „24. – 30. August 2026" wäre kürzer und verlangte eine Fallunterscheidung
+ * für die Wochen, die über einen Monats- oder Jahreswechsel gehen. Genau die
+ * Fallunterscheidung wäre die Stelle, an der einmal im Jahr „31. – 6.
+ * September" stünde. Die lange Form ist an jedem Tag des Jahres richtig, und
+ * sie steht in einer Überschrift, in der zwei Wörter mehr niemanden stören.
+ */
+export function toDashboardWeekView(week: DashboardWeek, today: string): DashboardWeekView {
+  return {
+    monday: week.monday,
+    sunday: week.sunday,
+    rangeLabel: `${formatGermanDayMonthYear(week.monday)} – ${formatGermanDayMonthYear(week.sunday)}`,
+    /**
+     * Das Jahr steht am ENDE und nur einmal — wie in jeder Zeitraumangabe,
+     * die man in einem Betrieb aufschreibt. Über einen Jahreswechsel hinweg
+     * ist es das Jahr des Sonntags; die vollständige Auskunft steht eine
+     * Zeile darüber in der Überschrift.
+     */
+    compactRangeLabel: `${formatGermanShortDate(week.monday)} – ${formatGermanShortDate(
+      week.sunday,
+    )}${week.sunday.slice(0, 4)}`,
+
+    previousWeek: wochensprung('Vorherige Woche', plusDays(week.monday, -7)),
+    nextWeek: wochensprung('Nächste Woche', plusDays(week.monday, 7)),
+
+    /**
+     * DIE SCHNELLWAHL IST DIESELBE WIE AUF DER TAGESANSICHT — Funktion und
+     * Adressen kommen aus dashboard-view.ts. Eine eigene Fassung für die
+     * Woche wäre eine zweite Stelle, an der steht, was „morgen" ist.
+     *
+     * Der betrachtete Tag ist hier der MONTAG: Wer von der Woche aus „Woche"
+     * drückt, bleibt in dieser Woche.
+     */
+    quickDays: toQuickDaysView(today, week.monday, 'week'),
+
+    days: week.days.map((tag) => tageszeile(tag, today)),
+    total: summenzeile(week.total),
+  };
+}
+
+function wochensprung(label: string, monday: string): QuickDayView {
+  return {
+    label,
+    href: `/admin/dashboard?date=${monday}&view=week`,
+    isCurrent: false,
+  };
+}
+
+function tageszeile(tag: DashboardWeekDay, today: string): DashboardWeekDayView {
+  /**
+   * LEER HEISST: ES IST NICHTS EINGEGANGEN — auch nichts Storniertes. Ein
+   * Tag, an dem eine Bestellung kam und wieder zurückgezogen wurde, hat eine
+   * Geschichte; er sieht anders aus als einer, an dem niemand bestellt hat.
+   * Dieselbe Unterscheidung trifft die Tagesansicht mit `isEmpty`.
+   */
+  const leer = tag.orderCount === 0 && tag.cancelledCount === 0;
+
+  return {
+    date: tag.date,
+    weekdayLabel: formatGermanWeekday(tag.date),
+    dateLabel: formatGermanShortDate(tag.date),
+    href: `/admin/dashboard?date=${tag.date}`,
+    isEmpty: leer,
+    isToday: tag.date === today,
+    ...zahlen(tag, leer),
+  };
+}
+
+/**
+ * Die Wochensumme trägt dieselben Beschriftungen wie ein Tag.
+ *
+ * SIE IST NIE „LEER". Eine Woche ohne Bestellung ist trotzdem eine Woche, in
+ * der nichts offen und nichts unbezahlt ist — „erledigt" und „bezahlt" sind
+ * dort die richtigen Wörter. Ein Strich in der Summenzeile läse sich wie eine
+ * fehlende Angabe.
+ */
+function summenzeile(total: DashboardWeekTotals): DashboardWeekTotalView {
+  return zahlen(total, false);
+}
+
+function zahlen(werte: DashboardWeekTotals, leer: boolean): DashboardWeekTotalView {
+  return {
+    ordersLabel: String(werte.orderCount),
+    revenueLabel: formatEuro(werte.revenueCents),
+    openLabel: leer ? '—' : werte.openCount === 0 ? 'erledigt' : `${werte.openCount} offen`,
+    unpaidLabel: leer ? '—' : werte.unpaidCents === 0 ? 'bezahlt' : `${formatEuro(werte.unpaidCents)} offen`,
+    cancelledLabel:
+      werte.cancelledCount === 0
+        ? ''
+        : `zusätzlich ${werte.cancelledCount} storniert`,
+  };
+}

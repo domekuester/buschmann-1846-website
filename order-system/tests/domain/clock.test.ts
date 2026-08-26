@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { businessDay, isCalendarDay, plusDays, toUtcTimestamp } from '../../src/domain/clock';
+import {
+  businessDay,
+  isCalendarDay,
+  plusDays,
+  toUtcTimestamp,
+  weekStart,
+} from '../../src/domain/clock';
 
 /**
  * Das Zeitmodell ist die Stelle, an der ein Bestellsystem am unauffälligsten
@@ -131,6 +137,64 @@ describe('isCalendarDay', () => {
   it('lehnt Leeres und Nichtzeichenketten ab', () => {
     for (const wert of ['', '   ', null, undefined, 42, {}, [], ['2026-08-26']]) {
       expect(isCalendarDay(wert)).toBe(false);
+    }
+  });
+});
+
+/**
+ * DIE KALENDERWOCHE — Montag bis Sonntag.
+ *
+ * Sie steht hier und nicht im Wochen-Lesemodell: Sie ist eine Regel über
+ * Kalendertage, wie plusDays() eine ist, und wer eines Tages eine zweite
+ * Ansicht mit Wochenbezug baut, sucht sie genau hier.
+ */
+describe('weekStart', () => {
+  it('gibt für einen Montag denselben Tag zurück', () => {
+    expect(weekStart('2026-08-24')).toBe('2026-08-24');
+  });
+
+  it('gibt für einen Mittwoch den Montag davor zurück', () => {
+    expect(weekStart('2026-08-26')).toBe('2026-08-24');
+  });
+
+  it('rechnet den Sonntag zur Woche davor und nicht zur folgenden', () => {
+    expect(weekStart('2026-08-30')).toBe('2026-08-24');
+  });
+
+  it('greift über einen Monatswechsel hinweg', () => {
+    // Dienstag, 1. September 2026 → Montag, 31. August 2026.
+    expect(weekStart('2026-09-01')).toBe('2026-08-31');
+  });
+
+  it('greift über einen Jahreswechsel hinweg', () => {
+    // Freitag, 1. Januar 2027 → Montag, 28. Dezember 2026.
+    expect(weekStart('2027-01-01')).toBe('2026-12-28');
+  });
+
+  it('greift über den 29. Februar eines Schaltjahres hinweg', () => {
+    // Montag, 1. März 2027 ist kein Schaltjahr; 2028 ist eines:
+    // Mittwoch, 1. März 2028 → Montag, 28. Februar 2028, mit dem 29. dazwischen.
+    expect(weekStart('2028-03-01')).toBe('2028-02-28');
+    expect(plusDays(weekStart('2028-03-01'), 1)).toBe('2028-02-29');
+  });
+
+  it('weist einen Wert zurück, der kein Kalendertag ist', () => {
+    expect(() => weekStart('2026-02-30')).toThrow();
+    expect(() => weekStart('nicht-ein-tag')).toThrow();
+  });
+
+  it('liefert einen Montag, für jeden Tag eines ganzen Jahres', () => {
+    let tag = '2026-01-01';
+
+    for (let i = 0; i < 365; i += 1) {
+      const montag = weekStart(tag);
+
+      expect(new Date(`${montag}T00:00:00Z`).getUTCDay()).toBe(1);
+      // Der Montag liegt nie in der Zukunft und nie mehr als sechs Tage zurück.
+      expect(montag <= tag).toBe(true);
+      expect(plusDays(montag, 6) >= tag).toBe(true);
+
+      tag = plusDays(tag, 1);
     }
   });
 });

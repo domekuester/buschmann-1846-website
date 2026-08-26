@@ -55,3 +55,61 @@ export function readDayParam(request: Request): string | null | 'invalid' {
   const wert = werte[0];
   return isCalendarDay(wert) ? wert : 'invalid';
 }
+
+
+/**
+ * DIE BLICKWEITE — Tag oder Woche.
+ *
+ * `view` ist der zweite Parameter des Dashboards und wird nach denselben drei
+ * Regeln gelesen wie `date`:
+ *
+ *   null        nicht angefragt — die Tagesansicht ist der Standard.
+ *   'day'/'week' ausdrücklich angefragt.
+ *   'invalid'   etwas anderes wurde angefragt.
+ *
+ * EIN UNBEKANNTER WERT FÄLLT NICHT STILL AUF DEN STANDARD ZURÜCK. `?view=jahr`
+ * bekommt dieselbe 400-Antwort wie ein Datum, das es nicht gibt — und aus
+ * demselben Grund: Eine Seite, die eine andere Blickweite zeigt als die
+ * angefragte, ohne es zu sagen, ist die Sorte Antwort, die man für die
+ * angefragte hält. Ein Lesezeichen mit einem Tippfehler zeigte sonst
+ * wortlos den Tag statt der Woche.
+ *
+ * MEHRFACHE PARAMETER WERDEN ABGELEHNT — wie bei `date`, und aus demselben
+ * Grund: Welcher der erste ist, hängt an der Reihenfolge in der URL.
+ *
+ * DIE MENGE DER WERTE IST GESCHLOSSEN. Was zurückkommt, ist 'day', 'week',
+ * null oder 'invalid' — nie die Eingabe. Damit kann über diesen Parameter
+ * nichts in eine Seite oder in eine Adresse gelangen.
+ */
+export function readViewParam(request: Request): 'day' | 'week' | null | 'invalid' {
+  const werte = new URL(request.url).searchParams.getAll('view');
+
+  if (werte.length === 0) return null;
+  if (werte.length > 1) return 'invalid';
+
+  const wert = werte[0];
+  return wert === 'day' || wert === 'week' ? wert : 'invalid';
+}
+
+/**
+ * DER BESTELLFILTER — nur eine Anzeigefrage.
+ *
+ * `?orders=unpaid` zeigt in der Bestellliste ausschließlich die nicht
+ * stornierten, unbezahlten Bestellungen. Er ändert KEINE Kennzahl, KEINEN
+ * Ring und KEINE Summe; er wählt Zeilen aus.
+ *
+ * ES GIBT KEIN 'open'. Was noch zu produzieren ist, steht in der
+ * Produktionsansicht — sie ist dafür die Quelle, und ein zweiter Ort mit
+ * derselben Liste wäre ein zweiter Ort mit der Statusregel.
+ *
+ * Gelesen wird wie bei `date` und `view`: fehlt, gültig, oder 'invalid'.
+ */
+export function readOrderFilterParam(request: Request): 'all' | 'unpaid' | null | 'invalid' {
+  const werte = new URL(request.url).searchParams.getAll('orders');
+
+  if (werte.length === 0) return null;
+  if (werte.length > 1) return 'invalid';
+
+  const wert = werte[0];
+  return wert === 'all' || wert === 'unpaid' ? wert : 'invalid';
+}

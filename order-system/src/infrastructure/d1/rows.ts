@@ -195,3 +195,19 @@ export interface DashboardItemRow {
   sort_order: number;
   quantity: number;
 }
+
+/**
+ * Eine Bestellung, wie die WOCHENÜBERSICHT sie sieht — vier Spalten.
+ *
+ * Der Gegensatz zu DashboardOrderRow ist die Aussage dieser Zeile: Die Woche
+ * zeigt je Tag vier Zahlen und deshalb keinen Kunden, keine Bestellnummer,
+ * keinen Zeitpunkt und keine Position. Was nicht in der Abfrage steht, kann
+ * nicht versehentlich in einer Seite landen.
+ */
+export interface DashboardWeekOrderRow {
+  fulfillment_date: string;
+  status: string;
+  /** Seit 0015 — 'unpaid' oder eine der vier bezahlten Zahlarten. */
+  payment_status: string;
+  total_amount_cents: number;
+}

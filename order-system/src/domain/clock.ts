@@ -114,3 +114,36 @@ export function plusDays(day: string, days: number): string {
   parsed.setUTCDate(parsed.getUTCDate() + days);
   return parsed.toISOString().slice(0, 10);
 }
+
+/**
+ * Der MONTAG der Kalenderwoche, in der dieser Tag liegt.
+ *
+ * DIE WOCHE IST MONTAG BIS SONNTAG und nicht „die letzten sieben Tage". Der
+ * Unterschied ist der Grund, warum diese Funktion überhaupt existiert: Ein
+ * rollendes Fenster hätte für jeden Tag eine andere Woche — dieselbe Ansicht
+ * zweimal geöffnet zeigte zweimal etwas anderes, ein Lesezeichen zeigte
+ * morgen einen anderen Ausschnitt als heute, und „diese Woche" wäre für einen
+ * vergangenen oder künftigen Tag gar nicht definiert. Die Kalenderwoche ist
+ * dagegen für JEDEN Tag dieselbe, gestern wie in drei Monaten.
+ *
+ * Montag als erster Tag ist die deutsche und die ISO-8601-Zählung; ein Betrieb
+ * plant seine Woche ab Montag, und der Sonntag schließt sie ab.
+ *
+ * GERECHNET WIRD IN UTC, aus demselben Grund wie in plusDays(): Ein Tag hat
+ * dort immer 86 400 Sekunden. `getUTCDay()` zählt von 0 = Sonntag; `(tag + 6)
+ * % 7` macht daraus den Abstand zum Montag — Montag 0, Sonntag 6. Das ist der
+ * ganze Trick, und er kommt ohne Sonderfall für den Sonntag aus, an dem die
+ * naive Fassung `tag - 1` einen Tag in die FOLGENDE Woche springt.
+ *
+ * Der Tag wird über plusDays() zurückgerechnet und nicht von Hand: Damit
+ * gelten Monats-, Jahres- und Schaltjahresgrenzen hier automatisch so wie
+ * überall sonst, und es gibt keine zweite Datumsarithmetik im System.
+ */
+export function weekStart(day: string): string {
+  if (!isCalendarDay(day)) {
+    throw new InvalidArgumentError('Der Tag ist kein gültiger Kalendertag.');
+  }
+
+  const wochentag = new Date(`${day}T00:00:00Z`).getUTCDay();
+  return plusDays(day, -((wochentag + 6) % 7));
+}

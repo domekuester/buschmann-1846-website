@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { escapeHtml, formatEuro, formatGermanDate } from '../../src/ui/format';
+import {
+  escapeHtml,
+  formatEuro,
+  formatGermanDate,
+  formatGermanDayMonthYear,
+  formatGermanShortDate,
+  formatGermanWeekday,
+} from '../../src/ui/format';
 
 describe('formatEuro', () => {
   it('setzt das deutsche Dezimalkomma', () => {
@@ -93,5 +100,43 @@ describe('formatGermanDate', () => {
   it('lehnt ab, was kein Kalendertag ist', () => {
     expect(() => formatGermanDate('25.08.2026')).toThrow();
     expect(() => formatGermanDate('2026-02-30')).toThrow();
+  });
+});
+
+describe('formatGermanWeekday', () => {
+  it('nennt den Wochentag', () => {
+    expect(formatGermanWeekday('2026-08-24')).toBe('Montag');
+    expect(formatGermanWeekday('2026-08-30')).toBe('Sonntag');
+  });
+
+  it('verschiebt den Tag nicht über die Zeitzone', () => {
+    // Mitternacht UTC, in Berlin bereits der 25. — der Wochentag bleibt der
+    // des Liefertages und nicht der einer Umrechnung.
+    expect(formatGermanWeekday('2026-08-25')).toBe('Dienstag');
+  });
+
+  it('weist einen Tag zurück, den es nicht gibt', () => {
+    expect(() => formatGermanWeekday('2026-02-30')).toThrow();
+  });
+});
+
+describe('formatGermanDayMonthYear', () => {
+  it('schreibt den Tag ohne Wochentag', () => {
+    expect(formatGermanDayMonthYear('2026-08-24')).toBe('24. August 2026');
+  });
+
+  it('weist einen Tag zurück, den es nicht gibt', () => {
+    expect(() => formatGermanDayMonthYear('nicht-ein-tag')).toThrow();
+  });
+});
+
+describe('formatGermanShortDate', () => {
+  it('schreibt den Tag zweistellig und ohne Jahr', () => {
+    expect(formatGermanShortDate('2026-08-24')).toBe('24.08.');
+    expect(formatGermanShortDate('2026-09-01')).toBe('01.09.');
+  });
+
+  it('weist einen Tag zurück, den es nicht gibt', () => {
+    expect(() => formatGermanShortDate('2026-13-01')).toThrow();
   });
 });

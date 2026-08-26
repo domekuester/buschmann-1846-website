@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import worker from '../../src/worker';
+import { businessDay, plusDays } from '../../src/domain/clock';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
@@ -185,9 +186,23 @@ describe('GET /admin/dashboard — Tagesbezug', () => {
     expect(html).not.toContain('alert(1)');
   });
 
+  /**
+   * DER STANDARDTAG WIRD AUSGERECHNET UND NICHT ABGESCHRIEBEN.
+   *
+   * Hier stand bis Phase 6C `value="2026-08-26"` — richtig an dem Tag, an dem
+   * der Test geschrieben wurde, und ab dem Tag danach rot. Der Worker liest
+   * die ECHTE Uhr; ein festes Datum in der Erwartung ist deshalb eine
+   * Zeitbombe mit einem Tag Zündschnur, und sie ist einmal hochgegangen.
+   *
+   * Gerechnet wird mit denselben Funktionen wie in der Anwendung —
+   * businessDay() für den Berliner Tag, plusDays() für „der nächste". Das ist
+   * kein Nachbau der Implementierung: Geprüft wird die REGEL („die Vorauswahl
+   * ist der Tag nach dem Geschäftstag"), und die gilt an jedem Tag des
+   * Jahres, auch am 31. Dezember um 23:59 Uhr Berliner Zeit.
+   */
   it('wählt ohne Parameter den nächsten Kalendertag vor', async () => {
     const html = await (await call('/admin/dashboard', await admin())).text();
-    expect(html).toContain('value="2026-08-26"');
+    expect(html).toContain(`value="${plusDays(businessDay(new Date()), 1)}"`);
   });
 });
 

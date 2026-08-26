@@ -88,14 +88,7 @@ const GERMAN_DATE = new Intl.DateTimeFormat('de-DE', {
  * Umrechnungsschritt ihn um einen Tag verschiebt.
  */
 export function formatGermanDate(day: string): string {
-  if (!ISO_DAY.test(day)) {
-    throw new InvalidArgumentError('Der Tag muss im Format JJJJ-MM-TT vorliegen.');
-  }
-  const parsed = new Date(`${day}T00:00:00Z`);
-  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== day) {
-    throw new InvalidArgumentError('Der Tag ist kein gültiger Kalendertag.');
-  }
-  return GERMAN_DATE.format(parsed);
+  return GERMAN_DATE.format(pruefeTag(day));
 }
 
 const GERMAN_TIMESTAMP = new Intl.DateTimeFormat('de-DE', {
@@ -114,4 +107,71 @@ export function formatGermanTimestamp(timestamp: string): string {
     throw new InvalidArgumentError('Der Zeitpunkt muss ein ISO-8601-UTC-Zeitstempel sein.');
   }
   return GERMAN_TIMESTAMP.format(parsed);
+}
+
+const GERMAN_WEEKDAY = new Intl.DateTimeFormat('de-DE', { timeZone: 'UTC', weekday: 'long' });
+
+const GERMAN_DAY_MONTH_YEAR = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'UTC',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+
+const GERMAN_SHORT_DATE = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'UTC',
+  day: '2-digit',
+  month: '2-digit',
+});
+
+/**
+ * Nur der Wochentag: „Montag".
+ *
+ * Für die Wochenübersicht, in der der Wochentag die FÜHRENDE Angabe jeder
+ * Zeile ist und das Datum die zweite. Ein Betrieb plant nach Wochentagen —
+ * „Samstag" sagt mehr über den Tag aus als „29.08.".
+ */
+export function formatGermanWeekday(day: string): string {
+  return GERMAN_WEEKDAY.format(pruefeTag(day));
+}
+
+/**
+ * Der Tag ohne Wochentag: „24. August 2026".
+ *
+ * Für Zeitraumangaben, in denen zwei Daten nebeneinanderstehen. Mit
+ * Wochentagen wäre „Montag, 24. August 2026 – Sonntag, 30. August 2026" eine
+ * Überschrift, die man liest statt sie zu erfassen.
+ */
+export function formatGermanDayMonthYear(day: string): string {
+  return GERMAN_DAY_MONTH_YEAR.format(pruefeTag(day));
+}
+
+/**
+ * Der Tag als kurze Zahl: „24.08.".
+ *
+ * Für die Wochenzeile, in der der Wochentag bereits ausgeschrieben davorsteht
+ * und das Datum ihn nur noch verankert. Ohne Jahr — die Woche steht
+ * vollständig in der Überschrift darüber.
+ */
+export function formatGermanShortDate(day: string): string {
+  return GERMAN_SHORT_DATE.format(pruefeTag(day));
+}
+
+/**
+ * Die gemeinsame Prüfung ALLER Tagesformate dieser Datei.
+ *
+ * Form UND Existenz des Tages — dieselbe zweite Prüfung, die isCalendarDay()
+ * in der Domäne vornimmt und aus demselben Grund: '2026-02-30' passt auf das
+ * Muster, und JavaScript schriebe es still als „2. März" an. Vier Kopien
+ * wären vier Gelegenheiten, dass eine davon das nicht tut.
+ */
+function pruefeTag(day: string): Date {
+  if (!ISO_DAY.test(day)) {
+    throw new InvalidArgumentError('Der Tag muss im Format JJJJ-MM-TT vorliegen.');
+  }
+  const parsed = new Date(`${day}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== day) {
+    throw new InvalidArgumentError('Der Tag ist kein gültiger Kalendertag.');
+  }
+  return parsed;
 }
