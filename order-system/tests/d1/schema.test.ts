@@ -90,6 +90,7 @@ describe('Migrationen', () => {
       'customers',
       'order_items',
       'order_number_sequences',
+      'order_policy',
       'orders',
       'price_lists',
       'products',

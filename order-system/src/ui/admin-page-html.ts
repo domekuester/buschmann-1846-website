@@ -360,11 +360,17 @@ export function renderStatusChangeFailurePage(
  * und Virenscannern ausgelöst und meldet dann jemanden ab, der nichts getan
  * hat.
  *
- * KEINE SIDEBAR. Seit Phase 6A gibt es genau VIER echte Ziele: Dashboard,
- * Produktion, Sortiment & Preise und Kunden. Mehr Navigation wäre weiterhin
- * Attrappe — ein Menüpunkt „Finanzen", hinter dem keine Seite liegt, ist kein
- * Ausblick, sondern eine Unwahrheit im Kopf jeder Seite. Jeder dieser vier
- * Einträge führt auf eine Seite, die es gibt und die etwas tut.
+ * KEINE SIDEBAR. Seit Phase 6F gibt es genau FÜNF echte Ziele: Dashboard,
+ * Produktion, Sortiment & Preise, Kunden und Bestellregeln. Mehr Navigation
+ * wäre weiterhin Attrappe — ein Menüpunkt „Finanzen", hinter dem keine Seite
+ * liegt, ist kein Ausblick, sondern eine Unwahrheit im Kopf jeder Seite.
+ * Jeder dieser fünf Einträge führt auf eine Seite, die es gibt und die etwas
+ * tut.
+ *
+ * BESTELLREGELN STEHT ZULETZT, und das ist eine Aussage über den Tag: Es ist
+ * die einzige Seite, die man EINMAL benutzt und dann monatelang nicht mehr.
+ * Sie vorn zu führen hieße, den Blick jeden Morgen an einer Einstellung
+ * vorbeizuführen, die sich nie ändert.
  *
  * DAS DASHBOARD BEKOMMT ALS EINZIGE SEITE EINE BREITERE SPALTE. Der Grund
  * kam aus dem Browser: Seine Bestelltabelle hat sechs Spalten — doppelt so
@@ -380,7 +386,7 @@ export function renderStatusChangeFailurePage(
  * Tag, nicht das Vorzimmer der übrigen Seiten — eine Zwischenseite mit vier
  * Kacheln wäre ein Klick ohne Entscheidung.
  */
-export type AdminArea = 'dashboard' | 'production' | 'catalog' | 'customers';
+export type AdminArea = 'dashboard' | 'production' | 'catalog' | 'customers' | 'rules';
 
 export function renderAdminShell(
   title: string,
@@ -406,6 +412,7 @@ export function renderAdminShell(
     <a href="/admin"${activeArea === 'production' ? ' aria-current="page"' : ''}>Produktion</a>
     <a href="/admin/catalog"${activeArea === 'catalog' ? ' aria-current="page"' : ''}>Sortiment &amp; Preise</a>
     <a href="/admin/customers"${activeArea === 'customers' ? ' aria-current="page"' : ''}>Kunden</a>
+    <a href="/admin/bestellregeln"${activeArea === 'rules' ? ' aria-current="page"' : ''}>Bestellregeln</a>
   </nav>
   <p class="kopf__kennung">Angemeldet als ${escapeHtml(view.loginIdentifier)}</p>
 

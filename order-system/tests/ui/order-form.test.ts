@@ -25,7 +25,9 @@ function setUpPage(): void {
     ],
     submissionId: 'sub-0123-4567-89ab',
     csrfToken: CSRF,
-    today: '2026-08-24',
+    earliestDate: '2026-08-24',
+    orderDaysNotice: null,
+    cutoffNotice: null,
     defaultDate: '2026-08-25',
     hasPriceGroup: true,
   })

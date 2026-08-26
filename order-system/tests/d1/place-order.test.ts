@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { placeOrder } from '../../src/application/place-order';
+import { saveOrderPolicy } from '../../src/infrastructure/d1/order-policy-repository';
 import { findOrderByNumber } from '../../src/infrastructure/d1/order-repository';
 import { ValidationError } from '../../src/domain/errors';
 import { GASTRO, PRICING_TABLES, changeCatalogPrice, assignPriceGroup, priceProduct, resetPriceLists } from '../support/pricing';
@@ -12,6 +13,12 @@ beforeEach(async () => {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
   await resetPriceLists(env.DB);
+
+  // Die Bestellrichtlinie auf den Zustand nach der Migration zurücksetzen —
+  // sonst trüge ein Test die Regel des vorherigen mit sich.
+  await env.DB.prepare('DELETE FROM order_policy').run();
+  await env.DB.prepare('INSERT INTO order_policy (id) VALUES (1)').run();
+
   const ts = NOW.toISOString();
   await env.DB.batch([
     env.DB.prepare(
@@ -194,5 +201,76 @@ describe('Bestellnummernvergabe bei Fehlern', () => {
 
     const order = await placeOrder(env.DB, { customerId: 1, input: request(), now: NOW });
     expect(order.orderNumber.value).toBe('BUS-2026-000001');
+  });
+});
+
+/**
+ * §5 — DIE BESTELLRICHTLINIE GILT AUF JEDEM SCHREIBWEG.
+ *
+ * placeOrder() hängt derzeit an keiner Route; der Café-Bestellweg ist
+ * placeCafeOrder(). Ein zweiter Schreibweg ohne Richtlinie wäre trotzdem
+ * genau die Lücke, die jemand in einer späteren Phase versehentlich
+ * verdrahtet — deshalb prüft dieser Block, dass sie auch hier greift.
+ *
+ * 2026-08-28 ist ein Freitag, NOW ist der 23. August.
+ */
+describe('placeOrder — Bestellrichtlinie', () => {
+  async function regel(overrides: Partial<Parameters<typeof saveOrderPolicy>[1]>): Promise<void> {
+    await saveOrderPolicy(
+      env.DB,
+      {
+        weekdays: [true, true, true, true, true, true, true],
+        cutoffEnabled: false,
+        leadDays: 1,
+        cutoffTime: '12:00',
+        ...overrides,
+      },
+      NOW,
+    );
+  }
+
+  async function anzahl(): Promise<number> {
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM orders').first<{ n: number }>();
+    return row?.n ?? -1;
+  }
+
+  it('lehnt einen abgeschalteten Wochentag ab und schreibt nichts', async () => {
+    // Freitag aus.
+    await regel({ weekdays: [true, true, true, true, false, true, true] });
+
+    await expect(placeOrder(env.DB, { customerId: 1, input: request(), now: NOW })).rejects.toThrow(
+      ValidationError,
+    );
+    expect(await anzahl()).toBe(0);
+  });
+
+  it('lehnt eine Bestellung nach dem Bestellschluss ab und schreibt nichts', async () => {
+    // Ein Tag Vorlauf: Schluss war am 27. August um 12:00 — NOW ist der 23.,
+    // also NICHT vorbei. Mit 30 Tagen Vorlauf lag er dagegen am 29. Juli.
+    await regel({ cutoffEnabled: true, leadDays: 30, cutoffTime: '12:00' });
+
+    await expect(placeOrder(env.DB, { customerId: 1, input: request(), now: NOW })).rejects.toThrow(
+      ValidationError,
+    );
+    expect(await anzahl()).toBe(0);
+  });
+
+  it('verbraucht bei einer Ablehnung keine Bestellnummer', async () => {
+    await regel({ weekdays: [true, true, true, true, false, true, true] });
+
+    await expect(placeOrder(env.DB, { customerId: 1, input: request(), now: NOW })).rejects.toThrow();
+
+    const row = await env.DB.prepare('SELECT COUNT(*) AS n FROM order_number_sequences')
+      .first<{ n: number }>();
+    expect(row?.n).toBe(0);
+  });
+
+  it('nimmt eine Bestellung an, die der Regel entspricht', async () => {
+    await regel({ cutoffEnabled: true, leadDays: 1, cutoffTime: '12:00' });
+
+    const order = await placeOrder(env.DB, { customerId: 1, input: request(), now: NOW });
+
+    expect(order.fulfillmentDate.value).toBe('2026-08-28');
+    expect(await anzahl()).toBe(1);
   });
 });

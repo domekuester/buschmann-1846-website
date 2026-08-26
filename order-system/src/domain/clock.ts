@@ -34,6 +34,67 @@ export function businessDay(instant: Date): string {
   return BERLIN_DATE_FORMAT.format(instant);
 }
 
+const BERLIN_TIME_FORMAT = new Intl.DateTimeFormat('en-GB', {
+  timeZone: BUSINESS_TIME_ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+});
+
+/**
+ * Die Uhrzeit, die an diesem Zeitpunkt in Düsseldorf gilt, als 'HH:MM'.
+ *
+ * DAS GEGENSTÜCK ZU businessDay() — und aus demselben Grund vorhanden. Ein
+ * Bestellschluss „bis 12:00" ist eine ORTSZEIT: Er liegt im Sommer bei 10:00
+ * UTC und im Winter bei 11:00 UTC, und ein System, das ihn aus der UTC-Uhr
+ * ableitete, schlösse die Bestellung ein halbes Jahr lang eine Stunde zu früh
+ * oder zu spät.
+ *
+ * WARUM DAS DIE GANZE SOMMERZEIT-BEHANDLUNG IST: Wer eine Ortszeit mit einer
+ * Ortszeit vergleicht, muss nie einen Zonenversatz ausrechnen — und kann ihn
+ * deshalb auch nicht falsch ausrechnen. Der umgekehrte Weg, aus '12:00' am
+ * Zieltag einen UTC-Zeitpunkt zu bauen, verlangte genau diesen Versatz, und
+ * zwar für einen ANDEREN Tag als heute; an den beiden Umstellungswochenenden
+ * wäre er ein anderer als der heutige.
+ *
+ * Die beiden Sonderfälle der Umstellung sind damit ohne Sonderfall im Code
+ * richtig: Die übersprungene Stunde im Frühjahr kommt schlicht nie vor —
+ * springt die Uhr von 01:59 auf 03:00, ist ein Bestellschluss um 02:30 ab
+ * 03:00 vorbei. Die doppelte Stunde im Herbst wird beim ERSTEN Durchlauf
+ * wirksam, weil die Wanduhr dann schon 02:30 zeigt; das ist die frühere der
+ * beiden Auslegungen und damit die, die niemandem eine Bestellung
+ * unterschiebt, die er nicht mehr erwartet hätte.
+ *
+ * Minutengenau und ohne Sekunden: Ein Bestellschluss wird in Minuten gedacht.
+ * 11:59:59 ist damit die letzte Minute davor, 12:00:00 die erste danach.
+ */
+export function businessTime(instant: Date): string {
+  return BERLIN_TIME_FORMAT.format(instant);
+}
+
+/**
+ * Der Wochentag eines Kalendertages als Zahl — 0 = Montag bis 6 = Sonntag.
+ *
+ * MONTAG IST NULL, nicht Sonntag. `Date.getUTCDay()` zählt von 0 = Sonntag;
+ * das ist die amerikanische Zählung und in einem Betrieb, der seine Woche am
+ * Montag beginnt, die Quelle für Zählfehler am Rand. `(tag + 6) % 7` rechnet
+ * sie um und kommt dabei ohne Sonderfall für den Sonntag aus.
+ *
+ * GERECHNET WIRD IN UTC — aus demselben Grund wie in plusDays(): Ein Tag hat
+ * dort immer 86 400 Sekunden, und ein Liefertag trägt ohnehin keine Zeitzone.
+ *
+ * Diese Funktion ist die EINZIGE Stelle, an der aus einem Tag ein Wochentag
+ * wird. Vorher stand die Umrechnung wörtlich in weekStart(); seit Phase 6F
+ * braucht sie auch die Bestellrichtlinie — und zwei Kopien wären zwei
+ * Gelegenheiten, bei einer davon den Sonntag um eine Woche zu verschieben.
+ */
+export function weekdayIndex(day: string): number {
+  if (!isCalendarDay(day)) {
+    throw new InvalidArgumentError('Der Tag ist kein gültiger Kalendertag.');
+  }
+  return (new Date(`${day}T00:00:00Z`).getUTCDay() + 6) % 7;
+}
+
 /**
  * Ein Zeitpunkt als ISO-8601 in UTC, mit Millisekunden und abschließendem Z.
  * Feste Länge, damit die Spalte lexikografisch sortierbar bleibt — genau das
@@ -129,10 +190,9 @@ export function plusDays(day: string, days: number): string {
  * Montag als erster Tag ist die deutsche und die ISO-8601-Zählung; ein Betrieb
  * plant seine Woche ab Montag, und der Sonntag schließt sie ab.
  *
- * GERECHNET WIRD IN UTC, aus demselben Grund wie in plusDays(): Ein Tag hat
- * dort immer 86 400 Sekunden. `getUTCDay()` zählt von 0 = Sonntag; `(tag + 6)
- * % 7` macht daraus den Abstand zum Montag — Montag 0, Sonntag 6. Das ist der
- * ganze Trick, und er kommt ohne Sonderfall für den Sonntag aus, an dem die
+ * DER ABSTAND ZUM MONTAG IST DER WOCHENTAG SELBST — Montag 0, Sonntag 6. Die
+ * Umrechnung dorthin steht seit Phase 6F in weekdayIndex() und nicht mehr
+ * wörtlich hier; sie kommt ohne Sonderfall für den Sonntag aus, an dem die
  * naive Fassung `tag - 1` einen Tag in die FOLGENDE Woche springt.
  *
  * Der Tag wird über plusDays() zurückgerechnet und nicht von Hand: Damit
@@ -140,10 +200,5 @@ export function plusDays(day: string, days: number): string {
  * überall sonst, und es gibt keine zweite Datumsarithmetik im System.
  */
 export function weekStart(day: string): string {
-  if (!isCalendarDay(day)) {
-    throw new InvalidArgumentError('Der Tag ist kein gültiger Kalendertag.');
-  }
-
-  const wochentag = new Date(`${day}T00:00:00Z`).getUTCDay();
-  return plusDays(day, -((wochentag + 6) % 7));
+  return plusDays(day, -weekdayIndex(day));
 }

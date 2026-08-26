@@ -2,8 +2,10 @@ import { businessDay } from '../domain/clock';
 import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
+import { assertOrderableDay } from '../domain/order-policy';
 import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
 import { findCustomer } from '../infrastructure/d1/customer-repository';
+import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
 import { saveOrder } from '../infrastructure/d1/order-repository';
 import { loadCatalog } from '../infrastructure/d1/product-repository';
@@ -49,14 +51,29 @@ export interface PlaceOrderCommand {
 export async function placeOrder(db: D1Database, command: PlaceOrderCommand): Promise<Order> {
   const draft = OrderDraft.fromInput(command.input, command.now);
 
-  const [customer, catalog] = await Promise.all([
+  const [customer, catalog, richtlinie] = await Promise.all([
     findCustomer(db, command.customerId),
     loadCatalog(db),
+    loadOrderPolicy(db),
   ]);
 
   if (customer === null) {
     throw ValidationError.field('customer', 'Dieser Kunde ist nicht bekannt.');
   }
+
+  /**
+   * DIE BESTELLRICHTLINIE GILT AUCH HIER.
+   *
+   * Dieser Anwendungsfall hängt derzeit an keiner Route — der Café-Bestellweg
+   * ist placeCafeOrder(). Die Prüfung trotzdem einzubauen ist kein Zierrat:
+   * Ein zweiter Schreibweg ohne Richtlinie wäre genau die Lücke, die
+   * jemand in einer späteren Phase versehentlich verdrahtet. Beide Wege
+   * fragen dieselbe Funktion mit derselben Regel.
+   *
+   * Sie steht VOR reserveOrderNumber(), damit eine Ablehnung keine
+   * Bestellnummer verbraucht.
+   */
+  assertOrderableDay(richtlinie.policy, draft.fulfillmentDate.value, command.now);
 
   /**
    * Die Preiswelt braucht den fertigen Kunden und lässt sich deshalb nicht

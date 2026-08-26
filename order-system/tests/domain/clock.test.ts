@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   businessDay,
+  businessTime,
   isCalendarDay,
   plusDays,
   toUtcTimestamp,
   weekStart,
+  weekdayIndex,
 } from '../../src/domain/clock';
 
 /**
@@ -194,6 +196,75 @@ describe('weekStart', () => {
       expect(montag <= tag).toBe(true);
       expect(plusDays(montag, 6) >= tag).toBe(true);
 
+      tag = plusDays(tag, 1);
+    }
+  });
+});
+
+/**
+ * Das Gegenstück zu businessDay(): die ORTSZEIT eines Zeitpunkts.
+ *
+ * Sie ist seit Phase 6F die Grundlage des Bestellschlusses. Ein
+ * Bestellschluss „bis 12:00" liegt im Sommer bei 10:00 UTC und im Winter bei
+ * 11:00 UTC — genau dieser Unterschied wird hier festgehalten.
+ */
+describe('businessTime', () => {
+  it('liefert die Uhrzeit in Europe/Berlin, nicht in UTC', () => {
+    // Sommerzeit: UTC+2.
+    expect(businessTime(new Date('2026-08-27T10:00:00.000Z'))).toBe('12:00');
+    // Winterzeit: UTC+1.
+    expect(businessTime(new Date('2026-11-26T10:00:00.000Z'))).toBe('11:00');
+  });
+
+  it('zählt von 00 bis 23 und nicht von 12 mit Zusatz', () => {
+    expect(businessTime(new Date('2026-01-15T23:30:00.000Z'))).toBe('00:30');
+    expect(businessTime(new Date('2026-01-15T11:00:00.000Z'))).toBe('12:00');
+  });
+
+  it('schneidet die Sekunden ab, statt zu runden', () => {
+    expect(businessTime(new Date('2026-08-27T09:59:59.999Z'))).toBe('11:59');
+    expect(businessTime(new Date('2026-08-27T10:00:00.000Z'))).toBe('12:00');
+  });
+
+  it('folgt der Umstellung auf Winterzeit innerhalb derselben Nacht', () => {
+    // 2026-10-25, 00:30 UTC — noch Sommerzeit, also 02:30 Ortszeit.
+    expect(businessTime(new Date('2026-10-25T00:30:00.000Z'))).toBe('02:30');
+    // Eine Stunde später ist die Uhr zurückgestellt: wieder 02:30.
+    expect(businessTime(new Date('2026-10-25T01:30:00.000Z'))).toBe('02:30');
+    // Und danach läuft sie in Winterzeit weiter.
+    expect(businessTime(new Date('2026-10-25T02:30:00.000Z'))).toBe('03:30');
+  });
+});
+
+/**
+ * Der Wochentag als Zahl — MONTAG IST NULL.
+ *
+ * Date.getUTCDay() zählt von 0 = Sonntag. Diese Funktion rechnet das um und
+ * ist seit Phase 6F die einzige Stelle im System, an der das geschieht;
+ * weekStart() und die Bestellrichtlinie fragen beide sie.
+ */
+describe('weekdayIndex', () => {
+  it('zählt Montag als 0 und Sonntag als 6', () => {
+    // 2026-08-31 ist ein Montag.
+    expect(weekdayIndex('2026-08-31')).toBe(0);
+    expect(weekdayIndex('2026-09-01')).toBe(1);
+    expect(weekdayIndex('2026-09-02')).toBe(2);
+    expect(weekdayIndex('2026-09-03')).toBe(3);
+    expect(weekdayIndex('2026-09-04')).toBe(4);
+    expect(weekdayIndex('2026-09-05')).toBe(5);
+    expect(weekdayIndex('2026-09-06')).toBe(6);
+  });
+
+  it('weist einen Wert zurück, der kein Kalendertag ist', () => {
+    expect(() => weekdayIndex('2026-02-30')).toThrow();
+    expect(() => weekdayIndex('nicht-ein-tag')).toThrow();
+  });
+
+  it('stimmt über ein ganzes Jahr mit weekStart überein', () => {
+    let tag = '2026-01-01';
+
+    for (let i = 0; i < 365; i += 1) {
+      expect(plusDays(tag, -weekdayIndex(tag))).toBe(weekStart(tag));
       tag = plusDays(tag, 1);
     }
   });

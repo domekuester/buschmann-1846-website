@@ -1,7 +1,9 @@
 import { toCatalogView } from '../application/catalog-view';
 import type { AppConfig } from '../config/app-config';
 import { businessDay, plusDays } from '../domain/clock';
+import { cutoffSentence, nextOrderableDay, orderDaysSentence } from '../domain/order-policy';
 import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
+import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
 import { loadCatalog } from '../infrastructure/d1/product-repository';
 import { renderOrderPage } from '../ui/order-page-html';
 import { requireRole } from './guard';
@@ -43,11 +45,36 @@ export async function orderPage(
    * ab. Die Preiswelt kommt aus dem Kunden der SITZUNG; es gibt auf dieser
    * Seite keinen Parameter, mit dem sich eine andere wählen ließe.
    */
-  const [catalog, priceBook] = await Promise.all([
+  const [catalog, priceBook, richtlinie] = await Promise.all([
     loadCatalog(db),
     loadCustomerPriceBook(db, wache.context.customer),
+    loadOrderPolicy(db),
   ]);
   const today = businessDay(now);
+  const morgen = plusDays(today, 1);
+  const policy = richtlinie.policy;
+
+  /**
+   * WELCHE TAGE ÜBERHAUPT GEHEN — gerechnet mit derselben Richtlinie, die
+   * auch der Bestell-Endpunkt anwendet.
+   *
+   * `fruehester` ist der erste mögliche Tag ab heute und wird zur unteren
+   * Grenze des Datumsfeldes. Mit der Voreinstellung ist das schlicht heute,
+   * also das bisherige Verhalten.
+   *
+   * VORBELEGT WIRD WEITERHIN LIEBER MORGEN als heute: Das ist der mit Abstand
+   * häufigste Fall und spart einen Tap. Geht morgen nach der Richtlinie
+   * nicht, rückt die Vorbelegung auf den nächsten Tag, der geht — eine
+   * Vorbelegung, die der Server ablehnen würde, wäre eine Einladung zu einem
+   * Fehlversuch.
+   *
+   * Findet die Suche gar nichts, bleibt es bei den bisherigen Werten. Die
+   * Seite behauptet dann nichts Falsches: Der Hinweis unter dem Feld sagt,
+   * dass zurzeit keine Bestellungen angenommen werden, und der Endpunkt
+   * erklärt es beim Absenden noch einmal.
+   */
+  const fruehester = nextOrderableDay(policy, now);
+  const vorbelegt = nextOrderableDay(policy, now, morgen) ?? fruehester ?? morgen;
 
   const html = renderOrderPage({
     customerName: wache.context.customer.name,
@@ -82,15 +109,21 @@ export async function orderPage(
      */
     csrfToken: wache.context.csrfToken,
 
-    today,
+    earliestDate: fruehester ?? today,
 
     /**
-     * Vorbelegt mit morgen. Das ist der mit Abstand häufigste Fall und spart
-     * einen Tap — der Wert steht sichtbar im Feld, in der Zusammenfassung und
-     * in der Bestätigung, sodass ein abweichender Tag nicht übersehen werden
-     * kann.
+     * Der Wert steht sichtbar im Feld, in der Zusammenfassung und in der
+     * Bestätigung, sodass ein abweichender Tag nicht übersehen werden kann.
      */
-    defaultDate: plusDays(today, 1),
+    defaultDate: vorbelegt,
+
+    /**
+     * DIESELBE RICHTLINIE, DIE AUCH DIE BESTELLUNG PRÜFT — und derselbe
+     * Wortlaut. Die Seite formuliert nichts selbst; täte sie es, könnte sie
+     * etwas anderes behaupten, als der Server tut.
+     */
+    orderDaysNotice: orderDaysSentence(policy),
+    cutoffNotice: cutoffSentence(policy),
   });
 
   return new Response(html, { status: 200, headers: pageHeaders() });

@@ -3,7 +3,9 @@ import type { Customer } from '../domain/customer';
 import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
+import { assertOrderableDay } from '../domain/order-policy';
 import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
+import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
 import {
   findOrderBySubmission,
@@ -110,10 +112,32 @@ export async function placeCafeOrder(
    * Idempotenz, und die Antwort nennt den tatsächlich gespeicherten Preis
    * ohnehin.
    */
-  const [catalog, priceBook] = await Promise.all([
+  const [catalog, priceBook, richtlinie] = await Promise.all([
     loadCatalog(db),
     loadCustomerPriceBook(db, customer),
+    loadOrderPolicy(db),
   ]);
+
+  /**
+   * DIE BESTELLRICHTLINIE, FRISCH GELESEN UND UNMITTELBAR VOR DEM SCHREIBEN
+   * GEPRÜFT — nicht bei der Anzeige der Seite.
+   *
+   * Zwischen dem Rendern der Bestellseite und diesem Augenblick können
+   * Stunden liegen. In dieser Zeit kann ein Wochentag abgeschaltet worden
+   * sein, und vor allem: Die Uhr kann über den Bestellschluss gesprungen
+   * sein. Eine Seite, die um 11:58 geladen und um 12:01 abgeschickt wird,
+   * zeigte einen Tag als bestellbar an, der es nicht mehr ist. HIER
+   * entscheidet sich das, und hier gewinnt der Server — dieselbe Überlegung
+   * wie bei den Preisen einen Absatz weiter oben (§14).
+   *
+   * DIE PRÜFUNG STEHT VOR reserveOrderNumber(). Eine abgelehnte Bestellung
+   * soll keine Bestellnummer verbrauchen; sie ist der häufigste Fall dieser
+   * Ablehnung und der einzige, der einem Café begegnet.
+   *
+   * Die Abfrage läuft im Promise.all darüber mit und kostet deshalb keine
+   * zusätzliche Wartezeit — sie hängt weder am Kunden noch am Katalog.
+   */
+  assertOrderableDay(richtlinie.policy, draft.fulfillmentDate.value, command.now);
 
   const year = Number(businessDay(command.now).slice(0, 4));
   const orderNumber = await reserveOrderNumber(db, year);

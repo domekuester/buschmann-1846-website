@@ -30,10 +30,32 @@ export interface OrderPageView {
   submissionId: string;
   /** Der Synchronizer-Token der Sitzung. Steht bewusst lesbar im Dokument. */
   csrfToken: string;
-  /** Heute in Europe/Berlin — die untere Grenze des Datumsfeldes. */
-  today: string;
-  /** Vorbelegung des Datumsfeldes: in aller Regel morgen. */
+  /**
+   * Der früheste Tag, für den nach der Bestellrichtlinie noch bestellt werden
+   * kann — die untere Grenze des Datumsfeldes.
+   *
+   * BIS PHASE 6F STAND HIER SCHLICHT „HEUTE". Seit es einen Bestellschluss
+   * gibt, ist „heute" nicht mehr automatisch bestellbar: Um 14:00 Uhr mit
+   * einem Bestellschluss von gestern 12:00 ist der früheste mögliche Tag
+   * übermorgen. Das Feld nennt deshalb den Tag, den der Server auch annähme.
+   *
+   * Es ist eine BEQUEMLICHKEIT UND KEINE SICHERUNG: `min` hält niemanden auf,
+   * der die Anfrage selbst baut. Die Regel gilt im Bestell-Endpunkt, und dort
+   * wird sie unmittelbar vor dem Schreiben noch einmal geprüft.
+   */
+  earliestDate: string;
+  /** Vorbelegung des Datumsfeldes: der nächste tatsächlich mögliche Tag. */
   defaultDate: string;
+  /**
+   * Welche Wochentage überhaupt gehen — oder null, wenn alle gehen.
+   *
+   * Ein Datumsfeld kann einzelne Wochentage nicht ausgrauen; ohne diesen Satz
+   * wäre der einzige Hinweis darauf die Fehlermeldung NACH dem Absenden. Er
+   * steht deshalb vorher da, und er kommt aus derselben Richtlinie.
+   */
+  orderDaysNotice: string | null;
+  /** Der Bestellschluss im Klartext — oder null, wenn keiner gilt. */
+  cutoffNotice: string | null;
   /**
    * Ob dem Kunden überhaupt eine gültige Preisgruppe zugeordnet ist.
    *
@@ -82,11 +104,12 @@ export function renderOrderPage(view: OrderPageView): string {
               id="liefertag"
               name="fulfillment_date"
               value="${escapeHtml(view.defaultDate)}"
-              min="${escapeHtml(view.today)}"
+              min="${escapeHtml(view.earliestDate)}"
               required
               aria-describedby="fehler-liefertag"
             >
             <p class="feldfehler" id="fehler-liefertag" data-error-for="fulfillment_date" hidden></p>
+            ${bestellregeln(view)}
           </div>
         </section>
 
@@ -324,4 +347,29 @@ ${body}
 </body>
 </html>
 `;
+}
+
+/**
+ * Was die Bestellrichtlinie dem Café über den Liefertag zu sagen hat.
+ *
+ * ZWEI SÄTZE HÖCHSTENS, UND MEISTENS KEINER. Solange alle Wochentage gehen
+ * und kein Bestellschluss gilt, steht hier nichts — ein Hinweis, der nichts
+ * einschränkt, ist Rauschen an einer Stelle, an der jemand gerade Mengen
+ * einstellt.
+ *
+ * SIE STEHEN UNTER DEM DATUMSFELD UND NICHT IN EINEM BANNER OBEN. Dort werden
+ * sie gelesen, wenn die Frage aufkommt — nämlich beim Wählen des Tages.
+ *
+ * KEIN SKRIPT UND KEINE RECHNUNG IM BROWSER: Beide Sätze kommen fertig vom
+ * Server und aus derselben Richtlinie, die auch die Bestellung annimmt.
+ */
+function bestellregeln(view: OrderPageView): string {
+  const saetze = [view.orderDaysNotice, view.cutoffNotice].filter(
+    (satz): satz is string => satz !== null,
+  );
+  if (saetze.length === 0) {
+    return '';
+  }
+
+  return `<p class="feldhinweis">${saetze.map(escapeHtml).join(' ')}</p>`;
 }

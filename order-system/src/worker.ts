@@ -5,6 +5,8 @@ import { adminProductionListPage } from './http/admin-production-list-page';
 import { adminPickupListPage } from './http/admin-pickup-list-page';
 import { adminCatalogPage } from './http/admin-catalog-page';
 import { adminCustomersPage } from './http/admin-customers-page';
+import { adminOrderPolicyPage } from './http/admin-order-policy-page';
+import { saveOrderPolicyEndpoint } from './http/admin-order-policy-api';
 import { changeOrderStatusEndpoint, matchOrderStatusPath } from './http/admin-order-api';
 import {
   changeCustomerPriceGroupEndpoint,
@@ -96,6 +98,16 @@ import { privateHeaders } from './http/security';
  *                      products.catalog_product_id und keinen Preis: Welchen
  *                      Preis ein verknüpftes Produkt hat, entscheidet
  *                      unverändert der Resolver aus Phase 5C.
+ *   GET  /admin/bestellregeln
+ *                      an welchen Wochentagen bestellt werden kann und wann
+ *                      Bestellschluss ist. Lesend; genau EINE Abfrage auf eine
+ *                      Tabelle mit einer Zeile.
+ *   POST /api/admin/order-policy
+ *                      die Bestellregeln speichern. Der fünfte schreibende
+ *                      Adminvorgang — Origin, Rolle, CSRF-Token, danach 303
+ *                      zurück auf die Regelseite. Er fasst AUSSCHLIESSLICH
+ *                      die eine Zeile in order_policy an: keine Bestellung
+ *                      wird geändert, verschoben oder storniert.
  *   GET  /bestellen    die Bestellseite. Das Café kommt aus der Sitzung, nicht
  *                      mehr aus einem Link.
  *   POST /api/orders   die Bestellung. Sitzung, Origin und CSRF-Token.
@@ -193,6 +205,25 @@ export default {
           return methodNotAllowed('GET', privateHeaders());
         }
         return await adminCustomersPage(env.DB, config, request, now);
+      }
+
+      if (pathname === '/admin/bestellregeln') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminOrderPolicyPage(env.DB, config, request, now);
+      }
+
+      /**
+       * Der einzige schreibende Adminendpunkt OHNE veränderlichen Pfadteil:
+       * Es gibt genau eine Bestellrichtlinie, und deshalb steht in diesem
+       * Pfad keine Kennung, die man prüfen müsste.
+       */
+      if (pathname === '/api/admin/order-policy') {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await saveOrderPolicyEndpoint(env.DB, config, request, now);
       }
 
       const cancelOrderNumber = matchCancelOrderPath(pathname);

@@ -3314,6 +3314,149 @@ textarea[aria-invalid='true'] {
   .produktionsliste__tabelle tfoot td { display: table-cell; width: 100%; padding-top: 1rem; }
 }
 
+
+/* ==========================================================================
+   Bestellregeln (Phase 6F)
+
+   Die Seite, auf die ein Betreiber einmal geht und danach monatelang nicht
+   mehr. Sie darf deshalb NICHT wie ein Einstellungsdialog aussehen, in dem
+   man sich zurechtfinden muss: drei Blöcke, große Klickflächen, ein Knopf.
+
+   KEIN EIGENES GESTALTUNGSSYSTEM. Rahmen, Radius, Farben und Abstände kommen
+   aus denselben Variablen wie Kunden- und Katalogseite; neu sind hier nur
+   Anordnungen, keine neuen Werte.
+   ========================================================================== */
+
+.regelstand {
+  margin-bottom: 1.5rem;
+  padding: .9rem 1rem;
+  background: #fff;
+  border: var(--spur);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+}
+.regelstand h2 {
+  margin: 0 0 .5rem;
+  font-family: var(--sans);
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+.regelstand p { margin: .3rem 0 0; }
+.regelstand p:first-of-type { margin-top: 0; }
+.regelstand__stand { margin-top: .75rem !important; font-size: .9rem; color: var(--text-leise); }
+
+.regelform { display: flex; flex-direction: column; gap: 1.25rem; }
+
+.regelblock {
+  margin: 0;
+  padding: 1rem;
+  background: #fff;
+  border: var(--spur);
+  border-radius: var(--radius);
+}
+.regelblock legend {
+  padding: 0 .4rem;
+  margin-left: -.4rem;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--navy);
+}
+.regelblock__hinweis {
+  margin: .5rem 0 0;
+  font-size: .92rem;
+  color: var(--text-leise);
+}
+
+/* Ein Kästchen je Wochentag. EINE SPALTE AUF DEM TELEFON: Sieben Namen
+   nebeneinander wären sieben schmale Ziele; untereinander ist jede Zeile eine
+   volle Reihe und damit sicher zu treffen. */
+.regeltage {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: .25rem;
+  margin-top: .75rem;
+}
+
+.regeltag,
+.regelschalter {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  /* Die ganze Zeile ist die Klickfläche, nicht nur das Kästchen — deshalb
+     steht das <input> IM <label>. min-height statt padding allein: Die Fläche
+     bleibt auch dann groß genug, wenn der Text kurz ist. */
+  min-height: var(--tap);
+  padding: .35rem .5rem;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+}
+.regeltag:hover,
+.regelschalter:hover { background: var(--elfenbein); }
+
+.regeltag input[type='checkbox'],
+.regelschalter input[type='checkbox'] {
+  flex: 0 0 auto;
+  width: 1.3rem;
+  height: 1.3rem;
+  accent-color: var(--blau);
+}
+
+.regelschalter { margin-top: .25rem; font-weight: 600; }
+
+.regelfrist { margin-top: 1.25rem; padding-top: 1rem; border-top: var(--spur); }
+.regelfrist__satz { margin: 0 0 .6rem; font-weight: 500; }
+
+/* Zahl und Uhrzeit nebeneinander — sie gehören zu einem Satz und sollen
+   nicht als zwei getrennte Fragen wirken. Auf sehr schmalen Geräten bricht
+   die Zeile um, statt zu überlaufen. */
+.regelfrist__felder { display: flex; flex-wrap: wrap; gap: .75rem 1rem; }
+.feld--eng { flex: 0 1 9rem; min-width: 7rem; }
+.feld--eng label { font-size: .85rem; color: var(--text-leise); }
+
+.regelfrist input[type='number'],
+.regelfrist input[type='time'] {
+  width: 100%;
+  height: var(--tap);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+  padding: .5rem .6rem;
+}
+
+.regelbeispiel {
+  margin: 1.25rem 0 0;
+  padding: .8rem .9rem;
+  background: var(--elfenbein);
+  border-radius: var(--radius);
+  font-size: .95rem;
+}
+.regelbeispiel strong { color: var(--navy); }
+
+.regelform__fuss { display: flex; justify-content: flex-end; }
+.regelform__senden { min-width: 10rem; }
+
+/* Ein Hinweis unter einem Feld — kein Fehler, deshalb ohne ⚠ und in der
+   ruhigen Textfarbe. Steht auf der Bestellseite unter dem Liefertag. */
+.feldhinweis {
+  margin: .1rem 0 0;
+  font-size: .9rem;
+  color: var(--text-leise);
+}
+
+/* Ab Tablet stehen die Wochentage in zwei Spalten: Die Liste ist dann mit
+   einem Blick zu erfassen, ohne dass ein Ziel kleiner wird. */
+@media (min-width: 600px) {
+  .regeltage { grid-template-columns: 1fr 1fr; gap: .25rem 1.5rem; }
+}
+
 @page { size: A4 portrait; margin: 14mm 13mm 16mm; }
 
 @media print {
