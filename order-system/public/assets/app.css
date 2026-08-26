@@ -3235,7 +3235,7 @@ textarea[aria-invalid='true'] {
   border: 0;
 }
 
-.seitenaktion { margin: 1rem 0 1.5rem; text-align: right; }
+.seitenaktion { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem 1rem; margin: 1rem 0 1.5rem; text-align: right; }
 
 .druckseite { min-width: 0; padding: 0; background: var(--ivory); }
 .druckseite__inhalt { width: min(100% - 2rem, 52rem); margin: 0 auto; padding: 2rem 0 4rem; }
@@ -3294,6 +3294,16 @@ textarea[aria-invalid='true'] {
 .produktionsliste__hinweis-text { margin: 0; }
 .produktionsliste__hinweis-text { margin-top: .25rem; font-size: 1.05rem; }
 
+.abholliste__bestellungen { border-top: 2px solid currentColor; }
+.abholliste__bestellung { padding: 1.4rem 0; border-bottom: 1px solid #9a958c; break-inside: avoid; }
+.abholliste__bestellkopf { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .25rem 1rem; }
+.abholliste__bestellkopf h2 { min-width: 0; margin: 0; font-family: var(--serif); font-size: 1.65rem; font-weight: 600; line-height: 1.1; overflow-wrap: anywhere; }
+.abholliste__bestellkopf p { margin: 0; font-weight: 750; font-variant-numeric: tabular-nums; }
+.abholliste__artikel { margin: 1rem 0 0; padding: 0; list-style: none; }
+.abholliste__artikel li { margin-top: .45rem; font-size: 1.15rem; font-weight: 650; }
+.abholliste__hinweis { margin: 1rem 0 0; padding-top: .75rem; border-top: 1px dotted #9a958c; font-size: 1.05rem; }
+.abholliste__summe { margin: 1rem 0 0; padding-top: 1rem; border-top: 2px solid currentColor; text-align: right; font-weight: 750; }
+
 @media (max-width: 599px) {
   .produktionsliste__tabelle thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
   .produktionsliste__tabelle td { display: block; }
@@ -3329,4 +3339,10 @@ textarea[aria-invalid='true'] {
   .produktionsliste__hinweise h2 { break-after: avoid; font-size: 11pt; }
   .produktionsliste__hinweis-kopf,
   .produktionsliste__hinweis-text { font-size: 12pt; }
+  .abholliste__bestellung { padding: 6mm 0; border-color: #000; break-inside: avoid; }
+  .abholliste__bestellkopf h2 { color: #000; font-size: 18pt; }
+  .abholliste__bestellkopf p { font-size: 12pt; }
+  .abholliste__artikel li { font-size: 14pt; }
+  .abholliste__hinweis { border-color: #000; font-size: 12pt; }
+  .abholliste__summe { border-color: #000; font-size: 12pt; break-inside: avoid; }
 }

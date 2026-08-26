@@ -2,6 +2,7 @@ import { readAppConfig } from './config/app-config';
 import { adminDashboardPage } from './http/admin-dashboard-page';
 import { adminPage } from './http/admin-page';
 import { adminProductionListPage } from './http/admin-production-list-page';
+import { adminPickupListPage } from './http/admin-pickup-list-page';
 import { adminCatalogPage } from './http/admin-catalog-page';
 import { adminCustomersPage } from './http/admin-customers-page';
 import { changeOrderStatusEndpoint, matchOrderStatusPath } from './http/admin-order-api';
@@ -171,6 +172,13 @@ export default {
           return methodNotAllowed('GET', privateHeaders());
         }
         return await adminProductionListPage(env.DB, config, request, now);
+      }
+
+      if (pathname === '/admin/abholliste') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminPickupListPage(env.DB, config, request, now);
       }
 
       if (pathname === '/admin/catalog') {

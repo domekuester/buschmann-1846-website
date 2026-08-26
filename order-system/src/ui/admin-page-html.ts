@@ -51,7 +51,10 @@ export function renderAdminPage(view: AdminPageView): string {
     `
       ${renderDayHeading(view.day)}
       ${renderDayNavigation(view.day)}
-      <p class="seitenaktion"><a href="/admin/production-list?date=${escapeHtml(view.day.day)}">Produktionsliste drucken</a></p>
+      <p class="seitenaktion">
+        <a href="/admin/production-list?date=${escapeHtml(view.day.day)}">Produktionsliste drucken</a>
+        <a href="/admin/abholliste?date=${escapeHtml(view.day.day)}">Abholliste</a>
+      </p>
       ${view.statusMessage ? `<p class="banner statusmeldung" role="alert">${escapeHtml(view.statusMessage)}</p>` : ''}
       ${renderProductionSummary(view.day)}
       ${renderMetrics(view.day)}
