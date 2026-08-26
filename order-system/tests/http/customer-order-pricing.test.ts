@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import worker from '../../src/worker';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
+import { businessDay, plusDays } from '../../src/domain/clock';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
 import {
   GASTRO,
@@ -27,7 +28,7 @@ import {
  */
 
 const NOW = '2026-08-24T07:00:00.000Z';
-const MORGEN = '2026-08-25';
+const MORGEN = plusDays(businessDay(new Date()), 1);
 const ORIGIN = 'https://bestellen.example';
 const PEPPER = 'TEST-PEPPER-nur-fuer-Tests-kein-Echtwert-0123456789';
 const PIN = '01234567';

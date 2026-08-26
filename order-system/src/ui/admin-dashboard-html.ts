@@ -157,6 +157,7 @@ function kopf(day: DashboardDayView): string {
       <p class="dashkopf__aktion">
         <a href="/admin?date=${escapeHtml(day.day)}"
           >Produktionsansicht für diesen Tag<span aria-hidden="true"> &rarr;</span></a>
+        <a href="/admin/production-list?date=${escapeHtml(day.day)}">Produktionsliste drucken</a>
       </p>
     </header>`;
 }
