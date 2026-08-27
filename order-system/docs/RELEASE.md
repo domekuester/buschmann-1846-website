@@ -390,6 +390,45 @@ dann kann sich niemand mehr über ihn anmelden.
 * Keine Migration ohne verifizierte Sicherung.
 * Keine Änderung an `.dev.vars` mit dem Ziel, sie zu committen. Sie steht in
   `.gitignore` und bleibt dort.
+* **Kein Deployment mit der Demo-Konfiguration.** `demo/wrangler.demo.jsonc`
+  ist ausschließlich für `wrangler dev` auf diesem Rechner gedacht — anderer
+  Workername, Platzhalter-`database_id`, und die zugehörigen Umgebungswerte
+  (`demo/.dev.vars`, von `scripts/demo-start.mjs` erzeugt) tragen
+  `ENVIRONMENT=development` und einen öffentlich bekannten Pepper. Ein
+  `wrangler deploy --config demo/…` wäre genau der Fall, den die beiden
+  Zeilen darüber verhindern sollen. Aus demselben Grund stehen diese Werte
+  NICHT als `vars` in der Demo-Konfiguration, sondern in einer erzeugten,
+  nicht eingecheckten Datei.
+* **Kein Einspielen des Demo-Bestands in die Produktionsdatenbank.** Er
+  beginnt mit neun `DELETE FROM`. Erreichbar ist er nur über
+  `npm run demo` / `demo:reset` / `demo:seed`, und alle drei tragen
+  `--persist-to demo/.state`.
+
+---
+
+## 10a. Die Vorführungsumgebung
+
+Sie gehört nicht zum Deployment, steht aber hier, weil sie dieselben
+Wrangler-Werkzeuge benutzt.
+
+| | Entwicklung | Vorführung |
+|---|---|---|
+| Konfiguration | `wrangler.jsonc` | `demo/wrangler.demo.jsonc` |
+| Umgebungswerte | `.dev.vars` (von Hand) | `demo/.dev.vars` (bei jedem Start erzeugt) |
+| Zustand | `.wrangler/state` | `demo/.state` |
+| Port | 8787 | 8790 |
+| Bestand | `seeds/002_cafe_ordering_dev.sql` | `scripts/demo/demo-dataset.mjs`, relativ zu heute |
+
+Getrennt sind beide durch das Verzeichnis: Wrangler sucht `.dev.vars` neben
+der Konfigurationsdatei, und `--persist-to` steht in jedem Aufruf der
+Demo-Skripte ausdrücklich da. Geprüft wird das in
+`tests/domain/demo-isolation.test.ts` — kein `--remote`, kein Zugriff auf
+`.wrangler/state`, kein Löschziel außerhalb von `demo/`.
+
+Anleitungen: `docs/DEMO.md` (Start und Zugangsdaten) und
+`docs/DEMO-WALKTHROUGH.md` (Ablauf). Die Dokumente für den Betrieb —
+`BETREIBER-HANDBUCH.md`, `ERSTE-SCHRITTE.md`, `UEBERGABE-CHECKLISTE.md` —
+enthalten bewusst nichts Technisches; was dort nicht hingehört, steht hier.
 
 ---
 

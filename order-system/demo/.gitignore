@@ -1,0 +1,17 @@
+# Der Zustand der Vorführung — Wegwerf-D1, bei jedem Start neu.
+.state/
+
+# Die Umgebungswerte des Demo-Workers. Sie werden von scripts/demo-start.mjs
+# erzeugt und dürfen aus demselben Grund nicht eingecheckt werden wie jede
+# andere .dev.vars: Der Release-Guard lehnt jede eingecheckte Datei mit
+# diesem Namen ab, unabhängig davon, wie harmlos ihr Inhalt gerade ist.
+.dev.vars
+
+# Das erzeugte Seed-SQL — Zwischenergebnis, kein Quelltext.
+*.generated.sql
+
+# Wranglers Bauverzeichnis. Es entsteht NEBEN der Konfigurationsdatei und
+# damit hier, unabhängig von --persist-to; darin liegt kein Datenbestand,
+# sondern der gebündelte Worker. Die Regel in der obersten .gitignore trifft
+# nur order-system/.wrangler/ und damit dieses Verzeichnis nicht.
+.wrangler/

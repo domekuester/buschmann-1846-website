@@ -79,6 +79,42 @@ http://127.0.0.1:8787/login
 | `npm run db:seed:local` | allgemeine Platzhalterdaten |
 | `npm run db:seed:cafe:local` | Café-Bestellung: fiktive Cafés + Demokonten |
 | `npm run auth:account -- …` | Anmeldekonto ausstellen (gibt ein `INSERT` aus) |
+| `npm run demo` | Vorführung starten — eigene D1, eigener Port |
+| `npm run demo:reset` | Vorführung auf den Ausgangsstand zurücksetzen |
+| `npm run demo:seed` | nur den Demo-Bestand einspielen, ohne zu starten |
+
+### Die Vorführung
+
+`npm run demo` startet eine **vollständig getrennte** Umgebung für die
+Kundenvorführung: eigene Wegwerf-D1 unter `demo/.state`, eigene
+Konfiguration (`demo/wrangler.demo.jsonc`), eigene Umgebungswerte
+(`demo/.dev.vars`, bei jedem Start erzeugt und nicht in Git) und ein fester
+Port.
+
+```text
+http://127.0.0.1:8790
+```
+
+Die persönliche Entwicklungsdatenbank unter `.wrangler/state` wird dabei
+**nicht angefasst**: Jeder Wrangler-Aufruf der Demo-Skripte trägt
+`--config` und `--persist-to`, und keiner kennt `--remote`. Festgehalten ist
+das in `tests/domain/demo-isolation.test.ts`.
+
+Der Bestand entsteht bei jedem Start neu und ist deshalb bei jeder
+Vorführung derselbe — Bestellungen aus der letzten Vorführung sind weg. Er
+wird relativ zu *heute* gerechnet (`scripts/demo/demo-dataset.mjs`); der
+volle Betriebstag liegt auf **morgen**, weil Dashboard und Produktion diesen
+Tag von selbst öffnen.
+
+Zugangsdaten, Ablauf und die Dokumente für den Betreiber:
+
+| Datei | Für wen |
+|---|---|
+| `docs/DEMO.md` | Starten, Zugangsdaten, Zurücksetzen |
+| `docs/DEMO-WALKTHROUGH.md` | Ablauf der Vorführung, 10–15 Minuten |
+| `docs/BETREIBER-HANDBUCH.md` | der Bäckereibetrieb |
+| `docs/ERSTE-SCHRITTE.md` | der Bäckereibetrieb, nach dem Go-Live |
+| `docs/UEBERGABE-CHECKLISTE.md` | Übergabegespräch |
 
 ## Aufbau
 

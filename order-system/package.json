@@ -6,6 +6,9 @@
   "description": "B2B-Vorbestellsystem für Buschmann 1846 — Cloudflare Worker + D1",
   "scripts": {
     "dev": "wrangler dev",
+    "demo": "node scripts/demo-start.mjs",
+    "demo:reset": "node scripts/demo-reset.mjs",
+    "demo:seed": "node scripts/demo-seed.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.ui.json --noEmit",
