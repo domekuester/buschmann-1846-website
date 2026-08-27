@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import worker from '../../src/worker';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
+import { businessDay, plusDays } from '../../src/domain/clock';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
 import { GASTRO, PRIVAT, PRICING_TABLES, assignPriceGroup, resetPriceLists } from '../support/pricing';
 
@@ -27,7 +28,21 @@ import { GASTRO, PRIVAT, PRICING_TABLES, assignPriceGroup, resetPriceLists } fro
  */
 
 const NOW = '2026-08-25T07:00:00.000Z';
-const MORGEN = '2026-08-26';
+/**
+ * DER LIEFERTAG WIRD GERECHNET UND NICHT HINGESCHRIEBEN.
+ *
+ * Hier stand '2026-08-26' — ein fester Tag, während die Bestellungen dieser
+ * Datei gegen die ECHTE Uhr laufen (`now: new Date()` in anmelden() und im
+ * Worker). Am 27.08.2026 lag dieser Tag in der Vergangenheit, und alle zehn
+ * Bestelltests scheiterten schlagartig an `fulfillment_date` statt an dem,
+ * was sie prüfen wollten. Ein Test, der nur an einem einzigen Kalendertag
+ * grün ist, prüft nichts.
+ *
+ * Dieselbe Rechnung wie in customer-order-pricing.test.ts. NOW unten bleibt
+ * fest: Es füllt nur created_at/updated_at der Testdaten und wird mit keiner
+ * Uhr verglichen.
+ */
+const MORGEN = plusDays(businessDay(new Date()), 1);
 const ORIGIN = 'http://127.0.0.1:8787';
 const PEPPER = 'TEST-PEPPER-nur-fuer-Tests-kein-Echtwert-0123456789';
 const PIN = '01234567';
