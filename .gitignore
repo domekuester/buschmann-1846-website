@@ -25,3 +25,19 @@ order-system/worker-startup.cpuprofile
 # eingecheckt: Ohne die Datei schlägt `npm run typecheck` in einem frischen
 # Klon fehl, bevor irgendjemand Wrangler ausgeführt hat.
 order-system/source-data/
+
+# Arbeitsscreenshots und Bildablagen im REPOSITORY-WURZELVERZEICHNIS.
+#
+# Das Muster beginnt mit einem Schrägstrich und gilt deshalb ausschließlich
+# hier oben — die 30 eingecheckten PNG unter 01-originalfotos/, 04-logo/,
+# assets/img/ und concepts/ sind davon nicht betroffen (geprüft in Phase 8A).
+#
+# Der Grund ist Quellsicherheit: Im Wurzelverzeichnis sammeln sich die
+# Prüfscreenshots der Phasen (6c-…, 6f-…, 7a-…, 7b-…, 7c-…) und
+# Buschmann-Logo.png, das bewusst untracked bleibt. Ohne diese Zeile nimmt ein
+# einziges `git add -A` sie alle mit auf — und ein Screenshot einer
+# Adminoberfläche kann Kundennamen, Bestellmengen und Umsätze zeigen.
+/*.png
+/*.jpg
+/*.jpeg
+/*.webp
