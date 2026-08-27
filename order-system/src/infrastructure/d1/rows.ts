@@ -60,6 +60,18 @@ export interface OrderItemRow {
   product_unit_snapshot: string;
   unit_price_cents: number;
   quantity: number;
+  /**
+   * Seit 0017 — die internen Herstellkosten zum Bestellzeitpunkt, oder NULL.
+   *
+   * NULL heißt „für dieses Produkt waren damals keine Herstellkosten
+   * gepflegt" und schließt jede Bestellung ein, die vor 0017 entstanden ist.
+   * Es heißt nie 0.
+   *
+   * Diese Spalte steht in KEINER anderen Zeilenform dieser Datei — weder in
+   * ProductionItemRow noch in DashboardItemRow. Was nicht geladen wird, kann
+   * nicht auf einer Seite landen.
+   */
+  unit_cost_cents_snapshot: number | null;
 }
 
 /**

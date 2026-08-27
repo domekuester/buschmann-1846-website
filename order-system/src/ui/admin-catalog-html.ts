@@ -1,7 +1,7 @@
 import type { AdminCatalogProduct, CatalogPrice } from '../domain/catalog-pricing';
 import type { CatalogProductChoice, ProductLinkRow } from '../domain/product-catalog-link';
 import { renderAdminShell } from './admin-page-html';
-import { escapeHtml, formatEuro } from './format';
+import { escapeHtml, formatAmountInput, formatEuro } from './format';
 
 /**
  * Sortiment & Preise — und seit Phase 5D ein zweiter, klar getrennter Bereich
@@ -10,11 +10,13 @@ import { escapeHtml, formatEuro } from './format';
  * ZWEI FRAGEN AUF EINER SEITE, UND SIE BLEIBEN GETRENNT:
  *
  *   „Was kostet was?"       die quelltreuen Katalogpreise. LESEND, wie seit
- *                           5A — hier wird kein Preis geändert, kein Preis
- *                           angelegt und keiner gelöscht.
+ *                           5A — hier wird kein VERKAUFSPREIS geändert, kein
+ *                           Preis angelegt und keiner gelöscht. Seit Phase 7A
+ *                           steht daneben ein Feld für die internen
+ *                           HERSTELLKOSTEN; es schreibt genau eine Spalte:
+ *                           catalog_products.unit_cost_cents.
  *   „Was ist was?"          die Zuordnung eines BESTELLBAREN Produkts zu
- *                           seinem Katalogprodukt. Der einzige schreibende
- *                           Vorgang dieser Seite, und er schreibt genau eine
+ *                           seinem Katalogprodukt. Sie schreibt genau eine
  *                           Spalte: products.catalog_product_id.
  *
  * SIE GEHÖREN ZUSAMMEN AUF EINE SEITE, weil man die zweite Frage nur mit der
@@ -22,11 +24,15 @@ import { escapeHtml, formatEuro } from './format';
  * welche Käsekuchen der Katalog kennt. Eine eigene Adminseite hätte dieselben
  * Daten noch einmal geladen und den Blick zwischen zwei Tabs geteilt.
  *
- * DER ZUORDNUNGSBEREICH SETZT KEINEN PREIS. Es gibt in dieser Datei kein
- * Eingabefeld für einen Betrag, keine Preisliste zur Auswahl und keine Zeile,
- * die einen Katalogpreis in ein Produkt überträgt. Was ein verknüpftes
- * Produkt einen bestimmten Kunden kostet, entscheidet unverändert der
- * Resolver aus Phase 5C (§11).
+ * DER ZUORDNUNGSBEREICH SETZT KEINEN PREIS. Es gibt in dieser Datei keine
+ * Preisliste zur Auswahl und keine Zeile, die einen Katalogpreis in ein
+ * Produkt überträgt. Was ein verknüpftes Produkt einen bestimmten Kunden
+ * kostet, entscheidet unverändert der Resolver aus Phase 5C.
+ *
+ * DAS EINZIGE BETRAGSFELD DIESER SEITE SIND DIE HERSTELLKOSTEN, und sie sind
+ * kein Verkaufspreis: Sie sind der interne Schätzwert, den KEIN Kunde je zu
+ * sehen bekommt. Ein Eingabefeld für einen Verkaufspreis gibt es hier
+ * weiterhin nicht — die Preise stammen aus den importierten Preislisten.
  *
  * SIE TRÄGT KEIN SKRIPT. Auswahl und Speichern sind ein echtes
  * `<form method="post">` je Zeile — dieselbe Bauart wie die Preisgruppen der
@@ -58,6 +64,9 @@ export interface AdminCatalogPageView {
   readonly noticeCode: string | null;
 }
 
+/**
+ * Die Meldungen der ZUORDNUNG. Codes ohne Präfix.
+ */
 const MELDUNGEN: Readonly<Record<string, string>> = {
   saved: 'Die Zuordnung wurde gespeichert.',
   unknown_product:
@@ -74,8 +83,37 @@ const MELDUNGEN: Readonly<Record<string, string>> = {
     'Die Zuordnung konnte gerade nicht gespeichert werden. Bitte versuche es gleich noch einmal.',
 };
 
+/**
+ * Die Meldungen der HERSTELLKOSTEN. Codes mit dem Präfix `cost_`.
+ *
+ * ZWEI TABELLEN UND NICHT EINE, weil die Seite zwei Vorgänge hat und jeder
+ * seine Antwort dort bekommen muss, wo er ausgelöst wurde. Eine gemeinsame
+ * Tabelle hätte die Antwort auf ein Kostenformular unten bei der Zuordnung
+ * erscheinen lassen — außerhalb des Bildschirms und neben einer Tabelle, um
+ * die es nicht ging.
+ *
+ * KEINE MELDUNG NENNT EINEN BETRAG. „2,10 € gespeichert" wäre bequem und
+ * hieße, einen Wert aus der Adresszeile anzuzeigen; was auf dieser Seite
+ * steht, steht im Quelltext dieser Datei.
+ */
+const KOSTENMELDUNGEN: Readonly<Record<string, string>> = {
+  cost_saved: 'Die Herstellkosten wurden gespeichert.',
+  cost_cleared: 'Die Herstellkosten wurden entfernt. Für dieses Produkt ist nun nichts hinterlegt.',
+  cost_unknown_product:
+    'Dieses Katalogprodukt gibt es nicht mehr. Die Herstellkosten wurden nicht gespeichert.',
+  cost_invalid:
+    'Bitte einen Betrag wie 2,10 eingeben — höchstens zwei Nachkommastellen, nicht negativ. ' +
+    'Die Herstellkosten wurden nicht gespeichert.',
+  cost_internal:
+    'Die Herstellkosten konnten gerade nicht gespeichert werden. ' +
+    'Bitte versuche es gleich noch einmal.',
+};
+
 /** Das Wort, das im ganzen Zuordnungsbereich für „keine Verknüpfung" steht. */
 const OHNE_ZUORDNUNG = 'Nicht verknüpft';
+
+/** Das Wort, das für „noch keine Herstellkosten gepflegt" steht — und nie „0,00 €". */
+const OHNE_KOSTEN = 'Nicht hinterlegt';
 
 export function renderAdminCatalogPage(view: AdminCatalogPageView): string {
   return renderAdminShell(
@@ -87,23 +125,90 @@ export function renderAdminCatalogPage(view: AdminCatalogPageView): string {
       <h1>Sortiment &amp; Preise</h1>
       <p class="bereichskopf__vorspann">Gastronomie- und Privatpreise im direkten Vergleich.</p>
     </header>
-    ${preisbereich(view.products)}
+    ${preisbereich(view)}
     ${zuordnungsbereich(view)}`,
   );
 }
 
 /* ------------------------------------------------------------------ *
- * Bereich 1 — die quelltreuen Katalogpreise. Unverändert lesend.
+ * Bereich 1 — die quelltreuen Katalogpreise und die internen
+ * Herstellkosten.
  * ------------------------------------------------------------------ */
 
-function preisbereich(products: readonly AdminCatalogProduct[]): string {
-  return `<section class="katalogbereich" aria-labelledby="preise-titel">
+/**
+ * Bereich 1 — die Katalogpreise UND, seit Phase 7A, die Herstellkosten.
+ *
+ * SIE STEHEN IN DERSELBEN TABELLE, weil sie zusammen gelesen werden: „Der
+ * Privatpreis ist 5,20 €, uns kostet es 2,10 €" ist EIN Blick. Zwei Tabellen
+ * hätten dieselben Produktnamen zweimal aufgeführt und den Vergleich zu einer
+ * Sache des Gedächtnisses gemacht.
+ *
+ * DER BEREICH TRÄGT `id="herstellkosten"`, und die Weiterleitung nach dem
+ * Speichern zeigt darauf — dieselbe Bauart wie `#zuordnung` seit 5D. Der
+ * Anker ist eine KONSTANTE im Quelltext des Endpunkts und kommt nicht aus der
+ * Anfrage.
+ */
+function preisbereich(view: AdminCatalogPageView): string {
+  return `<section id="herstellkosten" class="katalogbereich" aria-labelledby="preise-titel">
       <h2 id="preise-titel" class="katalogbereich__titel">Katalogpreise</h2>
-      ${products.length === 0 ? emptyState() : catalogTable(products)}
+      ${internHinweis()}
+      ${kostenmeldung(view.noticeCode)}
+      ${view.products.length === 0 ? emptyState() : catalogTable(view)}
     </section>`;
 }
 
-function catalogTable(products: readonly AdminCatalogProduct[]): string {
+/**
+ * Der Satz, der die Herstellkosten als INTERN kennzeichnet — §6.
+ *
+ * ER STEHT ÜBER DER TABELLE UND NICHT IN EINER FUSSNOTE. Wer eine Zahl in ein
+ * Feld tippt, soll wissen, wer sie sehen kann, BEVOR er sie eintippt. Die
+ * Spaltenüberschrift wiederholt den Hinweis in Kurzform, damit er auch beim
+ * Scrollen nicht verlorengeht.
+ *
+ * ER IST EINE ZUSAGE, DIE DER CODE EINHÄLT und keine Beschriftung: Es gibt in
+ * diesem System keine kundenseitige Ansicht, die den Kostenwert überhaupt
+ * geladen bekommt (siehe catalog-view.ts und
+ * customer-price-book-repository.ts).
+ */
+function internHinweis(): string {
+  return `<p class="katalogbereich__intern">
+      <strong>Herstellkosten sind nur intern sichtbar.</strong>
+      Kundinnen und Kunden sehen diese Angabe nirgends — weder auf der
+      Bestellseite noch in einer Bestätigung.
+    </p>`;
+}
+
+/**
+ * Die Rückmeldung nach dem Speichern der Herstellkosten.
+ *
+ * role="status" und nicht role="alert": Der Vorgang ist abgeschlossen, die
+ * Meldung unterbricht niemanden. Ein unbekannter Code führt zu GAR KEINER
+ * Meldung — damit kann hier nichts stehen, was nicht im Quelltext steht.
+ */
+function kostenmeldung(code: string | null): string {
+  if (code === null) return '';
+  const text = Object.prototype.hasOwnProperty.call(KOSTENMELDUNGEN, code)
+    ? KOSTENMELDUNGEN[code]
+    : null;
+  if (text === undefined || text === null) return '';
+
+  /**
+   * ERFOLG UND FEHLSCHLAG SEHEN NICHT GLEICH AUS — dieselbe Entscheidung wie
+   * im Zuordnungsbereich. `.banner` ist im ganzen System die FEHLERdarstellung
+   * samt vorangestelltem ⚠; „Die Herstellkosten wurden gespeichert." mit
+   * einem Warndreieck davor wäre eine Meldung, die ihrer eigenen Aussage
+   * widerspricht. Das Entfernen eines Werts ist ebenfalls ein Erfolg: Es war
+   * gewollt.
+   */
+  const erfolg = code === 'cost_saved' || code === 'cost_cleared';
+  const klasse = erfolg
+    ? 'zuordnungsmeldung zuordnungsmeldung--erfolg'
+    : 'banner zuordnungsmeldung';
+
+  return `<p class="${klasse}" role="status">${escapeHtml(text)}</p>`;
+}
+
+function catalogTable(view: AdminCatalogPageView): string {
   return `<div class="datentabelle-wrap">
     <table class="datentabelle">
       <thead><tr>
@@ -112,20 +217,64 @@ function catalogTable(products: readonly AdminCatalogProduct[]): string {
         <th scope="col">Einheit</th>
         <th scope="col">Gastronomie</th>
         <th scope="col">Privatkunden</th>
+        <th scope="col">Herstellkosten <span class="spaltenzusatz">nur intern</span></th>
       </tr></thead>
-      <tbody>${products.map(productRow).join('')}</tbody>
+      <tbody>${view.products.map((product) => productRow(product, view)).join('')}</tbody>
     </table>
   </div>`;
 }
 
-function productRow(product: AdminCatalogProduct): string {
+function productRow(product: AdminCatalogProduct, view: AdminCatalogPageView): string {
   return `<tr>
     <th scope="row" data-label="Produkt">${escapeHtml(product.name)}</th>
     <td data-label="Variante">${product.variant === null ? missing('Keine Variante') : escapeHtml(product.variant)}</td>
     <td data-label="Einheit">${product.unit === null ? missing('Keine Einheit angegeben') : escapeHtml(product.unit)}</td>
     <td data-label="Gastronomie" class="katalogpreis">${formatCatalogPrice(product.gastroPrice)}</td>
     <td data-label="Privatkunden" class="katalogpreis">${formatCatalogPrice(product.privatePrice)}</td>
+    <td data-label="Herstellkosten" class="kostenzelle">${kostenformular(product, view)}</td>
   </tr>`;
+}
+
+/**
+ * Das Herstellkostenformular EINER Zeile.
+ *
+ * DAS KATALOGPRODUKT STEHT IM PFAD und nicht im Körper. Damit gibt es kein
+ * Feld, über das sich ein anderes Produkt unterschieben ließe — und der
+ * Server prüft den Pfad ohnehin, bevor er irgendetwas schreibt.
+ *
+ * IM KÖRPER STEHEN GENAU ZWEI FELDER: der CSRF-Token der Sitzung und der
+ * Betrag. Keine Rolle, kein Kunde, kein Produktname, kein Verkaufspreis,
+ * keine Preisliste, kein Rückkehrziel. Was nicht im Formular steht, wird auch
+ * nicht gelesen.
+ *
+ * ES TRÄGT KEIN SKRIPT — ein echtes `<form method="post">` je Zeile, dieselbe
+ * Bauart wie die Zuordnung darunter. Ohne JavaScript bedienbar, ohne Ausnahme
+ * in der CSP.
+ *
+ * `type="text"` UND NICHT `type="number"`: Ein Zahlenfeld nimmt in vielen
+ * Browsern kein deutsches Dezimalkomma an und macht aus „2,10" je nach
+ * Gebietsschema nichts oder 210. `inputmode="decimal"` holt auf dem Handy
+ * trotzdem die Zifferntastatur.
+ *
+ * DER LEERE WERT IST „NICHT HINTERLEGT". Ein Produkt ohne gepflegte Kosten
+ * zeigt ein LEERES Feld und nicht „0,00" — 0 wäre eine Behauptung, die
+ * niemand aufgestellt hat (§2).
+ */
+function kostenformular(product: AdminCatalogProduct, view: AdminCatalogPageView): string {
+  const feldId = `herstellkosten-${product.id}`;
+  const wert = product.unitCostCents === null ? '' : formatAmountInput(product.unitCostCents);
+
+  return `<form method="post" action="/api/admin/catalog-products/${product.id}/cost" class="kosten">
+      <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
+      <label class="nur-vorlesen" for="${feldId}">Herstellkosten für ${escapeHtml(product.name)} in Euro</label>
+      <span class="kosten__eingabe">
+        <input type="text" inputmode="decimal" id="${feldId}" name="unit_cost"
+               value="${escapeHtml(wert)}" placeholder="${OHNE_KOSTEN}"
+               autocomplete="off" maxlength="10" class="kosten__feld">
+        <span class="kosten__waehrung" aria-hidden="true">€</span>
+      </span>
+      <button type="submit" class="senden kosten__senden">Speichern</button>
+    </form>`;
 }
 
 function formatCatalogPrice(price: CatalogPrice | null): string {

@@ -5,6 +5,7 @@ import { Money } from '../../domain/money';
 import { Order } from '../../domain/order';
 import { OrderItem } from '../../domain/order-item';
 import { OrderNumber } from '../../domain/order-number';
+import { unitCostFromCents } from '../../domain/product-cost';
 import { isOrderStatus, type OrderStatus } from '../../domain/order-status';
 import type { PaymentStatus } from '../../domain/payment-status';
 import type { OrderItemRow, OrderRow } from './rows';
@@ -63,8 +64,9 @@ export async function saveOrder(
     db
       .prepare(
         `INSERT INTO order_items (order_id, product_id, product_name_snapshot, product_unit_snapshot,
-                                  unit_price_cents, quantity, line_total_cents)
-              VALUES ((SELECT id FROM orders WHERE order_number = ?), ?, ?, ?, ?, ?, ?)`,
+                                  unit_price_cents, quantity, line_total_cents,
+                                  unit_cost_cents_snapshot)
+              VALUES ((SELECT id FROM orders WHERE order_number = ?), ?, ?, ?, ?, ?, ?, ?)`,
       )
       .bind(
         order.orderNumber.value,
@@ -74,6 +76,15 @@ export async function saveOrder(
         item.unitPrice.cents,
         item.quantity,
         item.lineTotal.cents,
+        /**
+         * Der Kostenschnappschuss — aus der POSITION und aus nichts sonst.
+         *
+         * Es gibt in dieser Datei keine Abfrage auf catalog_products und
+         * keinen Parameter für einen Kostenwert. Was hier geschrieben wird,
+         * hat Order.place() aus dem Kostenbuch übernommen; ein `null` ist
+         * dabei ein Wert und kein fehlendes Argument (§3, §9).
+         */
+        item.unitCostSnapshot === null ? null : item.unitCostSnapshot.cents,
       ),
   );
 
@@ -106,7 +117,8 @@ export async function findOrderByNumber(db: D1Database, orderNumber: string): Pr
 
   const { results } = await db
     .prepare(
-      `SELECT product_id, product_name_snapshot, product_unit_snapshot, unit_price_cents, quantity
+      `SELECT product_id, product_name_snapshot, product_unit_snapshot, unit_price_cents, quantity,
+              unit_cost_cents_snapshot
          FROM order_items
         WHERE order_id = ?
         ORDER BY id`,
@@ -159,6 +171,13 @@ function toOrder(row: OrderRow, itemRows: readonly OrderItemRow[]): Order {
         // Der Snapshot aus der Position, nicht der heutige Produktpreis.
         unitPrice: Money.fromCents(item.unit_price_cents),
         quantity: item.quantity,
+        /**
+         * Ebenso der Kostenschnappschuss: aus der Position und niemals aus
+         * catalog_products. Ein JOIN auf den heutigen Kostenwert wäre genau
+         * die Regel, gegen die Migration 0017 antritt — eine spätere
+         * Kostenänderung schriebe sonst die Vergangenheit um.
+         */
+        unitCost: unitCostFromCents(item.unit_cost_cents_snapshot),
       }),
   );
 

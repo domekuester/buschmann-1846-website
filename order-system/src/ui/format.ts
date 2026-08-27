@@ -41,6 +41,36 @@ function groupThousands(value: number): string {
   return out;
 }
 
+/**
+ * Ganzzahlige Cent als EINGABEWERT eines Formularfeldes: „2,10", „0,00",
+ * „1250,00".
+ *
+ * DER UNTERSCHIED ZU formatEuro() IST ABSICHT UND KEIN VERSEHEN:
+ *
+ *   kein Eurozeichen   Es steht im Formular NEBEN dem Feld. Ein „€" im Wert
+ *                      käme beim Speichern zurück und wäre dann eine
+ *                      ungültige Eingabe — ein Feld, dessen eigener Inhalt
+ *                      unabgesendet werden kann, ist eine Falle.
+ *   kein Tausenderpunkt
+ *                      „1.250,00" zurückgeschickt wäre nicht mehr eindeutig
+ *                      lesbar; parseUnitCost() lehnt zwei Trennzeichen
+ *                      ausdrücklich ab. Was hier herauskommt, muss dieselbe
+ *                      Funktion wieder annehmen.
+ *
+ * Damit gilt: Wer ein Feld unverändert absendet, speichert genau den Wert,
+ * der schon da stand. Rein zeichenbasiert wie alles in dieser Datei — es
+ * entsteht keine Fließkommazahl, auch nicht kurzzeitig für die Ausgabe.
+ */
+export function formatAmountInput(cents: number): string {
+  if (!Number.isInteger(cents) || cents < 0) {
+    throw new InvalidArgumentError('Ein Betrag zur Eingabe muss ganzzahlige Cent ab 0 sein.');
+  }
+
+  const euros = Math.floor(cents / 100);
+  const rest = cents % 100;
+  return `${euros},${String(rest).padStart(2, '0')}`;
+}
+
 const HTML_ESCAPES: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',

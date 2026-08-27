@@ -1,6 +1,8 @@
 import type { CatalogPrice } from '../../domain/catalog-pricing';
 import type { Customer } from '../../domain/customer';
+import type { Money } from '../../domain/money';
 import { CustomerPriceBook } from '../../domain/order-pricing';
+import { ProductCostBook, unitCostFromCents } from '../../domain/product-cost';
 
 interface PriceListRow {
   id: number;
@@ -13,6 +15,8 @@ interface PriceRow {
   price_cents: number | null;
   min_price_cents: number | null;
   max_price_cents: number | null;
+  /** Seit 0017 — die internen Herstellkosten des Katalogprodukts, oder NULL. */
+  unit_cost_cents: number | null;
 }
 
 /**
@@ -40,10 +44,25 @@ export const CUSTOMER_PRICE_BOOK_QUERIES = {
    *
    * products.price_cents kommt in dieser Abfrage NICHT vor. Was nicht
    * geladen wird, kann nicht versehentlich als Preis verwendet werden.
+   *
+   * SEIT PHASE 7A KOMMEN DIE HERSTELLKOSTEN AUS DERSELBEN ZEILE — §21.
+   *
+   * cp.unit_cost_cents ist eine weitere SPALTE und keine weitere ABFRAGE:
+   * Das Katalogprodukt ist für die Preisauflösung ohnehin verbunden, der
+   * Kostenwert steht seit 0017 daran, und ihn hier mitzunehmen kostet weder
+   * einen zusätzlichen Zugriff noch einen zusätzlichen JOIN. Eine eigene
+   * Kostenabfrage je Position wäre das N+1, das §21 ausschließt; selbst eine
+   * einzelne zusätzliche Abfrage wäre eine, die niemand braucht.
+   *
+   * ES IST EINE INNERE VERBINDUNG AUF DEN PREIS, UND DAS GENÜGT: Ein
+   * Produkt ohne Preis in dieser Liste fällt heraus und ist für diesen Kunden
+   * nicht bestellbar. Jedes Produkt, das bestellt werden KANN, steht also in
+   * diesem Ergebnis — und damit auch sein Kostenwert, falls einer gepflegt
+   * ist.
    */
   prices: `
     SELECT p.id AS product_id, pp.price_type, pp.price_cents,
-           pp.min_price_cents, pp.max_price_cents
+           pp.min_price_cents, pp.max_price_cents, cp.unit_cost_cents
       FROM products p
       JOIN catalog_products cp
         ON cp.id = p.catalog_product_id AND cp.is_active = 1
@@ -53,7 +72,13 @@ export const CUSTOMER_PRICE_BOOK_QUERIES = {
 } as const;
 
 /**
- * Lädt die Preiswelt EINES Kunden.
+ * Lädt NUR die Preiswelt eines Kunden — der Weg der kundenseitigen
+ * Bestellseite.
+ *
+ * SEIT PHASE 7A IST DAS EIN AUSSCHNITT UND KEIN VOLLSTÄNDIGES ERGEBNIS: Er
+ * verwirft die Herstellkosten, die dieselbe Abfrage mitliefert. Wer sie
+ * braucht, ruft loadOrderPricing() — und das tut ausschließlich der
+ * schreibende Bestellweg.
  *
  * DER KUNDE KOMMT ALS FERTIGES OBJEKT, NICHT ALS ID UND SCHON GAR NICHT AUS
  * EINEM ANFRAGEKÖRPER. Dieselbe Überlegung wie bei placeCafeOrder: Ein
@@ -74,9 +99,47 @@ export async function loadCustomerPriceBook(
   db: D1Database,
   customer: Customer,
 ): Promise<CustomerPriceBook> {
+  return (await loadOrderPricing(db, customer)).priceBook;
+}
+
+/**
+ * Preise UND Herstellkosten eines Kunden — der Weg, den NUR das Bestellen
+ * nimmt.
+ *
+ * ZWEI RÜCKGABEWERTE STATT EINES ERWEITERTEN PREISBUCHS, und das ist die
+ * Datenschutzentscheidung dieser Phase (§11):
+ *
+ *   loadCustomerPriceBook()  die Bestellseite des Cafés. Bekommt AUSSCHLIESSLICH
+ *                            das Preisbuch — sie kann keine Herstellkosten
+ *                            anzeigen, weil sie keine hat.
+ *   loadOrderPricing()       das Schreiben einer Bestellung. Bekommt beides.
+ *
+ * Ein Kostenfeld im CustomerPriceBook wäre der bequemere Weg gewesen und
+ * hätte die Trennung zu einer Frage der Sorgfalt beim Rendern gemacht. So ist
+ * sie eine Frage des Typs.
+ *
+ * ES KOSTET KEINE ZUSÄTZLICHE ABFRAGE. Beide Bücher entstehen aus demselben
+ * batch() aus zwei Anweisungen — genau wie vor Phase 7A. Die Kosten sind eine
+ * Spalte in einer Zeile, die ohnehin gelesen wird.
+ */
+export interface CustomerOrderPricing {
+  readonly priceBook: CustomerPriceBook;
+  readonly costBook: ProductCostBook;
+}
+
+export async function loadOrderPricing(
+  db: D1Database,
+  customer: Customer,
+): Promise<CustomerOrderPricing> {
   const priceListId = customer.priceListId;
   if (priceListId === null) {
-    return CustomerPriceBook.unassigned();
+    /**
+     * Ein Kunde ohne Preisgruppe kostet weiterhin KEINE Abfrage — und
+     * bekommt folgerichtig auch kein Kostenbuch mit Inhalt. Er kann nicht
+     * bestellen; ein Kostenwert wäre eine Angabe zu einer Position, die nie
+     * entsteht.
+     */
+    return { priceBook: CustomerPriceBook.unassigned(), costBook: ProductCostBook.empty() };
   }
 
   const [listResult, priceResult] = await db.batch<PriceListRow | PriceRow>([
@@ -96,18 +159,37 @@ export async function loadCustomerPriceBook(
    * und keine geratenen Preise.
    */
   if (list === undefined || list.is_active !== 1) {
-    return CustomerPriceBook.inactive(priceListId);
+    return { priceBook: CustomerPriceBook.inactive(priceListId), costBook: ProductCostBook.empty() };
   }
 
   const prices = new Map<number, CatalogPrice>();
+  const costs = new Map<number, Money>();
   for (const row of (priceResult?.results as PriceRow[] | undefined) ?? []) {
     const price = toCatalogPrice(row);
     if (price !== null) {
       prices.set(row.product_id, price);
     }
+
+    /**
+     * DIE KOSTEN HÄNGEN NICHT AM PREISTYP. Auch ein Produkt mit „auf
+     * Anfrage" hat gepflegte Herstellkosten, wenn jemand sie eingetragen hat
+     * — bestellbar ist es deswegen trotzdem nicht, und dann wird der Wert
+     * eben nie abgefragt. Ihn hier an eine Preisform zu koppeln wäre eine
+     * zweite Regel für dieselbe Zahl.
+     *
+     * KEIN EINTRAG BEI NULL. Der Unterschied zwischen „nicht im Buch" und
+     * „im Buch mit 0 €" ist der ganze Punkt von §14.
+     */
+    const cost = unitCostFromCents(row.unit_cost_cents ?? null);
+    if (cost !== null) {
+      costs.set(row.product_id, cost);
+    }
   }
 
-  return CustomerPriceBook.forPriceList(priceListId, prices);
+  return {
+    priceBook: CustomerPriceBook.forPriceList(priceListId, prices),
+    costBook: ProductCostBook.fromCosts(costs),
+  };
 }
 
 /**

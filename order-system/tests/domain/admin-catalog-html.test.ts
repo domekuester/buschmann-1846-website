@@ -4,9 +4,11 @@ import { renderAdminCatalogPage, type AdminCatalogPageView } from '../../src/ui/
 /**
  * Seit Phase 5D trägt dieselbe Seite einen zweiten Bereich. Diese Datei prüft
  * unverändert den ERSTEN — die read-only Katalogpreise; der Zuordnungsbereich
- * hat seine eigene Datei (admin-catalog-link-html.test.ts). Die drei neuen
- * Felder stehen hier leer, damit genau das sichtbar bleibt: Der Preisbereich
- * hängt an keinem von ihnen.
+ * hat seine eigene Datei (admin-catalog-link-html.test.ts), die
+ * Herstellkostenspalte aus Phase 7A ebenfalls
+ * (admin-catalog-cost-html.test.ts). Die neuen Felder stehen hier leer bzw.
+ * auf null, damit genau das sichtbar bleibt: Der Preisbereich hängt an keinem
+ * von ihnen.
  */
 const VIEW: AdminCatalogPageView = {
   loginIdentifier: 'admin@example.test',
@@ -16,25 +18,31 @@ const VIEW: AdminCatalogPageView = {
   noticeCode: null,
   products: [
     {
+      id: 1,
       name: 'Fiktiver Kuchen',
       variant: 'Ring',
       unit: '26 cm Ring',
       gastroPrice: { type: 'fixed' as const, priceCents: 2100 },
       privatePrice: { type: 'from' as const, minPriceCents: 5500 },
+      unitCostCents: null,
     },
     {
+      id: 2,
       name: 'Fiktives Gebäck',
       variant: null,
       unit: '100 g',
       gastroPrice: null,
       privatePrice: { type: 'range' as const, minPriceCents: 300, maxPriceCents: 450 },
+      unitCostCents: null,
     },
     {
+      id: 3,
       name: 'Fiktive Saisontorte',
       variant: null,
       unit: 'Torte',
       gastroPrice: { type: 'on_request' as const },
       privatePrice: null,
+      unitCostCents: null,
     },
   ],
 };
@@ -47,7 +55,24 @@ describe('Admin-Katalog HTML', () => {
     for (const text of ['Produkt', 'Variante', 'Einheit', 'Gastronomie', 'Privatkunden']) {
       expect(html).toContain(text);
     }
-    expect(html).not.toMatch(/>Bearbeiten<|>Löschen<|type="(text|number)"/);
+    /**
+     * DIE PREISE BLEIBEN READ-ONLY — auch nach Phase 7A.
+     *
+     * Bis 6F genügte dafür „gar kein Eingabefeld". Seit 7A steht in der Zeile
+     * ein Textfeld, aber ausschließlich für die internen HERSTELLKOSTEN; ein
+     * Verkaufspreis wird auf dieser Seite weiterhin weder angelegt noch
+     * geändert noch gelöscht. Die Prüfung wird deshalb GENAUER statt
+     * schwächer: kein Bearbeiten, kein Löschen, und kein Eingabefeld, das
+     * einen Preis trüge.
+     */
+    expect(html).not.toMatch(/>Bearbeiten<|>Löschen<|>Preis ändern</);
+    expect(html).not.toMatch(/name="(price|price_cents|gastro|gastro_price|private|private_price)"/);
+    // Es gibt auf der ganzen Seite genau zwei Feldnamen: den Sitzungstoken
+    // und die Herstellkosten. Ein dritter wäre ein neues Eingabefeld und
+    // müsste hier bewusst eingetragen werden.
+    const feldnamen = [...html.matchAll(/<input\b[^>]*\bname="([^"]+)"/g)].map((t) => t[1]);
+    expect([...new Set(feldnamen)].sort()).toEqual(['csrf_token', 'unit_cost']);
+    expect(feldnamen.filter((n) => n === 'unit_cost')).toHaveLength(3);
   });
 
   it('formatiert jede Preisart ohne sie zu verfälschen', () => {
@@ -76,11 +101,13 @@ describe('Admin-Katalog HTML', () => {
     const html = renderAdminCatalogPage({
       ...VIEW,
       products: [{
+        id: 1,
         name: '<script>alert(1)</script>',
         variant: '<img src=x>',
         unit: 'Stück & Torte',
         gastroPrice: null,
         privatePrice: null,
+        unitCostCents: null,
       }],
     });
     expect(html).not.toContain('<script>');

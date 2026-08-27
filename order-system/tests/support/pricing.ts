@@ -140,6 +140,25 @@ export async function changeCatalogPrice(
 }
 
 /**
+ * Setzt die internen Herstellkosten eines Katalogprodukts — der Vorgang,
+ * gegen den die Kosten-Snapshot-Invariante aus Phase 7A antritt.
+ *
+ * `null` entfernt einen gepflegten Wert wieder. Die Funktion schreibt
+ * AUSSCHLIESSLICH catalog_products.unit_cost_cents und fasst weder einen
+ * Preis noch eine Bestellung an — genau wie der Produktionscode.
+ */
+export async function setProductCost(
+  db: D1Database,
+  catalogProductId: number,
+  unitCostCents: number | null,
+): Promise<void> {
+  await db
+    .prepare('UPDATE catalog_products SET unit_cost_cents = ? WHERE id = ?')
+    .bind(unitCostCents, catalogProductId)
+    .run();
+}
+
+/**
  * Die Tabellen, die ein Bestelltest leeren muss — IN DIESER REIHENFOLGE.
  *
  * products hängt seit 0014 an catalog_products; wer zuerst den Katalog leert,

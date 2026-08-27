@@ -3,7 +3,7 @@ import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
 import { assertOrderableDay } from '../domain/order-policy';
-import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
+import { loadOrderPricing } from '../infrastructure/d1/customer-price-book-repository';
 import { findCustomer } from '../infrastructure/d1/customer-repository';
 import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
@@ -79,13 +79,19 @@ export async function placeOrder(db: D1Database, command: PlaceOrderCommand): Pr
    * Die Preiswelt braucht den fertigen Kunden und lässt sich deshalb nicht
    * mit den beiden Abfragen darüber parallelisieren — sie hängt an
    * customer.price_list_id.
+   *
+   * SEIT PHASE 7A KOMMEN DIE HERSTELLKOSTEN AUS DEMSELBEN AUFRUF. Es ist
+   * dieselbe Zahl von Abfragen wie vorher: Der Kostenwert steht in einer
+   * Zeile, die für den Preis ohnehin gelesen wird (§21).
    */
-  const priceBook = await loadCustomerPriceBook(db, customer);
+  const { priceBook, costBook } = await loadOrderPricing(db, customer);
 
   const year = Number(businessDay(command.now).slice(0, 4));
   const orderNumber = await reserveOrderNumber(db, year);
 
-  const order = Order.place({ customer, catalog, priceBook, draft, orderNumber, now: command.now });
+  const order = Order.place({
+    customer, catalog, priceBook, costBook, draft, orderNumber, now: command.now,
+  });
   await saveOrder(db, order);
 
   return order;

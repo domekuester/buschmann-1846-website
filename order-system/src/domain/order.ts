@@ -8,6 +8,7 @@ import { OrderItem } from './order-item';
 import type { OrderDraft } from './order-draft';
 import type { OrderNumber } from './order-number';
 import type { CustomerPriceBook } from './order-pricing';
+import type { ProductCostBook } from './product-cost';
 import { canTransitionTo, orderStatusLabel, type OrderStatus } from './order-status';
 import type { ProductCatalog } from './product-catalog';
 import { optionalText } from './text';
@@ -33,9 +34,40 @@ export interface PlaceOrderInput {
   customer: Customer;
   catalog: ProductCatalog;
   priceBook: CustomerPriceBook;
+  /**
+   * Die internen Herstellkosten — SEIT PHASE 7A UND EBENFALLS PFLICHT.
+   *
+   * Dieselbe Überlegung wie beim Preisbuch: Optional wäre der bequemere Weg
+   * und zugleich die Lücke — ein Aufrufer, der ihn vergisst, schriebe
+   * lautlos Bestellungen ohne Kostenschnappschuss, und niemand könnte
+   * später unterscheiden, ob die Kosten damals fehlten oder ob nur der
+   * Parameter fehlte. Ein leeres Kostenbuch ist ein GÜLTIGER Zustand und
+   * muss ausdrücklich übergeben werden (ProductCostBook.empty()).
+   *
+   * Es ist ein eigenes Objekt und kein Feld des Preisbuchs, damit die
+   * kundenseitige Bestellseite es gar nicht erst in die Hand bekommt (§11).
+   */
+  costBook: ProductCostBook;
   draft: OrderDraft;
   orderNumber: OrderNumber;
   now: Date;
+}
+
+/**
+ * Der Kostenstand einer Bestellung — vollständig, teilweise oder gar nicht
+ * bekannt.
+ *
+ * `complete` ist der wichtigste Wert und steht nicht zufällig neben den
+ * beiden Zählern: Eine Bestellung ohne Positionen kann es nicht geben (der
+ * Konstruktor lehnt sie ab), also heißt `itemsWithCost === itemCount`
+ * tatsächlich „für jede Position ist bekannt, was sie gekostet hat".
+ */
+export interface OrderCostSummary {
+  readonly itemCount: number;
+  readonly itemsWithCost: number;
+  readonly complete: boolean;
+  /** Die Kosten der Positionen, für die ein Snapshot vorliegt. NICHT „die Kosten". */
+  readonly knownCost: Money;
 }
 
 export interface OrderState {
@@ -107,7 +139,7 @@ export class Order {
   }
 
   static place(input: PlaceOrderInput): Order {
-    const { customer, catalog, priceBook, draft, orderNumber, now } = input;
+    const { customer, catalog, priceBook, costBook, draft, orderNumber, now } = input;
     const errors: Record<string, string> = {};
 
     if (!customer.isActive) {
@@ -176,7 +208,22 @@ export class Order {
           return;
         }
 
-        items.push(OrderItem.forProduct(product, price.unitPrice, draftItem.quantity));
+        /**
+         * DIE HERSTELLKOSTEN WERDEN NACHGESCHLAGEN, NICHT GEPRÜFT.
+         *
+         * Es gibt hier bewusst keinen Fehlerzweig: Fehlende Kosten sind kein
+         * Bestellhindernis. Ein Café abzuweisen, weil im Backoffice eine
+         * interne Zahl nicht gepflegt ist, wäre ein Betriebsausfall aus
+         * Buchhaltungsgründen — und die Zahl geht das Café ohnehin nichts an.
+         */
+        items.push(
+          OrderItem.forProduct(
+            product,
+            price.unitPrice,
+            draftItem.quantity,
+            costBook.costFor(product.id),
+          ),
+        );
       });
     }
 
@@ -223,6 +270,47 @@ export class Order {
   /** Die Bestellsumme wird berechnet, nie entgegengenommen. */
   total(): Money {
     return this.items.reduce((sum, item) => sum.plus(item.lineTotal), Money.zero());
+  }
+
+  /**
+   * Was über die Herstellkosten dieser Bestellung GESICHERT bekannt ist —
+   * und ausdrücklich auch, was nicht.
+   *
+   * DAS IST §14 UND KEIN AUSWERTUNGSSYSTEM. Drei Zahlen aus den eigenen
+   * Positionen, keine Aggregation über Bestellungen hinweg, keine Marge, kein
+   * Rohertrag, keine Kennzahl. Phase 7B rechnet damit; 7A stellt nur sicher,
+   * dass 7B die Frage „ist das vollständig?" überhaupt stellen KANN.
+   *
+   * WARUM ÜBERHAUPT: Eine Bestellung mit drei Positionen, von denen zwei
+   * einen Kostenschnappschuss tragen, hat KEINE bekannten Gesamtkosten. Wer
+   * die beiden bekannten Positionen aufsummiert und das Ergebnis
+   * „Herstellkosten der Bestellung" nennt, veröffentlicht eine zu niedrige
+   * Zahl und daraus eine zu hohe Marge. `complete` unterscheidet die beiden
+   * Fälle, und `knownCost` trägt deshalb ausdrücklich das Wort „known" im
+   * Namen.
+   *
+   * Der Positionskostenbetrag entsteht HIER und wird nirgends gespeichert —
+   * siehe die Begründung gegen line_cost_cents in Migration 0017.
+   */
+  costSummary(): OrderCostSummary {
+    let bekannt = 0;
+    let summe = Money.zero();
+
+    for (const item of this.items) {
+      const kosten = item.unitCostSnapshot;
+      if (kosten === null) {
+        continue;
+      }
+      bekannt += 1;
+      summe = summe.plus(kosten.multipliedBy(item.quantity));
+    }
+
+    return {
+      itemCount: this.items.length,
+      itemsWithCost: bekannt,
+      complete: bekannt === this.items.length,
+      knownCost: summe,
+    };
   }
 
   withStatus(target: OrderStatus, now: Date): Order {

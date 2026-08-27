@@ -17,6 +17,10 @@ import {
   matchProductCatalogLinkPath,
 } from './http/admin-product-catalog-api';
 import {
+  matchCatalogProductCostPath,
+  saveCatalogProductCostEndpoint,
+} from './http/admin-product-cost-api';
+import {
   matchOrderPaymentPath,
   recordOrderPaymentEndpoint,
 } from './http/admin-payment-api';
@@ -98,6 +102,15 @@ import { privateHeaders } from './http/security';
  *                      products.catalog_product_id und keinen Preis: Welchen
  *                      Preis ein verknüpftes Produkt hat, entscheidet
  *                      unverändert der Resolver aus Phase 5C.
+ *   POST /api/admin/catalog-products/:catalogProductId/cost
+ *                      die internen Herstellkosten eines Katalogprodukts. Der
+ *                      sechste schreibende Adminvorgang — Origin, Rolle,
+ *                      CSRF-Token, danach 303 zurück auf den Katalog. Er
+ *                      schreibt AUSSCHLIESSLICH
+ *                      catalog_products.unit_cost_cents: kein Verkaufspreis,
+ *                      keine Bestellung, kein Snapshot einer bestehenden
+ *                      Position. Der Wert ist rein intern und erscheint auf
+ *                      keiner kundenseitigen Oberfläche.
  *   GET  /admin/bestellregeln
  *                      an welchen Wochentagen bestellt werden kann und wann
  *                      Bestellschluss ist. Lesend; genau EINE Abfrage auf eine
@@ -309,6 +322,27 @@ export default {
           request,
           now,
           productIdSegment,
+        );
+      }
+
+      /**
+       * Die fünfte Route mit einem veränderlichen Pfadteil — erkannt von der
+       * Datei, die auch den Endpunkt enthält. Sie kann mit
+       * matchProductCatalogLinkPath nicht kollidieren: Jene beginnt mit
+       * '/api/admin/products/', diese mit '/api/admin/catalog-products/', und
+       * ein Pfad kann nicht auf beide passen.
+       */
+      const catalogProductIdSegment = matchCatalogProductCostPath(pathname);
+      if (catalogProductIdSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await saveCatalogProductCostEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          catalogProductIdSegment,
         );
       }
 

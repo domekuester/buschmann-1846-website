@@ -898,14 +898,16 @@ textarea[aria-invalid='true'] {
    in einer zweiten Kopie mit denselben Regeln. */
 .datentabelle td.kundenaktion,
 .datentabelle td.zuordnungaktion,
-.datentabelle td.zahlungaktion {
+.datentabelle td.zahlungaktion,
+.datentabelle td.kostenzelle {
   display: block;
   padding-top: .8rem;
 }
 
 .datentabelle td.kundenaktion::before,
 .datentabelle td.zuordnungaktion::before,
-.datentabelle td.zahlungaktion::before {
+.datentabelle td.zahlungaktion::before,
+.datentabelle td.kostenzelle::before {
   display: block;
   margin-bottom: .45rem;
 }
@@ -915,7 +917,8 @@ textarea[aria-invalid='true'] {
    nichts Kleines. */
 .preisgruppe,
 .zuordnung,
-.zahlung {
+.zahlung,
+.kosten {
   display: flex;
   flex-wrap: wrap;
   gap: .5rem;
@@ -945,7 +948,107 @@ textarea[aria-invalid='true'] {
 
 .preisgruppe__senden,
 .zuordnung__senden,
-.zahlung__senden { flex: 0 0 auto; }
+.zahlung__senden,
+.kosten__senden { flex: 0 0 auto; }
+
+/* ---------- Herstellkosten ----------
+
+   EIN BETRAGSFELD SIEHT ANDERS AUS ALS EINE AUSWAHL, und das ist der einzige
+   Grund für diese Regeln: Das Eurozeichen steht IM Feldrahmen rechts, damit
+   niemand es mit eintippt. Es ist aria-hidden — vorgelesen wird die Einheit
+   bereits im Label („… in Euro").
+
+   Die Zahl steht in Tabellenziffern und rechtsbündig, wie jeder andere Betrag
+   dieser Seite. Ein Kostenwert und ein Verkaufspreis sollen sich in derselben
+   Zeile vergleichen lassen, ohne dass das Auge springt.                     */
+
+.kosten__eingabe {
+  display: flex;
+  flex: 1 1 8rem;
+  align-items: center;
+  min-width: 0;
+  min-height: var(--tap);
+  padding-right: .55rem;
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+}
+
+.kosten__eingabe:hover { border-color: var(--champagner); }
+
+/* Der Fokusring gehört um das GANZE Feld samt Währungszeichen — sonst
+   umrandete er nur den Textteil und die Einfassung sähe zerbrochen aus. */
+.kosten__eingabe:focus-within {
+  outline: 2px solid var(--navy);
+  outline-offset: 1px;
+}
+
+.kosten__feld {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: calc(var(--tap) - 2px);
+  padding: 0 .5rem;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+}
+
+.kosten__feld:focus { outline: none; }
+
+/* Der Platzhalter sagt „Nicht hinterlegt" — ein leeres Feld ist ein
+   Zustand und keine vergessene Eingabe. Gedeckt, damit er nicht wie ein
+   Wert aussieht. */
+.kosten__feld::placeholder {
+  color: var(--text-leise);
+  /* Kleiner als der Wert — und das ist der Grund, nicht die Zierde:
+     „Nicht hinterlegt" ist länger als jeder Betrag, der hier je stehen wird
+     („1234,56"). In Wertgröße würde es abgeschnitten, und ein
+     abgeschnittenes „Nicht hinterle" sieht aus wie ein Fehler statt wie ein
+     Zustand. Der eingetippte Wert bleibt in voller Größe. */
+  font-size: .82rem;
+  font-variant-numeric: normal;
+  opacity: 1;
+}
+
+.kosten__waehrung {
+  flex: 0 0 auto;
+  padding-left: .35rem;
+  color: var(--text-leise);
+  font-size: .92rem;
+}
+
+/* Der Satz über der Tabelle: „nur intern sichtbar". Er ist eine ZUSAGE und
+   keine Warnung — deshalb dieselbe ruhige Bauart wie .zuordnungsstand und
+   kein Banner mit Warndreieck. */
+.katalogbereich__intern {
+  margin: 0 0 1.1rem;
+  max-width: 60ch;
+  padding: .7rem .9rem;
+  color: var(--text-leise);
+  font-size: .92rem;
+  background: #fff;
+  border: var(--spur);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+}
+
+.katalogbereich__intern strong { color: var(--navy); }
+
+/* „nur intern" in der Spaltenüberschrift. Unter 600px ist der Tabellenkopf
+   ausgeblendet; dort trägt der Satz darüber die Aussage allein. */
+.spaltenzusatz {
+  display: block;
+  color: var(--text-leise);
+  font-size: .68rem;
+  font-weight: 500;
+  letter-spacing: .04em;
+  text-transform: none;
+}
 
 /* Ein Label, das nur vorgelesen wird: „Preisgruppe für Fiktives Café Nord".
    Sehende lesen die Spaltenüberschrift, ein Screenreader braucht je Zeile
@@ -965,10 +1068,19 @@ textarea[aria-invalid='true'] {
 /* ---------- Katalogseite: zwei Bereiche, eine Seite ----------
 
    Seit Phase 5D trägt /admin/catalog zwei Fragen übereinander: „Was kostet
-   was" (lesend) und „Was ist was" (der einzige Schreibvorgang der Seite).
+   was" (die Preise lesend, die Herstellkosten seit 7A schreibend) und
+   „Was ist was" (die Zuordnung).
    Sie brauchen keine zwei Layouts — dieselbe Tabelle, die auf dem Telefon zu
    Karten wird. Getrennt werden sie durch Luft und eine Überschrift, nicht
    durch Rahmen, Kästen oder Farbe.                                          */
+
+/* ÜBERLAUFSCHUTZ statt Abschneiden.
+   Seit die Preistabelle sechs Spalten trägt, kann sie auf schmalen
+   Desktopfenstern breiter werden als ihr Platz. `.datentabelle-wrap` hat
+   systemweit kein overflow-x; ohne diese Zeile stünde der Speichern-Knopf
+   dann außerhalb des sichtbaren Bereichs und wäre unerreichbar. Dieselbe
+   Entscheidung wie bei `.bestellliste`. */
+.katalogbereich .datentabelle-wrap { overflow-x: auto; }
 
 .katalogbereich + .katalogbereich { margin-top: 2.75rem; }
 
@@ -1563,7 +1675,58 @@ textarea[aria-invalid='true'] {
   /* Ab Tablet ist die Zelle wieder eine Tabellenzelle wie jede andere. */
   .datentabelle td.kundenaktion,
   .datentabelle td.zuordnungaktion,
-  .datentabelle td.zahlungaktion { display: table-cell; padding-top: .8rem; }
+  .datentabelle td.zahlungaktion,
+  .datentabelle td.kostenzelle { display: table-cell; padding-top: .8rem; }
+
+  /* DIE KOSTENSPALTE DARF UMBRECHEN.
+     Sie trägt als einzige Spalte der Preistabelle ein Eingabefeld UND einen
+     Knopf. Zwingt man beide nebeneinander, nimmt die Spalte den fünf
+     Spalten links die Breite weg — und „Privatkunden" bricht dann mitten im
+     Wort. Umbrechen macht die Zeile etwas höher und alles andere lesbar.
+
+     Die Mindestbreite ist keine Schönheit, sondern Funktion: Darunter wird
+     der Platzhalter „Nicht hinterlegt" abgeschnitten, und ein abgeschnittenes
+     „Nich" sagt gar nichts. */
+  /* DIE KOSTENSPALTE DARF UMBRECHEN — der Knopf rutscht unter das Feld.
+     Sie trägt als einzige Spalte der Preistabelle ein Eingabefeld UND einen
+     Knopf. Zwingt man beide nebeneinander, wird die Tabelle breiter als ihr
+     Platz: Erst nimmt die Spalte den fünf Spalten links die Breite weg, dann
+     steht der Knopf außerhalb. Umbrechen macht die Zeile etwas höher und
+     alles andere lesbar — und nichts verschwindet.
+
+     Die Mindestbreite ist keine Schönheit, sondern Funktion: Darunter wird
+     der Platzhalter „Nicht hinterlegt" abgeschnitten, und ein abgeschnittenes
+     „Nich" sagt gar nichts. */
+  .datentabelle td.kostenzelle .kosten__eingabe { flex: 1 1 8rem; min-width: 7.5rem; }
+
+  /* KEIN WORTBRUCH IN KOPFZEILEN UND BETRÄGEN.
+     `.datentabelle` erlaubt zeichenweisen Umbruch (overflow-wrap: anywhere)
+     — richtig für einen langen Produktnamen, falsch für „PRIVATKUNDEN",
+     „Einheit" und „5,20 €". Seit die Preistabelle sechs Spalten hat, fällt
+     der Unterschied auf. */
+  .katalogbereich .datentabelle thead th,
+  .katalogbereich .datentabelle td.katalogpreis,
+  .katalogbereich .datentabelle td[data-label='Einheit'],
+  .katalogbereich .datentabelle td[data-label='Variante'] {
+    overflow-wrap: normal;
+  }
+
+  .katalogbereich .datentabelle td.katalogpreis { white-space: nowrap; }
+
+  /* Ein Produktname bricht ERST, WENN ER MUSS — nicht bei jeder Gelegenheit.
+     `overflow-wrap: anywhere` ist für pathologisch lange Zeichenketten
+     gedacht; auf „Käsekuchen" angewendet ergibt es „Käsekuc / hen". */
+  .katalogbereich .datentabelle th[scope='row'] { overflow-wrap: break-word; }
+
+  /* ETWAS DICHTER ALS DIE ÜBRIGEN TABELLEN — sechs Spalten statt fünf.
+     Die Preistabelle hat seit Phase 7A eine Spalte mehr als jede andere
+     `.datentabelle` des Systems und steht in derselben 704px-Lesespalte.
+     0,65rem Innenabstand je Seite ergeben über zwölf Zellkanten rund 125px,
+     die den Inhalten fehlen. 0,5rem holt davon knapp 30px zurück — genug,
+     damit nichts umbricht und nichts überhängt. Die Zeilenhöhe und damit
+     die Tippfläche bleibt unverändert. */
+  .katalogbereich .datentabelle th,
+  .katalogbereich .datentabelle td { padding-inline: .5rem; }
 }
 
 /* Desktop bekommt KEINE zweite Gestaltung — nur die begrenzte Spalte, die

@@ -10,6 +10,7 @@ import { ProductCatalog } from '../../src/domain/product-catalog';
 import { Address } from '../../src/domain/address';
 import { Money } from '../../src/domain/money';
 import { CustomerPriceBook } from '../../src/domain/order-pricing';
+import { ProductCostBook } from '../../src/domain/product-cost';
 import type { CatalogPrice } from '../../src/domain/catalog-pricing';
 import { DomainError, ValidationError } from '../../src/domain/errors';
 import type { FulfillmentType } from '../../src/domain/fulfillment-type';
@@ -74,11 +75,13 @@ function place(
   cat = catalog(),
   seq = 1,
   prices = priceBook(),
+  costs = ProductCostBook.empty(),
 ): Order {
   return Order.place({
     customer: c,
     catalog: cat,
     priceBook: prices,
+    costBook: costs,
     draft: d,
     orderNumber: OrderNumber.fromYearAndSequence(2026, seq),
     now,
@@ -396,6 +399,7 @@ describe('Order.restore', () => {
       productUnitSnapshot: 'Stück',
       unitPrice: Money.fromCents(435),
       quantity: 3,
+      unitCost: null,
     }),
   ];
 

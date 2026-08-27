@@ -1,7 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { loadCatalog } from '../../src/infrastructure/d1/product-repository';
-import { loadCustomerPriceBook } from '../../src/infrastructure/d1/customer-price-book-repository';
+import { loadOrderPricing } from '../../src/infrastructure/d1/customer-price-book-repository';
 import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
 import { reserveOrderNumber } from '../../src/infrastructure/d1/order-number-sequence';
 import {
@@ -77,10 +77,13 @@ async function seed(): Promise<void> {
   ]);
 }
 
-/** Die Preiswelt eines Kunden — genau so, wie der Bestellfluss sie lädt. */
-async function priceBookOf(customerId = 1) {
+/**
+ * Preiswelt UND Herstellkosten eines Kunden — genau so, wie der Bestellfluss
+ * sie lädt. Seit Phase 7A ein Paar, weil Order.place() beides verlangt.
+ */
+async function pricingOf(customerId = 1) {
   const customer = await findCustomer(env.DB, customerId);
-  return loadCustomerPriceBook(env.DB, customer!);
+  return loadOrderPricing(env.DB, customer!);
 }
 
 beforeEach(async () => {
@@ -103,7 +106,7 @@ beforeEach(async () => {
 describe('loadCatalog', () => {
   it('lädt alle Produkte — den Preis trägt seit 5C die Preiswelt des Kunden', async () => {
     const catalog = await loadCatalog(env.DB);
-    const buch = await priceBookOf();
+    const { priceBook: buch } = await pricingOf();
     expect(catalog.count()).toBe(3);
     const preis = buch.priceFor(1);
     expect(preis.kind === 'fixed' && preis.unitPrice.cents).toBe(435);
@@ -205,7 +208,7 @@ describe('saveOrder', () => {
     return Order.place({
       customer: customer!,
       catalog,
-      priceBook: await priceBookOf(1),
+      ...(await pricingOf(1)),
       draft: OrderDraft.fromInput(
         { fulfillment_type: 'delivery', fulfillment_date: '2026-08-28', items, note: 'Bitte kühl stellen' },
         NOW,
@@ -328,7 +331,7 @@ describe('saveOrder mit Absendekennung', () => {
     return Order.place({
       customer: customer!,
       catalog,
-      priceBook: await priceBookOf(customerId),
+      ...(await pricingOf(customerId)),
       draft: OrderDraft.fromInput(
         {
           fulfillment_type: customer!.defaultFulfillment,

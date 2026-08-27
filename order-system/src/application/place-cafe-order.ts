@@ -4,7 +4,7 @@ import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
 import { assertOrderableDay } from '../domain/order-policy';
-import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
+import { loadOrderPricing } from '../infrastructure/d1/customer-price-book-repository';
 import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
 import {
@@ -98,8 +98,8 @@ export async function placeCafeOrder(
   assertWithinLeadTime(draft.fulfillmentDate.value, command.now);
 
   /**
-   * SORTIMENT UND PREISWELT WERDEN HIER GELADEN — BEIM SCHREIBEN, NICHT BEIM
-   * RENDERN DER SEITE.
+   * SORTIMENT, PREISWELT UND HERSTELLKOSTEN WERDEN HIER GELADEN — BEIM
+   * SCHREIBEN, NICHT BEIM RENDERN DER SEITE.
    *
    * Das ist §14 des Auftrags. Zwischen dem Aufruf der Bestellseite und dem
    * Absenden können Minuten oder Stunden liegen; in dieser Zeit kann ein
@@ -112,9 +112,9 @@ export async function placeCafeOrder(
    * Idempotenz, und die Antwort nennt den tatsächlich gespeicherten Preis
    * ohnehin.
    */
-  const [catalog, priceBook, richtlinie] = await Promise.all([
+  const [catalog, pricing, richtlinie] = await Promise.all([
     loadCatalog(db),
-    loadCustomerPriceBook(db, customer),
+    loadOrderPricing(db, customer),
     loadOrderPolicy(db),
   ]);
 
@@ -142,7 +142,21 @@ export async function placeCafeOrder(
   const year = Number(businessDay(command.now).slice(0, 4));
   const orderNumber = await reserveOrderNumber(db, year);
 
-  const order = Order.place({ customer, catalog, priceBook, draft, orderNumber, now: command.now });
+  const order = Order.place({
+    customer,
+    catalog,
+    priceBook: pricing.priceBook,
+    /**
+     * DIE HERSTELLKOSTEN WERDEN HIER GELESEN — BEIM SCHREIBEN, wie der Preis
+     * und aus demselben Grund. Der Snapshot der Position hält damit den Stand
+     * fest, der im Augenblick des Schreibens galt; eine spätere Korrektur des
+     * Kostenwerts lässt diese Bestellung unberührt (§3 der Phase 7A).
+     */
+    costBook: pricing.costBook,
+    draft,
+    orderNumber,
+    now: command.now,
+  });
 
   try {
     await saveOrder(db, order, command.submissionId);

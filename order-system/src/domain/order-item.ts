@@ -13,6 +13,19 @@ export interface OrderItemData {
   productUnitSnapshot: string;
   unitPrice: Money;
   quantity: number;
+  /**
+   * Die internen Herstellkosten je Einheit zum Bestellzeitpunkt — oder null.
+   *
+   * PFLICHTFELD MIT ERLAUBTEM null, NICHT OPTIONAL. Der Unterschied ist der
+   * ganze Punkt: Ein `unitCost?: Money` ließe sich vergessen, und eine
+   * vergessene Kostenangabe sähe in der Datenbank genauso aus wie eine
+   * bewusst nicht gepflegte. So muss jeder Aufrufer — auch das Repository
+   * beim Zurücklesen — sich äußern.
+   *
+   * null heißt „für dieses Produkt waren damals keine Herstellkosten
+   * gepflegt" und niemals „0 €".
+   */
+  unitCost: Money | null;
 }
 
 /**
@@ -41,6 +54,15 @@ export class OrderItem {
   readonly unitPrice: Money;
   readonly quantity: number;
   readonly lineTotal: Money;
+  /**
+   * Der KOSTEN-Snapshot dieser Position — dieselbe Bauart wie unitPrice und
+   * aus demselben Grund.
+   *
+   * Ändert sich der Kostenwert des Produkts später, bleibt diese Position
+   * unverändert. Es gibt in dieser Klasse keinen Weg, den heutigen Wert
+   * nachzuschlagen: Sie kennt weder ein Kostenbuch noch eine Datenbank.
+   */
+  readonly unitCostSnapshot: Money | null;
 
   constructor(data: OrderItemData) {
     if (!Number.isInteger(data.productId) || data.productId <= 0) {
@@ -58,6 +80,7 @@ export class OrderItem {
     this.productUnitSnapshot = requireText(data.productUnitSnapshot, 20, 'Die Einheit der Position');
     this.unitPrice = data.unitPrice;
     this.quantity = data.quantity;
+    this.unitCostSnapshot = data.unitCost;
 
     // Die einzige Stelle, an der ein Positionsbetrag entsteht.
     this.lineTotal = data.unitPrice.multipliedBy(data.quantity);
@@ -78,14 +101,26 @@ export class OrderItem {
    * Money hereinkommt und nicht als Zahl, ist der Rest der Absicherung: Eine
    * Zahl aus einem Anfragekörper ist kein Money, und Money entsteht nur über
    * Money.fromCents mit seinen Grenzen.
+   *
+   * SEIT PHASE 7A KOMMEN DIE HERSTELLKOSTEN AUF DEMSELBEN WEG — als eigener
+   * Pflichtparameter aus ProductCostBook.costFor(), nicht aus dem Produkt und
+   * erst recht nicht aus der Anfrage. `null` ist ein zulässiger und ehrlicher
+   * Wert: Wo nichts gepflegt ist, wird nichts behauptet, und die Bestellung
+   * entsteht trotzdem.
    */
-  static forProduct(product: Product, unitPrice: Money, quantity: number): OrderItem {
+  static forProduct(
+    product: Product,
+    unitPrice: Money,
+    quantity: number,
+    unitCost: Money | null,
+  ): OrderItem {
     return new OrderItem({
       productId: product.id,
       productNameSnapshot: product.name,
       productUnitSnapshot: product.unit,
       unitPrice,
       quantity,
+      unitCost,
     });
   }
 }
