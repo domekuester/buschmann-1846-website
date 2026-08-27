@@ -56,7 +56,7 @@ export class Product {
 
     this.id = data.id;
     this.name = requireText(data.name, 120, 'Der Produktname');
-    this.unit = requireText(data.unit, 20, 'Die Einheit');
+    this.unit = requireText(data.unit, 120, 'Die Einheit');
     this.description = optionalText(data.description, 500, 'Die Beschreibung');
     this.isActive = data.isActive;
     this.sortOrder = data.sortOrder;

@@ -185,7 +185,7 @@ export async function seedDemo({ leise = false } = {}) {
   const erwartet = {
     kundenkonten: DEMO_CUSTOMER_LOGINS.length,
     kunden: bestand.customers.length,
-    produkte: bestand.catalogProducts.length,
+    produkte: bestand.orderableProducts.length,
     bestellungen: bestand.orders.length,
     leittagBestellungen: bestand.orders.filter((b) => b.fulfillmentDate === bestand.leittag).length,
   };

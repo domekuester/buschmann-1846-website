@@ -134,4 +134,9 @@ describe('Admin-Katalog HTML', () => {
     expect(html).toContain('class="bereichskopf"');
     expect(html).toContain('class="leerzustand"');
   });
+
+  it('kennzeichnet die sechsspaltige Katalogseite für die breite Desktopspalte', () => {
+    const html = renderAdminCatalogPage(VIEW);
+    expect(html).toContain('class="adminseite adminseite--katalogbreit"');
+  });
 });

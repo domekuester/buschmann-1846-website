@@ -404,7 +404,7 @@ export function renderAdminShell(
 <title>${escapeHtml(title)}</title>
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body class="adminseite${activeArea === 'dashboard' ? ' adminseite--breit' : ''}">
+<body class="adminseite${activeArea === 'dashboard' ? ' adminseite--breit' : activeArea === 'catalog' ? ' adminseite--katalogbreit' : ''}">
 <header class="kopf kopf--schmal">
   <p class="marke">Buschmann <span>1846</span></p>
   <nav class="adminnav" aria-label="Adminbereich">

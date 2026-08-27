@@ -69,8 +69,8 @@ Stelle der ganzen Demo: gleiches Sortiment, zwei Preiswelten.
 
 ## Was in der Demo steht
 
-* **9 Produkte** — Käsekuchen, Butterkuchen, Schokoladenkuchen, Croissant,
-  Baguette, Streuselschnecke, Obsttorte, Hochzeitstorte, Weihnachtsstollen
+* **26 Katalogprodukte** aus dem echten Buschmann-Sortiment; 25 davon können
+  mit ihrer vorhandenen Einheit auch im Bestellbereich gezeigt werden
 * **5 Kunden** — drei davon mit Zugang (siehe oben), zwei weitere bestellen
   nur mit, damit der Tag nach Betrieb aussieht
 * **18 Bestellungen**, verteilt auf mehrere Tage
@@ -79,8 +79,10 @@ Stelle der ganzen Demo: gleiches Sortiment, zwei Preiswelten.
 selbst: acht Bestellungen, alle Bestellstatus, alle Zahlungswege, eine
 stornierte.
 
-Alle Daten sind frei erfunden. Es sind keine echten Kunden, keine echten
-Preise und keine echten Herstellkosten enthalten.
+Sortiment sowie Gastronomie- und Privatkundenpreise stammen aus den echten
+Buschmann-Preislisten. Kunden, Bestellungen und Adressen sind reine
+Demo-Daten. Die Herstellkosten sind ebenfalls nur Beispielwerte und keine
+Buschmann-Buchhaltungsdaten.
 
 ---
 

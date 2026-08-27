@@ -77,7 +77,7 @@ export class OrderItem {
 
     this.productId = data.productId;
     this.productNameSnapshot = requireText(data.productNameSnapshot, 120, 'Der Produktname der Position');
-    this.productUnitSnapshot = requireText(data.productUnitSnapshot, 20, 'Die Einheit der Position');
+    this.productUnitSnapshot = requireText(data.productUnitSnapshot, 120, 'Die Einheit der Position');
     this.unitPrice = data.unitPrice;
     this.quantity = data.quantity;
     this.unitCostSnapshot = data.unitCost;

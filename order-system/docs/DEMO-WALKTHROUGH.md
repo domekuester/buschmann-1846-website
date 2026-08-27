@@ -8,8 +8,9 @@ sehen würde, dann der Weg einer einzelnen Bestellung, dann die Einstellungen
 dahinter. Wer mit den Einstellungen anfängt, führt eine Software vor; wer mit
 dem Dashboard anfängt, führt einen Arbeitstag vor.
 
-**Ein Satz vorweg:** Alle Zahlen und Namen sind erfunden. Das gehört gesagt,
-bevor jemand fragt.
+**Ein Satz vorweg:** Sortiment und Verkaufspreise stammen aus den echten
+Buschmann-Preislisten. Kunden, Bestellungen und Herstellkosten sind
+Demo-Daten. Das gehört gesagt, bevor jemand fragt.
 
 ---
 
@@ -86,11 +87,14 @@ abgeholt und die Rechnung offen sein — das System hält beides auseinander.
 **Zeigen:** Navigation → **Sortiment & Preise**.
 Gastronomie- und Privatpreis stehen nebeneinander in einer Tabelle.
 
-Auf **Käsekuchen** deuten: 4,35 € für Gastronomie, 5,20 € für Privatkunden.
+Auf **New York Cheese Classic** deuten: 22,00 € für Gastronomie, 40,00 € für
+Privatkunden.
 
-Und die Sonderfälle: **Obsttorte** steht auf „ab 24,00 €", die
-**Hochzeitstorte** auf „Auf Anfrage". Beide sind bewusst nicht online
-bestellbar.
+Und die Sonderfälle: **Diverse Blechkuchen** kosten für Gastronomie fest
+35,00 €, für Privatkunden dagegen „ab 55,00 €". **Traditionelle
+Weihnachtsplätzchen** stehen bei 3,00–4,50 €, **Bestimmte Kuchen nur
+saisonal** auf „Auf Anfrage". Aus diesen Angaben wird nie ein erfundener
+Festpreis gemacht.
 
 **Warum:** Zwei Preiswelten in einer Liste. Kein zweiter Katalog, keine
 Preisliste im Kopf.
@@ -102,7 +106,7 @@ Preisliste im Kopf.
 **Zeigen:** Dieselbe Seite, rechte Spalte **Herstellkosten**.
 Über der Tabelle steht ausdrücklich: nur intern sichtbar.
 
-Bei der **Streuselschnecke** ist das Feld leer.
+Bei **New York Cheese Frucht** ist das Feld leer.
 
 **Warum:** Daraus rechnet das Dashboard Rohertrag und Marge. Und wo ein Wert
 fehlt, sagt es das — im Dashboard steht dann „Kostenbasis unvollständig"
@@ -167,7 +171,8 @@ Beide auf Papier, weil in der Backstube kein Bildschirm steht.
 * **Bestellung senden** → Bestätigung mit Bestellnummer
 
 **Dann der Preisvergleich:** Abmelden, mit `PRIVATDEMO` anmelden.
-Dasselbe Sortiment, andere Preise. Käsekuchen jetzt 5,20 € statt 4,35 €.
+Dasselbe Sortiment, andere Preise. New York Cheese Classic jetzt 40,00 €
+statt 22,00 €.
 
 **Und der Grenzfall:** Abmelden, mit `KONDITOREI` anmelden.
 Keine Preise, keine Mengenauswahl, dafür eine Erklärung: für dieses

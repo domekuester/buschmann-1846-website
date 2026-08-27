@@ -1910,6 +1910,55 @@ textarea[aria-invalid='true'] {
   .katalogbereich .datentabelle td { padding-inline: .5rem; }
 }
 
+/* DIE KATALOGTABELLE BRAUCHT MEHR ALS DIE 44rem-LESESPALTE.
+   Zwischen 600px und 979px würde das allgemeine Tabellenmuster sechs
+   Spalten auf 656px zwingen. Der Browser macht die Tabelle deshalb 766px
+   breit; der interne Wrapper schneidet Herstellkosten und Speichern zunächst
+   ab. In diesem Bereich bleibt jede Produktzeile im vorhandenen Kartenmuster.
+   So bleibt jede Angabe direkt sichtbar, ohne Seiten- oder Tabellenscrollen. */
+@media (min-width: 600px) and (max-width: 979px) {
+  .katalogbereich .datentabelle thead { display: none; }
+
+  .katalogbereich .datentabelle tbody,
+  .katalogbereich .datentabelle tr,
+  .katalogbereich .datentabelle th,
+  .katalogbereich .datentabelle td { display: block; }
+
+  .katalogbereich .datentabelle tr {
+    margin-bottom: .9rem;
+    padding: .9rem;
+    border: var(--spur);
+    border-left: 3px solid var(--champagner);
+    border-radius: var(--radius);
+  }
+
+  .katalogbereich .datentabelle th[scope='row'] {
+    padding-bottom: .65rem;
+    font-size: 1.05rem;
+    border-bottom: var(--spur);
+  }
+
+  .katalogbereich .datentabelle td {
+    display: grid;
+    grid-template-columns: minmax(8rem, .8fr) 1fr;
+    gap: .75rem;
+    padding: .6rem 0 0;
+    border-bottom: 0;
+  }
+
+  .katalogbereich .datentabelle td::before { content: attr(data-label); }
+
+  .katalogbereich .datentabelle td.kostenzelle {
+    display: block;
+    padding-top: .8rem;
+  }
+
+  .katalogbereich .datentabelle td.kostenzelle::before {
+    display: block;
+    margin-bottom: .45rem;
+  }
+}
+
 /* Desktop bekommt KEINE zweite Gestaltung — nur die begrenzte Spalte, die
    .admin ohnehin trägt. Eine 1600px breite Datenwüste ist schwerer zu lesen
    als eine Spalte, auf dem Bildschirm wie auf Papier. */
@@ -1934,6 +1983,14 @@ textarea[aria-invalid='true'] {
      Auf einem breiten Bildschirm sassen dazwischen mehrere hundert Pixel
      Nichts. Sie richtet sich jetzt an derselben Spalte aus wie die Marke. */
   .adminseite .abmelden { right: calc((100% - 44rem) / 2); }
+}
+
+/* Ab 980px ist genug Platz für sechs echte Spalten. Katalog, Kopf und
+   Abmeldung richten sich dann gemeinsam an derselben 60rem-Spalte aus. */
+@media (min-width: 980px) {
+  .adminseite--katalogbreit .admin { max-width: 60rem; }
+  .adminseite--katalogbreit .kopf--schmal { padding-inline: calc((100% - 60rem) / 2); }
+  .adminseite--katalogbreit .abmelden { right: calc((100% - 60rem) / 2); }
 }
 
 /* ---------- Druck ---------- */

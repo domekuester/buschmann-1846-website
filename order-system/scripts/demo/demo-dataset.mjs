@@ -8,12 +8,10 @@
  * D1-Test entsteht wie in der laufenden Demo (tests/d1/demo-seed.test.ts).
  *
  * ╔══════════════════════════════════════════════════════════════════════╗
- * ║  ALLES HIER IST FREI ERFUNDEN.                                       ║
- * ║  Die Kunden, die Adressen, das Sortiment, die Preise, die            ║
- * ║  Herstellkosten und die Bestellungen. Es sind keine echten           ║
- * ║  Buschmann-Kunden und keine echten Preise enthalten — und es dürfen  ║
- * ║  auch keine eingetragen werden. Die echten Preislisten liegen in     ║
- * ║  order-system/source-data/ und gehören in kein Repository.           ║
+ * ║  KUNDEN, ADRESSEN, HERSTELLKOSTEN UND BESTELLUNGEN SIND FREI          ║
+ * ║  ERFUNDEN. Sortiment und Verkaufspreise kommen dagegen direkt aus    ║
+ * ║  dem normalisierten Phase-5A-Katalog unter source-data/derived/.      ║
+ * ║  Die Demo enthält weiterhin keine echten Buschmann-Kundendaten.      ║
  * ╚══════════════════════════════════════════════════════════════════════╝
  *
  * KEINE FESTEN KALENDERDATEN.
@@ -33,6 +31,9 @@
  * Ein Bestand, der HEUTE füllt, zeigte dem Betrachter eine leere Seite und
  * verlangte als Erstes einen Klick auf einen anderen Tag.
  */
+
+import catalogSource from '../../source-data/derived/catalog-pricing.json' with { type: 'json' };
+import { validateCatalogPricing } from '../catalog-pricing.mjs';
 
 /**
  * Tagesarithmetik auf 'JJJJ-MM-TT'.
@@ -78,45 +79,43 @@ export const GASTRO = 1;
 export const PRIVAT = 2;
 
 /**
- * DAS SORTIMENT.
+ * DAS SORTIMENT UND DIE VERKAUFSPREISE.
  *
- * Eine kleine, aber vollständige Bäckerei: Kuchen, Torten, Gebäck, Brot. Kein
- * „Produkt 1", kein „Test", kein „foo" — was ein Betreiber hier sieht, soll
- * aussehen wie sein eigenes Sortiment, damit er über die Software nachdenkt
- * und nicht über die Beispieldaten.
+ * Die normalisierte Phase-5A-Datei ist die einzige Wahrheit. Sie wird mit
+ * demselben Validator gelesen wie der lokale Katalogimport. Ein Produkt mit
+ * zwei Preislisten bleibt ein Produkt; fehlende Listenpreise und die Formen
+ * fixed/from/range/on_request bleiben unverändert.
  *
- * `cost` sind die HERSTELLKOSTEN in Cent, und NULL heißt „noch nicht
- * gepflegt" — nicht „kostet nichts" (Migration 0017). Genau zwei Artikel
- * stehen bewusst auf NULL:
- *
- *   Streuselschnecke  → sie ist BESTELLBAR und taucht in einer Bestellung
- *                       auf. Damit ist die Kostenbasis des betroffenen Tages
- *                       unvollständig, und das Dashboard sagt das auch. Diese
- *                       Lücke ist der Beweis, dass die Zahlen nicht geraten
- *                       werden.
- *   Hochzeitstorte    → sie wird ohnehin auf Anfrage kalkuliert.
- *
- * Der LEITTAG bleibt davon unberührt: Die Streuselschnecke kommt dort in
- * keiner Bestellung vor. Wer die Demo öffnet, sieht zuerst einen vollständig
- * gerechneten Tag mit Rohertrag und Marge.
+ * `cost` ist ausdrücklich nur ein DEMO-WERT. Gepflegt sind die Artikel, die
+ * für die Beispielbestellungen gebraucht werden. New York Cheese Frucht
+ * bleibt offen und kommt nur außerhalb des Leittags vor: So bleibt der
+ * Haupttag vollständig kalkuliert, während die unvollständige Kostenbasis
+ * weiterhin ehrlich vorgeführt werden kann.
  */
-export const CATALOG_PRODUCTS = Object.freeze([
-  { id: 201, key: 'demo-kaesekuchen',     name: 'Käsekuchen',        unit: 'Stück', category: 'Kuchen',  sort: 10, cost: 210,  gastro: 435,  privat: 520 },
-  { id: 202, key: 'demo-butterkuchen',    name: 'Butterkuchen',      unit: 'Blech', category: 'Kuchen',  sort: 20, cost: 1180, gastro: 2400, privat: 2900 },
-  { id: 203, key: 'demo-schokokuchen',    name: 'Schokoladenkuchen', unit: 'Stück', category: 'Kuchen',  sort: 30, cost: 185,  gastro: 395,  privat: 470 },
-  { id: 204, key: 'demo-croissant',       name: 'Croissant',         unit: 'Stück', category: 'Gebäck',  sort: 40, cost: 42,   gastro: 105,  privat: 140 },
-  { id: 205, key: 'demo-baguette',        name: 'Baguette',          unit: 'Stück', category: 'Brot',    sort: 50, cost: 68,   gastro: 165,  privat: 210 },
-  { id: 206, key: 'demo-streuselschnecke',name: 'Streuselschnecke',  unit: 'Stück', category: 'Gebäck',  sort: 60, cost: null, gastro: 130,  privat: 170 },
-  // „ab …" — der Preis hängt an der Größe. Nicht unmittelbar bestellbar, und
-  // genau das soll die Bestellseite auch zeigen.
-  { id: 207, key: 'demo-obsttorte',       name: 'Obsttorte',         unit: 'Torte', category: 'Torten',  sort: 70, cost: 950,  gastroFrom: 2400, privatFrom: 2900 },
-  // „Auf Anfrage" — Hochzeitstorten werden besprochen, nicht angeklickt.
-  { id: 208, key: 'demo-hochzeitstorte',  name: 'Hochzeitstorte',    unit: 'Torte', category: 'Torten',  sort: 80, cost: null, aufAnfrage: true },
-  // Saisonartikel: bepreist, aber als Bestellprodukt abgeschaltet. Er steht
-  // im Sortiment und fehlt auf der Bestellseite — der sichtbare Unterschied
-  // zwischen „gibt es" und „gibt es gerade".
-  { id: 209, key: 'demo-stollen',         name: 'Weihnachtsstollen', unit: 'Stück', category: 'Saison',  sort: 90, cost: 340,  gastro: 1290, privat: 1590, inaktiv: true },
-]);
+const REAL_CATALOG = validateCatalogPricing(catalogSource);
+
+const DEMO_COSTS = Object.freeze({
+  'cake:new-york-cheese-classic:ring-26': 900,
+  'cake:american-cheese-chocolate:ring-26': 940,
+  'cake:covered-apple-vegan:ring-26': 880,
+  'cake:apple-crumble-vegan:ring-26': 920,
+  'cake:cheesecake:ring-26': 880,
+  'cake:lemon-poppy:ring-or-loaf': 800,
+});
+
+export const CATALOG_PRODUCTS = Object.freeze(
+  REAL_CATALOG.products.map((product, index) => Object.freeze({
+    id: 201 + index,
+    key: product.source_key,
+    name: product.name,
+    variant: product.variant,
+    unit: product.unit,
+    category: product.category,
+    sort: product.sort_order,
+    prices: Object.freeze(product.prices),
+    cost: DEMO_COSTS[product.source_key] ?? null,
+  })),
+);
 
 /**
  * DIE KUNDEN.
@@ -203,22 +202,22 @@ export const DEMO_POLICY = Object.freeze({
  */
 const ORDER_PLAN = Object.freeze([
   // ── Der Leittag: acht Bestellungen, alle Status, alle Zahlungswege ────────
-  { seq: 101, tag: 1, kunde: 1, status: 'completed',     zahlung: 'paid_bank', positionen: [[201, 8], [204, 60]] },
-  { seq: 102, tag: 1, kunde: 4, status: 'in_production', zahlung: 'unpaid',    positionen: [[202, 2], [205, 30]] },
-  { seq: 103, tag: 1, kunde: 5, status: 'confirmed',     zahlung: 'paid_card', positionen: [[203, 6], [201, 4]] },
-  { seq: 104, tag: 1, kunde: 3, status: 'new',           zahlung: 'unpaid',    positionen: [[201, 2], [204, 6]] },
-  { seq: 105, tag: 1, kunde: 1, status: 'new',           zahlung: 'unpaid',    positionen: [[205, 20]] },
-  { seq: 106, tag: 1, kunde: 5, status: 'confirmed',     zahlung: 'unpaid',    positionen: [[202, 1], [203, 10]] },
-  { seq: 107, tag: 1, kunde: 3, status: 'completed',     zahlung: 'paid_cash', positionen: [[202, 1]] },
+  { seq: 101, tag: 1, kunde: 1, status: 'completed',     zahlung: 'paid_bank', positionen: [['cake:new-york-cheese-classic:ring-26', 8], ['cake:cheesecake:ring-26', 6]] },
+  { seq: 102, tag: 1, kunde: 4, status: 'in_production', zahlung: 'unpaid',    positionen: [['cake:apple-crumble-vegan:ring-26', 2], ['cake:lemon-poppy:ring-or-loaf', 3]] },
+  { seq: 103, tag: 1, kunde: 5, status: 'confirmed',     zahlung: 'paid_card', positionen: [['cake:american-cheese-chocolate:ring-26', 6], ['cake:new-york-cheese-classic:ring-26', 4]] },
+  { seq: 104, tag: 1, kunde: 3, status: 'new',           zahlung: 'unpaid',    positionen: [['cake:new-york-cheese-classic:ring-26', 2], ['cake:cheesecake:ring-26', 2]] },
+  { seq: 105, tag: 1, kunde: 1, status: 'new',           zahlung: 'unpaid',    positionen: [['cake:lemon-poppy:ring-or-loaf', 2]] },
+  { seq: 106, tag: 1, kunde: 5, status: 'confirmed',     zahlung: 'unpaid',    positionen: [['cake:apple-crumble-vegan:ring-26', 1], ['cake:american-cheese-chocolate:ring-26', 10]] },
+  { seq: 107, tag: 1, kunde: 3, status: 'completed',     zahlung: 'paid_cash', positionen: [['cake:apple-crumble-vegan:ring-26', 1]] },
   // Genau eine stornierte Bestellung. Sie zählt nicht zum Umsatz, steht aber
   // sichtbar da — das Dashboard weist sie getrennt aus, statt sie zu
   // verschweigen.
-  { seq: 108, tag: 1, kunde: 1, status: 'cancelled',     zahlung: 'unpaid',    positionen: [[201, 5]] },
+  { seq: 108, tag: 1, kunde: 1, status: 'cancelled',     zahlung: 'unpaid',    positionen: [['cake:new-york-cheese-classic:ring-26', 5]] },
 
-  // ── Heute: der Tag mit der Kostenlücke (Streuselschnecke, 206) ────────────
-  { seq: 109, tag: 0, kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [[206, 40], [204, 20]] },
-  { seq: 110, tag: 0, kunde: 5, status: 'completed', zahlung: 'paid_cash', positionen: [[201, 10]] },
-  { seq: 111, tag: 0, kunde: 3, status: 'completed', zahlung: 'unpaid',    positionen: [[204, 8], [205, 4]] },
+  // ── Heute: der Tag mit der Kostenlücke (New York Cheese Frucht) ──────────
+  { seq: 109, tag: 0, kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [['cake:new-york-cheese-fruit:ring-26', 4], ['cake:cheesecake:ring-26', 2]] },
+  { seq: 110, tag: 0, kunde: 5, status: 'completed', zahlung: 'paid_cash', positionen: [['cake:new-york-cheese-classic:ring-26', 10]] },
+  { seq: 111, tag: 0, kunde: 3, status: 'completed', zahlung: 'unpaid',    positionen: [['cake:cheesecake:ring-26', 2], ['cake:lemon-poppy:ring-or-loaf', 1]] },
 
   // ── Die kommenden Tage: damit die Woche nicht an einem Tag hängt ──────────
   //
@@ -227,15 +226,15 @@ const ORDER_PLAN = Object.freeze([
   // sechs leere Tage. Bestellungen bis +4 sorgen dafür, dass an JEDEM
   // Wochentag mehrere Zeilen der Woche gefüllt sind und die Ansicht nicht
   // wie ein Ausfall aussieht.
-  { seq: 112, tag: 2, kunde: 4, status: 'new', zahlung: 'unpaid', positionen: [[201, 20]] },
-  { seq: 113, tag: 2, kunde: 1, status: 'new', zahlung: 'unpaid', positionen: [[202, 2], [204, 30]] },
-  { seq: 117, tag: 3, kunde: 4, status: 'new', zahlung: 'unpaid', positionen: [[204, 40], [205, 10]] },
-  { seq: 118, tag: 4, kunde: 5, status: 'new', zahlung: 'unpaid', positionen: [[203, 12]] },
+  { seq: 112, tag: 2, kunde: 4, status: 'new', zahlung: 'unpaid', positionen: [['cake:new-york-cheese-classic:ring-26', 20]] },
+  { seq: 113, tag: 2, kunde: 1, status: 'new', zahlung: 'unpaid', positionen: [['cake:apple-crumble-vegan:ring-26', 2], ['cake:cheesecake:ring-26', 3]] },
+  { seq: 117, tag: 3, kunde: 4, status: 'new', zahlung: 'unpaid', positionen: [['cake:cheesecake:ring-26', 4], ['cake:lemon-poppy:ring-or-loaf', 1]] },
+  { seq: 118, tag: 4, kunde: 5, status: 'new', zahlung: 'unpaid', positionen: [['cake:american-cheese-chocolate:ring-26', 12]] },
 
   // ── Vergangenheit: die Historie des Café Morgenrot ────────────────────────
-  { seq: 114, tag: -7,  kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [[201, 10], [204, 50]] },
-  { seq: 115, tag: -14, kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [[205, 40]] },
-  { seq: 116, tag: -21, kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [[202, 3]] },
+  { seq: 114, tag: -7,  kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [['cake:new-york-cheese-classic:ring-26', 10], ['cake:cheesecake:ring-26', 5]] },
+  { seq: 115, tag: -14, kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [['cake:lemon-poppy:ring-or-loaf', 4]] },
+  { seq: 116, tag: -21, kunde: 1, status: 'completed', zahlung: 'paid_bank', positionen: [['cake:apple-crumble-vegan:ring-26', 3]] },
 ]);
 
 /**
@@ -250,16 +249,16 @@ const ORDER_PLAN = Object.freeze([
 const NEXT_ORDER_SEQUENCE = 120;
 
 /** Der Preis eines Katalogprodukts in einer Preisgruppe, in Cent. */
-function preis(katalogId, priceListId) {
-  const artikel = CATALOG_PRODUCTS.find((p) => p.id === katalogId);
-  const wert = priceListId === PRIVAT ? artikel?.privat : artikel?.gastro;
-  if (typeof wert !== 'number') {
+function preis(artikel, priceListId) {
+  const code = priceListId === PRIVAT ? 'private' : 'gastro';
+  const wert = artikel?.prices[code];
+  if (wert?.type !== 'fixed') {
     throw new Error(
-      `Demo-Bestand: Katalogprodukt ${katalogId} hat in Preisgruppe ${priceListId} keinen Festpreis. ` +
+      `Demo-Bestand: Katalogprodukt ${artikel?.key ?? 'unbekannt'} hat in Preisgruppe ${priceListId} keinen Festpreis. ` +
         'Nur Festpreisartikel dürfen in einer Bestellung vorkommen.',
     );
   }
-  return wert;
+  return wert.price_cents;
 }
 
 /**
@@ -284,11 +283,14 @@ export function buildOrders(heute) {
     }
 
     const tag = plusDays(heute, plan.tag);
-    const positionen = plan.positionen.map(([katalogId, menge]) => {
-      const artikel = CATALOG_PRODUCTS.find((p) => p.id === katalogId);
-      const einzelpreis = preis(katalogId, kunde.priceListId);
+    const positionen = plan.positionen.map(([katalogKey, menge]) => {
+      const artikel = CATALOG_PRODUCTS.find((p) => p.key === katalogKey);
+      if (artikel === undefined) {
+        throw new Error(`Demo-Bestand: Unbekanntes Katalogprodukt ${katalogKey}.`);
+      }
+      const einzelpreis = preis(artikel, kunde.priceListId);
       return {
-        productId: katalogId - 200,
+        productId: artikel.id - 200,
         name: artikel.name,
         unit: artikel.unit,
         unitPriceCents: einzelpreis,
@@ -329,6 +331,7 @@ export function buildDemoDataset(heute) {
     heute,
     leittag: plusDays(heute, 1),
     catalogProducts: CATALOG_PRODUCTS,
+    orderableProducts: CATALOG_PRODUCTS.filter((product) => product.unit !== null),
     customers: CUSTOMERS,
     policy: DEMO_POLICY,
     orders: buildOrders(heute),
@@ -338,19 +341,14 @@ export function buildDemoDataset(heute) {
 
 /** Die Preiszeile eines Katalogprodukts für eine Preisgruppe — oder null. */
 function preiszeile(artikel, priceListId, jetzt) {
-  const spalte = priceListId === PRIVAT ? 'privat' : 'gastro';
-  const abSpalte = priceListId === PRIVAT ? 'privatFrom' : 'gastroFrom';
+  const code = priceListId === PRIVAT ? 'private' : 'gastro';
+  const preis = artikel.prices[code];
+  if (preis === undefined) return null;
 
-  if (artikel.aufAnfrage === true) {
-    return `(${artikel.id}, ${priceListId}, 'on_request', NULL, NULL, NULL, ${text(jetzt)}, ${text(jetzt)})`;
-  }
-  if (typeof artikel[abSpalte] === 'number') {
-    return `(${artikel.id}, ${priceListId}, 'from', NULL, ${artikel[abSpalte]}, NULL, ${text(jetzt)}, ${text(jetzt)})`;
-  }
-  if (typeof artikel[spalte] === 'number') {
-    return `(${artikel.id}, ${priceListId}, 'fixed', ${artikel[spalte]}, NULL, NULL, ${text(jetzt)}, ${text(jetzt)})`;
-  }
-  return null;
+  const fest = preis.type === 'fixed' ? preis.price_cents : null;
+  const minimum = preis.type === 'from' || preis.type === 'range' ? preis.min_price_cents : null;
+  const maximum = preis.type === 'range' ? preis.max_price_cents : null;
+  return `(${artikel.id}, ${priceListId}, ${text(preis.type)}, ${zahl(fest)}, ${zahl(minimum)}, ${zahl(maximum)}, ${text(jetzt)}, ${text(jetzt)})`;
 }
 
 /**
@@ -448,7 +446,7 @@ export async function demoSeedStatements({
       bestand.catalogProducts
         .map(
           (a) =>
-            `    (${a.id}, ${text(a.key)}, ${text(a.name)}, NULL, ${text(a.unit)}, ${text(a.category)}, 1, ${a.sort}, ${zahl(a.cost)}, ${text(jetzt)}, ${text(jetzt)})`,
+            `    (${a.id}, ${text(a.key)}, ${text(a.name)}, ${text(a.variant)}, ${text(a.unit)}, ${text(a.category)}, 1, ${a.sort}, ${zahl(a.cost)}, ${text(jetzt)}, ${text(jetzt)})`,
         )
         .join(',\n') + ';',
   );
@@ -475,10 +473,10 @@ export async function demoSeedStatements({
    */
   anweisungen.push(
     'INSERT INTO products (id, name, description, price_cents, unit, is_active, sort_order, catalog_product_id, created_at, updated_at) VALUES\n' +
-      bestand.catalogProducts
+      bestand.orderableProducts
         .map(
           (a) =>
-            `    (${a.id - 200}, ${text(a.name)}, NULL, 0, ${text(a.unit)}, ${a.inaktiv === true ? 0 : 1}, ${a.sort}, ${a.id}, ${text(jetzt)}, ${text(jetzt)})`,
+            `    (${a.id - 200}, ${text(a.name)}, ${text(a.variant)}, 0, ${text(a.unit)}, 1, ${a.sort}, ${a.id}, ${text(jetzt)}, ${text(jetzt)})`,
         )
         .join(',\n') + ';',
   );

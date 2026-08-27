@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   REQUIRED_SECRET_NAMES,
   checkAssetReferences,
+  checkCanonicalCatalogSource,
   checkNoCommittedSecrets,
   checkWranglerConfig,
   referencedAssets,
@@ -113,5 +114,37 @@ describe('checkNoCommittedSecrets', () => {
     expect(checkNoCommittedSecrets(['order-system/source-data/preise.pdf']).join(' ')).toMatch(
       /source-data/,
     );
+  });
+
+  it('erlaubt ausschließlich den normalisierten kanonischen Katalog unter source-data', () => {
+    expect(
+      checkNoCommittedSecrets([
+        'order-system/source-data/derived/catalog-pricing.json',
+      ]),
+    ).toEqual([]);
+    expect(
+      checkNoCommittedSecrets([
+        'source-data/derived/catalog-pricing.json',
+      ]),
+    ).toEqual([]);
+    expect(
+      checkNoCommittedSecrets([
+        'order-system/source-data/derived/anderer-katalog.json',
+      ]).join(' '),
+    ).toMatch(/source-data/);
+  });
+});
+
+describe('checkCanonicalCatalogSource', () => {
+  it('LEHNT AB, wenn der kanonische Katalog fehlt', () => {
+    expect(checkCanonicalCatalogSource({ exists: false, ignored: false }).join(' ')).toMatch(/fehlt/i);
+  });
+
+  it('LEHNT AB, wenn der kanonische Katalog ignoriert ist', () => {
+    expect(checkCanonicalCatalogSource({ exists: true, ignored: true }).join(' ')).toMatch(/ignoriert/i);
+  });
+
+  it('akzeptiert einen vorhandenen, nicht ignorierten kanonischen Katalog', () => {
+    expect(checkCanonicalCatalogSource({ exists: true, ignored: false })).toEqual([]);
   });
 });

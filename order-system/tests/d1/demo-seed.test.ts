@@ -7,12 +7,17 @@ import {
 } from '../../scripts/demo/demo-config.mjs';
 import { buildDemoDataset, demoSeedStatements } from '../../scripts/demo/demo-dataset.mjs';
 import type { AppConfig } from '../../src/config/app-config';
+import { changeOrderStatus } from '../../src/application/change-order-status';
 import { getDashboardDay } from '../../src/application/get-dashboard-day';
 import { getDashboardWeek } from '../../src/application/get-dashboard-week';
 import { getProductionDay } from '../../src/application/get-production-day';
 import { logIn } from '../../src/application/log-in';
 import { placeCafeOrder } from '../../src/application/place-cafe-order';
 import { plusDays, weekStart } from '../../src/domain/clock';
+import { InvalidArgumentError } from '../../src/domain/errors';
+import { Money } from '../../src/domain/money';
+import { OrderItem } from '../../src/domain/order-item';
+import { OrderNumber } from '../../src/domain/order-number';
 import { MIN_ITERATIONS } from '../../src/infrastructure/auth/credential';
 import { loadCustomerOrderHistory } from '../../src/infrastructure/d1/customer-history-repository';
 import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
@@ -86,9 +91,7 @@ describe('Der Demo-Bestand entsteht vollständig', () => {
     expect(await zaehle('SELECT COUNT(*) AS n FROM catalog_products')).toBe(
       bestand.catalogProducts.length,
     );
-    expect(await zaehle('SELECT COUNT(*) AS n FROM products')).toBe(
-      bestand.catalogProducts.length,
-    );
+    expect(await zaehle('SELECT COUNT(*) AS n FROM products')).toBe(25);
     expect(await zaehle('SELECT COUNT(*) AS n FROM orders')).toBe(bestand.orders.length);
   });
 
@@ -101,12 +104,78 @@ describe('Der Demo-Bestand entsteht vollständig', () => {
     expect(await zaehle('SELECT COUNT(*) AS n FROM products WHERE catalog_product_id IS NULL')).toBe(0);
   });
 
+  it('bewahrt den Katalogeintrag ohne Einheit, ohne eine bestellbare Einheit zu erfinden', async () => {
+    expect(await zaehle(
+      "SELECT COUNT(*) AS n FROM catalog_products WHERE source_key = 'cake:seasonal-assortment' AND unit IS NULL",
+    )).toBe(1);
+    expect(await zaehle(
+      "SELECT COUNT(*) AS n FROM products p JOIN catalog_products c ON c.id = p.catalog_product_id WHERE c.source_key = 'cake:seasonal-assortment'",
+    )).toBe(0);
+  });
+
+  it('lädt den realen Katalog mit beiden Preislisten und allen Preisformen', async () => {
+    expect(await zaehle('SELECT COUNT(*) AS n FROM catalog_products')).toBe(26);
+    expect(await zaehle('SELECT COUNT(DISTINCT source_key) AS n FROM catalog_products')).toBe(26);
+    expect(await zaehle(
+      "SELECT COUNT(*) AS n FROM catalog_product_prices p JOIN price_lists l ON l.id = p.price_list_id WHERE l.code = 'gastro'",
+    )).toBe(21);
+    expect(await zaehle(
+      "SELECT COUNT(*) AS n FROM catalog_product_prices p JOIN price_lists l ON l.id = p.price_list_id WHERE l.code = 'private'",
+    )).toBe(24);
+
+    const { results } = await env.DB.prepare(
+      'SELECT price_type, COUNT(*) AS n FROM catalog_product_prices GROUP BY price_type ORDER BY price_type',
+    ).all<{ price_type: string; n: number }>();
+    expect(results).toEqual([
+      { price_type: 'fixed', n: 42 },
+      { price_type: 'from', n: 1 },
+      { price_type: 'on_request', n: 1 },
+      { price_type: 'range', n: 1 },
+    ]);
+  });
+
+  it('speichert repräsentative echte Produkte mit den normalisierten Preisen', async () => {
+    const { results } = await env.DB.prepare(
+      `SELECT p.source_key, l.code, pp.price_type, pp.price_cents, pp.min_price_cents, pp.max_price_cents
+         FROM catalog_products p
+         JOIN catalog_product_prices pp ON pp.product_id = p.id
+         JOIN price_lists l ON l.id = pp.price_list_id
+        WHERE p.source_key IN ('cake:new-york-cheese-classic:ring-26', 'cake:assorted-sheet', 'seasonal:christmas-cookies:100g')
+        ORDER BY p.source_key, l.code`,
+    ).all();
+
+    expect(results).toEqual([
+      { source_key: 'cake:assorted-sheet', code: 'gastro', price_type: 'fixed', price_cents: 3500, min_price_cents: null, max_price_cents: null },
+      { source_key: 'cake:assorted-sheet', code: 'private', price_type: 'from', price_cents: null, min_price_cents: 5500, max_price_cents: null },
+      { source_key: 'cake:new-york-cheese-classic:ring-26', code: 'gastro', price_type: 'fixed', price_cents: 2200, min_price_cents: null, max_price_cents: null },
+      { source_key: 'cake:new-york-cheese-classic:ring-26', code: 'private', price_type: 'fixed', price_cents: 4000, min_price_cents: null, max_price_cents: null },
+      { source_key: 'seasonal:christmas-cookies:100g', code: 'private', price_type: 'range', price_cents: null, min_price_cents: 300, max_price_cents: 450 },
+    ]);
+  });
+
   it('hält die Herstellkosten genau dort offen, wo es Absicht ist', async () => {
     const { results } = await env.DB.prepare(
       'SELECT name FROM catalog_products WHERE unit_cost_cents IS NULL ORDER BY name',
     ).all<{ name: string }>();
 
-    expect(results.map((z) => z.name)).toEqual(['Hochzeitstorte', 'Streuselschnecke']);
+    expect(results.map((z) => z.name)).toContain('New York Cheese Frucht');
+  });
+
+  it('akzeptiert Einheiten-Snapshots bis 120 Zeichen und lehnt längere ab', () => {
+    const position = {
+      productId: 1,
+      productNameSnapshot: 'Beispielkuchen',
+      unitPrice: Money.fromCents(100),
+      quantity: 1,
+      unitCost: null,
+    };
+
+    expect(
+      new OrderItem({ ...position, productUnitSnapshot: 'a'.repeat(120) }).productUnitSnapshot,
+    ).toHaveLength(120);
+    expect(
+      () => new OrderItem({ ...position, productUnitSnapshot: 'a'.repeat(121) }),
+    ).toThrow(InvalidArgumentError);
   });
 });
 
@@ -283,7 +352,7 @@ describe('Der Seed ist beliebig wiederholbar', () => {
 
     expect(await zaehle('SELECT COUNT(*) AS n FROM orders')).toBe(bestand.orders.length);
     expect(await zaehle('SELECT COUNT(*) AS n FROM customers')).toBe(bestand.customers.length);
-    expect(await zaehle('SELECT COUNT(*) AS n FROM products')).toBe(bestand.catalogProducts.length);
+    expect(await zaehle('SELECT COUNT(*) AS n FROM products')).toBe(25);
     expect(await zaehle('SELECT COUNT(*) AS n FROM auth_accounts')).toBe(
       DEMO_CUSTOMER_LOGINS.length + 1,
     );
@@ -303,5 +372,40 @@ describe('Der Seed ist beliebig wiederholbar', () => {
 
   it('lässt die Demokonten nach dem zweiten Lauf weiterhin herein', async () => {
     expect(await anmelden(DEMO_ADMIN.identifier, DEMO_ADMIN.secret)).not.toBeNull();
+  });
+
+  it('bestätigt BUS-2026-000105 trotz der langen gespeicherten Einheit', async () => {
+    const vorher = await env.DB.prepare(
+      `SELECT o.status, oi.product_unit_snapshot
+         FROM orders o
+         JOIN order_items oi ON oi.order_id = o.id
+        WHERE o.order_number = 'BUS-2026-000105'`,
+    ).first<{ status: string; product_unit_snapshot: string }>();
+
+    expect(vorher).toEqual({
+      status: 'new',
+      product_unit_snapshot: '30 cm Kasten oder 26 cm Ring',
+    });
+
+    const ergebnis = await changeOrderStatus(env.DB, {
+      orderNumber: OrderNumber.fromString('BUS-2026-000105'),
+      target: 'confirmed',
+      now: new Date('2026-08-28T08:00:00.000Z'),
+      actorAccountId: 1,
+    });
+
+    expect(ergebnis.outcome).toBe('changed');
+    expect(
+      await env.DB.prepare(
+        `SELECT status, status_changed_by_account_id, status_changed_at, updated_at
+           FROM orders
+          WHERE order_number = 'BUS-2026-000105'`,
+      ).first(),
+    ).toEqual({
+      status: 'confirmed',
+      status_changed_by_account_id: 1,
+      status_changed_at: '2026-08-28T08:00:00.000Z',
+      updated_at: '2026-08-28T08:00:00.000Z',
+    });
   });
 });

@@ -36,6 +36,17 @@ import { PAYMENT_STATUSES } from '../../src/domain/payment-status';
 /** Ein Tag, der bewusst NICHT „heute" ist: Der Bestand darf nicht daran hängen. */
 const HEUTE = '2026-08-27';
 
+type DemoCatalogProduct = {
+  id: number;
+  key: string;
+  prices: Record<string, {
+    type: 'fixed' | 'from' | 'range' | 'on_request';
+    price_cents?: number;
+    min_price_cents?: number;
+    max_price_cents?: number;
+  }>;
+};
+
 const CREDENTIAL_ARGS = {
   pepper: DEMO_PEPPER,
   // 1000 statt 600 000: Diese Datei prüft den BESTAND, nicht das
@@ -72,6 +83,37 @@ describe('Tagesarithmetik der Demo', () => {
 });
 
 describe('Demo-Bestand', () => {
+  it('verwendet den vollständigen normalisierten Buschmann-Katalog ohne doppelte Identitäten', () => {
+    expect(CATALOG_PRODUCTS).toHaveLength(26);
+
+    const schluessel = CATALOG_PRODUCTS.map((produkt: DemoCatalogProduct) => produkt.key);
+    expect(new Set(schluessel).size).toBe(26);
+    expect(schluessel).toContain('cake:new-york-cheese-classic:ring-26');
+    expect(schluessel).toContain('seasonal:duesseldorf-christstollen:100g');
+  });
+
+  it('bewahrt beide Preislisten, alle Preisformen und einseitige Preise quelltreu', () => {
+    const nachSchluessel = (key: string) => CATALOG_PRODUCTS.find(
+      (produkt: DemoCatalogProduct) => produkt.key === key,
+    ) as DemoCatalogProduct | undefined;
+
+    expect(nachSchluessel('cake:new-york-cheese-classic:ring-26')?.prices).toEqual({
+      gastro: { type: 'fixed', price_cents: 2200 },
+      private: { type: 'fixed', price_cents: 4000 },
+    });
+    expect(nachSchluessel('cake:assorted-sheet')?.prices.private).toEqual({
+      type: 'from', min_price_cents: 5500,
+    });
+    expect(nachSchluessel('seasonal:christmas-cookies:100g')?.prices.private).toEqual({
+      type: 'range', min_price_cents: 300, max_price_cents: 450,
+    });
+    expect(nachSchluessel('cake:seasonal-assortment')?.prices).toEqual({
+      private: { type: 'on_request' },
+    });
+    expect(nachSchluessel('cake:marble:ring-26')?.prices.private).toBeUndefined();
+    expect(nachSchluessel('cake:marble:loaf-30')?.prices.gastro).toBeUndefined();
+  });
+
   it('legt den Leittag auf morgen — die Voreinstellung aller Adminseiten', () => {
     const bestand = buildDemoDataset(HEUTE);
     expect(bestand.leittag).toBe(plusDays(HEUTE, 1));
@@ -129,9 +171,25 @@ describe('Demo-Bestand', () => {
       expect(kunde).toBeDefined();
 
       for (const position of bestellung.items) {
-        const artikel = CATALOG_PRODUCTS.find((a) => a.id === position.productId + 200);
-        const erwartet = kunde?.priceListId === 2 ? artikel?.privat : artikel?.gastro;
-        expect(position.unitPriceCents).toBe(erwartet);
+        const artikel = CATALOG_PRODUCTS.find(
+          (a: DemoCatalogProduct) => a.id === position.productId + 200,
+        ) as DemoCatalogProduct | undefined;
+        const code = kunde?.priceListId === 2 ? 'private' : 'gastro';
+        const preis = artikel?.prices[code];
+        expect(preis?.type).toBe('fixed');
+        expect(position.unitPriceCents).toBe(preis?.type === 'fixed' ? preis.price_cents : undefined);
+      }
+    }
+  });
+
+  it('lässt jede Demo-Bestellposition auf ein reales Katalogprodukt zeigen', () => {
+    const produktIds = new Set(CATALOG_PRODUCTS.map(
+      (produkt: DemoCatalogProduct) => produkt.id - 200,
+    ));
+
+    for (const bestellung of buildDemoDataset(HEUTE).orders) {
+      for (const position of bestellung.items) {
+        expect(produktIds.has(position.productId)).toBe(true);
       }
     }
   });

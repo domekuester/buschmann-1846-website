@@ -18,7 +18,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 
 /**
@@ -29,6 +29,7 @@ import { join } from 'node:path';
  * Deployment, dem beim Start etwas fehlt.
  */
 export const REQUIRED_SECRET_NAMES = Object.freeze(['AUTH_PEPPER', 'APP_ORIGIN', 'ENVIRONMENT']);
+export const CANONICAL_CATALOG_SOURCE = 'source-data/derived/catalog-pricing.json';
 
 /**
  * Was in der eingecheckten Wrangler-Konfiguration stehen muss — und was
@@ -100,9 +101,24 @@ export function checkNoCommittedSecrets(getrackteDateien) {
       befunde.push(`Geheimnisdatei ist eingecheckt: ${datei}`);
     }
 
-    if (datei.includes('source-data/')) {
-      befunde.push(`Quelldaten (echte Preislisten) sind eingecheckt: ${datei}`);
+    const istKanonischerKatalog =
+      datei === CANONICAL_CATALOG_SOURCE || datei === `order-system/${CANONICAL_CATALOG_SOURCE}`;
+    if (datei.includes('source-data/') && !istKanonischerKatalog) {
+      befunde.push(`Nicht erlaubte Quelldatei ist für Git sichtbar: ${datei}`);
     }
+  }
+
+  return befunde;
+}
+
+export function checkCanonicalCatalogSource({ exists, ignored }) {
+  const befunde = [];
+
+  if (!exists) {
+    befunde.push(`Kanonischer Demo-Katalog fehlt: ${CANONICAL_CATALOG_SOURCE}`);
+  }
+  if (ignored) {
+    befunde.push(`Kanonischer Demo-Katalog wird von Git ignoriert: ${CANONICAL_CATALOG_SOURCE}`);
   }
 
   return befunde;
@@ -110,6 +126,18 @@ export function checkNoCommittedSecrets(getrackteDateien) {
 
 function git(args) {
   return execFileSync('git', args, { encoding: 'utf8' }).trim();
+}
+
+function gitPathIsIgnored(path) {
+  try {
+    execFileSync('git', ['check-ignore', '--quiet', '--', path], { stdio: 'ignore' });
+    return true;
+  } catch (error) {
+    if (typeof error === 'object' && error !== null && error.status === 1) {
+      return false;
+    }
+    throw error;
+  }
 }
 
 /** JSONC → JSON: Kommentare und abschließende Kommata entfernen. */
@@ -132,7 +160,26 @@ function main() {
 
   melde('Keine Geheimnisse in Git …');
   const getrackt = git(['ls-files']).split('\n').filter(Boolean);
-  befunde.push(...checkNoCommittedSecrets(getrackt));
+  const sichtbareQuelldateien = git([
+    'ls-files',
+    '--cached',
+    '--others',
+    '--exclude-standard',
+    '--',
+    'source-data',
+  ])
+    .split('\n')
+    .filter(Boolean);
+  befunde.push(...checkNoCommittedSecrets([...new Set([...getrackt, ...sichtbareQuelldateien])]));
+
+  melde('Kanonischer Demo-Katalog versionierbar …');
+  const catalogSource = 'source-data/derived/catalog-pricing.json';
+  befunde.push(
+    ...checkCanonicalCatalogSource({
+      exists: existsSync(catalogSource),
+      ignored: gitPathIsIgnored(catalogSource),
+    }),
+  );
 
   melde('Statische Dateien vollständig …');
   const html = readdirSync('src/ui')

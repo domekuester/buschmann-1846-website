@@ -37,12 +37,12 @@ describe('Product', () => {
 
   it('verlangt eine Einheit', () => {
     expect(() => product({ unit: '' })).toThrow(InvalidArgumentError);
-    expect(() => product({ unit: 'a'.repeat(21) })).toThrow(InvalidArgumentError);
+    expect(() => product({ unit: 'a'.repeat(121) })).toThrow(InvalidArgumentError);
   });
 
   /** Die Einheit ist ein freies Anzeigelabel — keine Enum, keine Migration je Einheit. */
   it('akzeptiert jede sinnvolle Einheitenbezeichnung', () => {
-    for (const unit of ['Stück', 'Blech', 'kg', 'Torte', 'Portion']) {
+    for (const unit of ['Stück', 'Blech', 'kg', 'Torte', 'Portion', '30 cm Kasten oder 26 cm Ring']) {
       expect(product({ unit }).unit).toBe(unit);
     }
   });
