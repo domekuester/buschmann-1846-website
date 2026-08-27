@@ -222,6 +222,32 @@ export function formatGermanDayMonthYear(day: string): string {
   return GERMAN_DAY_MONTH_YEAR.format(pruefeTag(day));
 }
 
+const GERMAN_NUMERIC_DATE = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'UTC',
+  day: '2-digit',
+  month: '2-digit',
+  year: 'numeric',
+});
+
+/**
+ * Der Tag als vollständige Zahl: „27.08.2026".
+ *
+ * Für Listen, in denen viele Tage UNTEREINANDER stehen und jeder für sich
+ * eindeutig sein muss — die Bestellhistorie eines Kunden ist genau das. Der
+ * ausgeschriebene Tag („Donnerstag, 27. August 2026") ist dort zehnmal
+ * hintereinander eine Textwand, und formatGermanShortDate() lässt das Jahr
+ * weg, weil die Wochenübersicht es in ihrer Überschrift trägt. Eine
+ * Historie trägt es nirgends: Über einen Jahreswechsel hinweg wären „24.08."
+ * und „24.08." zwei verschiedene Bestellungen mit demselben Datum.
+ *
+ * Dieselbe Schreibweise, die formatGermanTimestamp() für den Datumsteil
+ * benutzt — damit sehen ein Liefertag und ein Zeitpunkt im selben
+ * Adminbereich nicht verschieden aus.
+ */
+export function formatGermanNumericDate(day: string): string {
+  return GERMAN_NUMERIC_DATE.format(pruefeTag(day));
+}
+
 /**
  * Der Tag als kurze Zahl: „24.08.".
  *

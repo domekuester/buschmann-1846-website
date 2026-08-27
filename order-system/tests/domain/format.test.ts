@@ -4,6 +4,7 @@ import {
   formatEuro,
   formatGermanDate,
   formatGermanDayMonthYear,
+  formatGermanNumericDate,
   formatGermanShortDate,
   formatGermanWeekday,
   formatPercentFromTenths,
@@ -129,6 +130,32 @@ describe('formatGermanDayMonthYear', () => {
 
   it('weist einen Tag zurück, den es nicht gibt', () => {
     expect(() => formatGermanDayMonthYear('nicht-ein-tag')).toThrow();
+  });
+});
+
+/**
+ * PHASE 7C — die kurze Schreibweise MIT Jahr.
+ *
+ * Sie steht neben formatGermanShortDate() und nicht an ihrer Stelle: Die
+ * Wochenzeile braucht kein Jahr, weil die Woche vollständig in der
+ * Überschrift darübersteht. Eine Bestellhistorie hat keine solche
+ * Überschrift — dort reichte „24.08." über einen Jahreswechsel hinweg nicht
+ * aus, um zwei Bestellungen auseinanderzuhalten.
+ */
+describe('formatGermanNumericDate', () => {
+  it('schreibt Tag, Monat und Jahr zweistellig beziehungsweise vierstellig', () => {
+    expect(formatGermanNumericDate('2026-08-27')).toBe('27.08.2026');
+    expect(formatGermanNumericDate('2026-09-01')).toBe('01.09.2026');
+  });
+
+  it('verschiebt einen Tag nicht über die Zeitzone', () => {
+    expect(formatGermanNumericDate('2026-01-01')).toBe('01.01.2026');
+    expect(formatGermanNumericDate('2026-12-31')).toBe('31.12.2026');
+  });
+
+  it('weist einen Tag zurück, den es nicht gibt', () => {
+    expect(() => formatGermanNumericDate('2026-02-30')).toThrow();
+    expect(() => formatGermanNumericDate('27.08.2026')).toThrow();
   });
 });
 

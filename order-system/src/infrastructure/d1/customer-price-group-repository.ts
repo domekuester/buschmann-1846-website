@@ -45,7 +45,20 @@ export async function loadAdminCustomers(db: D1Database): Promise<AdminCustomerR
       ORDER BY c.name, c.id`,
   ).all<AdminCustomerQueryRow>();
 
-  return results.map((row) => ({
+  return results.map(toAdminCustomerRow);
+}
+
+/**
+ * Eine Datenbankzeile als Kundenzeile — an EINER Stelle.
+ *
+ * Die Liste und die Detailansicht lesen dieselben Spalten und müssen sie
+ * deshalb auch gleich deuten. Vor allem eine Regel: Eine Zuordnung gilt nur
+ * dann als vorhanden, wenn Code UND Bezeichnung dastehen — der LEFT JOIN
+ * liefert bei fehlender Preisliste beide als NULL, und ein halb gefülltes
+ * Paar wäre eine Zeile, die niemand erklären kann.
+ */
+function toAdminCustomerRow(row: AdminCustomerQueryRow): AdminCustomerRow {
+  return {
     id: row.id,
     name: row.name,
     isActive: toBoolean(row.is_active),
@@ -57,7 +70,41 @@ export async function loadAdminCustomers(db: D1Database): Promise<AdminCustomerR
             label: row.price_group_label,
             isActive: toBoolean(row.price_group_is_active ?? 0),
           },
-  }));
+  };
+}
+
+/**
+ * EIN Kunde mit seiner Preisgruppe — die Kopfzeile der Detailansicht.
+ *
+ * DIESELBEN SPALTEN UND DERSELBE JOIN WIE IN loadAdminCustomers(), nur mit
+ * einer WHERE-Bedingung statt einer Sortierung. Das ist Absicht: „Kunde plus
+ * Preisgruppe" wird an zwei Stellen gebraucht, und zwei verschiedene
+ * Abfragen dafür wären zwei Gelegenheiten, die Regel `ohne Filter auf
+ * l.is_active` bei einer davon zu vergessen — die Liste zeigte dann eine
+ * bestehende Zuordnung an und die Detailseite „nicht zugeordnet".
+ *
+ * EINE ABFRAGE UND NICHT ZWEI. Preisliste und Kunde kommen in derselben
+ * Zeile zurück; ein zweites SELECT auf price_lists wäre eine zweite
+ * Datenbankrunde für eine Frage, die der LEFT JOIN schon beantwortet.
+ *
+ * `null` heißt: diesen Kunden gibt es nicht. Es heißt niemals „er hat keine
+ * Preisgruppe" — dafür steht `priceGroup: null` INNERHALB einer Zeile.
+ */
+export async function loadAdminCustomer(
+  db: D1Database,
+  customerId: number,
+): Promise<AdminCustomerRow | null> {
+  const row = await db.prepare(
+    `SELECT c.id, c.name, c.is_active,
+            l.code       AS price_group_code,
+            l.label      AS price_group_label,
+            l.is_active  AS price_group_is_active
+       FROM customers c
+       LEFT JOIN price_lists l ON l.id = c.price_list_id
+      WHERE c.id = ?`,
+  ).bind(customerId).first<AdminCustomerQueryRow>();
+
+  return row === null ? null : toAdminCustomerRow(row);
 }
 
 /**

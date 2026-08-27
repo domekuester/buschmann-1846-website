@@ -5,6 +5,10 @@ import { adminProductionListPage } from './http/admin-production-list-page';
 import { adminPickupListPage } from './http/admin-pickup-list-page';
 import { adminCatalogPage } from './http/admin-catalog-page';
 import { adminCustomersPage } from './http/admin-customers-page';
+import {
+  adminCustomerDetailPage,
+  matchCustomerDetailPath,
+} from './http/admin-customer-detail-page';
 import { adminOrderPolicyPage } from './http/admin-order-policy-page';
 import { saveOrderPolicyEndpoint } from './http/admin-order-policy-api';
 import { changeOrderStatusEndpoint, matchOrderStatusPath } from './http/admin-order-api';
@@ -88,6 +92,12 @@ import { privateHeaders } from './http/security';
  *   GET  /admin/customers
  *                      Kunden und ihre Preisgruppen. Lesend; der zugehörige
  *                      Schreibvorgang ist ein eigener Endpunkt.
+ *   GET  /admin/customers/:customerId
+ *                      wer dieser Kunde ist und was er zuletzt bestellt hat.
+ *                      Rein lesend, admin only, zwei Abfragen — und
+ *                      ausdrücklich OHNE Herstellkosten, Rohertrag und
+ *                      Marge: Die Kundenhistorie ist Betrieb und kein
+ *                      Controlling.
  *   POST /api/admin/customers/:customerId/price-list
  *                      die Zuordnung eines Kunden zu einer Preisgruppe. Der
  *                      zweite schreibende Adminvorgang — Origin, Rolle,
@@ -218,6 +228,31 @@ export default {
           return methodNotAllowed('GET', privateHeaders());
         }
         return await adminCustomersPage(env.DB, config, request, now);
+      }
+
+      /**
+       * Die Detailansicht EINES Kunden — die sechste Route mit einem
+       * veränderlichen Pfadteil und die erste LESENDE unter ihnen.
+       *
+       * Sie steht unmittelbar hinter '/admin/customers' und kann damit nicht
+       * kollidieren: Jener Pfad wird als Gleichheit erkannt und ist hier
+       * bereits beantwortet; dieses Muster verlangt ein weiteres Segment.
+       *
+       * Die 405 trägt privateHeaders(), damit auch die abweisende Antwort
+       * no-store trägt — wie bei jeder Adminroute.
+       */
+      const customerDetailSegment = matchCustomerDetailPath(pathname);
+      if (customerDetailSegment !== null) {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminCustomerDetailPage(
+          env.DB,
+          config,
+          request,
+          now,
+          customerDetailSegment,
+        );
       }
 
       if (pathname === '/admin/bestellregeln') {

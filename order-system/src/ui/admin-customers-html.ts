@@ -141,10 +141,22 @@ function datentabelle(view: AdminCustomersPageView): string {
   </div>`;
 }
 
+/**
+ * DER KUNDENNAME IST SEIT PHASE 7C EIN LINK.
+ *
+ * Er führt auf die Detailansicht — dorthin, wo steht, was dieser Kunde
+ * zuletzt bestellt hat. Das ist die einzige Änderung, die 7C an dieser Seite
+ * vornimmt: Der Name war schon vorher die Stelle, auf die man zeigt, wenn man
+ * über einen Kunden spricht.
+ *
+ * DIE MARKE „INAKTIV" BLEIBT AUSSERHALB DES LINKS. Sie ist eine Aussage über
+ * den Kunden und kein Teil seines Namens; im Link stünde sie in jedem
+ * Screenreader als „Fiktives Café Nord Inaktiv, Link".
+ */
 function kundenzeile(customer: AdminCustomerRow, view: AdminCustomersPageView): string {
   return `<tr>
     <th scope="row" data-label="Kunde">
-      ${escapeHtml(customer.name)}${customer.isActive ? '' : ' <span class="kundenzustand">Inaktiv</span>'}
+      <a class="kundenname" href="/admin/customers/${customer.id}">${escapeHtml(customer.name)}</a>${customer.isActive ? '' : ' <span class="kundenzustand">Inaktiv</span>'}
     </th>
     <td data-label="Preisgruppe" class="kundengruppe">${gruppenText(customer.priceGroup)}</td>
     <td data-label="Zuordnung ändern" class="kundenaktion">${zuordnungsformular(customer, view)}</td>

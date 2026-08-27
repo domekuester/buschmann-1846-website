@@ -7,6 +7,7 @@ import {
   assertSameOrigin,
   requireRole,
 } from './guard';
+import { parseIdSegment } from './id-param';
 import { RequestError, readBody } from './json-body';
 import { privateHeaders } from './security';
 
@@ -117,7 +118,7 @@ export async function changeCustomerPriceGroupEndpoint(
     const felder = new URLSearchParams(await readBody(request, MAX_BODY_BYTES));
     assertCsrf(request, wache.context, felder);
 
-    const customerId = leseKundenkennung(customerIdSegment);
+    const customerId = parseIdSegment(customerIdSegment);
     const priceListCode = lesePreisgruppe(felder);
 
     /**
@@ -201,23 +202,6 @@ export async function changeCustomerPriceGroupEndpoint(
 function istFormular(request: Request): boolean {
   const typ = request.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
   return typ === 'application/x-www-form-urlencoded';
-}
-
-/**
- * Die Kundenkennung aus dem Pfad — geprüft, nicht bloß weitergereicht.
- *
- * Erlaubt ist ausschließlich eine positive ganze Dezimalzahl. Kein trim,
- * kein Vorzeichen, keine führenden Nullen als Zahl umgedeutet, kein '1e3',
- * kein '1.0', kein Leerraum: Number() allein wäre hier zu nachsichtig —
- * Number(' 1 ') ist 1, und aus einer Adresszeile soll nichts durchkommen,
- * was nur zufällig wie eine Zahl aussieht.
- */
-function leseKundenkennung(segment: string): number | null {
-  if (!/^[1-9][0-9]{0,17}$/.test(segment)) {
-    return null;
-  }
-  const wert = Number(segment);
-  return Number.isSafeInteger(wert) ? wert : null;
 }
 
 /**

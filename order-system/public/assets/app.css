@@ -951,6 +951,132 @@ textarea[aria-invalid='true'] {
 .zahlung__senden,
 .kosten__senden { flex: 0 0 auto; }
 
+/* ---------- Kundendetail (Phase 7C) ----------
+
+   Die letzte Seite des Systems, und die ruhigste: Sie zeigt, wer ein Kunde
+   ist und was er zuletzt bestellt hat. Sie hat keinen einzigen Knopf.
+
+   SIE BRINGT FAST KEIN EIGENES LAYOUT MIT, und das ist die Absicht. Der Kopf
+   ist derselbe `.bereichskopf` wie in Kundenliste und Katalog, die Historie
+   ist dieselbe `.tafel`/`.datentabelle` wie im Dashboard — die auf dem
+   Telefon von selbst zu Karten wird. Was hier steht, sind die drei Stellen,
+   an denen das nicht genügt.                                                */
+
+/* Der Kundenname in der Liste ist seit 7C ein Link — und sieht auch so aus.
+   Navy statt Champagner: In der Zeilenüberschrift ist er die Kennung der
+   Zeile; ein goldener Name je Zeile wäre eine Spalte voller Hauptaktionen. */
+/* ER IST EINE TIPPFLÄCHE UND KEIN Fließtextlink, und das ist der Grund für
+   die Höhe: Auf dem Telefon ist der Name die EINZIGE Art, in einen Kunden
+   hineinzukommen. 20px Zeilenhöhe wären mit dem Daumen ein Ziel, das man
+   zweimal trifft und einmal verfehlt — deshalb die volle Kartenbreite und
+   die Systemhöhe var(--tap). Ab Tablet steht die Zeile wieder als
+   Tabellenzeile, dort ist der Name ein Zellenlink wie jeder andere. */
+.kundenname,
+.kundenname:visited {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--navy);
+  text-decoration-thickness: 1px;
+  text-underline-offset: .18em;
+}
+
+.kundenname:hover { color: var(--champagner-text); }
+
+/* Zwei Begriffspaare nebeneinander — Preisgruppe und Kontostand. Keine
+   Kachelwand: Es sind zwei Angaben, und zwei Angaben brauchen kein Gitter,
+   das auf sechs wartet. */
+.kundenstamm {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #fff;
+  border: var(--spur);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+}
+
+.kundenstamm__liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .9rem 2.5rem;
+  margin: 0;
+}
+
+.kundenstamm__paar dt {
+  margin-bottom: .2rem;
+  color: var(--text-leise);
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.kundenstamm__paar dd {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.05rem;
+}
+
+/* Der Weg zurück in die Verwaltung — leise, weil er nicht der Zweck dieser
+   Seite ist. Er steht UNTER den Angaben und nicht neben der Preisgruppe:
+   daneben sähe er aus wie ein Bearbeiten-Stift, und diese Seite bearbeitet
+   nichts. */
+.kundenstamm__weg {
+  margin: .9rem 0 0;
+  font-size: .92rem;
+}
+
+/* Auch dieser Link ist eine Tippfläche. Er steht allein in seiner Zeile —
+   ein 17px hohes Ziel wäre auf einem Tresengerät zu wenig. inline-flex und
+   nicht block: Er soll so breit sein wie sein Text und nicht wie die
+   Karte, sonst sähe er aus wie eine Schaltfläche und wäre eine
+   Hauptaktion, die er nicht ist. */
+.kundenstamm__weg a,
+.kundenstamm__weg a:visited {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  color: var(--blau);
+  font-weight: 600;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+/* Das Datum ist die Zeilenüberschrift und wird NICHT zerlegt. `.datentabelle`
+   bricht Zeichen für Zeichen (das braucht ein langer Kundenname); aus
+   „27.08.2026" würde damit „27.08. 2026". */
+.kundenhistorie .datentabelle th[scope='row'] {
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Falls die Tabelle doch einmal breiter wird als ihre Tafel — eine längere
+   Beschriftung, eine größere Schrift im Browser —, scrollt SIE und nicht die
+   Seite. Dieselbe Absicherung wie bei der Bestellliste des Dashboards; ohne
+   sie stünde die Tabelle über den Rand der Tafel hinaus, und genau das war
+   im Browser zu sehen, als ein nowrap auf der Zahlungsspalte ausprobiert
+   wurde. */
+.kundenhistorie .datentabelle-wrap { overflow-x: auto; }
+
+/* „Überweisung bezahlt" darf zwischen den Wörtern umbrechen — dieselbe
+   Entscheidung wie in der Bestellliste des Dashboards und aus demselben
+   Grund: Die Spalte ist schmaler als das Wortpaar, und zerlegt wird trotzdem
+   keines der beiden. Der freie Raum RECHTS der Tafel gehört nicht der
+   Tabelle: Die Spalte des Adminbereichs ist 44rem breit, und das gilt für
+   jede Seite außer dem Dashboard. */
+.kundenhistorie .zahlstand {
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+/* Ein bezahlter Stand ist der erledigte Normalfall und tritt zurück; „Offen"
+   behält Farbe und Gewicht. Wortgleich mit dem Dashboard — eine Bestellung
+   soll auf beiden Seiten gleich aussehen. */
+.kundenhistorie .zahlstand--bezahlt {
+  font-weight: 400;
+  color: var(--text-leise);
+}
+
 /* ---------- Herstellkosten ----------
 
    EIN BETRAGSFELD SIEHT ANDERS AUS ALS EINE AUSWAHL, und das ist der einzige
@@ -1686,6 +1812,36 @@ textarea[aria-invalid='true'] {
   .datentabelle--woche td {
     overflow-wrap: normal;
     padding-inline: .45rem;
+  }
+
+  /* DIE KUNDENHISTORIE HAT DASSELBE PROBLEM UND DIESELBE ANTWORT.
+
+     Auch hier kam der Befund aus dem Browser: Bei 768px brach Chrome
+     „Abgeschlossen" zu „Abgeschl ossen", „In Produktion" zu „In Produktio n"
+     und die Spaltenüberschrift zu „PRODUKTIONST AG". Ursache ist wieder
+     `overflow-wrap: anywhere`, das die Kartenfassung auf dem Telefon für
+     lange Kundennamen braucht.
+
+     Diese Tabelle führt AUSSCHLIESSLICH kurze Wörter, Daten, Bestellnummern
+     und Beträge — ein Kundenname kommt in ihr nicht vor, er steht als
+     Überschrift über der Seite. Sie darf den zeichenweisen Umbruch deshalb
+     genauso aufheben wie die Wochentabelle. Der Umbruch ZWISCHEN Wörtern
+     bleibt erlaubt: „Überweisung bezahlt" auf zwei Zeilen ist in Ordnung,
+     „Abgeschl ossen" war es nicht. */
+  .kundenhistorie .datentabelle th,
+  .kundenhistorie .datentabelle td {
+    overflow-wrap: normal;
+    padding-inline: .45rem;
+  }
+
+  /* Ab Tablet ist der Kundenname ein Zellenlink und keine Kartenzeile mehr:
+     Die Zeilenhöhe von var(--tap) würde jede Tabellenzeile künstlich
+     auseinanderziehen. Gezeigt wird derselbe Text, nur nicht mehr als
+     Daumenfläche — hier wird geklickt und nicht getippt. */
+  .kundenname,
+  .kundenname:visited {
+    display: inline;
+    min-height: 0;
   }
 
   /* Ab Tablet steht die Zeile als Tabellenzeile, und das Formular passt
@@ -3436,6 +3592,20 @@ textarea[aria-invalid='true'] {
   .tafel--tabelle .tafel__kopf,
   .tafel--tabelle .datentabelle th,
   .tafel--tabelle .datentabelle td { padding-inline: .65rem; }
+
+  /* … außer in der Kundenhistorie, die ihre engere Polsterung behält.
+
+     Gemessen: Mit .65rem fordern die fünf Spalten 663px, verfügbar sind 654
+     — neun Pixel zu wenig, und die Tabelle bekam eine eigene Scrollleiste
+     mitten in einer Tafel, die auf dem Bildschirm ausreichend breit aussieht.
+     Die Regel darüber steht später in dieser Datei als die des 600px-Blocks
+     und gewinnt bei gleicher Spezifität; deshalb muss die Ausnahme HIER
+     wiederholt werden und nicht dort.
+
+     .45rem ist dieselbe Polsterung, die die Wochentabelle aus demselben
+     Grund trägt. */
+  .kundenhistorie .datentabelle th,
+  .kundenhistorie .datentabelle td { padding-inline: .45rem; }
 
   .tafel--tabelle .tafel__kopf { padding-block: .85rem; }
 
