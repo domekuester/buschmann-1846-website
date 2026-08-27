@@ -4,6 +4,7 @@ import {
   type DashboardAction,
   type DashboardActionKey,
 } from '../domain/dashboard-actions';
+import type { CostSummary } from '../domain/cost-summary';
 import type { DashboardDay } from '../domain/dashboard-day';
 import { fulfillmentLabel } from '../domain/fulfillment-type';
 import { ORDER_STATUSES, countsTowardsRevenue, orderStatusLabel } from '../domain/order-status';
@@ -13,7 +14,13 @@ import {
   paymentStatusLabel,
   type PaymentStatus,
 } from '../domain/payment-status';
-import { formatEuro, formatGermanDate, formatGermanTimestamp } from './format';
+import {
+  formatEuro,
+  formatGermanDate,
+  formatGermanTimestamp,
+  formatPercentFromTenths,
+  formatSignedEuro,
+} from './format';
 
 /**
  * Das Ansichtsmodell des Tagesüberblicks — alles, was die Seite anzeigt, und
@@ -214,6 +221,73 @@ export interface DashboardOrderListView {
   readonly emptyText: string;
 }
 
+/**
+ * WOHIN „HERSTELLKOSTEN ERGÄNZEN" FÜHRT — eine Konstante und kein Parameter.
+ *
+ * Es ist der bestehende Bereich auf der Seite „Sortiment & Preise", der die
+ * Kostenwerte ohnehin schon pflegt (seit Phase 7A). Es gibt bewusst KEINE
+ * zweite Kostenpflegeseite: Zwei Orte, an denen derselbe Wert eingetragen
+ * wird, sind zwei Formulare, zwei Rückmeldungen und irgendwann zwei
+ * Meinungen darüber, was gespeichert wurde.
+ */
+const KOSTENPFLEGE_HREF = '/admin/catalog#herstellkosten';
+
+/**
+ * DER FINANZBEREICH — vier Zeilen und die Frage, ob man sie zeigen darf.
+ *
+ * ALLE VIER WERTE SIND FERTIGE ZEICHENKETTEN. Es steht kein `number` und kein
+ * `null` in diesem Modell, aus dem der Renderer noch etwas entscheiden
+ * müsste: Ob eine Marge erscheint, ist eine FACHLICHE Frage, sie ist in
+ * cost-summary.ts beantwortet, und sie darf nicht ein zweites Mal in einer
+ * Zeichenkettenverkettung beantwortet werden. Der Renderer setzt hin, was
+ * hier steht.
+ *
+ * BEI UNVOLLSTÄNDIGER KOSTENBASIS STEHT ÜBERALL EIN STRICH — auch bei den
+ * Herstellkosten, obwohl die bekannte Teilsumme vorläge. Eine Zeile
+ * „Herstellkosten 380,00 €" neben „Umsatz 1.240,00 €" liest sich als
+ * vollständig, ganz gleich, was zwei Zeilen tiefer steht; sie wäre dieselbe
+ * Halbwahrheit wie eine Teilmarge, nur unauffälliger. Der Umsatz bleibt
+ * davon unberührt und steht immer richtig da.
+ */
+export interface DashboardFinanceView {
+  /** „1.240,00 €" — immer, und identisch mit der Kennzahl darüber. */
+  readonly revenueLabel: string;
+  /** „510,30 €" oder „—". */
+  readonly costLabel: string;
+  /** „729,70 €", „-20,00 €" oder „—". */
+  readonly grossProfitLabel: string;
+  /** „58,8 %", „-20,0 %" oder „—". */
+  readonly marginLabel: string;
+  /** Jede relevante Position trägt einen Kostenwert. */
+  readonly isComplete: boolean;
+  /** Der Rohertrag steht unter null — für die Darstellung, nicht für die Rechnung. */
+  readonly isNegative: boolean;
+  /**
+   * Auch die MARGE steht unter null.
+   *
+   * Sie ist nicht dasselbe wie `isNegative`, und der Unterschied ist ein
+   * echter Fall: Ein Tag mit Kosten und ohne Umsatz hat einen negativen
+   * Rohertrag, aber gar keine Marge — dort steht ein Strich, und ein roter
+   * Strich wäre eine Farbe ohne Aussage.
+   */
+  readonly isMarginNegative: boolean;
+  /** „Kostenbasis vollständig" oder „Kostenbasis unvollständig". */
+  readonly statusLabel: string;
+  /**
+   * Der erklärende Satz darunter.
+   *
+   * Er nennt BESTELLUNGEN und nicht Positionen, obwohl der fehlende Wert an
+   * der Position hängt: Ein Betrieb denkt in Bestellungen, die Seite zählt
+   * überall sonst Bestellungen, und „bei 2 von 14 Positionen" schickt
+   * jemanden auf die Suche nach einer Zahl, die auf dieser Seite sonst nicht
+   * vorkommt. Der Weg zur Abhilfe führt ohnehin über das Produkt.
+   */
+  readonly note: string;
+  /** Der Weg zur Kostenpflege — nur, wenn etwas fehlt. */
+  readonly href: string | null;
+  readonly linkLabel: string;
+}
+
 export interface DashboardDayView {
   /** 'JJJJ-MM-TT' — für URLs und das Datumsfeld. */
   readonly day: string;
@@ -258,6 +332,17 @@ export interface DashboardDayView {
    * ihm entsteht: derselbe Tag, dieselben Zahlen, kein zweiter Ladevorgang.
    */
   readonly actions: readonly DashboardActionView[];
+
+  /**
+   * Umsatz, Herstellkosten, Rohertrag, Marge — seit Phase 7B.
+   *
+   * Sie stehen NICHT in der Kennzahlenwand darüber, und das ist eine
+   * Entscheidung: Vier weitere Karten hätten aus einer Tafel mit sechs
+   * Zahlen eine mit zehn gemacht, und die Wand hätte aufgehört, auf einen
+   * Blick lesbar zu sein. Die kaufmännische Auskunft ist außerdem eine
+   * andere Art von Auskunft — sie treibt nichts an, sie ordnet ein.
+   */
+  readonly finance: DashboardFinanceView;
 }
 
 export function toDashboardView(day: DashboardDay): DashboardDayView {
@@ -304,8 +389,79 @@ export function toDashboardView(day: DashboardDay): DashboardDayView {
 
     paymentDonut: zahlungsring(day),
     statusDonut: statusring(day),
+    finance: finanzen(day.costs),
     actions: dashboardActions(day).map((aktion) => aktionsansicht(aktion, day.date)),
   };
+}
+
+/**
+ * Aus einer Kostenzusammenfassung werden vier Zeilen und ein Satz.
+ *
+ * ES WIRD HIER NICHTS ENTSCHIEDEN UND NICHTS GERECHNET. `complete`,
+ * `grossProfitCents` und `marginTenthsPercent` kommen fertig aus der Domäne;
+ * diese Funktion liest sie und schreibt sie auf. Ein `revenueCents -
+ * knownCostCents` an dieser Stelle wäre eine zweite Fassung des Rohertrags —
+ * und zwar die, die den Vollständigkeitsvorbehalt nicht kennt.
+ *
+ * DER STRICH IST EIN EIGENES ZEICHEN UND KEINE LEERE ZELLE. „—" sagt „hier
+ * steht bewusst nichts"; eine leere Zelle sagt „hier ist etwas kaputt" — und
+ * auf einem Bildschirm, den jemand morgens um fünf ansieht, ist das ein
+ * Unterschied.
+ *
+ * DER NULLUMSATZ BEKOMMT EINEN EIGENEN SATZ. Ein Tag ohne Umsatz hat eine
+ * vollständige Kostenbasis (es fehlt nichts) und trotzdem keine Marge. Ohne
+ * eigenen Text stünde dort „Kostenbasis vollständig" und daneben ein Strich
+ * — was wie ein Fehler aussieht und keiner ist.
+ */
+function finanzen(costs: CostSummary): DashboardFinanceView {
+  const strich = '—';
+  const kennt = costs.complete;
+
+  return {
+    revenueLabel: formatEuro(costs.revenueCents),
+    costLabel: kennt ? formatEuro(costs.knownCostCents) : strich,
+    grossProfitLabel:
+      costs.grossProfitCents === null ? strich : formatSignedEuro(costs.grossProfitCents),
+    marginLabel:
+      costs.marginTenthsPercent === null
+        ? strich
+        : formatPercentFromTenths(costs.marginTenthsPercent),
+    isComplete: kennt,
+    isNegative: costs.grossProfitCents !== null && costs.grossProfitCents < 0,
+    isMarginNegative: costs.marginTenthsPercent !== null && costs.marginTenthsPercent < 0,
+    statusLabel: kennt ? 'Kostenbasis vollständig' : 'Kostenbasis unvollständig',
+    note: kostenhinweis(costs),
+    href: kennt ? null : KOSTENPFLEGE_HREF,
+    linkLabel: 'Herstellkosten ergänzen',
+  };
+}
+
+/**
+ * Der Satz unter den vier Zahlen.
+ *
+ * DREI FÄLLE, DREI SÄTZE, und keiner davon ist alarmistisch: Eine fehlende
+ * Kostenangabe ist kein Fehler, sondern etwas, das noch nicht gepflegt ist —
+ * bei jeder Bestellung aus der Zeit vor Phase 7A ist es sogar der
+ * Normalzustand. Ein rotes Warnfeld an dieser Stelle sagte einem Betrieb
+ * jeden Morgen, er habe etwas falsch gemacht.
+ *
+ * DIE EINZAHL IST KEIN SCHÖNHEITSFEHLER — dieselbe Regel wie im
+ * Handlungsbedarf.
+ */
+function kostenhinweis(costs: CostSummary): string {
+  if (!costs.complete) {
+    return `Bei ${costs.missingOrderCount} von ${costs.orderCount} ${
+      costs.orderCount === 1 ? 'Bestellung' : 'Bestellungen'
+    } fehlen noch die Herstellkosten.`;
+  }
+
+  if (costs.revenueCents === 0) {
+    return 'Keine Umsätze an diesem Tag.';
+  }
+
+  return `Alle ${costs.orderCount} ${
+    costs.orderCount === 1 ? 'Bestellung ist' : 'Bestellungen sind'
+  } vollständig kalkuliert.`;
 }
 
 /**

@@ -1663,6 +1663,31 @@ textarea[aria-invalid='true'] {
   }
   .datentabelle td::before { content: none; }
 
+  /* DIE WOCHENTABELLE HAT SEIT PHASE 7B SECHS SPALTEN — und zwischen 600px
+     und 980px ist das eng.
+
+     Ein Befund aus dem Browser: Mit der allgemeinen Zellenpolsterung brachen
+     die Überschriften MITTEN IM WORT um („BESTELLUN GEN", „PRODUKTI ON").
+     Ursache ist `overflow-wrap: anywhere`, das die Kartenfassung auf dem
+     Telefon braucht, damit eine lange Bestellnummer die Karte nicht sprengt —
+     in einer echten Tabelle richtet es Schaden an.
+
+     Zwei Zeilen genügen: In DIESER Tabelle bricht nichts mehr innerhalb
+     eines Wortes, und die Spalten bekommen etwas engere Polsterung. Der
+     Zeilenumbruch ZWISCHEN Wörtern bleibt erlaubt — „160,00 € offen" auf
+     zwei Zeilen ist in Ordnung, „Donnerst ag" wäre es nicht.
+
+     Die Ausnahme gilt nur der Wochentabelle, weil nur sie ausschließlich
+     kurze Wörter, Wochentage, Daten und Beträge führt. Die Bestell- und
+     Kundentabellen behalten `anywhere`: Dort steht mit der Bestellnummer und
+     der E-Mail-Adresse Text, der ohne Wortgrenze länger ist als seine
+     Spalte. */
+  .datentabelle--woche th,
+  .datentabelle--woche td {
+    overflow-wrap: normal;
+    padding-inline: .45rem;
+  }
+
   /* Ab Tablet steht die Zeile als Tabellenzeile, und das Formular passt
      nebeneinander in seine Zelle. */
   .preisgruppe,
@@ -2533,6 +2558,18 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
+/* „KOSTEN FEHLEN" STEHT LEISER ALS EINE MARGE.
+
+   Es ist kein Fehler, sondern eine Auskunft über die Datenlage — und bei
+   Bestellungen aus der Zeit vor Phase 7A der Normalzustand. Ein rotes Feld
+   wäre in mancher Woche an fünf Tagen zu sehen und damit nach zwei Wochen
+   unsichtbar. Kleiner gesetzt, in der leisen Textfarbe: Man sieht auf einen
+   Blick, welche Tage eine Zahl haben und welche nicht. */
+.wochenzeile__margeoffen {
+  font-size: .8rem;
+  color: var(--text-leise);
+}
+
 /* Ein Tag ohne Bestellung wird GEDÄMPFT und nicht weggelassen: Dass am
    Donnerstag nichts ist, ist eine Auskunft. */
 .wochenzeile--leer td { color: var(--text-leise); }
@@ -2551,6 +2588,110 @@ textarea[aria-invalid='true'] {
      und ist doch nicht einer ihrer sieben Tage. */
   .wochenzeile--summe th,
   .wochenzeile--summe td { border-top: 2px solid var(--leinen); }
+}
+
+/* --- Finanzen: Umsatz, Herstellkosten, Rohertrag, Marge --- */
+
+/* VIER ZEILEN UND KEINE VIER KARTEN.
+
+   Der Entwurf mit Kennzahlkarten wurde verworfen, bevor er in den Browser
+   kam: Die Wand oben hat sechs Felder, und drei weitere hätten aus einem
+   Block, den man auf einen Blick liest, eine Fläche gemacht, die man
+   absucht. Vier Zeilen einer RECHNUNG sind außerdem die richtigere Form —
+   Umsatz minus Kosten ergibt Rohertrag ergibt Marge; das ist eine Folge und
+   kein Nebeneinander.
+
+   Die Tafel ist deshalb schmaler als die Seite: Eine Rechnung mit vier
+   Zeilen über 900px auseinandergezogen liest sich als Tabelle mit zwei
+   sehr weit entfernten Spalten. Ab Desktop steht sie in ihrer natürlichen
+   Breite links, und daneben bleibt Luft — die Zurückhaltung ist die
+   Aussage. */
+.finanzen { margin: 0 0 1.75rem; }
+
+@media (min-width: 780px) {
+  .adminseite--breit .finanzen { max-width: 34rem; }
+}
+
+.finanzliste {
+  margin: 0;
+  padding: .35rem 0;
+}
+
+/* Bezeichnung links, Betrag rechts — die Form, in der eine Rechnung gelesen
+   wird. Die Beträge stehen in Tabellenziffern untereinander, damit sich das
+   Komma ausrichtet; ohne das wandert es je nach Ziffernbreite. */
+.finanzzeile {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .5rem 1.15rem;
+}
+
+.finanzzeile__label {
+  margin: 0;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-leise);
+}
+
+.finanzzeile__wert {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--navy);
+  white-space: nowrap;
+}
+
+/* DAS ERGEBNIS STEHT KRÄFTIGER — Rohertrag und Marge sind die beiden Zeilen,
+   wegen derer dieser Bereich existiert. Die Haarlinie darüber trennt die
+   Rechnung von ihrem Ergebnis, wie der Strich auf einem Kassenbon. */
+.finanzzeile--summe,
+.finanzzeile--minus { border-top: var(--spur); }
+
+.finanzzeile--summe .finanzzeile__label,
+.finanzzeile--minus .finanzzeile__label { color: var(--text); }
+
+.finanzzeile--summe .finanzzeile__wert,
+.finanzzeile--minus .finanzzeile__wert { font-size: 1.15rem; font-weight: 700; }
+
+/* EIN NEGATIVER ROHERTRAG IST KEIN ALARM.
+
+   Er bekommt die gedeckte Fehlerfarbe der Marke und kein Signalrot, keinen
+   Grund, kein Symbol — und das Minuszeichen steht ohnehin im Text. Wer die
+   Seite auf einem verwaschenen Tresenbildschirm liest, sieht die Auskunft
+   trotzdem. Eine Bäckerei, die einmal unter Einstand verkauft hat, braucht
+   keine Warnleuchte, sondern eine lesbare Zahl. */
+.finanzzeile--minus .finanzzeile__wert { color: var(--fehler); }
+
+/* Der Stand der Kostenbasis steht im Tafelkopf, wo sonst „nach Menge" oder
+   die Zahl der Einträge steht: Er sagt, WAS in dieser Tafel steht — nämlich
+   ob man ihr trauen darf.
+
+   „Vollständig" bleibt in der leisen Textfarbe aller Tafelangaben — es ist
+   der Normalfall und muss nicht auffallen. „Unvollständig" bekommt den
+   Markenton, in dem auf diesen Seiten auch die Wege stehen: deutlich genug,
+   um gelesen zu werden, und weit entfernt von einem Alarmrot.
+
+   Die Klasse steht ZUSAMMEN mit `.tafel__meta` im Selektor, weil beide
+   gleich spezifisch sind — allein geschrieben verlöre sie gegen die
+   Tafelangabe, und zwar lautlos: Der Browser hat genau das gezeigt. */
+.tafel__meta.finanzen__stand--offen { color: var(--champagner-text); }
+
+.finanzen__hinweis {
+  margin: 0;
+  padding: .2rem 1.15rem 1.05rem;
+  max-width: 60ch;
+  font-size: .85rem;
+  line-height: 1.5;
+  color: var(--text-leise);
+}
+
+.finanzen__weg {
+  color: var(--champagner-text);
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* --- Ringe: Zahlungen und Bestellstatus --- */
@@ -3372,6 +3513,7 @@ textarea[aria-invalid='true'] {
      lesbar — es ist genau das, was jemand mit in die Backstube nimmt —,
      verliert aber die Angabe, wohin man klicken würde. */
   .handlungszeile__weg,
+  .finanzen__weg,
   .tafel__weg { display: none !important; }
 
   /* Der Schatten der Kennzahlenwand sitzt seit der Tafel-Fassung am GITTER

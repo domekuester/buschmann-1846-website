@@ -1,3 +1,4 @@
+import { CostTally, type CostSummary } from './cost-summary';
 import type { FulfillmentType } from './fulfillment-type';
 import {
   ORDER_STATUSES,
@@ -54,11 +55,24 @@ export const TOP_PRODUCTS_LIMIT = 5;
 /**
  * Eine Position, wie der Überblick sie sieht.
  *
- * OHNE PREIS — und das ist kein Versehen. Was eine Bestellung gekostet hat,
- * steht in ihrem Gesamtbetrag; ein Positionspreis würde hier ausschließlich
- * dazu dienen, eine zweite Summe daraus zu bilden. `sortOrder` stammt wie in
- * der Produktionsansicht aus dem AKTUELLEN Produktdatensatz und dient allein
- * der Reihenfolge.
+ * OHNE VERKAUFSPREIS — und das ist kein Versehen. Was eine Bestellung
+ * eingebracht hat, steht in ihrem Gesamtbetrag; ein Positionspreis würde hier
+ * ausschließlich dazu dienen, eine zweite Summe daraus zu bilden. `sortOrder`
+ * stammt wie in der Produktionsansicht aus dem AKTUELLEN Produktdatensatz und
+ * dient allein der Reihenfolge.
+ *
+ * MIT KOSTENSCHNAPPSCHUSS — seit Phase 7B, und das ist kein Widerspruch zum
+ * Absatz darüber: Der Verkaufspreis der Position ist eine ZWEITE Fassung
+ * einer Zahl, die schon dasteht; der Kostenwert ist die EINZIGE Fassung einer
+ * Zahl, die sonst nirgends steht. Die Herstellkosten eines Tages sind aus dem
+ * Gesamtbetrag einer Bestellung nicht abzuleiten — sie hängen daran, WAS in
+ * ihr steht.
+ *
+ * `unitCostCents` ist der SNAPSHOT aus dem Bestellzeitpunkt und niemals der
+ * heutige Katalogwert. Eine spätere Kostenänderung darf eine Auswertung von
+ * letzter Woche nicht rückwirkend verändern — dieselbe Regel, die für den
+ * Preis seit Phase 5C gilt. null heißt „damals war nichts gepflegt" und
+ * niemals 0 €.
  */
 export interface DashboardOrderItem {
   readonly productId: number;
@@ -66,6 +80,8 @@ export interface DashboardOrderItem {
   readonly productUnit: string;
   readonly sortOrder: number;
   readonly quantity: number;
+  /** Herstellkosten je Einheit zum Bestellzeitpunkt — oder null für „unbekannt". */
+  readonly unitCostCents: number | null;
 }
 
 /**
@@ -104,9 +120,17 @@ export interface DashboardProductLine {
  *
  * Jede beantwortet eine Frage, die jemand tatsächlich stellt. Was keine
  * Frage beantwortet, steht nicht da: kein Durchschnittsbon, keine
- * Vortagesveränderung, keine Prognose, keine Marge. Ein Betrieb, der morgens
- * drei Sekunden auf diesen Bildschirm sieht, soll etwas erfahren und nicht
- * etwas auswerten.
+ * Vortagesveränderung, keine Prognose. Ein Betrieb, der morgens drei
+ * Sekunden auf diesen Bildschirm sieht, soll etwas erfahren und nicht etwas
+ * auswerten.
+ *
+ * SEIT PHASE 7B KOMMT DIE KAUFMÄNNISCHE SEITE DAZU — als EIN Feld `costs`
+ * und nicht als vier weitere Kennzahlen. „Was hat der Tag eingebracht"
+ * beantwortet der Umsatz nur zur Hälfte; die andere Hälfte steht seit 7A in
+ * den Kostenschnappschüssen der Positionen. Dass sie erst jetzt kommt, ist
+ * die Reihenfolge der Sache: Ohne unveränderliche Kostenwerte wäre jede
+ * Marge eine Aussage über den heutigen Katalog gewesen und nicht über den
+ * Tag, an dem bestellt wurde.
  */
 export interface DashboardDay {
   readonly date: string;
@@ -154,6 +178,19 @@ export interface DashboardDay {
    * verschwiegen hätte.
    */
   readonly statusCounts: Readonly<Record<OrderStatus, number>>;
+  /**
+   * HERSTELLKOSTEN, ROHERTRAG UND MARGE — samt der Frage, ob man sie zeigen
+   * darf.
+   *
+   * Sie stehen als EIN Feld da und nicht als vier einzelne Zahlen neben den
+   * übrigen Kennzahlen, weil sie nur zusammen etwas bedeuten: Ein Rohertrag
+   * ohne die Auskunft, ob die Kostenbasis vollständig war, ist eine Zahl mit
+   * unbekanntem Wahrheitsgehalt. Was hier gilt, steht in cost-summary.ts.
+   *
+   * `costs.revenueCents` IST `revenueCents` — dieselbe Zahl, hereingereicht
+   * und nicht ein zweites Mal gezählt.
+   */
+  readonly costs: CostSummary;
   /** ALLE Bestellungen des Tages, stornierte eingeschlossen. */
   readonly orders: readonly DashboardOrder[];
   readonly topProducts: readonly DashboardProductLine[];
@@ -186,6 +223,14 @@ export function aggregateDashboardDay(
   orders: readonly DashboardOrder[],
 ): DashboardDay {
   const kunden = new Set<number>();
+  /**
+   * DER KOSTENZÄHLER LÄUFT IN DERSELBEN SCHLEIFE — hinter demselben einen
+   * Stornofilter wie der Umsatz. Eine zweite Schleife über dieselben
+   * Bestellungen wäre ein zweiter Ort, an dem der Storno berücksichtigt
+   * werden müsste, und damit die Möglichkeit, dass die Kosten einer
+   * stornierten Bestellung im Rohertrag stehen, während ihr Umsatz fehlt.
+   */
+  const kosten = new CostTally();
   const mengen = new Map<string, DashboardProductLine & { readonly sortOrder: number }>();
 
   let orderCount = 0;
@@ -243,6 +288,8 @@ export function aggregateDashboardDay(
       unpaidCount += 1;
     }
 
+    kosten.addOrder(order.items);
+
     for (const item of order.items) {
       totalUnits += item.quantity;
 
@@ -286,6 +333,12 @@ export function aggregateDashboardDay(
     paidCents,
     paidCount,
     statusCounts,
+    /**
+     * DER UMSATZ WIRD HEREINGEREICHT und nicht im Kostenzähler noch einmal
+     * gebildet. Es gibt im ganzen System genau eine Umsatzsumme; Rohertrag
+     * und Marge rechnen MIT ihr.
+     */
+    costs: kosten.summary(revenueCents),
     orders,
     topProducts: topProdukte(mengen),
   };

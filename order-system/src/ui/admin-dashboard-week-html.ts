@@ -24,9 +24,15 @@ import { escapeHtml } from './format';
  * Es gibt bewusst keinen Menüpunkt „Wochenanalyse": Die Woche ist eine
  * Blickweite auf denselben Gegenstand und kein zweiter Bereich.
  *
- * SIE TRÄGT KEIN SKRIPT und keine Grafik. Sieben Zeilen mit vier Zahlen sind
+ * SIE TRÄGT KEIN SKRIPT und keine Grafik. Sieben Zeilen mit fünf Angaben sind
  * eine Tabelle, und eine Tabelle ist hier die genauere Darstellung als jedes
  * Balkendiagramm: Man liest Beträge ab, statt Höhen zu schätzen.
+ *
+ * SEIT PHASE 7B KOMMT EINE SPALTE DAZU UND KEIN ABSCHNITT. Die Marge je Tag
+ * ist die einzige kaufmännische Angabe, die in eine Wochenübersicht gehört:
+ * Sie lässt sich zwischen Tagen vergleichen, während Beträge das nicht tun.
+ * Herstellkosten und Rohertrag je Tag stehen bewusst NICHT hier — wer sie
+ * braucht, klickt den Tag an, und dort stehen sie vollständig.
  */
 
 export interface AdminDashboardWeekPageView {
@@ -144,7 +150,7 @@ function schnellwahl(quick: QuickDaysView): string {
  *
  * ES IST DIESELBE `.datentabelle`, die Kunden-, Katalog- und Bestellliste
  * benutzen — und das ist der Grund, warum die Wochenansicht auf einem Telefon
- * keine gequetschte Fünfspaltentabelle wird: Unterhalb von Tablet zerfällt
+ * keine gequetschte Sechsspaltentabelle wird: Unterhalb von Tablet zerfällt
  * sie in Karten mit einer Beschriftung je Zelle, oberhalb wird sie zur
  * Tabelle. Es gibt keinen waagerechten Scrollzwang und keine eigene
  * Mobilfassung, die getrennt gepflegt werden müsste.
@@ -170,6 +176,7 @@ function wochentabelle(week: DashboardWeekView): string {
             <th scope="col">Tag</th>
             <th scope="col">Bestellungen</th>
             <th scope="col" class="spalte-betrag">Umsatz</th>
+            <th scope="col" class="spalte-betrag">Marge</th>
             <th scope="col">Produktion</th>
             <th scope="col">Zahlung</th>
           </tr></thead>
@@ -212,9 +219,30 @@ function wochenzeile(tag: DashboardWeekDayView): string {
           : `<span class="wochenzeile__storno">${escapeHtml(tag.cancelledLabel)}</span>`
       }</td>
       <td data-label="Umsatz" class="bestellzeile__betrag">${escapeHtml(tag.revenueLabel)}</td>
+      ${margenzelle(tag)}
       <td data-label="Produktion">${escapeHtml(tag.openLabel)}</td>
       <td data-label="Zahlung">${escapeHtml(tag.unpaidLabel)}</td>
     </tr>`;
+}
+
+/**
+ * Die Margenzelle — eine Zahl oder der Grund, warum keine dasteht.
+ *
+ * DER HINWEIS „KOSTEN FEHLEN" STEHT KLEINER UND LEISER als eine Marge, und
+ * das ist die ganze Gestaltung dieses Falls: Er ist keine Warnung, sondern
+ * eine Auskunft über die Datenlage. Ein rotes Feld in einer Wochentabelle
+ * wäre an einem Tag mit Altbestand jede Woche zu sehen und damit nach zwei
+ * Wochen unsichtbar.
+ *
+ * DIE UNTERSCHEIDUNG WIRD NICHT HIER GETROFFEN. Text UND Fall kommen fertig
+ * aus dem Ansichtsmodell; diese Funktion wählt daraus nur die Klasse. Ein
+ * Blick auf die Schreibweise des Textes — „endet auf %" — wäre eine fachliche
+ * Unterscheidung, die an einem Prozentzeichen hinge.
+ */
+function margenzelle(werte: DashboardWeekTotalView): string {
+  return `<td data-label="Marge" class="bestellzeile__betrag${
+    werte.marginIsMissing ? ' wochenzeile__margeoffen' : ''
+  }">${escapeHtml(werte.marginLabel)}</td>`;
 }
 
 function summenzeile(total: DashboardWeekTotalView): string {
@@ -226,6 +254,7 @@ function summenzeile(total: DashboardWeekTotalView): string {
           : `<span class="wochenzeile__storno">${escapeHtml(total.cancelledLabel)}</span>`
       }</td>
       <td data-label="Umsatz" class="bestellzeile__betrag">${escapeHtml(total.revenueLabel)}</td>
+      ${margenzelle(total)}
       <td data-label="Produktion">${escapeHtml(total.openLabel)}</td>
       <td data-label="Zahlung">${escapeHtml(total.unpaidLabel)}</td>
     </tr>`;

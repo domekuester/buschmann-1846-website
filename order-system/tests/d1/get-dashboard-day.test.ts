@@ -31,7 +31,16 @@ interface OrderSeed {
   readonly paymentStatus?: string;
   readonly totalCents?: number;
   readonly createdAt?: string;
-  readonly items?: readonly { productId: number; quantity: number; name?: string }[];
+  readonly items?: readonly {
+    productId: number;
+    quantity: number;
+    name?: string;
+    /**
+     * Der Kostenschnappschuss aus Phase 7A. FEHLT ER, wird NULL gespeichert
+     * — also genau der Altbestand, den es vor 0017 gab.
+     */
+    unitCostCents?: number | null;
+  }[];
 }
 
 async function seedOrder(seed: OrderSeed): Promise<void> {
@@ -57,14 +66,16 @@ async function seedOrder(seed: OrderSeed): Promise<void> {
   for (const item of seed.items ?? [{ productId: 1, quantity: 2 }]) {
     await env.DB.prepare(
       `INSERT INTO order_items (order_id, product_id, product_name_snapshot, product_unit_snapshot,
-                                unit_price_cents, quantity, line_total_cents)
-       VALUES ((SELECT id FROM orders WHERE order_number = ?), ?, ?, 'Stück', 500, ?, ?)`,
+                                unit_price_cents, quantity, line_total_cents,
+                                unit_cost_cents_snapshot)
+       VALUES ((SELECT id FROM orders WHERE order_number = ?), ?, ?, 'Stück', 500, ?, ?, ?)`,
     ).bind(
       seed.orderNumber,
       item.productId,
       item.name ?? `Fiktives Produkt ${item.productId}`,
       item.quantity,
       500 * item.quantity,
+      item.unitCostCents ?? null,
     ).run();
   }
 }
@@ -224,5 +235,202 @@ describe('getDashboardDay', () => {
     expect(sql).not.toContain('note');
     expect(sql).not.toContain('unit_price_cents');
     expect(sql).not.toContain('line_total_cents');
+  });
+});
+
+/**
+ * PHASE 7B — DER KOSTENSCHNAPPSCHUSS AUS DER ECHTEN SPALTE.
+ *
+ * Die Rechenregeln stehen in der Domäne. Hier wird geprüft, dass die ABFRAGE
+ * die Spalte tatsächlich liest, dass NULL als NULL ankommt und dass die
+ * spätere Änderung eines Katalogwerts eine bestehende Auswertung nicht
+ * verändert.
+ */
+describe('getDashboardDay — Herstellkosten aus dem Snapshot', () => {
+  it('liest den gespeicherten Kostenwert der Position', async () => {
+    await seedOrder({
+      orderNumber: 'BUS-2026-000001',
+      totalCents: 10_000,
+      items: [{ productId: 1, quantity: 2, unitCostCents: 2000 }],
+    });
+
+    const tag = await getDashboardDay(env.DB, TAG);
+
+    expect(tag.orders[0]?.items[0]?.unitCostCents).toBe(2000);
+    expect(tag.costs.knownCostCents).toBe(4000);
+    expect(tag.costs.complete).toBe(true);
+    expect(tag.costs.grossProfitCents).toBe(6000);
+  });
+
+  it('liest eine leere Spalte als „unbekannt" und nicht als 0', async () => {
+    await seedOrder({
+      orderNumber: 'BUS-2026-000001',
+      totalCents: 10_000,
+      items: [{ productId: 1, quantity: 2 }],
+    });
+
+    const tag = await getDashboardDay(env.DB, TAG);
+
+    expect(tag.orders[0]?.items[0]?.unitCostCents).toBeNull();
+    expect(tag.costs.complete).toBe(false);
+    expect(tag.costs.grossProfitCents).toBeNull();
+    expect(tag.costs.marginTenthsPercent).toBeNull();
+  });
+
+  it('unterscheidet einen gepflegten Nullwert von einem fehlenden', async () => {
+    /**
+     * 0 € Herstellkosten sind eine ENTSCHEIDUNG des Betreibers und werden
+     * gespeichert; NULL ist die Abwesenheit einer Entscheidung. Genau
+     * deshalb hat parseUnitCost() drei Zustände und nicht zwei.
+     */
+    await seedOrder({
+      orderNumber: 'BUS-2026-000001',
+      totalCents: 10_000,
+      items: [{ productId: 1, quantity: 1, unitCostCents: 0 }],
+    });
+
+    const tag = await getDashboardDay(env.DB, TAG);
+
+    expect(tag.orders[0]?.items[0]?.unitCostCents).toBe(0);
+    expect(tag.costs.complete).toBe(true);
+    expect(tag.costs.marginTenthsPercent).toBe(1000);
+  });
+
+  it('mischt gepflegte und fehlende Werte in einer Bestellung', async () => {
+    await seedOrder({
+      orderNumber: 'BUS-2026-000001',
+      totalCents: 10_000,
+      items: [
+        { productId: 1, quantity: 2, unitCostCents: 300 },
+        { productId: 2, quantity: 1 },
+      ],
+    });
+
+    const tag = await getDashboardDay(env.DB, TAG);
+
+    expect(tag.costs.knownCostCents).toBe(600);
+    expect(tag.costs.itemCount).toBe(2);
+    expect(tag.costs.missingItemCount).toBe(1);
+    expect(tag.costs.missingOrderCount).toBe(1);
+    expect(tag.costs.complete).toBe(false);
+  });
+
+  it('lässt stornierte Bestellungen aus der Kostensumme heraus', async () => {
+    await seedOrder({
+      orderNumber: 'BUS-2026-000001',
+      totalCents: 10_000,
+      items: [{ productId: 1, quantity: 1, unitCostCents: 4000 }],
+    });
+    await seedOrder({
+      orderNumber: 'BUS-2026-000002',
+      status: 'cancelled',
+      totalCents: 99_900,
+      items: [{ productId: 1, quantity: 10, unitCostCents: 9000 }],
+    });
+
+    const tag = await getDashboardDay(env.DB, TAG);
+
+    expect(tag.costs.knownCostCents).toBe(4000);
+    expect(tag.costs.marginTenthsPercent).toBe(600);
+  });
+
+  /**
+   * §18.14 UND §22.C — DIE ENTSCHEIDENDE PRÜFUNG.
+   *
+   * Wird der Kostenwert des Katalogprodukts später geändert, darf sich an
+   * der Auswertung eines vergangenen Tages NICHTS ändern. Ohne diese
+   * Zusicherung wäre jede Marge eine Aussage über den heutigen Katalog.
+   */
+  it('bleibt unverändert, wenn sich die Katalogkosten später ändern', async () => {
+    await env.DB.prepare(
+      `INSERT INTO catalog_products (id, source_key, name, is_active, sort_order,
+                                     unit_cost_cents, created_at, updated_at)
+       VALUES (900, 'test-900', 'Fiktives Katalogprodukt', 1, 10, 2000, ?1, ?1)`,
+    ).bind(NOW).run();
+    await env.DB.prepare('UPDATE products SET catalog_product_id = 900 WHERE id = 1').run();
+
+    await seedOrder({
+      orderNumber: 'BUS-2026-000001',
+      totalCents: 10_000,
+      items: [{ productId: 1, quantity: 1, unitCostCents: 2000 }],
+    });
+
+    const vorher = await getDashboardDay(env.DB, TAG);
+    expect(vorher.costs.knownCostCents).toBe(2000);
+    expect(vorher.costs.marginTenthsPercent).toBe(800);
+
+    // Der Katalogwert verdreifacht sich — die Bestellung von damals nicht.
+    await env.DB.prepare('UPDATE catalog_products SET unit_cost_cents = 6000 WHERE id = 900').run();
+
+    const nachher = await getDashboardDay(env.DB, TAG);
+    expect(nachher.costs.knownCostCents).toBe(2000);
+    expect(nachher.costs.marginTenthsPercent).toBe(800);
+
+    await env.DB.prepare('UPDATE products SET catalog_product_id = NULL WHERE id = 1').run();
+    await env.DB.prepare('DELETE FROM catalog_products WHERE id = 900').run();
+  });
+
+  it('behandelt einen unmöglichen gespeicherten Kostenwert als unbekannt', async () => {
+    /**
+     * Ein negativer Wert kommt an der CHECK-Bedingung aus 0017 nur mit
+     * Gewalt vorbei. Träfe er die Ansicht, wäre „unbekannt" die sichere
+     * Antwort: Der Tag verliert seine Marge, statt eine falsche zu zeigen —
+     * und die Seite lädt weiterhin.
+     */
+    await seedOrder({
+      orderNumber: 'BUS-2026-000001',
+      totalCents: 10_000,
+      items: [{ productId: 1, quantity: 1, unitCostCents: 100 }],
+    });
+
+    await env.DB.prepare('PRAGMA ignore_check_constraints = ON').run();
+    await env.DB.prepare('UPDATE order_items SET unit_cost_cents_snapshot = -5').run();
+
+    const tag = await getDashboardDay(env.DB, TAG);
+
+    expect(tag.orders[0]?.items[0]?.unitCostCents).toBeNull();
+    expect(tag.costs.complete).toBe(false);
+    expect(tag.costs.knownCostCents).toBe(0);
+
+    await env.DB.prepare('PRAGMA ignore_check_constraints = OFF').run();
+  });
+
+  /** §12 — die Kosten kosten keine zusätzliche Abfrage. */
+  it('braucht mit Kosten weiterhin genau zwei Abfragen', () => {
+    expect(Object.keys(DASHBOARD_DAY_QUERIES)).toEqual(['orders', 'items']);
+  });
+
+  it('liest den Kostenwert aus der Position und nicht aus dem Katalog', () => {
+    const sql = `${DASHBOARD_DAY_QUERIES.orders} ${DASHBOARD_DAY_QUERIES.items}`;
+
+    expect(sql).toContain('i.unit_cost_cents_snapshot');
+    expect(sql).not.toContain('catalog_products');
+    expect(sql).not.toContain('unit_cost_cents ');
+  });
+
+  it('bildet die Kostensumme nicht in SQL', () => {
+    const sql = `${DASHBOARD_DAY_QUERIES.orders} ${DASHBOARD_DAY_QUERIES.items}`.toUpperCase();
+
+    expect(sql).not.toContain('SUM(');
+    expect(sql).not.toContain('GROUP BY');
+  });
+
+  it('kostet dieselben zwei Abfragen, egal wie viele Positionen der Tag hat', async () => {
+    for (let nummer = 1; nummer <= 6; nummer += 1) {
+      await seedOrder({
+        orderNumber: `BUS-2026-00000${nummer}`,
+        totalCents: 1000,
+        items: [
+          { productId: 1, quantity: 1, unitCostCents: 100 },
+          { productId: 2, quantity: 2, unitCostCents: 200 },
+        ],
+      });
+    }
+
+    const tag = await getDashboardDay(env.DB, TAG);
+
+    expect(tag.costs.itemCount).toBe(12);
+    expect(tag.costs.knownCostCents).toBe(3000);
+    expect(Object.keys(DASHBOARD_DAY_QUERIES)).toHaveLength(2);
   });
 });

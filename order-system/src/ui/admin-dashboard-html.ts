@@ -3,6 +3,7 @@ import {
   PAYMENT_OPTIONS,
   type DashboardActionView,
   type DashboardDayView,
+  type DashboardFinanceView,
   type DashboardOrderListView,
   type DashboardOrderRowView,
   type DonutView,
@@ -15,25 +16,32 @@ import { escapeHtml } from './format';
  * Das Dashboard — die Seite, die ein Bäckereibesitzer morgens als Erstes
  * ansieht.
  *
- * SIE BEANTWORTET SECHS FRAGEN UND KEINE SIEBTE:
+ * SIE BEANTWORTET SIEBEN FRAGEN UND KEINE ACHTE:
  *
  *   Wie viele Bestellungen hat dieser Tag? Was bringt er ein? Wie viel ist
- *   noch zu tun? Wie viele Kunden? Wie viele Einheiten? Und was ist davon
- *   noch nicht bezahlt?
+ *   noch zu tun? Wie viele Kunden? Wie viele Einheiten? Was ist davon noch
+ *   nicht bezahlt? Und — seit Phase 7B — was BLEIBT davon?
  *
  * Was keine dieser Fragen beantwortet, steht nicht darauf: kein
- * Vortagesvergleich, keine Prognose, keine Marge, kein Diagramm. Ein
- * Liniendiagramm über sieben Tage sähe nach Auswertung aus und wäre keine —
- * bei drei bis vierzig Bestellungen am Tag ist jede Kurve Rauschen. Die
- * Zahlen stehen groß da, weil sie groß dastehen sollen.
+ * Vortagesvergleich, keine Prognose, kein Liniendiagramm. Eine Kurve über
+ * sieben Tage sähe nach Auswertung aus und wäre keine — bei drei bis vierzig
+ * Bestellungen am Tag ist jede Kurve Rauschen. Die Zahlen stehen groß da,
+ * weil sie groß dastehen sollen.
  *
- * DIE REIHENFOLGE IST DIE DES ARBEITSTAGS: Tag, Zahlen, Verteilung,
- * Bestellungen, Meistbestellt. Erst wie der Tag steht, dann wie er sich
- * aufteilt, dann was zu tun ist, zuletzt was einordnet. „Meistbestellt" stand bis Phase 6A.3 zwischen den Zahlen und
- * den Bestellungen — und schob damit die einzige Liste, an der etwas ZU TUN
- * ist, unter eine Liste, die nur einordnet. Wer morgens auf diese Seite
- * kommt, sucht zuerst, was offen ist; wovon am meisten weggeht, ist die
- * Frage danach.
+ * DIE SIEBTE FRAGE IST ERST SEIT 7A BEANTWORTBAR. Bis dahin hätte jede Marge
+ * die HEUTIGEN Herstellkosten auf eine Bestellung von letzter Woche
+ * angewendet; seit es Kostenschnappschüsse gibt, ist sie eine Aussage über
+ * den Tag. Wo die Schnappschüsse fehlen, bleibt sie deshalb aus — siehe
+ * finanzen().
+ *
+ * DIE REIHENFOLGE IST DIE DES ARBEITSTAGS: Tag, Zahlen, Handlungsbedarf,
+ * Finanzen, Verteilung, Bestellungen, Meistbestellt. Erst wie der Tag steht,
+ * dann was zu tun ist, dann was er einbringt, dann wie er sich aufteilt,
+ * zuletzt die Listen. „Meistbestellt" stand bis Phase 6A.3 zwischen den
+ * Zahlen und den Bestellungen — und schob damit die einzige Liste, an der
+ * etwas ZU TUN ist, unter eine Liste, die nur einordnet. Wer morgens auf
+ * diese Seite kommt, sucht zuerst, was offen ist; wovon am meisten weggeht,
+ * ist die Frage danach.
  *
  * SIE IST NICHT DIE PRODUKTIONSANSICHT. Dort steht, WAS zu backen ist; hier
  * steht, WIE der Tag steht. Beide zeigen denselben Tag, und ein Link führt
@@ -87,6 +95,7 @@ export function renderAdminDashboardPage(view: AdminDashboardPageView): string {
     ${meldung(view.noticeCode)}
     ${kennzahlen(view.day)}
     ${handlungsbedarf(view.day)}
+    ${finanzen(view.day)}
     ${ringzone(view.day)}
     ${bestellliste(view)}
     ${topProdukte(view.day)}`,
@@ -421,6 +430,86 @@ function handlungszeile(aktion: DashboardActionView): string {
             )}<span aria-hidden="true"> &rarr;</span></span>
           </a>
         </li>`;
+}
+
+/**
+ * DIE FINANZEN DES TAGES — vier Zeilen, kein Diagramm, keine vierte Karte.
+ *
+ * WARUM KEINE KENNZAHLENKARTEN. Herstellkosten, Rohertrag und Marge als drei
+ * weitere Karten hätten die Wand oben von sechs auf neun Felder gebracht —
+ * und eine Wand mit neun Feldern ist keine Wand mehr, sondern eine Tabelle
+ * mit Rahmen. Sie hätten außerdem die falsche Rangfolge behauptet: Der Umsatz
+ * treibt den Tag an, die Marge ordnet ihn ein. Was einordnet, steht nicht in
+ * derselben Größe wie das, was antreibt.
+ *
+ * DER UMSATZ STEHT TROTZDEM NOCH EINMAL DA, und das ist kein Doppel: Er ist
+ * die erste Zeile einer RECHNUNG. Ohne ihn stünden „Herstellkosten",
+ * „Rohertrag" und „Marge" ohne ihre Bezugsgröße da, und man müsste zum
+ * Nachrechnen zwei Abschnitte weiter oben schauen. Es ist dieselbe Zahl aus
+ * derselben Quelle — das Ansichtsmodell formatiert sie zweimal und rechnet
+ * sie nicht zweimal.
+ *
+ * DIE STELLE IST GEWÄHLT: nach dem Handlungsbedarf, vor den Ringen. Erst was
+ * zu TUN ist, dann was der Tag EINBRINGT, dann wie er sich aufteilt. Ein
+ * Finanzbereich ganz oben hätte eine Bäckerei morgens um fünf mit einer
+ * Auswertung begrüßt, statt mit dem, was ansteht.
+ *
+ * ER IST KEIN ALARM, AUCH BEI UNVOLLSTÄNDIGER KOSTENBASIS. Kein rotes Feld,
+ * kein Warnzeichen: Fehlende Herstellkosten sind kein Fehler, sondern etwas,
+ * das noch nicht gepflegt ist — bei jeder Bestellung von vor Phase 7A ist es
+ * der Normalzustand. Es steht ein Satz da und ein Weg dorthin, wo man es
+ * ändern kann.
+ *
+ * ER TRÄGT KEINE LOGIK. Ob eine Marge erscheint, steht fertig im
+ * Ansichtsmodell; diese Funktion setzt Zeichenketten. Eine Bedingung wie
+ * `costs.complete ? … : '—'` in dieser Datei wäre eine fachliche Regel in
+ * einer Zeichenkettenverkettung — prüfbar nur über HTML.
+ */
+function finanzen(day: DashboardDayView): string {
+  const finanz: DashboardFinanceView = day.finance;
+
+  return `<section class="tafel finanzen" aria-labelledby="finanzen-titel">
+      <div class="tafel__kopf">
+        <h2 id="finanzen-titel" class="tafel__titel">Finanzen</h2>
+        <p class="tafel__meta finanzen__stand${
+          finanz.isComplete ? '' : ' finanzen__stand--offen'
+        }">${escapeHtml(finanz.statusLabel)}</p>
+      </div>
+      <dl class="finanzliste">
+        ${finanzzeile('Umsatz', finanz.revenueLabel)}
+        ${finanzzeile('Herstellkosten', finanz.costLabel)}
+        ${finanzzeile('Rohertrag', finanz.grossProfitLabel, finanz.isNegative ? 'minus' : 'summe')}
+        ${finanzzeile('Marge', finanz.marginLabel, finanz.isMarginNegative ? 'minus' : 'summe')}
+      </dl>
+      <p class="finanzen__hinweis">${escapeHtml(finanz.note)}${
+        finanz.href === null
+          ? ''
+          : ` <a class="finanzen__weg" href="${escapeHtml(finanz.href)}">${escapeHtml(
+              finanz.linkLabel,
+            )}<span aria-hidden="true"> &rarr;</span></a>`
+      }</p>
+    </section>`;
+}
+
+/**
+ * Eine Zeile der Rechnung: Bezeichnung links, Betrag rechts.
+ *
+ * ES IST EIN <dl> UND KEINE TABELLE. Vier Paare aus Begriff und Wert sind
+ * genau das, wofür eine Beschreibungsliste da ist; eine Tabelle behauptete
+ * Spalten, die es nicht gibt, und brächte auf dem Telefon die
+ * Karten-Umschaltung der `.datentabelle` mit, die hier nichts zu tun hätte.
+ *
+ * ZWEI ABWEICHUNGEN UND KEINE DRITTE: `summe` setzt Rohertrag und Marge etwas
+ * kräftiger — sie sind das ERGEBNIS der beiden Zeilen darüber. `minus`
+ * kennzeichnet einen negativen Rohertrag, und zwar zusätzlich zum Minuszeichen,
+ * das ohnehin im Text steht: Die Farbe ist nie die einzige Aussage.
+ */
+function finanzzeile(label: string, wert: string, variante: 'summe' | 'minus' | null = null): string {
+  const klasse = `finanzzeile${variante === null ? '' : ` finanzzeile--${variante}`}`;
+  return `<div class="${klasse}">
+          <dt class="finanzzeile__label">${escapeHtml(label)}</dt>
+          <dd class="finanzzeile__wert">${escapeHtml(wert)}</dd>
+        </div>`;
 }
 
 /**

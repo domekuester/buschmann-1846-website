@@ -19,6 +19,15 @@ function position(overrides: Partial<DashboardOrderItem> = {}): DashboardOrderIt
     productUnit: 'Stück',
     sortOrder: 10,
     quantity: 2,
+    /**
+     * DER STANDARD IST „KOSTEN UNBEKANNT" und nicht ein gepflegter Wert.
+     *
+     * Er entspricht dem Altbestand: Jede Bestellung von vor Phase 7A trägt
+     * NULL in dieser Spalte. Ein Test, der Kosten prüfen will, muss sie
+     * deshalb ausdrücklich setzen — und keiner der älteren Tests behauptet
+     * versehentlich eine vollständige Kalkulation.
+     */
+    unitCostCents: null,
     ...overrides,
   };
 }
@@ -59,6 +68,17 @@ describe('aggregateDashboardDay — der leere Tag', () => {
         in_production: 0,
         completed: 0,
         cancelled: 0,
+      },
+      costs: {
+        revenueCents: 0,
+        knownCostCents: 0,
+        itemCount: 0,
+        missingItemCount: 0,
+        orderCount: 0,
+        missingOrderCount: 0,
+        complete: true,
+        grossProfitCents: 0,
+        marginTenthsPercent: null,
       },
       orders: [],
       topProducts: [],
@@ -402,5 +422,233 @@ describe('aggregateDashboardDay — der Schlüssel der Zusammenfassung', () => {
     ]);
 
     expect(tag.topProducts).toHaveLength(2);
+  });
+});
+
+/**
+ * PHASE 7B — DIE KAUFMÄNNISCHE SEITE DES TAGES.
+ *
+ * Die Rechenregeln selbst stehen in tests/domain/cost-summary.test.ts. Hier
+ * wird die andere Hälfte geprüft: dass der Tagesüberblick sie auf DIESELBE
+ * Menge von Bestellungen anwendet wie den Umsatz — hinter demselben
+ * Stornofilter, mit demselben Umsatzwert, im selben Durchlauf.
+ */
+describe('aggregateDashboardDay — Herstellkosten, Rohertrag und Marge', () => {
+  it('summiert die Kosten einer vollständig kalkulierten Bestellung', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({
+        totalCents: 1000,
+        items: [position({ quantity: 2, unitCostCents: 200 })],
+      }),
+    ]);
+
+    expect(tag.costs.knownCostCents).toBe(400);
+    expect(tag.costs.complete).toBe(true);
+    expect(tag.costs.grossProfitCents).toBe(600);
+    expect(tag.costs.marginTenthsPercent).toBe(600);
+  });
+
+  /**
+   * §7 — DIE UMSATZKENNZAHL BLEIBT DIE EINZIGE QUELLE.
+   *
+   * `costs.revenueCents` ist nicht „auch ein Umsatz", sondern DERSELBE Wert.
+   * Liefen die beiden auseinander, stünde auf dem Dashboard eine Marge, die
+   * sich auf einen Umsatz bezieht, der nirgendwo auf der Seite steht.
+   */
+  it('rechnet mit genau dem Umsatz, der als Kennzahl ausgewiesen wird', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ totalCents: 1234, items: [position({ unitCostCents: 100 })] }),
+      bestellung({ totalCents: 4321, items: [position({ unitCostCents: 100 })] }),
+    ]);
+
+    expect(tag.costs.revenueCents).toBe(tag.revenueCents);
+    expect(tag.costs.revenueCents).toBe(5555);
+  });
+
+  it('summiert über mehrere Bestellungen und Positionen', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({
+        totalCents: 2000,
+        items: [
+          position({ quantity: 3, unitCostCents: 100 }),
+          position({ productId: 2, quantity: 1, unitCostCents: 250 }),
+        ],
+      }),
+      bestellung({ totalCents: 1000, items: [position({ quantity: 5, unitCostCents: 50 })] }),
+    ]);
+
+    expect(tag.costs.knownCostCents).toBe(800);
+    expect(tag.costs.itemCount).toBe(3);
+    expect(tag.costs.orderCount).toBe(2);
+    expect(tag.costs.grossProfitCents).toBe(2200);
+  });
+
+  /**
+   * §18.5 — DER STORNOFILTER GILT FÜR KOSTEN GENAUSO WIE FÜR DEN UMSATZ.
+   *
+   * Der gefährliche Fehler ist der ASYMMETRISCHE: Umsatz ohne Storno,
+   * Kosten mit Storno. Er drückt die Marge, ohne dass irgendeine Zahl auf
+   * der Seite falsch aussieht.
+   */
+  it('lässt stornierte Bestellungen vollständig aus der Kostenrechnung', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ totalCents: 1000, items: [position({ quantity: 2, unitCostCents: 200 })] }),
+      bestellung({
+        status: 'cancelled',
+        totalCents: 9999,
+        items: [position({ quantity: 40, unitCostCents: 900 })],
+      }),
+    ]);
+
+    expect(tag.costs.knownCostCents).toBe(400);
+    expect(tag.costs.orderCount).toBe(1);
+    expect(tag.costs.itemCount).toBe(1);
+    expect(tag.costs.grossProfitCents).toBe(600);
+  });
+
+  it('zählt eine stornierte Bestellung ohne Kostenwert nicht als Lücke', () => {
+    /**
+     * Eine stornierte Bestellung ohne Kostenschnappschuss dürfte den Tag
+     * nicht unvollständig machen — sie kommt in keiner Summe vor, also fehlt
+     * an ihr auch nichts.
+     */
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ totalCents: 1000, items: [position({ quantity: 2, unitCostCents: 200 })] }),
+      bestellung({ status: 'cancelled', items: [position({ unitCostCents: null })] }),
+    ]);
+
+    expect(tag.costs.complete).toBe(true);
+    expect(tag.costs.missingItemCount).toBe(0);
+    expect(tag.costs.marginTenthsPercent).toBe(600);
+  });
+
+  /** §18.6 und §16 — der Zahlungsstand ändert am Rohertrag nichts. */
+  it('zählt eine unbezahlte Bestellung in Umsatz UND Kosten', () => {
+    const bezahlt = aggregateDashboardDay(TAG, [
+      bestellung({
+        paymentStatus: 'paid_cash',
+        totalCents: 1000,
+        items: [position({ quantity: 2, unitCostCents: 200 })],
+      }),
+    ]);
+    const offen = aggregateDashboardDay(TAG, [
+      bestellung({
+        paymentStatus: 'unpaid',
+        totalCents: 1000,
+        items: [position({ quantity: 2, unitCostCents: 200 })],
+      }),
+    ]);
+
+    expect(offen.costs).toEqual(bezahlt.costs);
+    expect(offen.costs.grossProfitCents).toBe(600);
+  });
+
+  it('ändert die Marge nicht, wenn eine Bestellung bezahlt wird', () => {
+    const items = [position({ quantity: 2, unitCostCents: 200 })];
+    const vorher = aggregateDashboardDay(TAG, [
+      bestellung({ paymentStatus: 'unpaid', totalCents: 1000, items }),
+    ]);
+    const nachher = aggregateDashboardDay(TAG, [
+      bestellung({ paymentStatus: 'paid_bank', totalCents: 1000, items }),
+    ]);
+
+    expect(nachher.costs.marginTenthsPercent).toBe(vorher.costs.marginTenthsPercent);
+  });
+
+  /** §18.13 und §9 — der Altbestand aus der Zeit vor Phase 7A. */
+  it('behandelt eine Bestellung ohne Kostenschnappschüsse als unvollständig', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ totalCents: 1000, items: [position({ unitCostCents: null })] }),
+    ]);
+
+    expect(tag.costs.complete).toBe(false);
+    expect(tag.costs.missingOrderCount).toBe(1);
+    expect(tag.costs.grossProfitCents).toBeNull();
+    expect(tag.costs.marginTenthsPercent).toBeNull();
+  });
+
+  it('zeigt den Umsatz eines Altbestandstages trotzdem vollständig an', () => {
+    /**
+     * §1 — der Umsatz bleibt richtig, auch wenn die Kostenbasis fehlt. Ein
+     * Tag, der wegen fehlender Kosten auch seinen Umsatz verschwiege, wäre
+     * die schlechtere Lüge.
+     */
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ totalCents: 4350, items: [position({ unitCostCents: null })] }),
+    ]);
+
+    expect(tag.revenueCents).toBe(4350);
+    expect(tag.costs.revenueCents).toBe(4350);
+  });
+
+  it('macht einen Tag schon durch EINE Lücke unter vielen unvollständig', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ totalCents: 1000, items: [position({ unitCostCents: 100 })] }),
+      bestellung({ totalCents: 1000, items: [position({ unitCostCents: 100 })] }),
+      bestellung({ totalCents: 1000, items: [position({ unitCostCents: 100 })] }),
+      bestellung({
+        totalCents: 1000,
+        items: [position({ unitCostCents: 100 }), position({ productId: 2, unitCostCents: null })],
+      }),
+    ]);
+
+    expect(tag.costs.orderCount).toBe(4);
+    expect(tag.costs.missingOrderCount).toBe(1);
+    expect(tag.costs.missingItemCount).toBe(1);
+    expect(tag.costs.complete).toBe(false);
+    expect(tag.costs.marginTenthsPercent).toBeNull();
+  });
+
+  /** §15 — Kosten über dem Umsatz sind eine betriebliche Wahrheit. */
+  it('lässt den Rohertrag eines Tages negativ werden', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ totalCents: 10_000, items: [position({ quantity: 1, unitCostCents: 12_000 })] }),
+    ]);
+
+    expect(tag.costs.grossProfitCents).toBe(-2000);
+    expect(tag.costs.marginTenthsPercent).toBe(-200);
+  });
+
+  /** §14 — ein Tag ohne Umsatz. */
+  it('ergibt an einem leeren Tag keine Marge', () => {
+    const tag = aggregateDashboardDay(TAG, []);
+
+    expect(tag.costs.complete).toBe(true);
+    expect(tag.costs.grossProfitCents).toBe(0);
+    expect(tag.costs.marginTenthsPercent).toBeNull();
+  });
+
+  it('ergibt an einem vollständig stornierten Tag keine Marge', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ status: 'cancelled', totalCents: 5000, items: [position({ unitCostCents: 100 })] }),
+    ]);
+
+    expect(tag.revenueCents).toBe(0);
+    expect(tag.costs.knownCostCents).toBe(0);
+    expect(tag.costs.marginTenthsPercent).toBeNull();
+  });
+
+  /**
+   * §17 — der Produktionsstatus ändert nichts. Kosten werden nicht erst bei
+   * „abgeschlossen" angesetzt: Das Dashboard ist auftrags- und
+   * produktionstagsbezogen, nicht abschlussbezogen.
+   */
+  it('zählt Kosten in jedem nicht stornierten Status gleich', () => {
+    const items = [position({ quantity: 2, unitCostCents: 200 })];
+    const stati = ['new', 'confirmed', 'in_production', 'completed'] as const;
+
+    for (const status of stati) {
+      const tag = aggregateDashboardDay(TAG, [bestellung({ status, totalCents: 1000, items })]);
+      expect(tag.costs.knownCostCents).toBe(400);
+      expect(tag.costs.grossProfitCents).toBe(600);
+    }
+  });
+
+  it('zählt eine Bestellung ohne Positionen als kalkuliert', () => {
+    const tag = aggregateDashboardDay(TAG, [bestellung({ totalCents: 0, items: [] })]);
+
+    expect(tag.costs.orderCount).toBe(1);
+    expect(tag.costs.itemCount).toBe(0);
+    expect(tag.costs.complete).toBe(true);
   });
 });

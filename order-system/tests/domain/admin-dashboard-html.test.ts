@@ -26,16 +26,26 @@ function bestellung(overrides: Partial<DashboardOrder> = {}): DashboardOrder {
     fulfillmentType: 'pickup',
     totalCents: 4350,
     createdAt: '2026-08-25T07:12:00.000Z',
-    items: [
-      {
-        productId: 1,
-        productName: 'Fiktiver Käsekuchen',
-        productUnit: 'Stück',
-        sortOrder: 10,
-        quantity: 2,
-      },
-    ],
+    items: [position()],
     ...overrides,
+  };
+}
+
+/**
+ * Eine Position — standardmäßig OHNE gepflegte Herstellkosten.
+ *
+ * Der Standard ist der Altbestand: Vor Phase 7A trägt jede Position NULL.
+ * Ein Test, der eine vollständige Kalkulation braucht, setzt sie
+ * ausdrücklich — und keiner der älteren Tests behauptet sie versehentlich.
+ */
+function position(unitCostCents: number | null = null, quantity = 2) {
+  return {
+    productId: 1,
+    productName: 'Fiktiver Käsekuchen',
+    productUnit: 'Stück',
+    sortOrder: 10,
+    quantity,
+    unitCostCents,
   };
 }
 
@@ -606,5 +616,361 @@ describe('renderAdminDashboardPage — Meistbestellt', () => {
     expect(html).toContain('Meistbestellt');
     expect(html).toContain('Für diesen Tag ist noch kein Produkt bestellt');
     expect(html).not.toContain('class="topliste"');
+  });
+});
+
+/**
+ * PHASE 7B — DER FINANZBEREICH DER TAGESANSICHT.
+ *
+ * §19 des Auftrags. Geprüft wird die AUSGELIEFERTE SEITE und nicht nur das
+ * Ansichtsmodell: Eine Marge, die im Modell fehlt und im HTML doch dasteht,
+ * wäre genau der Fehler, den diese Phase verhindern soll.
+ */
+describe('§19.15 — die vollständig kalkulierte Tagesansicht', () => {
+  /** Umsatz 1.240,00 €, Kosten 510,30 € — das Beispiel aus §3 des Auftrags. */
+  const vollstaendig = () => ({
+    orders: [
+      bestellung({
+        totalCents: 124_000,
+        items: [position(51_030, 1)],
+      }),
+    ],
+  });
+
+  it('zeigt Umsatz, Herstellkosten, Rohertrag und Marge', () => {
+    const html = seite(vollstaendig());
+
+    expect(html).toContain('Finanzen');
+    expect(html).toContain('Umsatz');
+    expect(html).toContain('Herstellkosten');
+    expect(html).toContain('Rohertrag');
+    expect(html).toContain('Marge');
+
+    expect(html).toContain('1.240,00 €');
+    expect(html).toContain('510,30 €');
+    expect(html).toContain('729,70 €');
+    expect(html).toContain('58,8 %');
+  });
+
+  it('kennzeichnet die Kostenbasis als vollständig', () => {
+    const html = seite(vollstaendig());
+
+    expect(html).toContain('Kostenbasis vollständig');
+    expect(html).not.toContain('Kostenbasis unvollständig');
+  });
+
+  it('nennt, wie viele Bestellungen kalkuliert sind', () => {
+    expect(seite(vollstaendig())).toContain('Alle 1 Bestellung ist vollständig kalkuliert.');
+  });
+
+  it('führt bei vollständiger Basis NICHT zur Kostenpflege', () => {
+    /**
+     * Ein Weg, an dessen Ende nichts zu tun ist, ist eine Einladung ins
+     * Leere — er steht nur da, wenn tatsächlich etwas fehlt.
+     */
+    expect(seite(vollstaendig())).not.toContain('Herstellkosten ergänzen');
+  });
+
+  it('setzt den Finanzbereich zwischen Handlungsbedarf und Ringe', () => {
+    const html = seite(vollstaendig());
+
+    expect(html.indexOf('handlung-titel')).toBeLessThan(html.indexOf('finanzen-titel'));
+    expect(html.indexOf('finanzen-titel')).toBeLessThan(html.indexOf('zahlungsring-titel'));
+  });
+
+  it('gibt dem Bereich eine eigene Überschrift für Screenreader', () => {
+    expect(seite(vollstaendig())).toContain('aria-labelledby="finanzen-titel"');
+  });
+});
+
+describe('§19.16 und §19.17 — die unvollständige Kostenbasis', () => {
+  /**
+   * Vier Bestellungen, eine davon ohne Kostenwert. Der Umsatz stimmt, die
+   * Marge gibt es nicht.
+   */
+  const unvollstaendig = () => ({
+    orders: [
+      bestellung({ orderNumber: 'BUS-2026-000001', totalCents: 10_000, items: [position(2000, 1)] }),
+      bestellung({ orderNumber: 'BUS-2026-000002', totalCents: 10_000, items: [position(2000, 1)] }),
+      bestellung({ orderNumber: 'BUS-2026-000003', totalCents: 10_000, items: [position(2000, 1)] }),
+      bestellung({ orderNumber: 'BUS-2026-000004', totalCents: 10_000, items: [position(null, 1)] }),
+    ],
+  });
+
+  it('zeigt keine Gesamtmarge', () => {
+    const html = seite(unvollstaendig());
+
+    expect(html).toContain('Kostenbasis unvollständig');
+    expect(html).not.toMatch(/\d,\d\s%/);
+  });
+
+  it('zeigt auch keinen Rohertrag und keine Gesamtkosten', () => {
+    /**
+     * §2 — DIE TEILSUMME IST DIE GEFÄHRLICHERE HALBWAHRHEIT. „Herstellkosten
+     * 60,00 €" neben „Umsatz 400,00 €" liest sich vollständig, ganz gleich,
+     * was darunter steht.
+     */
+    const html = seite(unvollstaendig());
+
+    expect(html).not.toContain('60,00 €');
+    expect(html).not.toContain('340,00 €');
+  });
+
+  it('zeigt den Umsatz weiterhin vollständig und richtig', () => {
+    expect(seite(unvollstaendig())).toContain('400,00 €');
+  });
+
+  it('nennt, bei wie vielen Bestellungen die Kosten fehlen', () => {
+    expect(seite(unvollstaendig())).toContain(
+      'Bei 1 von 4 Bestellungen fehlen noch die Herstellkosten.',
+    );
+  });
+
+  it('zählt mehrere Lücken richtig', () => {
+    const html = seite({
+      orders: [
+        bestellung({ orderNumber: 'BUS-2026-000001', totalCents: 10_000, items: [position(2000, 1)] }),
+        bestellung({ orderNumber: 'BUS-2026-000002', totalCents: 10_000, items: [position(null, 1)] }),
+        bestellung({ orderNumber: 'BUS-2026-000003', totalCents: 10_000, items: [position(null, 1)] }),
+      ],
+    });
+
+    expect(html).toContain('Bei 2 von 3 Bestellungen fehlen noch die Herstellkosten.');
+  });
+
+  it('setzt den Strich als Zeichen und lässt die Zelle nicht leer', () => {
+    const html = seite(unvollstaendig());
+    const bereich = html.slice(html.indexOf('finanzen-titel'), html.indexOf('ringzone'));
+
+    expect(bereich.match(/—/g)?.length).toBe(3);
+  });
+
+  /** §19.18 — der Weg zur Kostenpflege. */
+  it('führt zur bestehenden Adminseite Sortiment & Preise', () => {
+    const html = seite(unvollstaendig());
+
+    expect(html).toContain('Herstellkosten ergänzen');
+    expect(html).toContain('href="/admin/catalog#herstellkosten"');
+  });
+
+  it('legt keine zweite Kostenpflegeseite an', () => {
+    expect(seite(unvollstaendig())).not.toContain('/admin/kosten');
+  });
+
+  it('bleibt ein Hinweis und wird kein Fehlerbanner', () => {
+    /**
+     * §8 und §24 — deutlich, aber nicht alarmistisch. Kein role="alert",
+     * keine Fehlerfläche: Fehlende Kosten sind kein Fehler, sondern etwas,
+     * das noch nicht gepflegt ist.
+     */
+    const html = seite(unvollstaendig());
+    const bereich = html.slice(html.indexOf('finanzen-titel'), html.indexOf('ringzone'));
+
+    expect(bereich).not.toContain('role="alert"');
+    expect(bereich).not.toContain('class="banner"');
+  });
+});
+
+describe('§14 — der Tag ohne Umsatz', () => {
+  it('zeigt an einem leeren Tag keine Marge und kein NaN', () => {
+    const html = seite({ orders: [] });
+
+    expect(html).toContain('Finanzen');
+    expect(html).not.toContain('NaN');
+    expect(html).not.toContain('Infinity');
+    expect(html).toContain('Keine Umsätze an diesem Tag.');
+  });
+
+  it('zeigt an einem leeren Tag trotzdem 0,00 € Umsatz und Kosten', () => {
+    const html = seite({ orders: [] });
+    const bereich = html.slice(html.indexOf('finanzen-titel'), html.indexOf('ringzone'));
+
+    expect(bereich.match(/0,00 €/g)?.length).toBe(3);
+  });
+
+  it('zeigt an einem vollständig stornierten Tag keine Marge', () => {
+    const html = seite({
+      orders: [bestellung({ status: 'cancelled', totalCents: 5000, items: [position(100, 1)] })],
+    });
+
+    expect(html).not.toMatch(/\d,\d\s%/);
+    expect(html).toContain('Keine Umsätze an diesem Tag.');
+  });
+});
+
+describe('§15 — der negative Rohertrag auf der Seite', () => {
+  const verlusttag = () => ({
+    orders: [bestellung({ totalCents: 10_000, items: [position(12_000, 1)] })],
+  });
+
+  it('zeigt ihn mit Vorzeichen statt ihn auf null zu klemmen', () => {
+    const html = seite(verlusttag());
+
+    expect(html).toContain('-20,00 €');
+    expect(html).toContain('-20,0 %');
+  });
+
+  it('kennzeichnet ihn zusätzlich für die Darstellung', () => {
+    // Rohertrag UND Marge — beide stehen unter null, beide werden gekennzeichnet.
+    expect(seite(verlusttag()).match(/finanzzeile--minus/g)?.length).toBe(2);
+  });
+
+  it('färbt einen Strich nicht ein, wo es gar keine Marge gibt', () => {
+    /**
+     * Ein Tag mit Kosten und ohne Umsatz — alles storniert — hätte einen
+     * negativen Rohertrag, aber keine Marge. Ein roter Strich wäre eine
+     * Farbe ohne Aussage.
+     */
+    const view = toDashboardView(
+      tag({ orders: [bestellung({ status: 'cancelled', totalCents: 5000, items: [position(100, 1)] })] }),
+    );
+
+    expect(view.finance.marginLabel).toBe('—');
+    expect(view.finance.isMarginNegative).toBe(false);
+  });
+
+  it('sagt es im Text und nicht nur in einer Farbe', () => {
+    /**
+     * §24 — Farbe ist auf diesen Seiten nie die einzige Aussage. Das
+     * Minuszeichen steht im Text, und der Text ist die Auskunft.
+     */
+    const html = seite(verlusttag());
+    expect(html).toMatch(/-20,00 €/);
+  });
+});
+
+describe('§19.19 bis §19.21 — was 7B NICHT verändert', () => {
+  const tagMitKosten = () => ({
+    orders: [
+      bestellung({ orderNumber: 'BUS-2026-000001', totalCents: 4350, items: [position(1000, 2)] }),
+      bestellung({
+        orderNumber: 'BUS-2026-000002',
+        totalCents: 1290,
+        paymentStatus: 'paid_cash',
+        items: [position(300, 1)],
+      }),
+    ],
+  });
+
+  /** §19.19 — die Umsatzkennzahl ist unverändert. */
+  it('lässt die Kennzahlenwand bei sechs Karten', () => {
+    const html = seite(tagMitKosten());
+
+    // Nur die Karten selbst — nicht ihre Innenteile (kennzahlkarte__label …).
+    expect(html.match(/class="kennzahlkarte[^_]/g)?.length).toBe(6);
+  });
+
+  it('zeigt den Umsatz weiterhin als Hauptkennzahl', () => {
+    const html = seite(tagMitKosten());
+
+    expect(html).toContain('kennzahlkarte--haupt');
+    expect(html).toContain('56,40 €');
+  });
+
+  it('nennt denselben Umsatz in der Kennzahl und im Finanzbereich', () => {
+    const view = toDashboardView(tag(tagMitKosten()));
+
+    expect(view.finance.revenueLabel).toBe(view.revenueLabel);
+  });
+
+  /** §19.20 — die Ringe bleiben, wie sie waren. */
+  it('lässt beide Ringe unverändert stehen', () => {
+    const html = seite(tagMitKosten());
+
+    expect(html).toContain('id="zahlungsring-titel"');
+    expect(html).toContain('id="statusring-titel"');
+    expect(html.match(/class="tafel ringtafel"/g)?.length).toBe(2);
+  });
+
+  it('fügt keinen dritten Ring und keinen Margen-Donut hinzu', () => {
+    const html = seite(tagMitKosten());
+
+    expect(html.match(/<svg/g)?.length).toBe(2);
+    expect(html).not.toContain('margenring');
+    expect(html).not.toContain('kostenring');
+  });
+
+  /** §19.21 — der Handlungsbedarf bekommt keine Kostenzeile. */
+  it('lässt den Handlungsbedarf unverändert', () => {
+    const html = seite(tagMitKosten());
+    const bereich = html.slice(html.indexOf('handlung-titel'), html.indexOf('finanzen-titel'));
+
+    expect(bereich).not.toContain('Herstellkosten');
+    expect(bereich).not.toContain('Kostenbasis');
+  });
+
+  it('erzeugt aus fehlenden Kosten keinen neuen Handlungspunkt', () => {
+    const ohneKosten = seite({
+      orders: [bestellung({ totalCents: 4350, items: [position(null, 2)] })],
+    });
+    const mitKosten = seite({
+      orders: [bestellung({ totalCents: 4350, items: [position(1000, 2)] })],
+    });
+
+    const punkte = (html: string) => html.match(/class="handlung__punkt"/g)?.length ?? 0;
+    expect(punkte(ohneKosten)).toBe(punkte(mitKosten));
+  });
+
+  it('lässt Meistbestellt und die Bestellliste unberührt', () => {
+    const html = seite(tagMitKosten());
+
+    expect(html).toContain('Meistbestellt');
+    expect(html).toContain('id="bestellungen"');
+    expect(html).toContain('Fiktiver Käsekuchen');
+  });
+});
+
+describe('Der Finanzbereich als Ansichtsmodell', () => {
+  it('trägt fertige Zeichenketten und keine Rechenarbeit für den Renderer', () => {
+    const view = toDashboardView(
+      tag({ orders: [bestellung({ totalCents: 124_000, items: [position(51_030, 1)] })] }),
+    );
+
+    expect(view.finance).toEqual({
+      revenueLabel: '1.240,00 €',
+      costLabel: '510,30 €',
+      grossProfitLabel: '729,70 €',
+      marginLabel: '58,8 %',
+      isComplete: true,
+      isNegative: false,
+      isMarginNegative: false,
+      statusLabel: 'Kostenbasis vollständig',
+      note: 'Alle 1 Bestellung ist vollständig kalkuliert.',
+      href: null,
+      linkLabel: 'Herstellkosten ergänzen',
+    });
+  });
+
+  it('setzt bei unvollständiger Basis überall den Strich', () => {
+    const view = toDashboardView(
+      tag({ orders: [bestellung({ totalCents: 10_000, items: [position(null, 1)] })] }),
+    );
+
+    expect(view.finance.revenueLabel).toBe('100,00 €');
+    expect(view.finance.costLabel).toBe('—');
+    expect(view.finance.grossProfitLabel).toBe('—');
+    expect(view.finance.marginLabel).toBe('—');
+    expect(view.finance.isComplete).toBe(false);
+    expect(view.finance.href).toBe('/admin/catalog#herstellkosten');
+  });
+
+  it('erkennt den negativen Rohertrag für die Darstellung', () => {
+    const view = toDashboardView(
+      tag({ orders: [bestellung({ totalCents: 10_000, items: [position(12_000, 1)] })] }),
+    );
+
+    expect(view.finance.isNegative).toBe(true);
+    expect(view.finance.isMarginNegative).toBe(true);
+    expect(view.finance.grossProfitLabel).toBe('-20,00 €');
+  });
+
+  it('nennt einen Rohertrag von genau null nicht negativ', () => {
+    const view = toDashboardView(
+      tag({ orders: [bestellung({ totalCents: 10_000, items: [position(10_000, 1)] })] }),
+    );
+
+    expect(view.finance.isNegative).toBe(false);
+    expect(view.finance.grossProfitLabel).toBe('0,00 €');
+    expect(view.finance.marginLabel).toBe('0,0 %');
   });
 });

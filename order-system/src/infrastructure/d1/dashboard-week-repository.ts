@@ -1,11 +1,12 @@
+import type { CostItem } from '../../domain/cost-summary';
 import type { DashboardWeekOrder } from '../../domain/dashboard-week';
 import { InvalidArgumentError } from '../../domain/errors';
 import { isOrderStatus } from '../../domain/order-status';
 import { isPaymentStatus } from '../../domain/payment-status';
-import type { DashboardWeekOrderRow } from './rows';
+import type { DashboardWeekItemRow, DashboardWeekOrderRow } from './rows';
 
 /**
- * Die Datenbasis der Wochenübersicht — EINE Abfrage über sieben Tage.
+ * Die Datenbasis der Wochenübersicht — ZWEI Abfragen über sieben Tage.
  *
  * DAS IST DER GANZE GRUND, WARUM ES DIESE DATEI GIBT. Die naheliegende
  * Fassung — getDashboardDay() siebenmal in einer Schleife — hätte 14 Abfragen
@@ -14,15 +15,24 @@ import type { DashboardWeekOrderRow } from './rows';
  * die siebenmal so teuer ist wie eine Tagesansicht, ist die Sorte Bequemlichkeit,
  * die man erst bemerkt, wenn der Betrieb Bestellungen hat.
  *
- * Hier steht stattdessen EIN Bereichsfilter über fulfillment_date. Er kostet
- * dasselbe, ob die Woche leer ist oder voll — es gibt keine Schleife, keine
- * Abfrage je Tag und keine je Bestellung.
+ * Hier stehen stattdessen ZWEI Bereichsfilter über fulfillment_date. Sie
+ * kosten dasselbe, ob die Woche leer ist oder voll — es gibt keine Schleife,
+ * keine Abfrage je Tag und keine je Bestellung.
  *
- * ES WERDEN VIER SPALTEN GELESEN und keine fünfte: Liefertag, Status,
- * Zahlungsstand, Betrag. Kein Kundenname, keine Bestellnummer, keine Adresse,
- * keine Notiz, keine Position. Die Wochenansicht zeigt Zahlen je Tag; was sie
- * nicht zeigt, lädt sie nicht. Ein späteres „zeig doch schnell den Kunden mit
- * an" muss hier vorbei und ist damit eine Entscheidung und kein Versehen.
+ * WARUM ES SEIT PHASE 7B ZWEI SIND UND NICHT EINE. Herstellkosten stehen an
+ * der POSITION und nicht an der Bestellung; ohne Positionszeilen gibt es
+ * keinen Rohertrag, sondern nur eine Schätzung. Die zweite Abfrage ist der
+ * Preis dafür — eine feste Zahl, keine wachsende: Sie kostet dasselbe bei
+ * einer Bestellung wie bei vierhundert, und die Wochenansicht bleibt damit
+ * billiger als eine einzige Tagesansicht plus Wochenübersicht zusammen.
+ *
+ * ES WERDEN FÜNF SPALTEN JE BESTELLUNG GELESEN und drei je Position: Kennung,
+ * Liefertag, Status, Zahlungsstand, Betrag — und Bestellzugehörigkeit, Menge,
+ * Kostenschnappschuss. Kein Kundenname, keine Bestellnummer, keine Adresse,
+ * keine Notiz, kein Produktname, keine Einheit, kein Verkaufspreis. Die
+ * Wochenansicht zeigt Zahlen je Tag; was sie nicht zeigt, lädt sie nicht. Ein
+ * späteres „zeig doch schnell den Kunden mit an" muss hier vorbei und ist
+ * damit eine Entscheidung und kein Versehen.
  *
  * ES WIRD NICHT AGGREGIERT. Kein SUM(), kein GROUP BY, kein COUNT — dieselbe
  * Regel wie im Tagesüberblick, und hier mit besonderem Gewicht: Ein SUM() in
@@ -53,17 +63,49 @@ import type { DashboardWeekOrderRow } from './rows';
  * entsteht aus dem Kalender und nicht aus dieser Abfrage.
  */
 const Q_ORDERS = `
-  SELECT o.fulfillment_date, o.status, o.payment_status, o.total_amount_cents
+  SELECT o.id, o.fulfillment_date, o.status, o.payment_status, o.total_amount_cents
     FROM orders o
    WHERE o.fulfillment_date >= ? AND o.fulfillment_date <= ?
 `;
 
 /**
- * Die Abfrage, nach außen sichtbar — damit ein Test DIESE prüft und nicht
- * eine Kopie. Dass es GENAU EINE ist, ist Vertrag.
+ * Die Kostenzeilen derselben Woche — DREI Spalten und kein Produkt.
+ *
+ * DER FILTER IST DERSELBE BEREICHSAUSDRUCK wie in Q1 und nicht eine Liste der
+ * eben ermittelten Bestell-IDs — dieselbe Entscheidung wie im Tagesüberblick
+ * und aus demselben Grund: Es bleibt bei ZWEI Abfragen je Woche, ob in ihr
+ * eine Bestellung steht oder vierhundert. Keine Schleife, keine Abfrage je
+ * Tag, keine je Bestellung.
+ *
+ * ES WIRD NICHT AUF products ODER catalog_products VERBUNDEN. Für die
+ * Wochenansicht gibt es nichts, was von dort käme: keinen Namen, keine
+ * Sortierung — und ganz besonders keinen HEUTIGEN Kostenwert. Gelesen wird
+ * ausschließlich der Schnappschuss der Position; alles andere hieße, eine
+ * Bestellung von Montag am Sonntag neu zu bewerten.
+ *
+ * ES GIBT KEIN ORDER BY. Gezählt wird summierend; jede Sortierung wäre Arbeit
+ * für ein Ergebnis, das niemand sieht.
+ *
+ * KEIN STATUSFILTER IN SQL. Welche Bestellung zählt, entscheidet
+ * countsTowardsRevenue() in der Domäne — an EINER Stelle für Umsatz und
+ * Kosten. Ein `WHERE status <> 'cancelled'` hier wäre eine zweite Fassung der
+ * Umsatzregel, und zwar eine als Zeichenkette.
+ */
+const Q_ITEMS = `
+  SELECT i.order_id, i.quantity, i.unit_cost_cents_snapshot
+    FROM order_items i
+    JOIN orders o ON o.id = i.order_id
+   WHERE o.fulfillment_date >= ? AND o.fulfillment_date <= ?
+`;
+
+/**
+ * Die beiden Abfragen, nach außen sichtbar — damit ein Test DIESE prüft und
+ * nicht eine Kopie. Dass es GENAU ZWEI sind, ist Vertrag: Die Zahl hängt
+ * nicht daran, wie viele Tage, Bestellungen oder Positionen die Woche hat.
  */
 export const DASHBOARD_WEEK_QUERIES = {
   orders: Q_ORDERS,
+  items: Q_ITEMS,
 } as const;
 
 /**
@@ -77,12 +119,45 @@ export async function findDashboardWeekOrders(
   monday: string,
   sunday: string,
 ): Promise<readonly DashboardWeekOrder[]> {
-  const { results } = await db
-    .prepare(Q_ORDERS)
-    .bind(monday, sunday)
-    .all<DashboardWeekOrderRow>();
+  const [orderZeilen, itemZeilen] = await Promise.all([
+    db.prepare(Q_ORDERS).bind(monday, sunday).all<DashboardWeekOrderRow>(),
+    db.prepare(Q_ITEMS).bind(monday, sunday).all<DashboardWeekItemRow>(),
+  ]);
 
-  return results.map(toWeekOrder);
+  // Die Zuordnung Position → Bestellung in linearer Zeit — dieselbe Bauart
+  // wie im Tagesüberblick. Die Reihenfolge spielt für eine Summe keine Rolle.
+  const positionen = new Map<number, CostItem[]>();
+  for (const zeile of itemZeilen.results) {
+    const position: CostItem = {
+      quantity: zeile.quantity,
+      unitCostCents: leseKosten(zeile.unit_cost_cents_snapshot),
+    };
+
+    const liste = positionen.get(zeile.order_id);
+    if (liste === undefined) {
+      positionen.set(zeile.order_id, [position]);
+    } else {
+      liste.push(position);
+    }
+  }
+
+  return orderZeilen.results.map((zeile) => toWeekOrder(zeile, positionen.get(zeile.id)));
+}
+
+/**
+ * Ein gespeicherter Kostenwert — oder „unbekannt".
+ *
+ * WÖRTLICH DIESELBE REGEL WIE IM TAGESÜBERBLICK, und sie steht hier ein
+ * zweites Mal, weil sie hier ein zweites Mal gilt: Ein Wert, der nicht sein
+ * kann, wird zu „unbekannt" und nicht zu einer Zahl. Er macht die Woche
+ * unvollständig, statt eine falsche Marge zu erzeugen — und er bringt keine
+ * Ansicht zum Erliegen.
+ */
+function leseKosten(cents: number | null): number | null {
+  if (cents === null || !Number.isInteger(cents) || cents < 0) {
+    return null;
+  }
+  return cents;
 }
 
 /**
@@ -95,7 +170,10 @@ export async function findDashboardWeekOrders(
  * hier zu einem Fehler und nicht zu einer Woche, die ihn stillschweigend als
  * „nicht storniert, nicht bezahlt" mitzählt.
  */
-function toWeekOrder(zeile: DashboardWeekOrderRow): DashboardWeekOrder {
+function toWeekOrder(
+  zeile: DashboardWeekOrderRow,
+  items: readonly CostItem[] | undefined,
+): DashboardWeekOrder {
   if (!isOrderStatus(zeile.status)) {
     throw new InvalidArgumentError('Der gespeicherte Status der Bestellung ist unbekannt.');
   }
@@ -108,5 +186,11 @@ function toWeekOrder(zeile: DashboardWeekOrderRow): DashboardWeekOrder {
     status: zeile.status,
     paymentStatus: zeile.payment_status,
     totalCents: zeile.total_amount_cents,
+    /**
+     * Eine Bestellung ohne Positionen ist eine leere Liste und kein Grund zu
+     * scheitern — dieselbe Entscheidung wie im Tagesüberblick. Sie zählt dann
+     * als Bestellung ohne fehlende Kosten: Es fehlt nichts, wo nichts steht.
+     */
+    items: items ?? [],
   };
 }

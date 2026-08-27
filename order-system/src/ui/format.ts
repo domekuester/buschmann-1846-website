@@ -71,6 +71,52 @@ export function formatAmountInput(cents: number): string {
   return `${euros},${String(rest).padStart(2, '0')}`;
 }
 
+/**
+ * Ein Betrag, der auch NEGATIV sein darf — für den Rohertrag.
+ *
+ * WARUM formatEuro() DAS NICHT SELBST KANN: Es wirft bei einer negativen
+ * Zahl, und das soll es weiterhin. Ein negativer Umsatz, ein negativer
+ * offener Betrag oder ein negativer Positionsbetrag wären ein Rechenfehler,
+ * und ein Rechenfehler soll laut scheitern statt sich als „-4,35 €" auf eine
+ * Seite zu schreiben. Es gibt in diesem System genau EINE Zahl, die
+ * unterhalb von null etwas Sinnvolles bedeutet: den Rohertrag. Sie bekommt
+ * deshalb eine eigene Funktion und keine gelockerte Regel für alle.
+ *
+ * Das Vorzeichen steht als schlichtes Minus vorn — kein Klammerpaar (das ist
+ * angelsächsische Buchhaltung und wird hier als Fußnote gelesen), keine
+ * Farbe (Farbe ist auf diesen Seiten nie die einzige Aussage).
+ */
+export function formatSignedEuro(cents: number): string {
+  if (!Number.isInteger(cents)) {
+    throw new InvalidArgumentError('Ein Betrag zur Anzeige muss ganzzahlige Cent sein.');
+  }
+  return cents < 0 ? `-${formatEuro(-cents)}` : formatEuro(cents);
+}
+
+/**
+ * ZEHNTEL PROZENT als deutscher Prozentwert: 588 wird „58,8 %".
+ *
+ * DIE EINGABE IST GANZZAHLIG, und das ist der ganze Punkt — dieselbe
+ * Überlegung wie bei formatEuro(): Der Rundungsschritt ist in der Domäne
+ * bereits getan und nachprüfbar (cost-summary.ts); hier wird nur noch
+ * gesetzt. Käme eine Fließkommazahl herein, stünde die Rundungsregel in
+ * einer Anzeigefunktion, und zwei Stellen im System entschieden über
+ * dieselbe Zahl.
+ *
+ * Rein zeichenbasiert, deshalb entsteht auch hier kein Float. Negative Werte
+ * sind zulässig: Eine Marge unter null ist eine betriebliche Auskunft.
+ */
+export function formatPercentFromTenths(tenths: number): string {
+  if (!Number.isInteger(tenths)) {
+    throw new InvalidArgumentError('Ein Prozentwert zur Anzeige muss ganzzahlige Zehntel sein.');
+  }
+
+  const betrag = Math.abs(tenths);
+  const ganze = Math.floor(betrag / 10);
+  const zehntel = betrag % 10;
+  return `${tenths < 0 ? '-' : ''}${groupThousands(ganze)},${zehntel} %`;
+}
+
 const HTML_ESCAPES: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',

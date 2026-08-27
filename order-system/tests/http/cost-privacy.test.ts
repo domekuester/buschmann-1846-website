@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import worker from '../../src/worker';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
-import { businessDay, plusDays } from '../../src/domain/clock';
+import { businessDay, plusDays, weekStart } from '../../src/domain/clock';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
 import {
   GASTRO,
@@ -260,16 +260,64 @@ describe('§17.19 — die Abholliste (6E bleibt unverändert)', () => {
   });
 });
 
-describe('§13 und §17.20 — Dashboard und öffentliche Antworten', () => {
-  /** §13 — das Dashboard sieht in 7A identisch aus. Keine Kosten, keine Marge. */
-  it('zeigt im Tagesüberblick keine Kosten', async () => {
+describe('§17.20 und Phase 7B — das Dashboard ist ADMIN und darf rechnen', () => {
+  /**
+   * HIER HAT SICH MIT PHASE 7B ETWAS GEÄNDERT — und zwar bewusst.
+   *
+   * In 7A stand an dieser Stelle, der Tagesüberblick enthalte keine Kosten:
+   * Damals gab es die Auswertung noch nicht, und die Zusicherung war die
+   * ehrlichste verfügbare. Seit 7B zeigt das Dashboard Herstellkosten,
+   * Rohertrag und Marge — es ist die adminseitige Auswertung, für die die
+   * Snapshots aus 7A überhaupt angelegt wurden (§21: „Neue Finanzdaten sind
+   * ADMIN ONLY").
+   *
+   * DIE GRENZE HAT SICH NICHT VERSCHOBEN, sie ist nur genauer benannt: Alles,
+   * was ein CAFÉ sieht, und alles, was auf PAPIER in die Backstube geht,
+   * bleibt kostenfrei. Genau das prüfen die Gruppen darüber weiterhin — und
+   * die Gegenprobe hier stellt sicher, dass die Zahl im Adminbereich
+   * tatsächlich ankommt.
+   */
+  it('zeigt dem Admin im Tagesüberblick die Herstellkosten', async () => {
     await bestellen(sitzung.kunde);
-    frei(await (await hole(`/admin/dashboard?date=${MORGEN}`, sitzung.admin)).text());
+
+    const html = await (await hole(`/admin/dashboard?date=${MORGEN}`, sitzung.admin)).text();
+
+    expect(html).toContain('Herstellkosten');
+    expect(html).toContain('Rohertrag');
+    // 3 × 7,71 € Kosten bei 3 × 10,00 € Umsatz → 23,13 € und 22,9 % Marge.
+    expect(html).toContain('23,13 €');
+    expect(html).toContain('22,9 %');
   });
 
-  it('zeigt in der Wochenübersicht keine Kosten', async () => {
+  it('zeigt dem Admin die Marge auch in der Wochenübersicht', async () => {
     await bestellen(sitzung.kunde);
-    frei(await (await hole(`/admin/dashboard?week=${MORGEN}`, sitzung.admin)).text());
+
+    const montag = weekStart(MORGEN);
+    const html = await (
+      await hole(`/admin/dashboard?date=${montag}&view=week`, sitzung.admin)
+    ).text();
+
+    expect(html).toContain('>Marge</th>');
+    // Derselbe Tag, dieselbe Zahl wie in der Tagesansicht.
+    expect(html).toContain('22,9 %');
+  });
+
+  it('zeigt einem Café davon nichts — auch nicht in einer Ablehnung', async () => {
+    await bestellen(sitzung.kunde);
+
+    frei(await (await hole(`/admin/dashboard?date=${MORGEN}`, sitzung.kunde)).text());
+    frei(await (await hole(`/admin/dashboard?date=${MORGEN}&view=week`, sitzung.kunde)).text());
+  });
+
+  it('zeigt sie auch einem nicht Angemeldeten nicht', async () => {
+    await bestellen(sitzung.kunde);
+
+    const antwort = await worker.fetch(
+      new Request(`${ORIGIN}/admin/dashboard?date=${MORGEN}`),
+      umgebung(),
+    );
+
+    frei(await antwort.text());
   });
 
   it('nennt in den öffentlichen Antworten keine Kosten', async () => {

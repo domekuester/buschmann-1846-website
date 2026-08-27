@@ -14,8 +14,15 @@ function bestellung(overrides: Partial<DashboardWeekOrder> = {}): DashboardWeekO
     status: 'new',
     paymentStatus: 'unpaid',
     totalCents: 1000,
+    /** Ohne Position — also nichts zu kalkulieren und keine Lücke. */
+    items: [],
     ...overrides,
   };
+}
+
+/** Eine Position, wie die Woche sie sieht: Menge und Kostenwert. */
+function position(unitCostCents: number | null, quantity = 1) {
+  return { quantity, unitCostCents };
 }
 
 function ansicht(orders: readonly DashboardWeekOrder[] = [], today = HEUTE) {
@@ -167,6 +174,15 @@ describe('toDashboardWeekView — die Wochensumme', () => {
       openLabel: '1 offen',
       unpaidLabel: '420,50 € offen',
       cancelledLabel: 'zusätzlich 1 storniert',
+      /**
+       * Die Bestellungen dieses Falls tragen keine Positionen — es fehlt
+       * also kein Kostenwert, und die Woche gilt als kalkuliert. Ohne
+       * Kosten ist der Rohertrag der ganze Umsatz. Ein Fall aus der
+       * Testvorgabe und keiner aus dem Betrieb; die Margenfälle stehen
+       * weiter unten mit echten Positionen.
+       */
+      marginLabel: '100,0 %',
+      marginIsMissing: false,
     });
   });
 
@@ -177,6 +193,206 @@ describe('toDashboardWeekView — die Wochensumme', () => {
       openLabel: 'erledigt',
       unpaidLabel: 'bezahlt',
       cancelledLabel: '',
+      // Kein Umsatz, also keine Marge — und kein Kostenhinweis, weil nichts fehlt.
+      marginLabel: '—',
+      marginIsMissing: false,
     });
+  });
+});
+
+/**
+ * PHASE 7B — DIE MARGENSPALTE DER WOCHENÜBERSICHT.
+ *
+ * §10 und §20 des Auftrags: eine Angabe je Tag, und nur dann eine ZAHL, wenn
+ * der Tag vollständig kalkuliert ist.
+ */
+describe('§20.22 — die Marge eines vollständig kalkulierten Tages', () => {
+  it('steht als Prozentwert in der Tageszeile', () => {
+    const tage = ansicht([
+      bestellung({ day: MONTAG, totalCents: 1000, items: [position(450)] }),
+    ]).days;
+
+    expect(tage[0]?.marginLabel).toBe('55,0 %');
+    expect(tage[0]?.marginIsMissing).toBe(false);
+  });
+
+  it('steht neben dem Umsatz desselben Tages', () => {
+    const montag = ansicht([
+      bestellung({ day: MONTAG, totalCents: 42_000, items: [position(18_900)] }),
+    ]).days[0];
+
+    expect(montag?.revenueLabel).toBe('420,00 €');
+    expect(montag?.marginLabel).toBe('55,0 %');
+  });
+
+  it('bleibt bei jedem Tag bei seiner eigenen Zahl', () => {
+    const tage = ansicht([
+      bestellung({ day: MONTAG, totalCents: 42_000, items: [position(18_900)] }),
+      bestellung({ day: '2026-08-26', totalCents: 84_000, items: [position(32_760)] }),
+    ]).days;
+
+    expect(tage[0]?.marginLabel).toBe('55,0 %');
+    expect(tage[2]?.marginLabel).toBe('61,0 %');
+  });
+});
+
+describe('§20.23 — der Tag mit fehlenden Kosten', () => {
+  const gemischt = () => [
+    bestellung({ day: MONTAG, totalCents: 42_000, items: [position(18_900)] }),
+    bestellung({ day: '2026-08-25', totalCents: 31_000, items: [position(null)] }),
+  ];
+
+  it('sagt „Kosten fehlen" statt einer Teilmarge', () => {
+    const dienstag = ansicht(gemischt()).days[1];
+
+    expect(dienstag?.marginLabel).toBe('Kosten fehlen');
+    expect(dienstag?.marginIsMissing).toBe(true);
+  });
+
+  it('zeigt den Umsatz dieses Tages trotzdem', () => {
+    expect(ansicht(gemischt()).days[1]?.revenueLabel).toBe('310,00 €');
+  });
+
+  it('lässt die übrigen Tage ihre Marge behalten', () => {
+    const tage = ansicht(gemischt()).days;
+
+    expect(tage[0]?.marginLabel).toBe('55,0 %');
+    expect(tage[0]?.marginIsMissing).toBe(false);
+  });
+
+  it('ergibt das Bild aus §10 des Auftrags', () => {
+    const tage = ansicht([
+      bestellung({ day: MONTAG, totalCents: 42_000, items: [position(18_900)] }),
+      bestellung({ day: '2026-08-25', totalCents: 31_000, items: [position(null)] }),
+      bestellung({ day: '2026-08-26', totalCents: 84_000, items: [position(32_760)] }),
+    ]).days;
+
+    expect([tage[0], tage[1], tage[2]].map((t) => [t?.revenueLabel, t?.marginLabel])).toEqual([
+      ['420,00 €', '55,0 %'],
+      ['310,00 €', 'Kosten fehlen'],
+      ['840,00 €', '61,0 %'],
+    ]);
+  });
+});
+
+describe('Der Tag ohne Bestellung', () => {
+  it('bekommt einen Strich und keinen Kostenhinweis', () => {
+    const tag = ansicht().days[3];
+
+    expect(tag?.marginLabel).toBe('—');
+    expect(tag?.marginIsMissing).toBe(false);
+    expect(tag?.isEmpty).toBe(true);
+  });
+
+  it('bekommt auch dann einen Strich, wenn alles storniert wurde', () => {
+    /**
+     * Ein Tag mit Umsatz null hat keine Marge — und „Kosten fehlen" wäre
+     * dort die falsche Erklärung: Es fehlt nichts, es ist nur nichts übrig.
+     */
+    const tag = ansicht([
+      bestellung({ day: MONTAG, status: 'cancelled', totalCents: 5000, items: [position(null)] }),
+    ]).days[0];
+
+    expect(tag?.marginLabel).toBe('—');
+    expect(tag?.marginIsMissing).toBe(false);
+    expect(tag?.isEmpty).toBe(false);
+  });
+});
+
+describe('§20.24 und §20.25 — die Wochensumme', () => {
+  it('zeigt die Wochenmarge, wenn die ganze Woche kalkuliert ist', () => {
+    const view = ansicht([
+      bestellung({ day: MONTAG, totalCents: 42_000, items: [position(18_900)] }),
+      bestellung({ day: '2026-08-26', totalCents: 84_000, items: [position(32_760)] }),
+    ]);
+
+    expect(view.total.revenueLabel).toBe('1.260,00 €');
+    expect(view.total.marginLabel).toBe('59,0 %');
+    expect(view.total.marginIsMissing).toBe(false);
+  });
+
+  it('lässt die Wochenmarge bei einem einzigen unvollständigen Tag aus', () => {
+    const view = ansicht([
+      bestellung({ day: MONTAG, totalCents: 42_000, items: [position(18_900)] }),
+      bestellung({ day: '2026-08-25', totalCents: 31_000, items: [position(null)] }),
+      bestellung({ day: '2026-08-26', totalCents: 84_000, items: [position(32_760)] }),
+    ]);
+
+    expect(view.total.marginLabel).toBe('Kosten fehlen');
+    expect(view.total.marginIsMissing).toBe(true);
+  });
+
+  it('zeigt den Wochenumsatz auch dann vollständig', () => {
+    const view = ansicht([
+      bestellung({ day: MONTAG, totalCents: 42_000, items: [position(18_900)] }),
+      bestellung({ day: '2026-08-25', totalCents: 31_000, items: [position(null)] }),
+    ]);
+
+    expect(view.total.revenueLabel).toBe('730,00 €');
+  });
+
+  /** §22.G — die Wochenmarge ist kein Mittelwert der Tagesmargen. */
+  it('gewichtet die Wochenmarge nach Umsatz', () => {
+    const view = ansicht([
+      bestellung({ day: MONTAG, totalCents: 1000, items: [position(100)] }),
+      bestellung({ day: '2026-08-29', totalCents: 10_000, items: [position(7000)] }),
+    ]);
+
+    expect(view.days[0]?.marginLabel).toBe('90,0 %');
+    expect(view.days[5]?.marginLabel).toBe('30,0 %');
+    expect(view.total.marginLabel).toBe('35,5 %');
+    expect(view.total.marginLabel).not.toBe('60,0 %');
+  });
+
+  it('gibt einer leeren Woche einen Strich in der Summenzeile', () => {
+    expect(ansicht().total.marginLabel).toBe('—');
+  });
+
+  it('zeigt eine negative Wochenmarge mit Vorzeichen', () => {
+    const view = ansicht([
+      bestellung({ day: MONTAG, totalCents: 10_000, items: [position(12_000)] }),
+    ]);
+
+    expect(view.total.marginLabel).toBe('-20,0 %');
+  });
+});
+
+describe('Die Wochenübersicht bleibt karg', () => {
+  it('zeigt je Tag genau eine kaufmännische Angabe', () => {
+    /**
+     * §10 — EXTREM KOMPAKT. Herstellkosten und Rohertrag stehen bewusst
+     * NICHT je Tag: Wer sie braucht, klickt den Tag an.
+     */
+    const tag = ansicht([
+      bestellung({ day: MONTAG, totalCents: 1000, items: [position(450)] }),
+    ]).days[0];
+
+    expect(Object.keys(tag ?? {}).sort()).toEqual([
+      'cancelledLabel',
+      'date',
+      'dateLabel',
+      'href',
+      'isEmpty',
+      'isToday',
+      'marginIsMissing',
+      'marginLabel',
+      'openLabel',
+      'ordersLabel',
+      'revenueLabel',
+      'unpaidLabel',
+      'weekdayLabel',
+    ]);
+  });
+
+  it('führt keinen Vergleich zur Vorwoche und keinen Trend', () => {
+    const view = ansicht([
+      bestellung({ day: MONTAG, totalCents: 1000, items: [position(450)] }),
+    ]);
+
+    const alsText = JSON.stringify(view);
+    expect(alsText).not.toMatch(/trend/i);
+    expect(alsText).not.toMatch(/vorwoche/i);
+    expect(alsText).not.toContain('↑');
+    expect(alsText).not.toContain('↓');
   });
 });

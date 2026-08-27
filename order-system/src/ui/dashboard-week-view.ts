@@ -1,10 +1,15 @@
 import { plusDays } from '../domain/clock';
-import type { DashboardWeek, DashboardWeekDay, DashboardWeekTotals } from '../domain/dashboard-week';
+import type {
+  DashboardWeek,
+  DashboardWeekDay,
+  DashboardWeekSummary,
+} from '../domain/dashboard-week';
 import {
   formatEuro,
   formatGermanDayMonthYear,
   formatGermanShortDate,
   formatGermanWeekday,
+  formatPercentFromTenths,
 } from './format';
 import { toQuickDaysView, type QuickDayView, type QuickDaysView } from './dashboard-view';
 
@@ -15,11 +20,17 @@ import { toQuickDaysView, type QuickDayView, type QuickDaysView } from './dashbo
  * schreibt auf. Sie hat keine Uhr, keine Datenbank und keinen Request;
  * dasselbe Modell ergibt immer dieselbe Ansicht.
  *
- * SIE IST BEWUSST KARG. Sieben Zeilen mit vier Zahlen, eine Summe und die
- * Wege hinaus. Kein Diagramm, kein Vergleich, kein Prozentsatz, keine
- * Hervorhebung eines „besten Tages" — die Wochenansicht sagt, WO etwas los
- * ist, und übergibt die Frage nach dem WIE an die Tagesansicht, die es
- * ausführlich beantwortet. Jede Zeile ist deshalb ein Link.
+ * SIE IST BEWUSST KARG. Sieben Zeilen mit fünf Angaben, eine Summe und die
+ * Wege hinaus. Kein Diagramm, kein Vergleich mit der Vorwoche, kein
+ * Trendpfeil, keine Hervorhebung eines „besten Tages" — die Wochenansicht
+ * sagt, WO etwas los ist, und übergibt die Frage nach dem WIE an die
+ * Tagesansicht, die es ausführlich beantwortet. Jede Zeile ist deshalb ein
+ * Link.
+ *
+ * DER EINE PROZENTSATZ SEIT PHASE 7B ist die Ausnahme, die die Regel
+ * bestätigt: Er vergleicht keine Zeiträume, sondern setzt zwei Zahlen
+ * DESSELBEN Tages ins Verhältnis. Genau deshalb ist er die einzige Angabe der
+ * Tabelle, die sich zwischen zwei Tagen überhaupt vergleichen lässt.
  *
  * EIN STRICH IST KEINE NULL. Ein Tag ohne Bestellung bekommt „—" bei
  * Produktion und Zahlung und nicht „erledigt"/„bezahlt": Wo nichts bestellt
@@ -46,6 +57,31 @@ export interface DashboardWeekDayView {
   readonly unpaidLabel: string;
   /** „zusätzlich 1 storniert" — oder leer. */
   readonly cancelledLabel: string;
+  /**
+   * „55,0 %", „Kosten fehlen" oder „—" — seit Phase 7B.
+   *
+   * EINE SPALTE UND NICHT VIER. Herstellkosten, Rohertrag und Marge
+   * nebeneinander wären in einer Wochentabelle acht Spalten, und die Woche
+   * beantwortet nicht die Frage „wie steht dieser Tag", sondern „wo ist etwas
+   * los". Die Marge ist von den dreien die einzige, die sich zwischen Tagen
+   * VERGLEICHEN lässt — Beträge tun das nicht, weil ein Samstag mehr Umsatz
+   * hat als ein Dienstag, ohne besser kalkuliert zu sein.
+   *
+   * „KOSTEN FEHLEN" IST KEINE FEHLERMELDUNG, sondern die ehrliche Antwort auf
+   * eine Frage, die für diesen Tag nicht beantwortbar ist. Sie steht dort, wo
+   * sonst die Marge steht, und nimmt denselben Platz ein.
+   */
+  readonly marginLabel: string;
+  /**
+   * In `marginLabel` steht KEINE Zahl, sondern der Hinweis auf fehlende
+   * Kosten.
+   *
+   * Der Renderer soll den Fall leiser setzen als eine Marge — und dafür nicht
+   * am Text erkennen müssen, welcher Fall vorliegt. Ein `label.endsWith('%')`
+   * im HTML wäre eine fachliche Unterscheidung, die an einer Schreibweise
+   * hängt.
+   */
+  readonly marginIsMissing: boolean;
   /** An diesem Tag ist überhaupt nichts eingegangen, auch nichts Storniertes. */
   readonly isEmpty: boolean;
   readonly isToday: boolean;
@@ -54,7 +90,13 @@ export interface DashboardWeekDayView {
 /** Die Summenzeile — dieselben Angaben ohne Datum. */
 export type DashboardWeekTotalView = Pick<
   DashboardWeekDayView,
-  'ordersLabel' | 'revenueLabel' | 'openLabel' | 'unpaidLabel' | 'cancelledLabel'
+  | 'ordersLabel'
+  | 'revenueLabel'
+  | 'openLabel'
+  | 'unpaidLabel'
+  | 'cancelledLabel'
+  | 'marginLabel'
+  | 'marginIsMissing'
 >;
 
 export interface DashboardWeekView {
@@ -119,6 +161,13 @@ export function toDashboardWeekView(week: DashboardWeek, today: string): Dashboa
     quickDays: toQuickDaysView(today, week.monday, 'week'),
 
     days: week.days.map((tag) => tageszeile(tag, today)),
+    /**
+     * DIE WOCHENMARGE STEHT NUR DA, WENN DIE GANZE WOCHE KALKULIERT IST — und
+     * das entscheidet nicht diese Datei: `week.total.costs` entsteht aus den
+     * Rohzählern aller sieben Tage, und ein einziger fehlender Kostenwert
+     * irgendwo macht `complete` falsch. Eine Wochenmarge aus den vorhandenen
+     * Tagen wäre eine Zahl über einen Zeitraum, den es nicht gibt.
+     */
     total: summenzeile(week.total),
   };
 }
@@ -159,11 +208,11 @@ function tageszeile(tag: DashboardWeekDay, today: string): DashboardWeekDayView 
  * dort die richtigen Wörter. Ein Strich in der Summenzeile läse sich wie eine
  * fehlende Angabe.
  */
-function summenzeile(total: DashboardWeekTotals): DashboardWeekTotalView {
+function summenzeile(total: DashboardWeekSummary): DashboardWeekTotalView {
   return zahlen(total, false);
 }
 
-function zahlen(werte: DashboardWeekTotals, leer: boolean): DashboardWeekTotalView {
+function zahlen(werte: DashboardWeekSummary, leer: boolean): DashboardWeekTotalView {
   return {
     ordersLabel: String(werte.orderCount),
     revenueLabel: formatEuro(werte.revenueCents),
@@ -173,5 +222,37 @@ function zahlen(werte: DashboardWeekTotals, leer: boolean): DashboardWeekTotalVi
       werte.cancelledCount === 0
         ? ''
         : `zusätzlich ${werte.cancelledCount} storniert`,
+    marginLabel: marge(werte, leer),
+    marginIsMissing: !leer && !werte.costs.complete && werte.costs.revenueCents > 0,
   };
+}
+
+/**
+ * Die Marge eines Tages — oder der Grund, warum keine dasteht.
+ *
+ * DREI FÄLLE, UND SIE SIND UNTERSCHEIDBAR:
+ *
+ *   „—"             An diesem Tag ist nichts eingegangen. Es gibt nichts zu
+ *                   berechnen, und es fehlt auch nichts.
+ *   „Kosten fehlen" Es gibt Umsatz, aber mindestens eine Position ohne
+ *                   Kostenwert. Die Marge dieses Tages ist nicht berechenbar
+ *                   — und wird deshalb auch nicht als Teilmarge gezeigt.
+ *   „55,0 %"        Der Tag ist vollständig kalkuliert.
+ *
+ * Ein Tag mit Bestellungen, aber ohne Umsatz — alles storniert — bekommt
+ * ebenfalls einen Strich: Eine Marge auf null Umsatz gibt es nicht, und
+ * „Kosten fehlen" wäre dort die falsche Erklärung.
+ *
+ * ES WIRD NICHT ENTSCHIEDEN, OB EINE MARGE ERLAUBT IST. Das steht in
+ * cost-summary.ts; hier wird `marginTenthsPercent === null` gelesen und der
+ * Grund dafür aus `complete` abgelesen.
+ */
+function marge(werte: DashboardWeekSummary, leer: boolean): string {
+  if (werte.costs.marginTenthsPercent !== null) {
+    return formatPercentFromTenths(werte.costs.marginTenthsPercent);
+  }
+  if (leer || werte.costs.complete) {
+    return '—';
+  }
+  return 'Kosten fehlen';
 }

@@ -67,9 +67,11 @@ export interface OrderItemRow {
    * gepflegt" und schließt jede Bestellung ein, die vor 0017 entstanden ist.
    * Es heißt nie 0.
    *
-   * Diese Spalte steht in KEINER anderen Zeilenform dieser Datei — weder in
-   * ProductionItemRow noch in DashboardItemRow. Was nicht geladen wird, kann
-   * nicht auf einer Seite landen.
+   * Diese Spalte steht in genau DREI Zeilenformen dieser Datei: hier, in
+   * DashboardItemRow und in DashboardWeekItemRow — also im Bestelldokument
+   * und in den beiden Auswertungen des Adminbereichs. In ProductionItemRow
+   * steht sie NICHT: Was nicht geladen wird, kann nicht auf einer Backliste
+   * landen.
    */
   unit_cost_cents_snapshot: number | null;
 }
@@ -206,20 +208,54 @@ export interface DashboardItemRow {
   product_unit_snapshot: string;
   sort_order: number;
   quantity: number;
+  /**
+   * Seit Phase 7B — der Kostenschnappschuss aus 0017, oder NULL.
+   *
+   * ER STEHT AUSDRÜCKLICH NUR HIER UND IN OrderItemRow. Die Produktionsliste
+   * und die Abholliste lesen ihn nicht: Eine Backliste beantwortet
+   * Mengenfragen, und ein Wert, der nicht geladen wird, kann nicht auf einem
+   * Ausdruck landen, der in der Backstube liegt.
+   *
+   * NULL heißt „damals nicht gepflegt" und niemals 0.
+   */
+  unit_cost_cents_snapshot: number | null;
 }
 
 /**
- * Eine Bestellung, wie die WOCHENÜBERSICHT sie sieht — vier Spalten.
+ * Eine Bestellung, wie die WOCHENÜBERSICHT sie sieht — vier Angaben und eine
+ * Kennung.
  *
  * Der Gegensatz zu DashboardOrderRow ist die Aussage dieser Zeile: Die Woche
- * zeigt je Tag vier Zahlen und deshalb keinen Kunden, keine Bestellnummer,
- * keinen Zeitpunkt und keine Position. Was nicht in der Abfrage steht, kann
- * nicht versehentlich in einer Seite landen.
+ * zeigt je Tag Zahlen und deshalb keinen Kunden, keine Bestellnummer und
+ * keinen Zeitpunkt. Was nicht in der Abfrage steht, kann nicht versehentlich
+ * in einer Seite landen.
+ *
+ * `id` verlässt die Infrastrukturschicht nicht — sie ordnet seit Phase 7B die
+ * Kostenzeilen ihrer Bestellung zu, damit „in wie vielen Bestellungen fehlt
+ * etwas" überhaupt beantwortbar ist.
  */
 export interface DashboardWeekOrderRow {
+  id: number;
   fulfillment_date: string;
   status: string;
   /** Seit 0015 — 'unpaid' oder eine der vier bezahlten Zahlarten. */
   payment_status: string;
   total_amount_cents: number;
+}
+
+/**
+ * Eine Position, wie die WOCHENÜBERSICHT sie sieht — zwei Zahlen und eine
+ * Zuordnung.
+ *
+ * SIE IST DIE SCHLANKSTE POSITIONSZEILE DES SYSTEMS, und das ist der Punkt:
+ * kein Name, keine Einheit, keine Produkt-ID, kein Preis, keine
+ * Sortierreihenfolge. Die Woche zeigt von einer Position nichts; sie braucht
+ * ausschließlich, was für die Kostensumme nötig ist. `order_id` ordnet die
+ * Zeile ihrer Bestellung zu — nur so lässt sich sagen, in WIE VIELEN
+ * Bestellungen etwas fehlt.
+ */
+export interface DashboardWeekItemRow {
+  order_id: number;
+  quantity: number;
+  unit_cost_cents_snapshot: number | null;
 }

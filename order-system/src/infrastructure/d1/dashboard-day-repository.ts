@@ -74,10 +74,29 @@ const Q_ORDERS = `
  * unit_price_cents und line_total_cents werden NICHT gelesen. Der Betrag
  * einer Bestellung steht in ihrem eigenen Snapshot; ihn hier ein zweites Mal
  * aus den Positionen bilden zu können wäre die Einladung, es zu tun.
+ *
+ * unit_cost_cents_snapshot WIRD GELESEN — seit Phase 7B, und es ist die
+ * einzige Geldspalte dieser Abfrage. Der Unterschied zum Verkaufspreis ist
+ * kein Geschmack: Der Positionspreis wäre eine zweite Fassung des
+ * Gesamtbetrags, der Kostenwert ist die einzige Fassung einer Zahl, die
+ * nirgendwo sonst steht. Herstellkosten hängen daran, WAS in einer
+ * Bestellung liegt; aus `total_amount_cents` sind sie nicht abzuleiten.
+ *
+ * ER KOSTET KEINE ZUSÄTZLICHE ABFRAGE. Die Positionen werden ohnehin
+ * geladen — für „Meistbestellt" und für die Zahl der Einheiten. Die
+ * Kostenspalte reist in Zeilen mit, die es schon gibt; die Seite braucht
+ * nach wie vor GENAU ZWEI Abfragen, ob der Tag eine Bestellung hat oder
+ * vierzig.
+ *
+ * DER JOIN GEHT NICHT AUF catalog_products. Der HEUTIGE Kostenwert eines
+ * Produkts hat in dieser Abfrage nichts zu suchen: Er würde eine Bestellung
+ * von letzter Woche rückwirkend neu bewerten. Gelesen wird ausschließlich
+ * der Schnappschuss aus der Position selbst.
  */
 const Q_ITEMS = `
   SELECT i.order_id, i.product_id, i.product_name_snapshot,
-         i.product_unit_snapshot, p.sort_order, i.quantity
+         i.product_unit_snapshot, p.sort_order, i.quantity,
+         i.unit_cost_cents_snapshot
     FROM order_items i
     JOIN orders   o ON o.id = i.order_id
     JOIN products p ON p.id = i.product_id
@@ -120,6 +139,7 @@ export async function findDashboardOrders(
       productUnit: zeile.product_unit_snapshot,
       sortOrder: zeile.sort_order,
       quantity: zeile.quantity,
+      unitCostCents: leseKosten(zeile.unit_cost_cents_snapshot),
     };
 
     const liste = positionen.get(zeile.order_id);
@@ -131,6 +151,29 @@ export async function findDashboardOrders(
   }
 
   return orderZeilen.results.map((zeile) => toDashboardOrder(zeile, positionen.get(zeile.id)));
+}
+
+/**
+ * Ein gespeicherter Kostenwert — oder „unbekannt".
+ *
+ * WARUM HIER NICHTS GEWORFEN WIRD, obwohl drei Zeilen weiter unten ein
+ * unbekannter Status sehr wohl zum Fehler führt: Für einen kaputten Status
+ * gibt es keine ehrliche Darstellung — jeder Wert, den man ersatzweise
+ * einsetzte, wäre eine Behauptung. Für einen kaputten Kostenwert gibt es
+ * genau eine, und sie steht ohnehin im Typ: `null` heißt „unbekannt".
+ *
+ * Der Ersatz fällt damit auf die SICHERE Seite. Eine negative oder gebrochene
+ * Zahl aus der Spalte — nur über einen Weg an der CHECK-Bedingung aus 0017
+ * vorbei denkbar — macht den Tag „nicht vollständig kalkuliert" und lässt
+ * Rohertrag und Marge verschwinden. Sie kann keine falsche Marge erzeugen,
+ * und sie bringt keine Tagesansicht zum Erliegen, die außer dieser einen
+ * Zahl vollständig in Ordnung ist.
+ */
+function leseKosten(cents: number | null): number | null {
+  if (cents === null || !Number.isInteger(cents) || cents < 0) {
+    return null;
+  }
+  return cents;
 }
 
 /**

@@ -6,6 +6,8 @@ import {
   formatGermanDayMonthYear,
   formatGermanShortDate,
   formatGermanWeekday,
+  formatPercentFromTenths,
+  formatSignedEuro,
 } from '../../src/ui/format';
 
 describe('formatEuro', () => {
@@ -138,5 +140,76 @@ describe('formatGermanShortDate', () => {
 
   it('weist einen Tag zurück, den es nicht gibt', () => {
     expect(() => formatGermanShortDate('2026-13-01')).toThrow();
+  });
+});
+
+/**
+ * PHASE 7B — die beiden Schreibweisen, die es vorher nicht gab.
+ *
+ * Sie stehen neben formatEuro() und nicht an seiner Stelle: Der Rohertrag
+ * ist die einzige Zahl dieses Systems, die unter null etwas bedeutet, und
+ * die Marge die einzige mit einem Prozentzeichen.
+ */
+describe('formatSignedEuro', () => {
+  it('schreibt einen positiven Betrag wie formatEuro', () => {
+    expect(formatSignedEuro(72_970)).toBe('729,70 €');
+    expect(formatSignedEuro(0)).toBe('0,00 €');
+  });
+
+  it('setzt ein Minus vor einen negativen Betrag', () => {
+    expect(formatSignedEuro(-2000)).toBe('-20,00 €');
+  });
+
+  it('gruppiert auch negative Tausender', () => {
+    expect(formatSignedEuro(-123_456)).toBe('-1.234,56 €');
+  });
+
+  it('behält die Nachkommastellen eines negativen Betrags', () => {
+    expect(formatSignedEuro(-5)).toBe('-0,05 €');
+  });
+
+  it('weist eine gebrochene Zahl zurück', () => {
+    expect(() => formatSignedEuro(12.5)).toThrow();
+  });
+
+  /**
+   * DIE GEGENPROBE ZUR ARBEITSTEILUNG: formatEuro() bleibt streng. Wäre es
+   * das nicht, könnte ein negativer Umsatz unbemerkt auf einer Seite landen.
+   */
+  it('lässt formatEuro streng bleiben', () => {
+    expect(() => formatEuro(-1)).toThrow();
+  });
+});
+
+describe('formatPercentFromTenths', () => {
+  it('schreibt Zehntel Prozent mit deutschem Komma', () => {
+    expect(formatPercentFromTenths(588)).toBe('58,8 %');
+  });
+
+  it('schreibt eine glatte Zahl mit einer Nachkommastelle', () => {
+    expect(formatPercentFromTenths(600)).toBe('60,0 %');
+    expect(formatPercentFromTenths(1000)).toBe('100,0 %');
+  });
+
+  it('schreibt null als 0,0 %', () => {
+    expect(formatPercentFromTenths(0)).toBe('0,0 %');
+  });
+
+  it('schreibt eine negative Marge mit Minus', () => {
+    expect(formatPercentFromTenths(-200)).toBe('-20,0 %');
+    expect(formatPercentFromTenths(-5)).toBe('-0,5 %');
+  });
+
+  it('trennt den Prozentwert mit einem Leerzeichen vom Zeichen', () => {
+    expect(formatPercentFromTenths(123)).toMatch(/^12,3 %$/);
+  });
+
+  it('weist eine gebrochene Eingabe zurück', () => {
+    /**
+     * Der Rundungsschritt gehört in die Domäne (cost-summary.ts) und ist
+     * dort geprüft. Käme eine Fließkommazahl hier an, stünde die
+     * Rundungsregel an zwei Stellen.
+     */
+    expect(() => formatPercentFromTenths(58.8)).toThrow();
   });
 });
