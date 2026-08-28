@@ -25,7 +25,7 @@ export function renderProductionListPage(view: ProductionListPageView): string {
         <h1>Produktionsliste</h1>
         <p class="produktionsliste__datum">${escapeHtml(dayLabel)}</p>
         <div class="druckkopf screen-only">
-          <a href="/admin?date=${escapeHtml(view.day.date)}">&larr; Zurück zur Produktion</a>
+          <a href="/admin/production?date=${escapeHtml(view.day.date)}">&larr; Zurück zur Produktion</a>
           <button type="button" class="drucktaste" data-print-trigger>Drucken</button>
         </div>
       </header>

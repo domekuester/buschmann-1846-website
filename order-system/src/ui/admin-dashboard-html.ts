@@ -79,6 +79,11 @@ export interface AdminDashboardPageView {
 
 const MELDUNGEN: Readonly<Record<string, string>> = {
   payment_saved: 'Der Zahlungsstatus wurde gespeichert.',
+  status_saved: 'Der Bestellstatus wurde gespeichert.',
+  status_invalid_transition: 'Diese Statusänderung ist nicht mehr möglich. Es wurde nichts geändert.',
+  status_conflict: 'Die Bestellung wurde zwischenzeitlich geändert. Bitte prüfe den aktuellen Stand.',
+  status_not_found: 'Diese Bestellung gibt es nicht mehr. Es wurde nichts geändert.',
+  status_internal: 'Der Bestellstatus wurde nicht gespeichert. Bitte versuche es gleich noch einmal.',
   unknown_order: 'Diese Bestellung gibt es nicht. Der Zahlungsstatus wurde nicht gespeichert.',
   invalid: 'Die Auswahl war nicht lesbar. Der Zahlungsstatus wurde nicht gespeichert.',
   internal:
@@ -89,7 +94,7 @@ export function renderAdminDashboardPage(view: AdminDashboardPageView): string {
   return renderAdminShell(
     `Dashboard ${view.day.day} — Buschmann 1846`,
     view,
-    'dashboard',
+    'overview',
     `${kopf(view.day)}
     ${steuerung(view.day, view.quickDays)}
     ${meldung(view.noticeCode)}
@@ -99,6 +104,36 @@ export function renderAdminDashboardPage(view: AdminDashboardPageView): string {
     ${ringzone(view.day)}
     ${bestellliste(view)}
     ${topProdukte(view.day)}`,
+  );
+}
+
+export function renderAdminOverviewPage(view: AdminDashboardPageView): string {
+  return renderAdminShell(
+    `Übersicht ${view.day.day} — Buschmann 1846`,
+    view,
+    'overview',
+    `${kopf(view.day)}
+    ${steuerung(view.day, view.quickDays, '/admin')}
+    ${kennzahlen(view.day)}
+    ${handlungsbedarf(view.day)}
+    ${finanzen(view.day)}
+    ${topProdukte(view.day)}`,
+  );
+}
+
+export function renderAdminOrdersPage(view: AdminDashboardPageView): string {
+  return renderAdminShell(
+    `Bestellungen ${view.day.day} — Buschmann 1846`,
+    view,
+    'orders',
+    `<header class="bereichskopf">
+      <p class="bereichskopf__kicker">Bestellungen</p>
+      <h1>${escapeHtml(view.day.dayLabel)}</h1>
+      <p class="bereichskopf__vorspann">Status, Zahlung, Betrag und Übergabe für diesen Produktionstag.</p>
+    </header>
+    ${steuerung(view.day, view.quickDays, '/admin/orders')}
+    ${meldung(view.noticeCode)}
+    ${bestellliste(view)}`,
   );
 }
 
@@ -120,7 +155,7 @@ export function renderDashboardUnavailablePage(
   return renderAdminShell(
     `Dashboard ${view.day.day} — Buschmann 1846`,
     view,
-    'dashboard',
+    'overview',
     `${kopf(view.day)}
     ${steuerung(view.day, view.quickDays)}
     <p class="banner" role="alert">Die Tagesdaten konnten gerade nicht geladen werden.</p>
@@ -164,7 +199,7 @@ function kopf(day: DashboardDayView): string {
         </p>
       </div>
       <p class="dashkopf__aktion">
-        <a href="/admin?date=${escapeHtml(day.day)}"
+        <a href="/admin/production?date=${escapeHtml(day.day)}"
           >Produktionsansicht für diesen Tag<span aria-hidden="true"> &rarr;</span></a>
         <a href="/admin/production-list?date=${escapeHtml(day.day)}">Produktionsliste drucken</a>
         <a href="/admin/abholliste?date=${escapeHtml(day.day)}">Abholliste</a>
@@ -192,18 +227,18 @@ function kopf(day: DashboardDayView): string {
  * Formular, dessen action aus einem Parameter käme, wäre die Vorlage für eine
  * Weiterleitung nach draußen.
  */
-function steuerung(day: DashboardDayView, quick: QuickDaysView): string {
+function steuerung(day: DashboardDayView, quick: QuickDaysView, basePath = '/admin/dashboard'): string {
   return `<div class="tagleiste">
       ${schnellwahl(quick)}
       <nav class="tagnav tagnav--leiste" aria-label="Tag wechseln">
         <a
           class="tagnav__pfeil"
-          href="/admin/dashboard?date=${escapeHtml(day.previousDay)}"
+          href="${escapeHtml(basePath)}?date=${escapeHtml(day.previousDay)}"
           rel="prev"
           aria-label="Vorheriger Tag, ${escapeHtml(day.previousDayLabel)}"
         ><span aria-hidden="true">&larr;</span></a>
 
-        <form class="tagnav__formular" method="get" action="/admin/dashboard">
+        <form class="tagnav__formular" method="get" action="${escapeHtml(basePath)}">
           <label for="dashboardtag">Tag wählen</label>
           <input type="date" id="dashboardtag" name="date" value="${escapeHtml(day.day)}" required>
           <button type="submit" class="senden tagnav__senden">Anzeigen</button>
@@ -211,7 +246,7 @@ function steuerung(day: DashboardDayView, quick: QuickDaysView): string {
 
         <a
           class="tagnav__pfeil"
-          href="/admin/dashboard?date=${escapeHtml(day.nextDay)}"
+          href="${escapeHtml(basePath)}?date=${escapeHtml(day.nextDay)}"
           rel="next"
           aria-label="Nächster Tag, ${escapeHtml(day.nextDayLabel)}"
         ><span aria-hidden="true">&rarr;</span></a>
@@ -290,14 +325,14 @@ function kennzahlen(day: DashboardDayView): string {
           String(day.openCount),
           'noch nicht abgeschlossen',
           null,
-          `/admin?date=${day.day}`,
+          `/admin/production?date=${day.day}`,
         )}
         ${karte(
           'Noch nicht bezahlt',
           day.unpaidLabel,
           `${day.unpaidCount} ${day.unpaidCount === 1 ? 'Bestellung' : 'Bestellungen'}`,
           day.unpaidCount > 0 ? 'betont' : null,
-          `/admin/dashboard?date=${day.day}&orders=unpaid#bestellungen`,
+          `/admin/orders?date=${day.day}&orders=unpaid#bestellungen`,
         )}
         ${karte('Kunden', String(day.customerCount), 'verschiedene Betriebe', 'zweit', '/admin/customers')}
         ${karte('Einheiten', String(day.totalUnits), 'bestellte Menge', 'zweit')}
@@ -795,6 +830,7 @@ function bestellliste(view: AdminDashboardPageView): string {
             <th scope="col">Bestellung</th>
             <th scope="col">Kunde</th>
             <th scope="col">Produktion</th>
+            <th scope="col">Status ändern</th>
             <th scope="col" class="spalte-betrag">Betrag</th>
             <th scope="col">Zahlung</th>
             <th scope="col">Zahlungsstatus ändern</th>
@@ -822,6 +858,7 @@ function bestellzeile(order: DashboardOrderRowView, csrfToken: string): string {
           ? `<span class="bestellzeile__storno">${escapeHtml(order.statusLabel)}</span>`
           : escapeHtml(order.statusLabel)
       }</td>
+      <td data-label="Status ändern" class="statusaktionen">${statusaktionen(order, csrfToken)}</td>
       <td data-label="Betrag" class="bestellzeile__betrag">${escapeHtml(order.amountLabel)}</td>
       <td data-label="Zahlung">${
         order.isPaid
@@ -833,6 +870,28 @@ function bestellzeile(order: DashboardOrderRowView, csrfToken: string): string {
         csrfToken,
       )}</td>
     </tr>`;
+}
+
+function statusaktionen(order: DashboardOrderRowView, csrfToken: string): string {
+  if (order.actions.length === 0) return '<span class="tafel__meta">Keine Aktion</span>';
+
+  return order.actions
+    .map((action) => {
+      const orderNumber = escapeHtml(encodeURIComponent(order.orderNumber));
+      const label = escapeHtml(action.label);
+      const accessibleOrder = `<span class="hinweis"> — Bestellung ${escapeHtml(order.orderNumber)}</span>`;
+
+      if (action.destructive) {
+        return `<a class="statustaste statustaste--abbruch" href="/admin/orders/${orderNumber}/cancel?workspace=orders">${label}${accessibleOrder}</a>`;
+      }
+
+      return `<form class="statusaktion" method="post" action="/api/admin/orders/${orderNumber}/status?workspace=orders">
+          <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
+          <input type="hidden" name="status" value="${escapeHtml(action.target)}">
+          <button type="submit" class="statustaste">${label}${accessibleOrder}</button>
+        </form>`;
+    })
+    .join('');
 }
 
 /**
@@ -899,8 +958,8 @@ function meldung(code: string | null): string {
   const text = Object.prototype.hasOwnProperty.call(MELDUNGEN, code) ? MELDUNGEN[code] : null;
   if (text === undefined || text === null) return '';
 
-  const klasse =
-    code === 'payment_saved' ? 'kundenmeldung kundenmeldung--erfolg' : 'banner kundenmeldung';
+  const istErfolg = code === 'payment_saved' || code === 'status_saved';
+  const klasse = istErfolg ? 'kundenmeldung kundenmeldung--erfolg' : 'banner kundenmeldung';
 
   return `<p class="${klasse}" role="status">${escapeHtml(text)}</p>`;
 }

@@ -72,7 +72,7 @@ describe('Produktionsliste — Druckinhalt', () => {
   it('liefert echte Screen-Controls und markiert alles Bedienende als print-irrelevant', () => {
     const html = render();
 
-    expect(html).toContain('href="/admin?date=2026-08-28"');
+    expect(html).toContain('href="/admin/production?date=2026-08-28"');
     expect(html).toContain('<button type="button" class="drucktaste" data-print-trigger>Drucken</button>');
     expect(html).toContain('<script type="module" src="/assets/print.js"></script>');
     expect(html).toContain('class="druckkopf screen-only"');

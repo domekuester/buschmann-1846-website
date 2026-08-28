@@ -236,7 +236,7 @@ describe('GET Storno-Bestätigung — erster Klick', () => {
     expect(text).toContain('Bestellung wirklich stornieren?');
     expect(text).toContain(NUMMER);
     expect(text).toContain('Testcafé Nord');
-    expect(text).toContain(`href="/admin?date=${TAG}"`);
+    expect(text).toContain(`href="/admin/production?date=${TAG}"`);
     expect(text).toContain(`action="${PFAD}"`);
     expect(text).toContain('<input type="hidden" name="status" value="cancelled">');
     expect(text).toContain('<button type="submit"');
@@ -268,7 +268,7 @@ describe('GET Storno-Bestätigung — erster Klick', () => {
 
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe(
-      `/admin?date=${TAG}&status_error=invalid_transition`,
+      `/admin/production?date=${TAG}&status_error=invalid_transition`,
     );
     expect(await status()).toBe('completed');
   });
@@ -293,7 +293,7 @@ describe('Finaler Storno-POST', () => {
     const response = await absenden('cancelled');
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe(`/admin?date=${TAG}`);
+    expect(response.headers.get('location')).toBe(`/admin/production?date=${TAG}`);
     expect(await status()).toBe('cancelled');
     expect((await zeile())['status_changed_by_account_id']).toBe(2);
     expect((await zeile())['status_changed_at']).toBe((await zeile())['updated_at']);
@@ -307,7 +307,7 @@ describe('Finaler Storno-POST', () => {
 
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe(
-      `/admin?date=${TAG}&status_error=invalid_transition`,
+      `/admin/production?date=${TAG}&status_error=invalid_transition`,
     );
     expect(await status()).toBe('completed');
   });
@@ -334,7 +334,13 @@ describe('Formular-POST — der erlaubte Weg', () => {
   it('leitet auf den Produktionstag der Bestellung zurück', async () => {
     const response = await absenden('confirmed');
 
-    expect(response.headers.get('location')).toBe(`/admin?date=${TAG}`);
+    expect(response.headers.get('location')).toBe(`/admin/production?date=${TAG}`);
+  });
+
+  it('bleibt nach einer Statusaktion aus Bestellungen im Bestellbereich', async () => {
+    const response = await absenden('confirmed', { pfad: `${PFAD}?workspace=orders` });
+
+    expect(response.headers.get('location')).toBe(`/admin/orders?date=${TAG}&notice=status_saved`);
   });
 
   it('leitet auch dann auf den Tag der Bestellung, wenn er nicht der Standardtag ist', async () => {
@@ -342,7 +348,7 @@ describe('Formular-POST — der erlaubte Weg', () => {
 
     const response = await absenden('confirmed', { pfad: `/api/admin/orders/${ZWEITE}/status` });
 
-    expect(response.headers.get('location')).toBe('/admin?date=2027-01-07');
+    expect(response.headers.get('location')).toBe('/admin/production?date=2027-01-07');
   });
 
   it('führt den ganzen Arbeitsablauf durch', async () => {
@@ -409,7 +415,7 @@ describe('Formular-POST — Weiterleitungsziel', () => {
       },
     });
 
-    expect(response.headers.get('location')).toBe(`/admin?date=${TAG}`);
+    expect(response.headers.get('location')).toBe(`/admin/production?date=${TAG}`);
   });
 
   it('übernimmt kein Ziel aus der Abfrage', async () => {
@@ -417,13 +423,21 @@ describe('Formular-POST — Weiterleitungsziel', () => {
       pfad: `${PFAD}?return=https://angreifer.test/&date=2030-01-01&next=//angreifer.test`,
     });
 
-    expect(response.headers.get('location')).toBe(`/admin?date=${TAG}`);
+    expect(response.headers.get('location')).toBe(`/admin/production?date=${TAG}`);
+  });
+
+  it('erlaubt als Arbeitsbereich ausschließlich den festen Wert orders', async () => {
+    const response = await absenden('confirmed', {
+      pfad: `${PFAD}?workspace=https://angreifer.test/`,
+    });
+
+    expect(response.headers.get('location')).toBe(`/admin/production?date=${TAG}`);
   });
 
   it('leitet ausschließlich auf einen eigenen Pfad', async () => {
     const ziel = (await absenden('confirmed')).headers.get('location') ?? '';
 
-    expect(ziel.startsWith('/admin?date=')).toBe(true);
+    expect(ziel.startsWith('/admin/production?date=')).toBe(true);
     expect(ziel).not.toContain('//');
     expect(ziel).not.toContain(':');
     expect(ziel).not.toContain('angreifer');
@@ -518,7 +532,7 @@ describe('Formular-POST — wer nicht darf', () => {
       const response = await absenden(unsinn);
 
       expect(response.status).toBe(303);
-      expect(response.headers.get('location')).toBe('/admin?status_error=internal');
+      expect(response.headers.get('location')).toBe('/admin/production?status_error=internal');
       await unveraendert();
     }
   });
@@ -538,7 +552,7 @@ describe('Formular-POST — wer nicht darf', () => {
     );
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('/admin?status_error=internal');
+    expect(response.headers.get('location')).toBe('/admin/production?status_error=internal');
     await unveraendert();
   });
 });
@@ -559,7 +573,7 @@ describe('Formular-POST — kontrollierte Fehler mit PRG', () => {
 
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe(
-      `/admin?date=${TAG}&status_error=invalid_transition`,
+      `/admin/production?date=${TAG}&status_error=invalid_transition`,
     );
   });
 
@@ -608,7 +622,7 @@ describe('Formular-POST — kontrollierte Fehler mit PRG', () => {
 
     expect(spaet.status).toBe(303);
     expect(spaet.headers.get('location')).toBe(
-      `/admin?date=${TAG}&status_error=invalid_transition`,
+      `/admin/production?date=${TAG}&status_error=invalid_transition`,
     );
     expect(await status()).toBe('in_production');
   });
@@ -618,7 +632,7 @@ describe('Formular-POST — kontrollierte Fehler mit PRG', () => {
 
     expect([a.status, b.status]).toEqual([303, 303]);
     expect([a.headers.get('location'), b.headers.get('location')]).toContain(
-      `/admin?date=${TAG}&status_error=conflict`,
+      `/admin/production?date=${TAG}&status_error=conflict`,
     );
     expect(await status()).toBe('confirmed');
   });
@@ -629,7 +643,7 @@ describe('Formular-POST — kontrollierte Fehler mit PRG', () => {
     });
 
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('/admin?status_error=not_found');
+    expect(response.headers.get('location')).toBe('/admin/production?status_error=not_found');
     expect(response.headers.get('location')).not.toContain('BUS-2026-999999');
   });
 
@@ -639,7 +653,7 @@ describe('Formular-POST — kontrollierte Fehler mit PRG', () => {
     const response = await absenden('confirmed');
     expect(response.status).toBe(303);
     const ziel = response.headers.get('location') ?? '';
-    expect(ziel).toBe('/admin?status_error=internal');
+    expect(ziel).toBe('/admin/production?status_error=internal');
     for (const verboten of [
       'SELECT',
       'UPDATE',
@@ -694,7 +708,7 @@ describe('Formular-POST — Wirkung auf den Produktionstag', () => {
     await absenden('confirmed');
     await absenden('in_production');
 
-    const vorher = await (await seite(`/admin?date=${TAG}`)).text();
+    const vorher = await (await seite(`/admin/production?date=${TAG}`)).text();
     expect(vorher).toContain(NUMMER);
 
     const response = await absenden('completed');

@@ -313,6 +313,6 @@ function istNotice(code: string): code is Notice {
 function zurueck(notice: Notice): Response {
   return new Response(null, {
     status: 303,
-    headers: privateHeaders({ location: `/admin/bestellregeln?notice=${notice}` }),
+    headers: privateHeaders({ location: `/admin/settings?notice=${notice}` }),
   });
 }

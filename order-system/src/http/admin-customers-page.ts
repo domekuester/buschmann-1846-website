@@ -1,8 +1,6 @@
 import type { AppConfig } from '../config/app-config';
-import {
-  loadAdminCustomers,
-  loadAssignablePriceGroups,
-} from '../infrastructure/d1/customer-price-group-repository';
+import { loadAdminCustomerWorkspace } from '../infrastructure/d1/admin-customer-repository';
+import { loadAssignablePriceGroups } from '../infrastructure/d1/customer-price-group-repository';
 import { renderAdminCustomersPage } from '../ui/admin-customers-html';
 import { requireRole } from './guard';
 import { pageHeaders } from './security';
@@ -35,7 +33,7 @@ export async function adminCustomersPage(
   if (!wache.ok) return wache.response;
 
   const [customers, priceGroups] = await Promise.all([
-    loadAdminCustomers(db),
+    loadAdminCustomerWorkspace(db),
     loadAssignablePriceGroups(db),
   ]);
 

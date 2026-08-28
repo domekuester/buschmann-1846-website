@@ -6,6 +6,8 @@ import { aggregateDashboardDay } from '../domain/dashboard-day';
 import { aggregateDashboardWeek } from '../domain/dashboard-week';
 import { renderInvalidDatePage } from '../ui/admin-page-html';
 import {
+  renderAdminOverviewPage,
+  renderAdminOrdersPage,
   renderAdminDashboardPage,
   renderDashboardUnavailablePage,
   type AdminDashboardPageView,
@@ -54,6 +56,7 @@ export async function adminDashboardPage(
   config: AppConfig,
   request: Request,
   now: Date,
+  workspace: 'overview' | 'orders' | 'legacy' = 'overview',
 ): Promise<Response> {
   const wache = await requireRole(db, config, request, now, 'admin', 'html');
   if (!wache.ok) {
@@ -85,7 +88,10 @@ export async function adminDashboardPage(
      * das Dashboard gesucht hat, will das Dashboard.
      */
     return new Response(
-      renderInvalidDatePage({ href: '/admin/dashboard', label: 'Zurück zum Dashboard' }),
+      renderInvalidDatePage({
+        href: workspace === 'orders' ? '/admin/orders' : workspace === 'legacy' ? '/admin/dashboard' : '/admin',
+        label: workspace === 'orders' ? 'Zurück zu Bestellungen' : 'Zurück zur Übersicht',
+      }),
       { status: 400, headers: pageHeaders() },
     );
   }
@@ -169,7 +175,11 @@ export async function adminDashboardPage(
   const day = toDashboardView(ueberblick);
 
   return new Response(
-    renderAdminDashboardPage({
+    (workspace === 'orders'
+      ? renderAdminOrdersPage
+      : workspace === 'legacy'
+        ? renderAdminDashboardPage
+        : renderAdminOverviewPage)({
       ...geruest,
       day,
       orderList: toOrderListView(day, filter ?? 'all'),

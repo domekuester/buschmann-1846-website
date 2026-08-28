@@ -244,7 +244,7 @@ describe('§17.18 — die Produktionsliste (6D bleibt unverändert)', () => {
   it('enthält auch die Produktionsansicht keine Kosten', async () => {
     await bestellen(sitzung.kunde);
 
-    frei(await (await hole(`/admin?date=${MORGEN}`, sitzung.admin)).text());
+    frei(await (await hole(`/admin/production?date=${MORGEN}`, sitzung.admin)).text());
     frei(await (await hole(`/api/admin/production-day?date=${MORGEN}`, sitzung.admin)).text());
   });
 });

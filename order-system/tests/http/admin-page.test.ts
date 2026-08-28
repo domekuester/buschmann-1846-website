@@ -166,7 +166,7 @@ describe('GET /admin — Zugriff', () => {
   });
 });
 
-describe('GET /admin — Statusfehlermeldung nach PRG', () => {
+describe('GET /admin/production — Statusfehlermeldung nach PRG', () => {
   it.each([
     ['conflict', 'Der Status wurde zwischenzeitlich geändert. Bitte prüfe die Bestellung noch einmal.'],
     ['invalid_transition', 'Diese Statusänderung ist nicht mehr möglich.'],
@@ -174,7 +174,7 @@ describe('GET /admin — Statusfehlermeldung nach PRG', () => {
     ['internal', 'Die Änderung konnte gerade nicht gespeichert werden.'],
   ])('zeigt den allowlist-Code %s als verständliche Meldung', async (code, message) => {
     const response = await call(
-      `/admin?date=2026-08-25&status_error=${code}`,
+      `/admin/production?date=2026-08-25&status_error=${code}`,
       await anmelden('admin@example.test', PASSWORT),
     );
     const text = await response.text();
@@ -190,7 +190,7 @@ describe('GET /admin — Statusfehlermeldung nach PRG', () => {
       'status_error=<script>alert(1)</script>',
       'status_error=conflict&status_error=internal',
     ]) {
-      const text = await (await call(`/admin?date=2026-08-25&${query}`, cookie)).text();
+      const text = await (await call(`/admin/production?date=2026-08-25&${query}`, cookie)).text();
 
       expect(text).not.toContain('role="alert"');
       expect(text).not.toContain('<script>alert(1)</script>');
@@ -198,7 +198,7 @@ describe('GET /admin — Statusfehlermeldung nach PRG', () => {
   });
 });
 
-describe('GET /admin — Inhalt', () => {
+describe('GET /admin/production — Inhalt', () => {
   /**
    * Phase 3C zeigt Produktionsdaten — aber ausdruecklich KEINE Finanz- und
    * KEINE Kontaktdaten. Der Test ist der Nachfolger von „zeigt keine
@@ -210,7 +210,7 @@ describe('GET /admin — Inhalt', () => {
    * duerfen nirgends auftauchen.
    */
   it('zeigt weder Preise noch Kontaktdaten', async () => {
-    const text = await (await call('/admin', await anmelden('admin@example.test', PASSWORT))).text();
+    const text = await (await call('/admin/production', await anmelden('admin@example.test', PASSWORT))).text();
 
     for (const verboten of [
       '€', 'Umsatz', 'Marge', 'Kosten', '4,35', '435',

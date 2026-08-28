@@ -83,7 +83,7 @@ describe('Abholliste — Bestellblöcke', () => {
   it('verwendet die bestehende Druckaktion und führt datumstreu zur Produktion zurück', () => {
     const html = renderPickupListPage({ day: day() });
 
-    expect(html).toContain('href="/admin?date=2026-08-28"');
+    expect(html).toContain('href="/admin/production?date=2026-08-28"');
     expect(html).toContain('data-print-trigger>Drucken</button>');
     expect(html).toContain('<script type="module" src="/assets/print.js"></script>');
     expect(html).toContain('class="druckkopf screen-only"');

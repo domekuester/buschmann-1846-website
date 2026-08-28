@@ -5,7 +5,10 @@ import {
   type DashboardOrder,
 } from '../../src/domain/dashboard-day';
 import { PAYMENT_STATUSES } from '../../src/domain/payment-status';
-import { renderAdminDashboardPage } from '../../src/ui/admin-dashboard-html';
+import {
+  renderAdminDashboardPage,
+  renderAdminOrdersPage,
+} from '../../src/ui/admin-dashboard-html';
 import {
   toDashboardView,
   toOrderListView,
@@ -92,7 +95,33 @@ function seite(
   });
 }
 
+function bestellseite(
+  overrides: Partial<DashboardDay> = {},
+  noticeCode: string | null = null,
+): string {
+  const day = toDashboardView(tag(overrides));
+
+  return renderAdminOrdersPage({
+    loginIdentifier: 'admin@example.test',
+    csrfToken: 'test-csrf-token',
+    day,
+    noticeCode,
+    quickDays: toQuickDaysView(HEUTE, day.day, 'day'),
+    orderList: toOrderListView(day, 'all'),
+  });
+}
+
 describe('toDashboardView', () => {
+  it('hält erlaubte Status- und Zahlungsaktionen im Bestellbereich gemeinsam erreichbar', () => {
+    const html = bestellseite({ orders: [bestellung({ status: 'new' })] });
+
+    expect(html).toContain('action="/api/admin/orders/BUS-2026-000001/status?workspace=orders"');
+    expect(html).toContain('name="status" value="confirmed"');
+    expect(html).toContain('>Bestätigen<span');
+    expect(html).toContain('/admin/orders/BUS-2026-000001/cancel?workspace=orders');
+    expect(html).toContain('action="/api/admin/orders/BUS-2026-000001/payment"');
+  });
+
   it('schreibt den Tag deutsch aus und kennt seine Nachbarn', () => {
     const view = toDashboardView(tag());
 
@@ -181,12 +210,14 @@ describe('renderAdminDashboardPage — Gerüst', () => {
     expect(seite()).toContain('Produktionstag');
   });
 
-  it('führt die Adminnavigation mit dem Dashboard als aktueller Seite', () => {
+  it('führt die sechs Bereiche mit Übersicht als aktueller Seite', () => {
     const html = seite();
-    expect(html).toContain('<a href="/admin/dashboard" aria-current="page">Dashboard</a>');
-    expect(html).toContain('href="/admin"');
+    expect(html).toContain('<a href="/admin" aria-current="page">Übersicht</a>');
+    expect(html).toContain('href="/admin/orders"');
+    expect(html).toContain('href="/admin/production"');
     expect(html).toContain('href="/admin/catalog"');
     expect(html).toContain('href="/admin/customers"');
+    expect(html).toContain('href="/admin/settings"');
   });
 
   it('navigiert tageweise über echte Links auf das Dashboard', () => {
@@ -197,7 +228,7 @@ describe('renderAdminDashboardPage — Gerüst', () => {
   });
 
   it('führt zur Produktionsansicht desselben Tages', () => {
-    expect(seite()).toContain('href="/admin?date=2026-08-28"');
+    expect(seite()).toContain('href="/admin/production?date=2026-08-28"');
   });
 
   it('trägt kein Skript', () => {
@@ -575,6 +606,14 @@ describe('renderAdminDashboardPage — Zahlungsstatus ändern', () => {
 describe('renderAdminDashboardPage — Rückmeldungen', () => {
   it('bestätigt einen gespeicherten Zahlungsstand', () => {
     expect(seite({}, 'payment_saved')).toContain('Der Zahlungsstatus wurde gespeichert.');
+  });
+
+  it('zeigt einen gespeicherten Bestellstatus im Bestellbereich als Erfolg', () => {
+    const html = bestellseite({}, 'status_saved');
+
+    expect(html).toContain('Der Bestellstatus wurde gespeichert.');
+    expect(html).toContain('class="kundenmeldung kundenmeldung--erfolg"');
+    expect(html).not.toContain('class="banner kundenmeldung"');
   });
 
   it('sagt bei einem Fehlschlag, dass nichts gespeichert wurde', () => {

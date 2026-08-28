@@ -124,7 +124,7 @@ describe('POST /api/admin/orders/:orderNumber/payment — Erfolg', () => {
 
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe(
-      `/admin/dashboard?date=${TAG}&notice=payment_saved`,
+      `/admin/orders?date=${TAG}&notice=payment_saved`,
     );
     expect((await zahlung()).payment_status).toBe('paid_cash');
   });
@@ -308,7 +308,7 @@ describe('POST /api/admin/orders/:orderNumber/payment — Eingaben', () => {
       path: '/api/admin/orders/BUS-2026-999999/payment',
     });
 
-    expect(response.headers.get('location')).toBe('/admin/dashboard?notice=unknown_order');
+    expect(response.headers.get('location')).toBe('/admin/orders?notice=unknown_order');
     expect((await zahlung()).payment_status).toBe('unpaid');
   });
 
@@ -318,7 +318,7 @@ describe('POST /api/admin/orders/:orderNumber/payment — Eingaben', () => {
       path: '/api/admin/orders/kein-format/payment',
     });
 
-    expect(response.headers.get('location')).toBe('/admin/dashboard?notice=unknown_order');
+    expect(response.headers.get('location')).toBe('/admin/orders?notice=unknown_order');
   });
 
   it('lehnt einen fremden Content-Type ab', async () => {
@@ -343,7 +343,7 @@ describe('POST /api/admin/orders/:orderNumber/payment — kein Open Redirect', (
     const response = await post({ session, body: felder.toString() });
 
     expect(response.headers.get('location')).toBe(
-      `/admin/dashboard?date=${TAG}&notice=payment_saved`,
+      `/admin/orders?date=${TAG}&notice=payment_saved`,
     );
   });
 

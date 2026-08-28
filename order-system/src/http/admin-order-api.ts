@@ -126,6 +126,7 @@ export async function changeOrderStatusEndpoint(
    * Auskunft, welche Anfrageform dieser Endpunkt erwartet.
    */
   const alsFormular = istFormular(request);
+  const arbeitsbereich = alsFormular ? formularArbeitsbereich(request) : 'production';
 
   try {
     assertSameOrigin(request, config);
@@ -170,7 +171,7 @@ export async function changeOrderStatusEndpoint(
      */
     const orderNumber = OrderNumber.parse(orderNumberSegment);
     if (orderNumber === null) {
-      return alsFormular ? fehlerRedirect('not_found', null) : nichtGefunden();
+      return alsFormular ? fehlerRedirect('not_found', null, arbeitsbereich) : nichtGefunden();
     }
 
     const ergebnis = await changeOrderStatus(db, {
@@ -183,7 +184,7 @@ export async function changeOrderStatusEndpoint(
     switch (ergebnis.outcome) {
       case 'changed':
         return alsFormular
-          ? zurueckZumProduktionstag(ergebnis.order.fulfillmentDate.value)
+          ? zurueckZumArbeitsbereich(ergebnis.order.fulfillmentDate.value, arbeitsbereich)
           : json(
               {
                 order_number: ergebnis.order.orderNumber.value,
@@ -194,7 +195,7 @@ export async function changeOrderStatusEndpoint(
             );
 
       case 'unknown_order':
-        return alsFormular ? fehlerRedirect('not_found', null) : nichtGefunden();
+        return alsFormular ? fehlerRedirect('not_found', null, arbeitsbereich) : nichtGefunden();
 
       /**
        * 409 und nicht 400: Die Anfrage ist in Ordnung, sie passt nur nicht
@@ -209,7 +210,7 @@ export async function changeOrderStatusEndpoint(
        */
       case 'invalid_transition':
         return alsFormular
-          ? fehlerRedirect('invalid_transition', ergebnis.fulfillmentDate)
+          ? fehlerRedirect('invalid_transition', ergebnis.fulfillmentDate, arbeitsbereich)
           : json({ error: 'invalid_transition' }, 409, privateHeaders());
 
       /**
@@ -220,13 +221,13 @@ export async function changeOrderStatusEndpoint(
        */
       case 'conflict':
         return alsFormular
-          ? fehlerRedirect('conflict', ergebnis.fulfillmentDate)
+          ? fehlerRedirect('conflict', ergebnis.fulfillmentDate, arbeitsbereich)
           : json({ error: 'conflict' }, 409, privateHeaders());
     }
   } catch (error) {
     if (error instanceof RequestError) {
       return alsFormular
-        ? fehlerRedirect('internal', null)
+        ? fehlerRedirect('internal', null, arbeitsbereich)
         : json({ error: error.code }, error.status, privateHeaders());
     }
 
@@ -263,7 +264,7 @@ export async function changeOrderStatusEndpoint(
      * zuständig — das `throw` ist der Normalfall.
      */
     if (alsFormular) {
-      return fehlerRedirect('internal', null);
+      return fehlerRedirect('internal', null, arbeitsbereich);
     }
     throw error;
   }
@@ -283,14 +284,13 @@ function istFormular(request: Request): boolean {
 }
 
 /**
- * ZURÜCK AUF DENSELBEN PRODUKTIONSTAG — und das ist die Stelle, an der ein
- * Open Redirect entstünde, wenn man sie falsch baute.
+ * ZURÜCK IN DEN AUSLÖSENDEN ARBEITSBEREICH — und das ist die Stelle, an der
+ * ein Open Redirect entstünde, wenn man sie falsch baute.
  *
- * DER TAG KOMMT AUS DER BESTELLUNG IN D1. Nicht aus einem Formularfeld, nicht
- * aus einem Parameter, nicht aus dem Referer. Es gibt in diesem Endpunkt
- * keine Zeile, die ein Wunschziel des Aufrufers läse — und damit auch nichts,
- * das eine Allowlist prüfen müsste. Dieselbe Entscheidung wie beim Login, der
- * bewusst kein `next` kennt.
+ * DER TAG KOMMT AUS DER BESTELLUNG IN D1. Der optionale Arbeitsbereich kommt
+ * aus der Query, wird aber auf den einzigen Wert `orders` begrenzt. Jeder
+ * fehlende, doppelte oder fremde Wert fällt auf Produktion zurück. Freie URLs
+ * und der Referer werden nicht gelesen.
  *
  * DIE PRÜFUNG MIT isCalendarDay IST TROTZDEM DA. FulfillmentDate.restore()
  * lässt nichts anderes zu, der Wert kann hier also gar nichts Fremdes sein —
@@ -302,8 +302,18 @@ function istFormular(request: Request): boolean {
  * folgen. Ein 302 überlässt das der Auslegung, und manche Clients wiederholen
  * dann den POST — hier wäre das ein zweiter Statuswechsel.
  */
-function zurueckZumProduktionstag(fulfillmentDate: string): Response {
-  const ziel = isCalendarDay(fulfillmentDate) ? `/admin?date=${fulfillmentDate}` : '/admin';
+type FormWorkspace = 'production' | 'orders';
+
+function formularArbeitsbereich(request: Request): FormWorkspace {
+  const values = new URL(request.url).searchParams.getAll('workspace');
+  return values.length === 1 && values[0] === 'orders' ? 'orders' : 'production';
+}
+
+function zurueckZumArbeitsbereich(fulfillmentDate: string, workspace: FormWorkspace): Response {
+  const day = isCalendarDay(fulfillmentDate) ? `?date=${fulfillmentDate}` : '';
+  const ziel = workspace === 'orders'
+    ? `/admin/orders${day}${day === '' ? '?' : '&'}notice=status_saved`
+    : `/admin/production${day}`;
 
   return new Response(null, { status: 303, headers: privateHeaders({ location: ziel }) });
 }
@@ -318,8 +328,15 @@ function zurueckZumProduktionstag(fulfillmentDate: string): Response {
  */
 type StatusErrorCode = 'conflict' | 'invalid_transition' | 'not_found' | 'internal';
 
-function fehlerRedirect(code: StatusErrorCode, day: string | null): Response {
-  const base = day !== null && isCalendarDay(day) ? `/admin?date=${day}` : '/admin?';
+function fehlerRedirect(code: StatusErrorCode, day: string | null, workspace: FormWorkspace): Response {
+  if (workspace === 'orders') {
+    const date = day !== null && isCalendarDay(day) ? `date=${day}&` : '';
+    return new Response(null, {
+      status: 303,
+      headers: privateHeaders({ location: `/admin/orders?${date}notice=status_${code}` }),
+    });
+  }
+  const base = day !== null && isCalendarDay(day) ? `/admin/production?date=${day}` : '/admin/production?';
   const separator = base.endsWith('?') ? '' : '&';
   return new Response(null, {
     status: 303,

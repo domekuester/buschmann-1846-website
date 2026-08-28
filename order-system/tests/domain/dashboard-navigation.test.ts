@@ -45,7 +45,7 @@ describe('toDashboardView — Handlungsbedarf', () => {
       detail: 'warten auf Bestätigung',
       amountLabel: '',
       linkLabel: 'Zur Produktion',
-      href: `/admin?date=${TAG}`,
+      href: `/admin/production?date=${TAG}`,
     });
   });
 
@@ -60,7 +60,7 @@ describe('toDashboardView — Handlungsbedarf', () => {
 
     expect(aktionen[0]).toMatchObject({
       key: 'open_production',
-      href: `/admin?date=${TAG}`,
+      href: `/admin/production?date=${TAG}`,
       linkLabel: 'Produktion öffnen',
     });
   });
@@ -76,7 +76,7 @@ describe('toDashboardView — Handlungsbedarf', () => {
       count: 2,
       title: 'Zahlungen offen',
       amountLabel: '69,60 €',
-      href: `/admin/dashboard?date=${TAG}&orders=unpaid#bestellungen`,
+      href: `/admin/orders?date=${TAG}&orders=unpaid#bestellungen`,
       linkLabel: 'Offene Zahlungen anzeigen',
     });
   });
@@ -101,7 +101,7 @@ describe('toQuickDaysView', () => {
   it('führt „Heute" auf das Geschäftsdatum', () => {
     expect(toQuickDaysView(HEUTE, TAG, 'day').today).toEqual({
       label: 'Heute',
-      href: '/admin/dashboard?date=2026-08-26',
+      href: '/admin?date=2026-08-26',
       isCurrent: false,
     });
   });
@@ -109,19 +109,19 @@ describe('toQuickDaysView', () => {
   it('führt „Morgen" auf den Tag danach', () => {
     expect(toQuickDaysView(HEUTE, TAG, 'day').tomorrow).toMatchObject({
       label: 'Morgen',
-      href: '/admin/dashboard?date=2026-08-27',
+      href: '/admin?date=2026-08-27',
     });
   });
 
   it('rechnet „Morgen" über einen Monatswechsel hinweg', () => {
     expect(toQuickDaysView('2026-08-31', TAG, 'day').tomorrow.href).toBe(
-      '/admin/dashboard?date=2026-09-01',
+      '/admin?date=2026-09-01',
     );
   });
 
   it('rechnet „Morgen" über einen Jahreswechsel hinweg', () => {
     expect(toQuickDaysView('2026-12-31', TAG, 'day').tomorrow.href).toBe(
-      '/admin/dashboard?date=2027-01-01',
+      '/admin?date=2027-01-01',
     );
   });
 
@@ -146,14 +146,14 @@ describe('toQuickDaysView', () => {
     // Freitag, 28. August 2026 — die Woche beginnt am Montag, dem 24.
     expect(toQuickDaysView(HEUTE, TAG, 'day').week).toEqual({
       label: 'Woche',
-      href: '/admin/dashboard?date=2026-08-24&view=week',
+      href: '/admin?date=2026-08-24&view=week',
       isCurrent: false,
     });
   });
 
   it('nennt für einen Sonntag den Montag DAVOR', () => {
     expect(toQuickDaysView(HEUTE, '2026-08-30', 'day').week.href).toBe(
-      '/admin/dashboard?date=2026-08-24&view=week',
+      '/admin?date=2026-08-24&view=week',
     );
   });
 });
@@ -224,7 +224,7 @@ describe('toOrderListView — offene Zahlungen', () => {
   it('bietet den Weg zurück zu allen Bestellungen', () => {
     const liste = toOrderListView(ansicht([bestellung()]), 'unpaid');
 
-    expect(liste.allHref).toBe(`/admin/dashboard?date=${TAG}#bestellungen`);
+    expect(liste.allHref).toBe(`/admin/orders?date=${TAG}#bestellungen`);
   });
 
   it('sagt, wenn nichts offen ist, statt einen leeren Rahmen zu zeigen', () => {

@@ -278,7 +278,7 @@ function normalisiereNotiz(note: string | null): string | null {
  * http/guard.ts — jedes Mal neu, bei jedem POST. Das ist die Trennung, ohne
  * die eine ausgeblendete Schaltfläche wie Sicherheit aussähe.
  */
-function statusAktionen(status: OrderStatus): readonly StatusActionView[] {
+export function statusAktionen(status: OrderStatus): readonly StatusActionView[] {
   return ORDER_STATUSES.filter((ziel) => canTransitionTo(status, ziel)).map((ziel) => ({
     target: ziel,
     label: AKTIONSLABEL[ziel],

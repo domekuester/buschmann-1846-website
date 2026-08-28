@@ -53,13 +53,13 @@ describe('toDashboardWeekView — der Rahmen', () => {
 
   it('verlinkt jeden Tag auf seine eigene Tagesansicht', () => {
     expect(ansicht().days.map((tag) => tag.href)).toEqual([
-      '/admin/dashboard?date=2026-08-24',
-      '/admin/dashboard?date=2026-08-25',
-      '/admin/dashboard?date=2026-08-26',
-      '/admin/dashboard?date=2026-08-27',
-      '/admin/dashboard?date=2026-08-28',
-      '/admin/dashboard?date=2026-08-29',
-      '/admin/dashboard?date=2026-08-30',
+      '/admin?date=2026-08-24',
+      '/admin?date=2026-08-25',
+      '/admin?date=2026-08-26',
+      '/admin?date=2026-08-27',
+      '/admin?date=2026-08-28',
+      '/admin?date=2026-08-29',
+      '/admin?date=2026-08-30',
     ]);
   });
 
@@ -82,15 +82,15 @@ describe('toDashboardWeekView — der Rahmen', () => {
   it('führt die Pfeile auf die Wochen davor und danach', () => {
     const woche = ansicht();
 
-    expect(woche.previousWeek.href).toBe('/admin/dashboard?date=2026-08-17&view=week');
-    expect(woche.nextWeek.href).toBe('/admin/dashboard?date=2026-08-31&view=week');
+    expect(woche.previousWeek.href).toBe('/admin?date=2026-08-17&view=week');
+    expect(woche.nextWeek.href).toBe('/admin?date=2026-08-31&view=week');
   });
 
   it('markiert in der Schnellwahl die Woche als aktiv', () => {
     const woche = ansicht();
 
     expect(woche.quickDays.week.isCurrent).toBe(true);
-    expect(woche.quickDays.today.href).toBe('/admin/dashboard?date=2026-08-26');
+    expect(woche.quickDays.today.href).toBe('/admin?date=2026-08-26');
   });
 });
 

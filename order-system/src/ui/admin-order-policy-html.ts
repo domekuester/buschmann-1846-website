@@ -77,7 +77,7 @@ export function renderAdminOrderPolicyPage(view: AdminOrderPolicyPageView): stri
   return renderAdminShell(
     'Bestellregeln — Buschmann 1846',
     view,
-    'rules',
+    'settings',
     `<header class="bereichskopf">
       <p class="bereichskopf__kicker">Bestellregeln</p>
       <h1>Bestellregeln</h1>

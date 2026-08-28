@@ -86,10 +86,11 @@ describe('GET /admin/customers', () => {
     expect(html).toContain('Nicht zugeordnet');
   });
 
-  it('stellt bestehende Kunden nach der Migration als nicht zugeordnet dar', async () => {
+  it('stellt bestehende Kunden ohne Preisgruppe weiterhin als nicht zugeordnet dar', async () => {
     const html = await (await call('/admin/customers', await admin())).text();
     expect(html).toContain('Nicht zugeordnet');
-    expect(html).toContain('2 von 2 Kunden');
+    expect(html).toContain('Fiktives Café Nord');
+    expect(html).toContain('Fiktiver Privatkunde');
   });
 
   it('bietet die aktiven Preisgruppen zur Auswahl an', async () => {

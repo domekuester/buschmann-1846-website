@@ -1,9 +1,5 @@
 import type { AppConfig } from '../config/app-config';
-import { loadAdminCatalog } from '../infrastructure/d1/catalog-pricing-repository';
-import {
-  loadLinkableCatalogProducts,
-  loadProductLinks,
-} from '../infrastructure/d1/product-catalog-link-repository';
+import { loadAdminProducts } from '../infrastructure/d1/admin-product-repository';
 import { renderAdminCatalogPage } from '../ui/admin-catalog-html';
 import { requireRole } from './guard';
 import { pageHeaders } from './security';
@@ -42,18 +38,12 @@ export async function adminCatalogPage(
   const guard = await requireRole(db, config, request, now, 'admin', 'html');
   if (!guard.ok) return guard.response;
 
-  const [products, productLinks, catalogChoices] = await Promise.all([
-    loadAdminCatalog(db),
-    loadProductLinks(db),
-    loadLinkableCatalogProducts(db),
-  ]);
+  const products = await loadAdminProducts(db);
 
   return new Response(renderAdminCatalogPage({
     loginIdentifier: guard.context.loginIdentifier,
     csrfToken: guard.context.csrfToken,
     products,
-    productLinks,
-    catalogChoices,
     noticeCode: readNotice(request),
   }), { status: 200, headers: pageHeaders() });
 }

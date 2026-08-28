@@ -128,7 +128,7 @@ describe('GET /admin/dashboard — Handlungsbedarf', () => {
     expect(html).toContain('Handlungsbedarf');
     expect(html).toContain('Neue Bestellungen');
     expect(html).toContain('warten auf Bestätigung');
-    expect(html).toContain(`href="/admin?date=${TAG}"`);
+    expect(html).toContain(`href="/admin/production?date=${TAG}"`);
   });
 
   it('meldet die offene Produktion', async () => {
@@ -204,9 +204,9 @@ describe('GET /admin/dashboard — Schnellwahl', () => {
     const heute = businessDay(new Date());
     const html = await (await call(`/admin/dashboard?date=${TAG}`, await admin())).text();
 
-    expect(html).toContain(`href="/admin/dashboard?date=${heute}"`);
-    expect(html).toContain(`href="/admin/dashboard?date=${plusDays(heute, 1)}"`);
-    expect(html).toContain(`href="/admin/dashboard?date=${MONTAG}&amp;view=week"`);
+    expect(html).toContain(`href="/admin?date=${heute}"`);
+    expect(html).toContain(`href="/admin?date=${plusDays(heute, 1)}"`);
+    expect(html).toContain(`href="/admin?date=${MONTAG}&amp;view=week"`);
     expect(html).toContain('>Heute<');
     expect(html).toContain('>Morgen<');
     expect(html).toContain('>Woche<');
@@ -244,7 +244,7 @@ describe('GET /admin/dashboard — Kennzahlnavigation', () => {
     const html = await (await call(`/admin/dashboard?date=${TAG}`, await admin())).text();
 
     expect(html).toContain('href="#bestellungen"');
-    expect(html).toContain(`href="/admin?date=${TAG}"`);
+    expect(html).toContain(`href="/admin/production?date=${TAG}"`);
     expect(html).toContain('href="/admin/customers"');
     expect(html).toContain('id="bestellungen"');
   });
@@ -278,7 +278,7 @@ describe('GET /admin/dashboard — Kennzahlnavigation', () => {
 
     const html = await (await call(`/admin/dashboard?date=${TAG}`, await admin())).text();
 
-    expect(html).toContain(`href="/admin/dashboard?date=${TAG}&amp;orders=unpaid#bestellungen"`);
+    expect(html).toContain(`href="/admin/orders?date=${TAG}&amp;orders=unpaid#bestellungen"`);
   });
 });
 
@@ -319,7 +319,7 @@ describe('GET /admin/dashboard — Zahlungsfilter', () => {
       await call(`/admin/dashboard?date=${TAG}&orders=unpaid`, await admin())
     ).text();
 
-    expect(html).toContain(`href="/admin/dashboard?date=${TAG}#bestellungen"`);
+    expect(html).toContain(`href="/admin/orders?date=${TAG}#bestellungen"`);
     expect(html).toContain('Alle Bestellungen');
   });
 
@@ -396,8 +396,8 @@ describe('GET /admin/dashboard?view=week', () => {
       await call(`/admin/dashboard?date=${MONTAG}&view=week`, await admin())
     ).text();
 
-    expect(html).toContain('href="/admin/dashboard?date=2026-08-24"');
-    expect(html).toContain('href="/admin/dashboard?date=2026-08-30"');
+    expect(html).toContain('href="/admin?date=2026-08-24"');
+    expect(html).toContain('href="/admin?date=2026-08-30"');
   });
 
   it('rechnet Umsatz, offene Produktion und offene Zahlung je Tag', async () => {
@@ -483,8 +483,8 @@ describe('GET /admin/dashboard?view=week', () => {
       await call(`/admin/dashboard?date=${MONTAG}&view=week`, await admin())
     ).text();
 
-    expect(html).toContain('href="/admin/dashboard?date=2026-08-17&amp;view=week"');
-    expect(html).toContain('href="/admin/dashboard?date=2026-08-31&amp;view=week"');
+    expect(html).toContain('href="/admin?date=2026-08-17&amp;view=week"');
+    expect(html).toContain('href="/admin?date=2026-08-31&amp;view=week"');
   });
 
   it('lehnt einen unbekannten view-Wert mit 400 ab', async () => {

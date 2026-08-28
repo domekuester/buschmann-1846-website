@@ -249,8 +249,8 @@ function leseZahlungsstand(felder: URLSearchParams): PaymentStatus {
 function zurueck(notice: Notice, day: string | null): Response {
   const ziel =
     day !== null && isCalendarDay(day)
-      ? `/admin/dashboard?date=${day}&notice=${notice}`
-      : `/admin/dashboard?notice=${notice}`;
+      ? `/admin/orders?date=${day}&notice=${notice}`
+      : `/admin/orders?notice=${notice}`;
 
   return new Response(null, { status: 303, headers: privateHeaders({ location: ziel }) });
 }

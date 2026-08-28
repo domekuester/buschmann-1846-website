@@ -45,7 +45,7 @@ export function renderAdminDashboardWeekPage(view: AdminDashboardWeekPageView): 
   return renderAdminShell(
     `Woche ${view.week.monday} — Buschmann 1846`,
     view,
-    'dashboard',
+    'overview',
     `${kopf(view.week)}
     ${steuerung(view.week)}
     ${wochentabelle(view.week)}`,
@@ -63,7 +63,7 @@ export function renderWeekUnavailablePage(view: AdminDashboardWeekPageView): str
   return renderAdminShell(
     `Woche ${view.week.monday} — Buschmann 1846`,
     view,
-    'dashboard',
+    'overview',
     `${kopf(view.week)}
     ${steuerung(view.week)}
     <p class="banner" role="alert">Die Wochendaten konnten gerade nicht geladen werden.</p>

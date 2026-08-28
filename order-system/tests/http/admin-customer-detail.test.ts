@@ -339,15 +339,19 @@ describe('GET /admin/customers/:customerId', () => {
     }
   });
 
-  it('zeigt weder Zugangsdaten noch Kontaktdaten noch interne Notizen', async () => {
+  it('zeigt editierbare Kontaktdaten und Notiz, aber keine Zugangsinternas', async () => {
     await seedOrder({ id: 1, number: 'BUS-2026-000142', day: '2026-08-27', totalCents: 8450 });
 
     const html = await (await call('/admin/customers/1', await admin())).text();
 
+    for (const erwartet of [
+      'kontakt@beispiel.test', '0211 1234567', 'Fiktiver Betriebshinweis',
+    ]) {
+      expect(html).toContain(erwartet);
+    }
     for (const verboten of [
       'credential_', 'token_hash', 'session_id', 'failed_attempts', 'locked_until',
-      'auth_account', 'account_id', 'submission_id',
-      'kontakt@beispiel.test', '0211 1234567', 'Fiktiver Betriebshinweis',
+      'auth_account', 'account_id', 'submission_id', 'credential_salt', 'credential_verifier',
     ]) {
       expect(html).not.toContain(verboten);
     }
@@ -389,7 +393,7 @@ describe('GET /admin/customers/:customerId', () => {
   it('führt von der Detailansicht zurück in die Kundenverwaltung', async () => {
     const html = await (await call('/admin/customers/1', await admin())).text();
     expect(html).toContain('href="/admin/customers"');
-    expect(html).toContain('Preisgruppe verwalten');
+    expect(html).toContain('Kunden</a>');
   });
 
   it('nennt eine unvollständige Historie anders als eine vollständige', async () => {

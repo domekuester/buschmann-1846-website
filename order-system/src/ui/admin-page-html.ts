@@ -105,12 +105,12 @@ function renderDayNavigation(day: ProductionDayView): string {
   return `<nav class="tagnav" aria-label="Produktionstag wechseln">
         <a
           class="tagnav__pfeil"
-          href="/admin?date=${escapeHtml(day.previousDay)}"
+          href="/admin/production?date=${escapeHtml(day.previousDay)}"
           rel="prev"
           aria-label="Vorheriger Tag, ${escapeHtml(day.previousDayLabel)}"
         ><span aria-hidden="true">&larr;</span></a>
 
-        <form class="tagnav__formular" method="get" action="/admin">
+        <form class="tagnav__formular" method="get" action="/admin/production">
           <label for="tagwahl">Tag wählen</label>
           <input type="date" id="tagwahl" name="date" value="${escapeHtml(day.day)}" required>
           <button type="submit" class="senden tagnav__senden">Anzeigen</button>
@@ -118,7 +118,7 @@ function renderDayNavigation(day: ProductionDayView): string {
 
         <a
           class="tagnav__pfeil"
-          href="/admin?date=${escapeHtml(day.nextDay)}"
+          href="/admin/production?date=${escapeHtml(day.nextDay)}"
           rel="next"
           aria-label="Nächster Tag, ${escapeHtml(day.nextDayLabel)}"
         ><span aria-hidden="true">&rarr;</span></a>
@@ -317,7 +317,7 @@ export function renderStatusChangeFailurePage(
   day: string | null,
 ): string {
   const text = FEHLERTEXTE[reason];
-  const ziel = day === null ? '/admin' : `/admin?date=${escapeHtml(day)}`;
+  const ziel = day === null ? '/admin/production' : `/admin/production?date=${escapeHtml(day)}`;
 
   return `<!doctype html>
 <html lang="de">
@@ -386,7 +386,7 @@ export function renderStatusChangeFailurePage(
  * Tag, nicht das Vorzimmer der übrigen Seiten — eine Zwischenseite mit vier
  * Kacheln wäre ein Klick ohne Entscheidung.
  */
-export type AdminArea = 'dashboard' | 'production' | 'catalog' | 'customers' | 'rules';
+export type AdminArea = 'overview' | 'orders' | 'production' | 'catalog' | 'customers' | 'settings';
 
 export function renderAdminShell(
   title: string,
@@ -404,15 +404,16 @@ export function renderAdminShell(
 <title>${escapeHtml(title)}</title>
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body class="adminseite${activeArea === 'dashboard' ? ' adminseite--breit' : activeArea === 'catalog' ? ' adminseite--katalogbreit' : ''}">
+<body class="adminseite${activeArea === 'overview' || activeArea === 'orders' ? ' adminseite--breit' : activeArea === 'catalog' ? ' adminseite--katalogbreit' : ''}">
 <header class="kopf kopf--schmal">
   <p class="marke">Buschmann <span>1846</span></p>
   <nav class="adminnav" aria-label="Adminbereich">
-    <a href="/admin/dashboard"${activeArea === 'dashboard' ? ' aria-current="page"' : ''}>Dashboard</a>
-    <a href="/admin"${activeArea === 'production' ? ' aria-current="page"' : ''}>Produktion</a>
-    <a href="/admin/catalog"${activeArea === 'catalog' ? ' aria-current="page"' : ''}>Sortiment &amp; Preise</a>
+    <a href="/admin"${activeArea === 'overview' ? ' aria-current="page"' : ''}>Übersicht</a>
+    <a href="/admin/orders"${activeArea === 'orders' ? ' aria-current="page"' : ''}>Bestellungen</a>
+    <a href="/admin/production"${activeArea === 'production' ? ' aria-current="page"' : ''}>Produktion</a>
+    <a href="/admin/catalog"${activeArea === 'catalog' ? ' aria-current="page"' : ''}>Angebot</a>
     <a href="/admin/customers"${activeArea === 'customers' ? ' aria-current="page"' : ''}>Kunden</a>
-    <a href="/admin/bestellregeln"${activeArea === 'rules' ? ' aria-current="page"' : ''}>Bestellregeln</a>
+    <a href="/admin/settings"${activeArea === 'settings' ? ' aria-current="page"' : ''}>Einstellungen</a>
   </nav>
   <p class="kopf__kennung">Angemeldet als ${escapeHtml(view.loginIdentifier)}</p>
 

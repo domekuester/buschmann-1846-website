@@ -13,7 +13,7 @@ import { requireRole } from './guard';
 import { pageHeaders } from './security';
 
 /**
- * GET /admin — die Produktions-Tagesansicht.
+ * GET /admin/production — die Produktions-Tagesansicht.
  *
  * DIE REIHENFOLGE IST ABSICHT, und sie ist dieselbe wie in
  * production-api.ts und order-api.ts:

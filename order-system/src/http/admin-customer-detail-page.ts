@@ -1,7 +1,8 @@
 import type { AppConfig } from '../config/app-config';
 import { CUSTOMER_ORDER_HISTORY_LIMIT } from '../domain/customer-history';
+import { loadAdminCustomerWorkspace } from '../infrastructure/d1/admin-customer-repository';
 import { loadCustomerOrderHistory } from '../infrastructure/d1/customer-history-repository';
-import { loadAdminCustomer } from '../infrastructure/d1/customer-price-group-repository';
+import { loadAssignablePriceGroups } from '../infrastructure/d1/customer-price-group-repository';
 import { renderAdminCustomerDetailPage } from '../ui/admin-customer-detail-html';
 import { renderNoticePage } from '../ui/notice-page-html';
 import { requireRole } from './guard';
@@ -56,10 +57,12 @@ export async function adminCustomerDetailPage(
   const customerId = parseIdSegment(customerIdSegment);
   if (customerId === null) return unbekannt();
 
-  const [customer, orders] = await Promise.all([
-    loadAdminCustomer(db, customerId),
+  const [customers, orders, priceGroups] = await Promise.all([
+    loadAdminCustomerWorkspace(db, customerId),
     loadCustomerOrderHistory(db, customerId, CUSTOMER_ORDER_HISTORY_LIMIT),
+    loadAssignablePriceGroups(db),
   ]);
+  const customer = customers[0] ?? null;
 
   if (customer === null) return unbekannt();
 
@@ -70,9 +73,16 @@ export async function adminCustomerDetailPage(
       customer,
       orders,
       orderLimit: CUSTOMER_ORDER_HISTORY_LIMIT,
+      noticeCode: readNotice(request),
+      priceGroups,
     }),
     { status: 200, headers: pageHeaders() },
   );
+}
+
+function readNotice(request: Request): string | null {
+  const values = new URL(request.url).searchParams.getAll('notice');
+  return values.length === 1 ? (values[0] ?? null) : null;
 }
 
 /**

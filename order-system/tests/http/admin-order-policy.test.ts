@@ -23,7 +23,7 @@ const FREMD = 'https://buschmann1846.de.angreifer.test';
 const PEPPER = 'TEST-PEPPER-nur-fuer-Tests-kein-Echtwert-0123456789';
 const NOW = '2026-08-25T12:00:00.000Z';
 const CONFIG: AppConfig = { environment: 'development', appOrigin: ORIGIN, pepper: PEPPER };
-const SEITE = '/admin/bestellregeln';
+const SEITE = '/admin/settings';
 const PFAD = '/api/admin/order-policy';
 
 function environment(): Env {
@@ -143,7 +143,7 @@ beforeEach(async () => {
   await seedAccount(2, 'testcafe', 'customer', 'fiktive-kunden-pin-123');
 });
 
-describe('GET /admin/bestellregeln', () => {
+describe('GET /admin/settings', () => {
   /** §19.15 */
   it('zeigt einem Admin die geltende Regel', async () => {
     const response = await get(SEITE, (await admin()).cookie);
@@ -235,7 +235,7 @@ describe('GET /admin/bestellregeln', () => {
   it('steht in der Navigation jeder Adminseite', async () => {
     const cookie = (await admin()).cookie;
     for (const pfad of [SEITE, '/admin', '/admin/customers', '/admin/catalog']) {
-      expect(await (await get(pfad, cookie)).text()).toContain('href="/admin/bestellregeln"');
+      expect(await (await get(pfad, cookie)).text()).toContain('href="/admin/settings"');
     }
   });
 });
@@ -256,7 +256,7 @@ describe('POST /api/admin/order-policy', () => {
 
     /** §19.23 — PRG: 303 und ein Ziel aus dem Quelltext. */
     expect(response.status).toBe(303);
-    expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=saved');
+    expect(response.headers.get('location')).toBe('/admin/settings?notice=saved');
     expect(response.headers.get('cache-control')).toBe('no-store');
 
     expect(await gespeichert()).toEqual({
@@ -299,7 +299,7 @@ describe('POST /api/admin/order-policy', () => {
       body: new URLSearchParams({ csrf_token: csrf, lead_days: '1', cutoff_time: '12:00' }).toString(),
     });
 
-    expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=no_day');
+    expect(response.headers.get('location')).toBe('/admin/settings?notice=no_day');
     expect((await gespeichert()).weekdays).toEqual([true, true, true, true, true, true, true]);
   });
 
@@ -309,7 +309,7 @@ describe('POST /api/admin/order-policy', () => {
 
     for (const wert of ['31', '-1', '1.5', '1e1', ' 1', 'zwei', '', '999']) {
       const response = await post({ cookie, body: formular(csrf, { lead_days: wert }) });
-      expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=invalid_lead_days');
+      expect(response.headers.get('location')).toBe('/admin/settings?notice=invalid_lead_days');
     }
 
     expect((await gespeichert()).leadDays).toBe(1);
@@ -330,7 +330,7 @@ describe('POST /api/admin/order-policy', () => {
 
     for (const wert of ['24:00', '12:60', '29:71', '9:00', '12:0', '12:00:00', 'mittags', '']) {
       const response = await post({ cookie, body: formular(csrf, { cutoff_time: wert }) });
-      expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=invalid_cutoff_time');
+      expect(response.headers.get('location')).toBe('/admin/settings?notice=invalid_cutoff_time');
     }
 
     expect((await gespeichert()).cutoffTime).toBe('12:00');
@@ -340,7 +340,7 @@ describe('POST /api/admin/order-policy', () => {
     const { cookie, csrf } = await admin();
     const response = await post({ cookie, body: formular(csrf, { weekday: ['monday', 'Montag'] }) });
 
-    expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=invalid');
+    expect(response.headers.get('location')).toBe('/admin/settings?notice=invalid');
     expect((await gespeichert()).weekdays).toEqual([true, true, true, true, true, true, true]);
   });
 
@@ -348,7 +348,7 @@ describe('POST /api/admin/order-policy', () => {
     const { cookie, csrf } = await admin();
     const response = await post({ cookie, body: formular(csrf, { weekday: ['monday', 'monday'] }) });
 
-    expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=invalid');
+    expect(response.headers.get('location')).toBe('/admin/settings?notice=invalid');
   });
 
   it('lehnt mehrfache Felder ab, statt still das erste zu nehmen', async () => {
@@ -360,7 +360,7 @@ describe('POST /api/admin/order-policy', () => {
       { cutoff_enabled: ['1', '1'] },
     ]) {
       const response = await post({ cookie, body: formular(csrf, overrides) });
-      expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=invalid');
+      expect(response.headers.get('location')).toBe('/admin/settings?notice=invalid');
     }
   });
 
@@ -369,7 +369,7 @@ describe('POST /api/admin/order-policy', () => {
 
     for (const wert of ['on', 'true', '0', 'ja']) {
       const response = await post({ cookie, body: formular(csrf, { cutoff_enabled: wert }) });
-      expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=invalid');
+      expect(response.headers.get('location')).toBe('/admin/settings?notice=invalid');
     }
     expect((await gespeichert()).cutoffEnabled).toBe(false);
   });
@@ -466,7 +466,7 @@ describe('POST /api/admin/order-policy', () => {
     felder.set('redirect', 'https://angreifer.test/');
 
     const response = await post({ cookie, body: felder.toString() });
-    expect(response.headers.get('location')).toBe('/admin/bestellregeln?notice=saved');
+    expect(response.headers.get('location')).toBe('/admin/settings?notice=saved');
   });
 });
 
@@ -519,7 +519,7 @@ describe('Bestehende Bestellungen', () => {
       body: formular(csrf, { weekday: ['monday'], cutoff_enabled: '1', lead_days: '30', cutoff_time: '06:00' }),
     });
 
-    const html = await (await get('/admin?date=2026-08-30', cookie)).text();
+    const html = await (await get('/admin/production?date=2026-08-30', cookie)).text();
     expect(html).toContain('BUS-2026-000001');
   });
 });

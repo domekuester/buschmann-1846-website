@@ -7,6 +7,7 @@ function render(overrides: Partial<Parameters<typeof renderCancelOrderPage>[0]> 
     orderNumber: 'BUS-2026-000123',
     customerName: 'Testcafé Nord',
     fulfillmentDate: '2026-09-26',
+    workspace: 'production',
     ...overrides,
   });
 }
@@ -27,8 +28,17 @@ describe('renderCancelOrderPage', () => {
   it('escapet das Datum im serverseitig erzeugten Zurück-Link', () => {
     const html = render({ fulfillmentDate: '2026-09-26&next=//angreifer.test' });
 
-    expect(html).toContain('href="/admin?date=2026-09-26&amp;next=//angreifer.test"');
+    expect(html).toContain('href="/admin/production?date=2026-09-26&amp;next=//angreifer.test"');
     expect(html).not.toContain('href="//angreifer.test');
+  });
+
+  it('bleibt bei einer Stornierung aus Bestellungen im Bestellbereich', () => {
+    const html = render({ workspace: 'orders' });
+
+    expect(html).toContain('href="/admin/orders?date=2026-09-26"');
+    expect(html).toContain('Zurück zu Bestellungen');
+    expect(html).not.toContain('Zurück zum Produktionstag');
+    expect(html).toContain('action="/api/admin/orders/BUS-2026-000123/status?workspace=orders"');
   });
 
   it('kommt ohne JavaScript und ohne Preise oder interne IDs aus', () => {

@@ -21,6 +21,7 @@ import {
   formatPercentFromTenths,
   formatSignedEuro,
 } from './format';
+import { statusAktionen, type StatusActionView } from './production-day-view';
 
 /**
  * Das Ansichtsmodell des Tagesüberblicks — alles, was die Seite anzeigt, und
@@ -89,6 +90,8 @@ export interface DashboardOrderRowView {
   readonly orderedAtLabel: string;
   /** „Lieferung" oder „Abholung". */
   readonly fulfillmentLabel: string;
+  /** Erlaubte nächste Statusschritte, aus derselben Domänenregel wie in Produktion. */
+  readonly actions: readonly StatusActionView[];
 }
 
 export interface DashboardProductLineView {
@@ -379,6 +382,7 @@ export function toDashboardView(day: DashboardDay): DashboardDayView {
       amountLabel: formatEuro(order.totalCents),
       orderedAtLabel: formatGermanTimestamp(order.createdAt),
       fulfillmentLabel: fulfillmentLabel(order.fulfillmentType),
+      actions: statusAktionen(order.status),
     })),
 
     topProducts: day.topProducts.map((line) => ({
@@ -492,19 +496,19 @@ function aktionsansicht(aktion: DashboardAction, day: string): DashboardActionVi
       title: eine ? 'Neue Bestellung' : 'Neue Bestellungen',
       detail: eine ? 'wartet auf Bestätigung' : 'warten auf Bestätigung',
       linkLabel: 'Zur Produktion',
-      href: `/admin?date=${day}`,
+      href: `/admin/production?date=${day}`,
     },
     open_production: {
       title: 'Offen in der Produktion',
       detail: 'noch nicht abgeschlossen',
       linkLabel: 'Produktion öffnen',
-      href: `/admin?date=${day}`,
+      href: `/admin/production?date=${day}`,
     },
     unpaid: {
       title: eine ? 'Zahlung offen' : 'Zahlungen offen',
       detail: 'noch nicht eingegangen',
       linkLabel: 'Offene Zahlungen anzeigen',
-      href: `/admin/dashboard?date=${day}&orders=unpaid#bestellungen`,
+      href: `/admin/orders?date=${day}&orders=unpaid#bestellungen`,
     },
   };
 
@@ -547,17 +551,17 @@ export function toQuickDaysView(
   return {
     today: {
       label: 'Heute',
-      href: `/admin/dashboard?date=${today}`,
+      href: `/admin?date=${today}`,
       isCurrent: active === 'day' && viewedDay === today,
     },
     tomorrow: {
       label: 'Morgen',
-      href: `/admin/dashboard?date=${morgen}`,
+      href: `/admin?date=${morgen}`,
       isCurrent: active === 'day' && viewedDay === morgen,
     },
     week: {
       label: 'Woche',
-      href: `/admin/dashboard?date=${montag}&view=week`,
+      href: `/admin?date=${montag}&view=week`,
       /**
        * DER AKTIVE ZUSTAND WIRD ÜBERGEBEN und nicht aus dem Datum geraten:
        * Tages- und Wochenansicht zeigen denselben Tag, und welche von beiden
@@ -601,7 +605,7 @@ export function toOrderListView(
         ? bestellungen(rows.length)
         : `${rows.length} ${rows.length === 1 ? 'Eintrag' : 'Einträge'}`,
     rows,
-    allHref: `/admin/dashboard?date=${day.day}#bestellungen`,
+    allHref: `/admin/orders?date=${day.day}#bestellungen`,
     emptyText:
       filter === 'unpaid'
         ? 'Für diesen Tag ist keine Zahlung offen. Alles, was nicht storniert wurde, ist bezahlt.'

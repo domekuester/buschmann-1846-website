@@ -175,7 +175,7 @@ export function toDashboardWeekView(week: DashboardWeek, today: string): Dashboa
 function wochensprung(label: string, monday: string): QuickDayView {
   return {
     label,
-    href: `/admin/dashboard?date=${monday}&view=week`,
+    href: `/admin?date=${monday}&view=week`,
     isCurrent: false,
   };
 }
@@ -193,7 +193,7 @@ function tageszeile(tag: DashboardWeekDay, today: string): DashboardWeekDayView 
     date: tag.date,
     weekdayLabel: formatGermanWeekday(tag.date),
     dateLabel: formatGermanShortDate(tag.date),
-    href: `/admin/dashboard?date=${tag.date}`,
+    href: `/admin?date=${tag.date}`,
     isEmpty: leer,
     isToday: tag.date === today,
     ...zahlen(tag, leer),

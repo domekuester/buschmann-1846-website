@@ -25,6 +25,18 @@ import {
   saveCatalogProductCostEndpoint,
 } from './http/admin-product-cost-api';
 import {
+  createAdminProductEndpoint,
+  matchAdminProductPath,
+  updateAdminProductEndpoint,
+} from './http/admin-product-api';
+import {
+  createAdminCustomerEndpoint,
+  matchAdminCustomerPath,
+  matchAdminCustomerPinPath,
+  resetAdminCustomerPinEndpoint,
+  updateAdminCustomerEndpoint,
+} from './http/admin-customer-management-api';
+import {
   matchOrderPaymentPath,
   recordOrderPaymentEndpoint,
 } from './http/admin-payment-api';
@@ -192,14 +204,28 @@ export default {
         if (request.method !== 'GET' && request.method !== 'HEAD') {
           return methodNotAllowed('GET');
         }
-        return await adminPage(env.DB, config, request, now);
+        return await adminDashboardPage(env.DB, config, request, now, 'overview');
       }
 
       if (pathname === '/admin/dashboard') {
         if (request.method !== 'GET' && request.method !== 'HEAD') {
           return methodNotAllowed('GET', privateHeaders());
         }
-        return await adminDashboardPage(env.DB, config, request, now);
+        return await adminDashboardPage(env.DB, config, request, now, 'legacy');
+      }
+
+      if (pathname === '/admin/orders') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminDashboardPage(env.DB, config, request, now, 'orders');
+      }
+
+      if (pathname === '/admin/production') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminPage(env.DB, config, request, now);
       }
 
       if (pathname === '/admin/production-list') {
@@ -262,6 +288,13 @@ export default {
         return await adminOrderPolicyPage(env.DB, config, request, now);
       }
 
+      if (pathname === '/admin/settings') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminOrderPolicyPage(env.DB, config, request, now);
+      }
+
       /**
        * Der einzige schreibende Adminendpunkt OHNE veränderlichen Pfadteil:
        * Es gibt genau eine Bestellrichtlinie, und deshalb steht in diesem
@@ -272,6 +305,20 @@ export default {
           return methodNotAllowed('POST', privateHeaders());
         }
         return await saveOrderPolicyEndpoint(env.DB, config, request, now);
+      }
+
+      if (pathname === '/api/admin/products') {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await createAdminProductEndpoint(env.DB, config, request, now);
+      }
+
+      if (pathname === '/api/admin/customers') {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await createAdminCustomerEndpoint(env.DB, config, request, now);
       }
 
       const cancelOrderNumber = matchCancelOrderPath(pathname);
@@ -341,6 +388,34 @@ export default {
         );
       }
 
+      const managedCustomerPinIdSegment = matchAdminCustomerPinPath(pathname);
+      if (managedCustomerPinIdSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await resetAdminCustomerPinEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          managedCustomerPinIdSegment,
+        );
+      }
+
+      const managedCustomerIdSegment = matchAdminCustomerPath(pathname);
+      if (managedCustomerIdSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await updateAdminCustomerEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          managedCustomerIdSegment,
+        );
+      }
+
       /**
        * Die dritte Route mit einem veränderlichen Pfadteil — erkannt von der
        * Datei, die auch den Endpunkt enthält. Die 405 trägt privateHeaders(),
@@ -357,6 +432,20 @@ export default {
           request,
           now,
           productIdSegment,
+        );
+      }
+
+      const managedProductIdSegment = matchAdminProductPath(pathname);
+      if (managedProductIdSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await updateAdminProductEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          managedProductIdSegment,
         );
       }
 

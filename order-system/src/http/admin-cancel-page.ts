@@ -26,6 +26,7 @@ export async function cancelOrderPage(
   now: Date,
   orderNumberSegment: string,
 ): Promise<Response> {
+  const workspace = cancelWorkspace(request);
   const guard = await requireRole(db, config, request, now, 'admin', 'html');
   if (!guard.ok) return guard.response;
 
@@ -36,7 +37,7 @@ export async function cancelOrderPage(
   if (order === null) return notFoundPage();
 
   if (!canTransitionTo(order.status, 'cancelled')) {
-    return redirectToDay(order.fulfillmentDate.value, 'invalid_transition');
+    return redirectToDay(order.fulfillmentDate.value, 'invalid_transition', workspace);
   }
 
   return new Response(
@@ -45,6 +46,7 @@ export async function cancelOrderPage(
       orderNumber: order.orderNumber.value,
       customerName: order.customerNameSnapshot,
       fulfillmentDate: order.fulfillmentDate.value,
+      workspace,
     }),
     { status: 200, headers: pageHeaders() },
   );
@@ -57,9 +59,25 @@ function notFoundPage(): Response {
   });
 }
 
-function redirectToDay(day: string, error: 'invalid_transition'): Response {
+function cancelWorkspace(request: Request): 'production' | 'orders' {
+  const values = new URL(request.url).searchParams.getAll('workspace');
+  return values.length === 1 && values[0] === 'orders' ? 'orders' : 'production';
+}
+
+function redirectToDay(
+  day: string,
+  error: 'invalid_transition',
+  workspace: 'production' | 'orders',
+): Response {
+  if (workspace === 'orders') {
+    const date = isCalendarDay(day) ? `date=${day}&` : '';
+    return new Response(null, {
+      status: 303,
+      headers: privateHeaders({ location: `/admin/orders?${date}notice=status_${error}` }),
+    });
+  }
   const target = isCalendarDay(day)
-    ? `/admin?date=${day}&status_error=${error}`
-    : `/admin?status_error=${error}`;
+    ? `/admin/production?date=${day}&status_error=${error}`
+    : `/admin/production?status_error=${error}`;
   return new Response(null, { status: 303, headers: privateHeaders({ location: target }) });
 }

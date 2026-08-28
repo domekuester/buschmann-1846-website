@@ -1934,6 +1934,178 @@ textarea[aria-invalid='true'] {
   font-size: .92rem;
 }
 
+/* ---------- Angebot: sichere Operator-Selbstbedienung ---------- */
+
+.katalogbereich__kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.katalogbereich__kopf .katalogbereich__titel,
+.katalogbereich__kopf p { margin: 0; }
+.katalogbereich__kopf p { color: var(--text-leise); font-size: .9rem; }
+
+.operator-neu,
+.operator-eintrag,
+.operator-editor {
+  margin: 0 0 1rem;
+  background: #fff;
+  border: var(--spur);
+  border-radius: var(--radius);
+}
+
+.operator-neu { margin-bottom: 2.5rem; }
+
+.operator-neu > summary,
+.operator-eintrag > summary,
+.operator-editor > summary {
+  min-height: var(--tap);
+  padding: .8rem 1rem;
+  color: var(--navy);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.operator-neu > summary { font-size: 1.05rem; }
+.operator-neu > p { margin: 0; padding: 0 1rem 1rem; color: var(--text-leise); }
+.operator-editor { margin-bottom: 1.5rem; }
+.operator-editor--create { margin-bottom: 2.5rem; }
+.operator-editor > summary { font-size: 1.05rem; }
+
+.operator-eintrag > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.operator-eintrag > summary > span:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.operator-eintrag > summary small {
+  margin-top: .12rem;
+  color: var(--text-leise);
+  font-weight: 400;
+}
+
+.operator-status {
+  flex: 0 0 auto;
+  padding: .15rem .45rem;
+  color: var(--text-leise);
+  font-size: .75rem;
+  border: var(--spur);
+  border-radius: 999px;
+}
+.operator-status--aktiv { color: var(--erfolg); border-color: var(--erfolg); }
+
+.operator-kurzwerte {
+  margin: 0;
+  padding: .8rem 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem 1.5rem;
+  border-top: var(--spur);
+  border-bottom: var(--spur);
+}
+
+.operator-kurzwerte div { min-width: 9rem; }
+.operator-kurzwerte dt { color: var(--text-leise); font-size: .75rem; }
+.operator-kurzwerte dd { margin: .1rem 0 0; font-variant-numeric: tabular-nums; }
+
+.operator-formular { padding: 1rem; }
+.operator-felder,
+.operator-preise { display: grid; gap: 1rem; }
+.operator-preise { margin-top: 1rem; }
+
+.operator-formular input[type='text'],
+.operator-formular input[type='email'],
+.operator-formular input[type='tel'],
+.operator-formular input:not([type]),
+.operator-formular textarea,
+.operator-formular select {
+  width: 100%;
+  min-height: var(--tap);
+  padding: .65rem .7rem;
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+}
+
+.operator-formular textarea { min-height: 6rem; resize: vertical; }
+
+.operator-formular--kunden {
+  display: grid;
+  gap: 1rem;
+}
+
+.operator-feld {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: .35rem;
+  font-size: .85rem;
+}
+
+.operator-hilfe { color: var(--text-leise); font-size: .78rem; }
+
+.operator-check {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  cursor: pointer;
+}
+
+.operator-check input { width: 1.25rem; height: 1.25rem; }
+.operator-aktionen { display: flex; align-items: end; }
+
+.operator-formular input[type='text']:hover,
+.operator-formular select:hover { border-color: var(--champagner); }
+.operator-formular .feld small { color: var(--text-leise); }
+
+.operator-preisgruppe {
+  min-width: 0;
+  margin: 0;
+  padding: .9rem;
+  display: grid;
+  gap: .4rem;
+  border: var(--spur);
+  border-radius: var(--radius);
+}
+
+.operator-preisgruppe legend { padding: 0 .3rem; color: var(--navy); font-weight: 700; }
+.operator-preisgruppe label { margin-top: .35rem; font-size: .85rem; }
+
+.operator-felder--abschluss { margin-top: 1rem; align-items: end; }
+.operator-schalter {
+  min-height: var(--tap);
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  cursor: pointer;
+}
+.operator-schalter input { width: 1.25rem; height: 1.25rem; }
+.operator-hinweis { margin: .75rem 0; color: var(--text-leise); font-size: .85rem; }
+.operator-formular > .senden { min-width: 9rem; }
+
+@media (min-width: 700px) {
+  .operator-felder,
+  .operator-preise,
+  .operator-formular--kunden { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .operator-feld--breit,
+  .operator-formular--kunden > .operator-aktionen { grid-column: 1 / -1; }
+}
+
 /* „Verknüpft" steht als WORT vor dem Katalogprodukt — §19. Klein und gedeckt
    gesetzt: Es ordnet ein, was daneben steht, und ist nicht selbst die
    Nachricht. Die Farbe ist Zugabe, nie die Aussage. */
@@ -4127,7 +4299,7 @@ textarea[aria-invalid='true'] {
    11rem sind kein Wunschmaß, sondern die Untergrenze, unterhalb derer die
    Spalte kippt. Der Platz kommt aus der Aktionsspalte, die ihr Auswahlfeld
    ohnehin schrumpfen lassen darf. */
-.bestellliste .datentabelle td[data-label='Kunde'] { min-width: 10rem; }
+.bestellliste .datentabelle td[data-label='Kunde'] { min-width: 9.75rem; }
 
 /* Kunde und Abholart stehen UNTEREINANDER, nicht durch einen Punkt getrennt.
 
@@ -4249,23 +4421,23 @@ textarea[aria-invalid='true'] {
   .tagnav--leiste .tagnav__formular input[type='date'] { flex: 0 1 11rem; }
 }
 
-/* DIE SCHMALE MITTE: TABLET UND KLEINER DESKTOP (600px–979px).
+/* DIE SCHMALE MITTE: TABLET UND KLEINER DESKTOP (600px–1099px).
 
    Ab 600px werden `.datentabelle`n systemweit zu echten Tabellen. Für die
    drei Spalten von Kunden- und Katalogseite ist das ab 600px richtig; für die
-   SECHS Spalten der Bestellliste — eine davon mit einem Formular — ist es zu
+   SIEBEN Spalten der Bestellliste — zwei davon mit Aktionen — ist es zu
    früh. Auf einem 834px-Tablet blieben der Tabelle rund 780px; sie braucht
    910px. Das Ergebnis war ein seitlich laufender Tabellenkörper, in dem
    ausgerechnet „Speichern" außerhalb des sichtbaren Bereichs stand.
 
    DIESE EINE TABELLE BLEIBT DESHALB LÄNGER EINE KARTENLISTE. Kein Kompromiss
    und kein Zusammenquetschen: dieselbe Darstellung, die auf dem Telefon
-   ohnehin die richtige ist, gilt bis 980px — ab da ist Platz für sechs
+   ohnehin die richtige ist, gilt bis 1100px — ab da ist Platz für sieben
    Spalten, und die Tabelle wird eine.
 
    Es ist KEIN drittes Layout: Diese Regeln stellen nur den Zustand wieder
    her, den `.datentabelle` unterhalb von 600px ohnehin hat. */
-@media (min-width: 600px) and (max-width: 979px) {
+@media (min-width: 600px) and (max-width: 1099px) {
   .bestellliste .datentabelle thead { display: none; }
 
   .bestellliste .datentabelle tbody,
@@ -4304,6 +4476,16 @@ textarea[aria-invalid='true'] {
     padding-top: .8rem;
   }
 
+  .bestellliste .datentabelle td.statusaktionen {
+    display: block;
+    padding-top: .8rem;
+  }
+
+  .bestellliste .datentabelle td.statusaktionen::before {
+    display: block;
+    margin-bottom: .45rem;
+  }
+
   .bestellliste .datentabelle td.zahlungaktion::before {
     display: block;
     margin-bottom: .45rem;
@@ -4329,12 +4511,12 @@ textarea[aria-invalid='true'] {
 }
 
 
-/* --- Ab 980px: die Bestellliste wird eine Tabelle --- */
+/* --- Ab 1100px: die Bestellliste wird eine Tabelle --- */
 
-/* Erst hier ist Platz für sechs Spalten samt Formular. Was in diesem Block
+/* Erst hier ist Platz für sieben Spalten samt Formularen. Was in diesem Block
    steht, gilt ausschließlich für diesen Zustand — darunter ist die Liste
    eine Kartenliste und braucht nichts davon. */
-@media (min-width: 980px) {
+@media (min-width: 1100px) {
   /* Die Zahlenspalte steht rechtsbündig: So lesen sich Beträge als Spalte
      und nicht als Aufzählung. Die Überschrift geht mit — eine linksbündige
      Beschriftung über einer rechtsbündigen Spalte sieht aus wie ein

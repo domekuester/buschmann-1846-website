@@ -246,4 +246,15 @@ describe('Die npm-Befehle zeigen auf die Demo-Skripte', () => {
     expect(paket.scripts['db:migrate:local']).toBe('wrangler d1 migrations apply DB --local');
     expect(paket.scripts['release:check']).toContain('npm run typecheck');
   });
+
+  it('hält den Katalogimport im Live-Betrieb ausdrücklich und getrennt vom Start', () => {
+    const paket = JSON.parse(readFileSync(join(PROJECT_ROOT, 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    const worker = code('src/worker.ts');
+
+    expect(paket.scripts['catalog:import']).toBe('node scripts/import-local-catalog-pricing.mjs');
+    expect(paket.scripts['dev']).not.toMatch(/catalog|seed|import-local/);
+    expect(worker).not.toMatch(/catalog-pricing\.json|importValidatedCatalog|import-local-catalog-pricing/);
+  });
 });

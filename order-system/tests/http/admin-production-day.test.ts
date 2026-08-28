@@ -195,7 +195,7 @@ beforeEach(async () => {
 
 describe('Zugriff', () => {
   it('lässt einen Admin die Produktionsansicht sehen', async () => {
-    const response = await call(`/admin?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
+    const response = await call(`/admin/production?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
@@ -207,7 +207,7 @@ describe('Zugriff', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
 
-    const response = await call(`/admin?date=${TAG}`, await anmelden('testcafe', PIN));
+    const response = await call(`/admin/production?date=${TAG}`, await anmelden('testcafe', PIN));
 
     expect(response.status).toBe(403);
     const text = await response.text();
@@ -216,7 +216,7 @@ describe('Zugriff', () => {
   });
 
   it('schickt ohne Sitzung in den bestehenden Loginflow', async () => {
-    const response = await call(`/admin?date=${TAG}`);
+    const response = await call(`/admin/production?date=${TAG}`);
 
     expect(response.status).toBe(303);
     expect(response.headers.get('location')).toBe('/login');
@@ -228,7 +228,7 @@ describe('Zugriff', () => {
    * hier eine Seite gibt und sie ein Datum will.
    */
   it('prüft die Rolle vor dem Datum', async () => {
-    const response = await call('/admin?date=kein-datum', await anmelden('testcafe', PIN));
+    const response = await call('/admin/production?date=kein-datum', await anmelden('testcafe', PIN));
     expect(response.status).toBe(403);
   });
 });
@@ -239,20 +239,20 @@ describe('Datum', () => {
     morgen.setUTCDate(morgen.getUTCDate() + 1);
     const erwartet = morgen.toISOString().slice(0, 10);
 
-    const text = await alsAdmin('/admin');
+    const text = await alsAdmin('/admin/production');
 
     expect(text).toContain(`value="${erwartet}"`);
   });
 
   it('verwendet ein ausdrücklich genanntes Datum', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain(`value="${TAG}"`);
     expect(text).toContain('Dienstag, 15. September 2026');
   });
 
   it('lehnt einen Tag ab, den es nicht gibt', async () => {
-    const response = await call('/admin?date=2026-02-30', await anmelden('admin@example.test', PASSWORT));
+    const response = await call('/admin/production?date=2026-02-30', await anmelden('admin@example.test', PASSWORT));
 
     expect(response.status).toBe(400);
     expect(await response.text()).toContain('Diesen Tag gibt es nicht');
@@ -261,7 +261,7 @@ describe('Datum', () => {
   it('lehnt einen Wert ab, der kein Datum ist', async () => {
     for (const kaputt of ['gestern', '2026-13-01', '15.09.2026', '', 'null']) {
       const response = await call(
-        `/admin?date=${encodeURIComponent(kaputt)}`,
+        `/admin/production?date=${encodeURIComponent(kaputt)}`,
         await anmelden('admin@example.test', PASSWORT),
       );
       expect(response.status).toBe(400);
@@ -270,7 +270,7 @@ describe('Datum', () => {
 
   it('lehnt mehrfache date-Parameter ab, statt still den ersten zu nehmen', async () => {
     const response = await call(
-      `/admin?date=${TAG}&date=2026-09-16`,
+      `/admin/production?date=${TAG}&date=2026-09-16`,
       await anmelden('admin@example.test', PASSWORT),
     );
 
@@ -287,7 +287,7 @@ describe('Datum', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
 
-    const text = await alsAdmin('/admin?date=2026-02-30');
+    const text = await alsAdmin('/admin/production?date=2026-02-30');
 
     expect(text).not.toContain('Beispiel Käsekuchen');
     expect(text).not.toContain('3 Stück');
@@ -295,7 +295,7 @@ describe('Datum', () => {
 
   /** Die Fehlerseite wiederholt den Wert aus der Adresszeile nicht. */
   it('spiegelt einen fehlerhaften Datumswert nicht zurück', async () => {
-    const text = await alsAdmin('/admin?date=%3Cscript%3Ealert(1)%3C%2Fscript%3E');
+    const text = await alsAdmin('/admin/production?date=%3Cscript%3Ealert(1)%3C%2Fscript%3E');
 
     expect(text).not.toContain('<script>alert(1)</script>');
     expect(text).not.toContain('alert(1)');
@@ -322,7 +322,7 @@ describe('Produktionsliste', () => {
   });
 
   it('zeigt die produzierten Produkte', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Beispiel Käsekuchen');
     expect(text).toContain('Beispiel Carrot Cake');
@@ -331,7 +331,7 @@ describe('Produktionsliste', () => {
 
   /** DIE ZAHLEN MUESSEN STIMMEN: 8 + 3 = 11 Kaesekuchen. */
   it('summiert die Mengen exakt', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toMatch(/Beispiel Käsekuchen[\s\S]*?>11<[\s\S]*?Stück/);
     expect(text).toMatch(/Beispiel Carrot Cake[\s\S]*?>5<[\s\S]*?Stück/);
@@ -339,18 +339,18 @@ describe('Produktionsliste', () => {
   });
 
   it('zeigt die Einheit aus dem Snapshot und nennt nicht alles Stück', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
     expect(text).toContain('Blech');
   });
 
   it('zeigt die Anzahl der Bestellungen', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
     expect(text).toMatch(/>2<\/strong>\s*Bestellungen/);
   });
 
   it('zeigt die Gesamtzahl der Einheiten', async () => {
     // 8 + 2 + 3 + 5 = 18
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
     expect(text).toMatch(/>18<\/strong>\s*Einheiten/);
   });
 
@@ -358,7 +358,7 @@ describe('Produktionsliste', () => {
     await env.DB.prepare('DELETE FROM order_items WHERE order_id = 2').run();
     await env.DB.prepare('DELETE FROM orders WHERE id = 2').run();
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
     expect(text).toMatch(/>1<\/strong>\s*Bestellung</);
   });
 });
@@ -382,21 +382,21 @@ describe('Bestellungen', () => {
   });
 
   it('zeigt jede Bestellung', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Bestellungen');
     expect(text.match(/<article class="bestellung">/g)).toHaveLength(2);
   });
 
   it('zeigt den Kundennamen', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Testcafé Nord');
     expect(text).toContain('Testcafé Süd');
   });
 
   it('zeigt die Bestellnummer', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('BUS-2026-000123');
     expect(text).toContain('BUS-2026-000124');
@@ -410,7 +410,7 @@ describe('Bestellungen', () => {
    * die Maschine liest, ist es nicht.
    */
   it('zeigt den Status auf Deutsch', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
     const sichtbar = text.replace(/<input[^>]*>/g, '');
 
     expect(text).toContain('Bestätigt');
@@ -420,21 +420,21 @@ describe('Bestellungen', () => {
   });
 
   it('zeigt eine Lieferung auf Deutsch', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Lieferung');
     expect(text).not.toContain('delivery');
   });
 
   it('zeigt eine Abholung auf Deutsch', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Abholung');
     expect(text).not.toContain('pickup');
   });
 
   it('zeigt die Positionen je Bestellung', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('3 Stück × Beispiel Käsekuchen');
     expect(text).toContain('2 Stück × Beispiel Carrot Cake');
@@ -442,7 +442,7 @@ describe('Bestellungen', () => {
   });
 
   it('zeigt eine vorhandene Notiz', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Hinweis');
     expect(text).toContain('Bitte vor 10 Uhr anliefern');
@@ -450,7 +450,7 @@ describe('Bestellungen', () => {
 
   /** Genau ein Notizblock — die zweite Bestellung hat keine Notiz. */
   it('erzeugt ohne Notiz keinen leeren Notizblock', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text.match(/bestellung__notiz-titel/g)).toHaveLength(1);
   });
@@ -459,7 +459,7 @@ describe('Bestellungen', () => {
     await env.DB.prepare(`UPDATE orders SET note = '   ' WHERE id = 2`).run();
     await env.DB.prepare(`UPDATE orders SET note = NULL WHERE id = 1`).run();
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('bestellung__notiz');
   });
@@ -481,7 +481,7 @@ describe('Bestellungen', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 77 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('Testcafé Abgeschlossen');
     expect(text).not.toContain('Testcafé Storniert');
@@ -498,16 +498,16 @@ describe('Bestellungen', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 42 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('Testcafé Anderer Tag');
-    expect(text).not.toContain('42');
+    expect(text).not.toContain('BUS-2026-000127');
   });
 });
 
 describe('Leerer Tag', () => {
   it('erklärt einen Tag ohne offene Bestellungen verständlich', async () => {
-    const response = await call('/admin?date=2026-09-20', await anmelden('admin@example.test', PASSWORT));
+    const response = await call('/admin/production?date=2026-09-20', await anmelden('admin@example.test', PASSWORT));
 
     expect(response.status).toBe(200);
     expect(await response.text()).toContain(
@@ -516,22 +516,22 @@ describe('Leerer Tag', () => {
   });
 
   it('lässt die Datumsnavigation auf einem leeren Tag vollständig bedienbar', async () => {
-    const text = await alsAdmin('/admin?date=2026-09-20');
+    const text = await alsAdmin('/admin/production?date=2026-09-20');
 
-    expect(text).toContain('href="/admin?date=2026-09-19"');
-    expect(text).toContain('href="/admin?date=2026-09-21"');
-    expect(text).toContain('<form class="tagnav__formular" method="get" action="/admin">');
+    expect(text).toContain('href="/admin/production?date=2026-09-19"');
+    expect(text).toContain('href="/admin/production?date=2026-09-21"');
+    expect(text).toContain('<form class="tagnav__formular" method="get" action="/admin/production">');
   });
 
   it('zeigt auf einem leeren Tag ehrliche Kennzahlen', async () => {
-    const text = await alsAdmin('/admin?date=2026-09-20');
+    const text = await alsAdmin('/admin/production?date=2026-09-20');
 
     expect(text).toMatch(/>0<\/strong>\s*Bestellungen/);
     expect(text).toMatch(/>0<\/strong>\s*Einheiten/);
   });
 
   it('rendert auf einem leeren Tag keinen Bestellabschnitt', async () => {
-    const text = await alsAdmin('/admin?date=2026-09-20');
+    const text = await alsAdmin('/admin/production?date=2026-09-20');
 
     expect(text).not.toContain('<article class="bestellung">');
     expect(text).not.toContain('titel-bestellungen');
@@ -549,7 +549,7 @@ describe('Datensparsamkeit', () => {
 
   /** DER TEST, DER DIE PHASE DEFINIERT: Produktion ist finanzfrei. */
   it('zeigt keine Preise', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     for (const verboten of ['€', '4,35', '435', '13,05', '1305', 'unit_price', 'line_total', 'total_amount']) {
       expect(text).not.toContain(verboten);
@@ -557,7 +557,7 @@ describe('Datensparsamkeit', () => {
   });
 
   it('zeigt keine Kosten-, Umsatz- oder Margenbegriffe', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     for (const verboten of ['Umsatz', 'Marge', 'Kosten', 'Wareneinsatz', 'Bestellwert', 'Rechnung']) {
       expect(text).not.toContain(verboten);
@@ -565,14 +565,14 @@ describe('Datensparsamkeit', () => {
   });
 
   it('zeigt keine E-Mail-Adresse des Cafés', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('kontakt@testcafe.test');
     expect(text).not.toContain('@testcafe');
   });
 
   it('zeigt keine Telefonnummer und keine Lieferadresse', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     for (const verboten of ['+49 211', '0000000', 'Beispielweg', '40213', 'Düsseldorf']) {
       expect(text).not.toContain(verboten);
@@ -580,7 +580,7 @@ describe('Datensparsamkeit', () => {
   });
 
   it('zeigt keine Authentifizierungsdaten', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     for (const verboten of ['credential', 'verifier', 'salt', 'pepper', 'PBKDF2', 'iterations']) {
       expect(text.toLowerCase()).not.toContain(verboten.toLowerCase());
@@ -591,13 +591,13 @@ describe('Datensparsamkeit', () => {
     const cookie = await anmelden('admin@example.test', PASSWORT);
     const token = cookie.split('=')[1] as string;
 
-    const text = await (await call(`/admin?date=${TAG}`, cookie)).text();
+    const text = await (await call(`/admin/production?date=${TAG}`, cookie)).text();
 
     expect(text).not.toContain(token);
   });
 
   it('zeigt keine internen Kennungen', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     for (const verboten of ['product_id', 'productId', 'customer_id', 'order_id', 'submission_id', 'data-product']) {
       expect(text).not.toContain(verboten);
@@ -607,17 +607,17 @@ describe('Datensparsamkeit', () => {
 
 describe('Transport und Härtung', () => {
   it('darf nirgends zwischengespeichert werden', async () => {
-    const response = await call(`/admin?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
+    const response = await call(`/admin/production?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
     expect(response.headers.get('cache-control')).toBe('no-store');
   });
 
   it('setzt den Content-Type ausdrücklich', async () => {
-    const response = await call(`/admin?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
+    const response = await call(`/admin/production?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
     expect(response.headers.get('content-type')).toBe('text/html; charset=utf-8');
   });
 
   it('behält die Sicherheitskopfzeilen aus Phase 3A vollständig', async () => {
-    const response = await call(`/admin?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
+    const response = await call(`/admin/production?date=${TAG}`, await anmelden('admin@example.test', PASSWORT));
 
     const csp = response.headers.get('content-security-policy') ?? '';
     expect(csp).toContain("default-src 'none'");
@@ -633,7 +633,7 @@ describe('Transport und Härtung', () => {
   });
 
   it('trägt dieselben Kopfzeilen auch auf der Fehlerseite eines ungültigen Datums', async () => {
-    const response = await call('/admin?date=kaputt', await anmelden('admin@example.test', PASSWORT));
+    const response = await call('/admin/production?date=kaputt', await anmelden('admin@example.test', PASSWORT));
 
     expect(response.status).toBe(400);
     expect(response.headers.get('cache-control')).toBe('no-store');
@@ -641,7 +641,7 @@ describe('Transport und Härtung', () => {
   });
 
   it('lädt nichts von fremden Hosts', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('http://');
     expect(text).not.toContain('https://');
@@ -651,7 +651,7 @@ describe('Transport und Härtung', () => {
 
 describe('Bedienung ohne JavaScript', () => {
   it('lädt kein Skript', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('<script');
     expect(text).not.toContain('onclick');
@@ -659,42 +659,42 @@ describe('Bedienung ohne JavaScript', () => {
   });
 
   it('verlinkt den vorherigen Kalendertag', async () => {
-    const text = await alsAdmin('/admin?date=2026-09-15');
-    expect(text).toContain('href="/admin?date=2026-09-14"');
+    const text = await alsAdmin('/admin/production?date=2026-09-15');
+    expect(text).toContain('href="/admin/production?date=2026-09-14"');
   });
 
   it('verlinkt den nächsten Kalendertag', async () => {
-    const text = await alsAdmin('/admin?date=2026-09-15');
-    expect(text).toContain('href="/admin?date=2026-09-16"');
+    const text = await alsAdmin('/admin/production?date=2026-09-15');
+    expect(text).toContain('href="/admin/production?date=2026-09-16"');
   });
 
   it('springt korrekt über den Monatswechsel', async () => {
-    const text = await alsAdmin('/admin?date=2026-08-31');
+    const text = await alsAdmin('/admin/production?date=2026-08-31');
 
-    expect(text).toContain('href="/admin?date=2026-08-30"');
-    expect(text).toContain('href="/admin?date=2026-09-01"');
+    expect(text).toContain('href="/admin/production?date=2026-08-30"');
+    expect(text).toContain('href="/admin/production?date=2026-09-01"');
   });
 
   it('springt korrekt über den Jahreswechsel', async () => {
-    const text = await alsAdmin('/admin?date=2026-12-31');
+    const text = await alsAdmin('/admin/production?date=2026-12-31');
 
-    expect(text).toContain('href="/admin?date=2026-12-30"');
-    expect(text).toContain('href="/admin?date=2027-01-01"');
+    expect(text).toContain('href="/admin/production?date=2026-12-30"');
+    expect(text).toContain('href="/admin/production?date=2027-01-01"');
   });
 
   it('kennt den 29. Februar eines Schaltjahres', async () => {
-    const vorher = await alsAdmin('/admin?date=2028-02-28');
-    expect(vorher).toContain('href="/admin?date=2028-02-29"');
+    const vorher = await alsAdmin('/admin/production?date=2028-02-28');
+    expect(vorher).toContain('href="/admin/production?date=2028-02-29"');
 
-    const schalttag = await alsAdmin('/admin?date=2028-02-29');
-    expect(schalttag).toContain('href="/admin?date=2028-03-01"');
-    expect(schalttag).toContain('href="/admin?date=2028-02-28"');
+    const schalttag = await alsAdmin('/admin/production?date=2028-02-29');
+    expect(schalttag).toContain('href="/admin/production?date=2028-03-01"');
+    expect(schalttag).toContain('href="/admin/production?date=2028-02-28"');
   });
 
   it('bietet die Datumswahl als echtes GET-Formular an', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
-    expect(text).toContain('<form class="tagnav__formular" method="get" action="/admin">');
+    expect(text).toContain('<form class="tagnav__formular" method="get" action="/admin/production">');
     expect(text).toContain('<label for="tagwahl">Tag wählen</label>');
     expect(text).toContain('name="date"');
     expect(text).toContain('type="date"');
@@ -702,11 +702,11 @@ describe('Bedienung ohne JavaScript', () => {
 
   /**
    * KEIN OPEN REDIRECT. Das Ziel des Formulars steht als Konstante im
-   * Quelltext, und jeder erzeugte Link ist /admin?date= mit einem geprueften
+   * Quelltext, und jeder erzeugte Link ist /admin/production?date= mit einem geprueften
    * Kalendertag. Ein fremder Host kann dort nicht landen.
    */
   it('erzeugt ausschließlich interne Ziele', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     const ziele = [...text.matchAll(/(?:href|action)="([^"]*)"/g)].map((treffer) => treffer[1] ?? '');
     expect(ziele.length).toBeGreaterThan(0);
@@ -718,9 +718,9 @@ describe('Bedienung ohne JavaScript', () => {
   });
 
   it('lässt sich mit einem fremden Ziel im date-Parameter nicht umlenken', async () => {
-    for (const angriff of ['//angreifer.test', 'https://angreifer.test', '/admin?date=x']) {
+    for (const angriff of ['//angreifer.test', 'https://angreifer.test', '/admin/production?date=x']) {
       const response = await call(
-        `/admin?date=${encodeURIComponent(angriff)}`,
+        `/admin/production?date=${encodeURIComponent(angriff)}`,
         await anmelden('admin@example.test', PASSWORT),
       );
 
@@ -731,7 +731,7 @@ describe('Bedienung ohne JavaScript', () => {
   });
 
   it('bietet die Abmeldung als echtes POST-Formular mit CSRF-Token an', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('<form method="post" action="/logout"');
     expect(text).toContain('name="csrf_token"');
@@ -746,7 +746,7 @@ describe('Escaping', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 1 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('&lt;b&gt;Testcafé&lt;/b&gt;');
     expect(text).not.toContain('<b>Testcafé</b>');
@@ -758,7 +758,7 @@ describe('Escaping', () => {
       items: [{ productId: 1, name: '<i>Kuchen</i>', unit: '<u>Stück</u>', quantity: 1 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('&lt;i&gt;Kuchen&lt;/i&gt;');
     expect(text).toContain('&lt;u&gt;Stück&lt;/u&gt;');
@@ -772,7 +772,7 @@ describe('Escaping', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 1 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('<script');
     expect(text).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
@@ -785,7 +785,7 @@ describe('Escaping', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 1 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('<img');
     expect(text).toContain('&lt;img src=x onerror=alert(1)&gt;');
@@ -798,7 +798,7 @@ describe('Escaping', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 1 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Müller &amp; Söhne');
     expect(text).toContain('&quot;');
@@ -813,7 +813,7 @@ describe('Escaping', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 1 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('A &amp;amp; B &amp;lt;');
   });
@@ -835,7 +835,7 @@ describe('Snapshot-Umbenennungsfall', () => {
       items: [{ productId: 1, name: 'Klassischer Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Beispiel Käsekuchen');
     expect(text).toContain('Klassischer Käsekuchen');
@@ -860,7 +860,7 @@ describe('Snapshot-Umbenennungsfall', () => {
       items: [{ productId: 1, name: 'Klassischer Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Abweichende Bezeichnung aus einer Bestellung');
   });
@@ -875,7 +875,7 @@ describe('Snapshot-Umbenennungsfall', () => {
       ],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('Abweichende Bezeichnung');
     expect(text).toMatch(/>11</);
@@ -894,7 +894,7 @@ describe('Snapshot-Umbenennungsfall', () => {
 
     await env.DB.prepare(`UPDATE products SET name = 'Ganz Neuer Name', unit = 'Kiste' WHERE id = 1`).run();
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Historische Bezeichnung');
     expect(text).toContain('Blech');
@@ -913,12 +913,12 @@ describe('Struktur und Zugänglichkeit', () => {
   });
 
   it('hat genau eine h1', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
     expect(text.match(/<h1/g)).toHaveLength(1);
   });
 
   it('überspringt keine Überschriftenebene', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('<h1');
     expect(text).toContain('<h2');
@@ -927,7 +927,7 @@ describe('Struktur und Zugänglichkeit', () => {
   });
 
   it('setzt die Backliste als semantische Tabelle mit Kopfzellen', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('<table');
     expect(text).toContain('<th scope="col"');
@@ -935,21 +935,21 @@ describe('Struktur und Zugänglichkeit', () => {
   });
 
   it('benennt die Datumspfeile mit ihrem Ziel', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('aria-label="Vorheriger Tag, Montag, 14. September 2026"');
     expect(text).toContain('aria-label="Nächster Tag, Mittwoch, 16. September 2026"');
   });
 
   it('verbindet das Datumsfeld mit einem echten Label', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('<label for="tagwahl">');
     expect(text).toContain('id="tagwahl"');
   });
 
   it('verbietet das Zoomen nicht', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('content="width=device-width, initial-scale=1"');
     expect(text).not.toContain('user-scalable=no');
@@ -957,19 +957,21 @@ describe('Struktur und Zugänglichkeit', () => {
   });
 
   it('gibt die Dokumentsprache an', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
     expect(text).toContain('<html lang="de">');
   });
 
   it('baut keine Attrappen-Navigation', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     // „Dashboard" stand bis Phase 5D in dieser Liste. Seit Phase 6A gibt es
     // die Seite wirklich — und genau das macht den Eintrag zulässig: Er führt
     // auf eine Route, die antwortet. Der Test prüft deshalb beides.
-    expect(text).toContain('href="/admin/dashboard"');
+    expect(text).toContain('href="/admin"');
+    expect(text).toContain('href="/admin/orders"');
+    expect(text).toContain('href="/admin/production" aria-current="page"');
 
-    for (const verboten of ['Einstellungen', 'Auswertung', 'Analytics', 'Kunden verwalten']) {
+    for (const verboten of ['Auswertung', 'Analytics', 'Kunden verwalten', 'Bestellprodukte verknüpfen']) {
       expect(text).not.toContain(verboten);
     }
   });
@@ -985,7 +987,7 @@ describe('Struktur und Zugänglichkeit', () => {
    * Feldnamen des Dokuments — sie ist abgeschlossen und kurz.
    */
   it('bietet außer dem Statuswechsel kein Bedienelement zum Ändern an', async () => {
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).not.toContain('<select');
     expect(text).not.toContain('<textarea');
@@ -1020,7 +1022,7 @@ describe('Statusaktionen', () => {
       status,
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
-    return alsAdmin(`/admin?date=${TAG}`);
+    return alsAdmin(`/admin/production?date=${TAG}`);
   }
 
   it('bietet einer neuen Bestellung Bestätigen und Stornieren an', async () => {
@@ -1064,7 +1066,7 @@ describe('Statusaktionen', () => {
       items: [{ productId: 2, name: 'Beispiel Carrot Cake', unit: 'Stück', quantity: 2 }],
     });
 
-    const text = await alsAdmin(`/admin?date=${TAG}`);
+    const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('action="/api/admin/orders/BUS-2026-000123/status"');
     expect(text).toContain('action="/api/admin/orders/BUS-2026-000124/status"');
@@ -1090,7 +1092,7 @@ describe('Statusaktionen', () => {
     if (sitzung === null) throw new Error('Anmeldung im Testaufbau fehlgeschlagen');
 
     const text = await (
-      await call(`/admin?date=${TAG}`, `buschmann_session_dev=${sitzung.token}`)
+      await call(`/admin/production?date=${TAG}`, `buschmann_session_dev=${sitzung.token}`)
     ).text();
 
     const token = [...text.matchAll(/name="csrf_token" value="([^"]+)"/g)].map((t) => t[1]);
@@ -1123,7 +1125,7 @@ describe('Statusaktionen', () => {
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
 
-    const response = await call(`/admin?date=${TAG}`, await anmelden('testcafe', PIN));
+    const response = await call(`/admin/production?date=${TAG}`, await anmelden('testcafe', PIN));
     const text = await response.text();
 
     expect(response.status).toBe(403);
@@ -1145,7 +1147,7 @@ describe('Statusaktionen', () => {
   it('stellt die Backliste weiterhin vor die Bestellkarten', async () => {
     const text = await karte('new');
 
-    expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('Bestellungen'));
+    expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('<h2 id="titel-bestellungen">Bestellungen</h2>'));
     expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('Bestätigen'));
   });
 });
