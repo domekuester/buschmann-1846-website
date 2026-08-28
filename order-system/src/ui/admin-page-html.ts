@@ -404,9 +404,12 @@ export function renderAdminShell(
 <title>${escapeHtml(title)}</title>
 <link rel="stylesheet" href="/assets/app.css">
 </head>
-<body class="adminseite${activeArea === 'overview' || activeArea === 'orders' ? ' adminseite--breit' : activeArea === 'catalog' ? ' adminseite--katalogbreit' : ''}">
-<header class="kopf kopf--schmal">
-  <p class="marke">Buschmann <span>1846</span></p>
+<body class="adminseite adminseite--${activeArea}${activeArea === 'overview' || activeArea === 'orders' ? ' adminseite--breit' : activeArea === 'catalog' ? ' adminseite--katalogbreit' : ''}">
+<header class="kopf kopf--schmal admin-shell">
+  <div class="adminkopf__marke">
+    <p class="marke">Buschmann <span>1846</span></p>
+    <p class="adminkopf__subline">Operator Center</p>
+  </div>
   <nav class="adminnav" aria-label="Adminbereich">
     <a href="/admin"${activeArea === 'overview' ? ' aria-current="page"' : ''}>Übersicht</a>
     <a href="/admin/orders"${activeArea === 'orders' ? ' aria-current="page"' : ''}>Bestellungen</a>
@@ -415,12 +418,13 @@ export function renderAdminShell(
     <a href="/admin/customers"${activeArea === 'customers' ? ' aria-current="page"' : ''}>Kunden</a>
     <a href="/admin/settings"${activeArea === 'settings' ? ' aria-current="page"' : ''}>Einstellungen</a>
   </nav>
-  <p class="kopf__kennung">Angemeldet als ${escapeHtml(view.loginIdentifier)}</p>
-
-  <form method="post" action="/logout" class="abmelden">
-    <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
-    <button type="submit" class="abmelden__taste">Abmelden</button>
-  </form>
+  <div class="adminkopf__meta">
+    <p class="kopf__kennung">Angemeldet als ${escapeHtml(view.loginIdentifier)}</p>
+    <form method="post" action="/logout" class="abmelden">
+      <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
+      <button type="submit" class="abmelden__taste">Abmelden</button>
+    </form>
+  </div>
 </header>
 
 <main id="inhalt" class="admin">${body}

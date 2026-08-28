@@ -19,5 +19,12 @@ describe('genehmigte Admin-Navigation', () => {
   it.each(AREAS)('markiert in %s genau einen Bereich als aktiv', (area) => {
     const html = renderAdminShell('Test', { loginIdentifier: 'admin@example.test', csrfToken: 'csrf' }, area, '');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(html).toContain(`adminseite--${area}`);
+  });
+
+  it('gibt dem Operator-Shell eine getrennte Identitätszone', () => {
+    const html = renderAdminShell('Test', { loginIdentifier: 'admin@example.test', csrfToken: 'csrf' }, 'overview', '');
+    expect(html).toContain('admin-shell');
+    expect(html).toContain('class="adminkopf__meta"');
   });
 });

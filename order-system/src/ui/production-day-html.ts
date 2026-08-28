@@ -59,8 +59,11 @@ export function renderProductionSummary(view: ProductionDayView): string {
   }
 
   return `
-      <section class="produktion" aria-labelledby="titel-produktion">
-        <h2 id="titel-produktion">Zu produzieren</h2>
+      <section class="produktion produktion--workmode" aria-labelledby="titel-produktion">
+        <div class="produktion__kopf">
+          <h2 id="titel-produktion">Zu produzieren</h2>
+          <p class="produktion__meta">${view.totalUnits} Einheiten <span aria-hidden="true">·</span> ${view.products.length} ${view.products.length === 1 ? 'Produktart' : 'Produktarten'}</p>
+        </div>
         <table class="backliste">
           <caption class="hinweis">Zu produzierende Mengen für ${escapeHtml(view.dayLabel)}</caption>
           <thead>

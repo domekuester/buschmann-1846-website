@@ -60,6 +60,12 @@ function ansicht(over: Partial<ProductionDayView> = {}): ProductionDayView {
 }
 
 describe('renderProductionSummary — Backliste', () => {
+  it('markiert die Produktionsfläche als fokussierten Work Mode', () => {
+    const html = renderProductionSummary(ansicht({ products: [zeile({ unit: 'Blech', quantity: 3 })] }));
+    expect(html).toContain('produktion--workmode');
+    expect(html).toContain('produktion__meta');
+  });
+
   it('zeigt Produktname und Menge mit der Einheit aus dem Snapshot', () => {
     const html = renderProductionSummary(ansicht({ products: [zeile({ unit: 'Blech', quantity: 3 })] }));
 

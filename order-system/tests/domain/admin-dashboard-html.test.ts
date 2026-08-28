@@ -7,6 +7,7 @@ import {
 import { PAYMENT_STATUSES } from '../../src/domain/payment-status';
 import {
   renderAdminDashboardPage,
+  renderAdminOverviewPage,
   renderAdminOrdersPage,
 } from '../../src/ui/admin-dashboard-html';
 import {
@@ -92,6 +93,19 @@ function seite(
     noticeCode,
     quickDays: toQuickDaysView(HEUTE, day.day, 'day'),
     orderList: toOrderListView(day, filter),
+  });
+}
+
+function uebersichtsseite(overrides: Partial<DashboardDay> = {}): string {
+  const day = toDashboardView(tag(overrides));
+
+  return renderAdminOverviewPage({
+    loginIdentifier: 'admin@example.test',
+    csrfToken: 'test-csrf-token',
+    day,
+    noticeCode: null,
+    quickDays: toQuickDaysView(HEUTE, day.day, 'day'),
+    orderList: toOrderListView(day, 'all'),
   });
 }
 
@@ -243,7 +257,7 @@ describe('renderAdminDashboardPage — Gerüst', () => {
    * deshalb im Körper an, dass sie die breitere Spalte braucht.
    */
   it('kennzeichnet sich als Seite mit breiter Spalte', () => {
-    expect(seite()).toContain('<body class="adminseite adminseite--breit">');
+    expect(seite()).toContain('<body class="adminseite adminseite--overview adminseite--breit">');
   });
 
   it('lässt die übrigen Adminseiten schmal', () => {
@@ -655,6 +669,15 @@ describe('renderAdminDashboardPage — Meistbestellt', () => {
     expect(html).toContain('Meistbestellt');
     expect(html).toContain('Für diesen Tag ist noch kein Produkt bestellt');
     expect(html).not.toContain('class="topliste"');
+  });
+});
+
+describe('renderAdminOverviewPage — Betriebszentrale', () => {
+  it('führt vier primäre Signale und die Produktionsliste als Tagesfokus', () => {
+    const html = uebersichtsseite();
+    expect(html.match(/class="kennzahlkarte[^_]/g)).toHaveLength(4);
+    expect(html).toContain('Produktion heute');
+    expect(html).toContain('Als Nächstes');
   });
 });
 

@@ -4910,3 +4910,446 @@ textarea[aria-invalid='true'] {
   .abholliste__hinweis { border-color: #000; font-size: 12pt; }
   .abholliste__summe { border-color: #000; font-size: 12pt; break-inside: avoid; }
 }
+
+/* ========================================================================
+   PHASE 9B — PREMIUM OPERATOR SHELL
+
+   Presentation-only layer for the six-area admin experience. The existing
+   selectors remain the semantic source; this final layer composes them into
+   one calm operator surface without changing domain or form behavior.
+   ======================================================================== */
+
+.adminseite {
+  --admin-max: 1200px;
+  font-family: var(--marken-sans);
+  color: var(--text);
+  background: var(--porzellan);
+}
+
+.adminseite .admin-shell {
+  display: grid;
+  grid-template-columns: minmax(13rem, 15rem) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1.5rem;
+  min-height: 6rem;
+  padding: 1rem clamp(1.25rem, 4vw, 3rem);
+  background: var(--navy);
+  border-bottom: 1px solid rgba(209, 178, 123, .45);
+}
+
+.adminseite .adminkopf__marke { min-width: 0; }
+.adminseite .marke {
+  margin: 0;
+  font-family: var(--marken-serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: .04em;
+  line-height: 1;
+  text-transform: none;
+  color: var(--porzellan);
+}
+.adminseite .marke span { color: var(--champagner-soft, #d1b27b); }
+.adminkopf__subline {
+  margin: .35rem 0 0;
+  color: rgba(243, 237, 223, .66);
+  font-size: .68rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.adminseite .adminnav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: .1rem .35rem;
+  margin: 0;
+  padding: 0;
+}
+.adminseite .adminnav a,
+.adminseite .adminnav a:visited {
+  min-height: 2.75rem;
+  padding: .5rem .65rem;
+  color: var(--porzellan);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  font-size: .85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color .12s ease-out, border-color .12s ease-out;
+}
+.adminseite .adminnav a:hover { color: var(--champagner-soft, #d1b27b); }
+.adminseite .adminnav a[aria-current='page'] {
+  color: var(--porzellan);
+  border-bottom-color: var(--champagner);
+}
+
+.adminkopf__meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .8rem;
+  min-width: 0;
+}
+.adminseite .kopf__kennung {
+  max-width: 11rem;
+  margin: 0;
+  padding: 0;
+  color: rgba(243, 237, 223, .66);
+  font-size: .72rem;
+  overflow-wrap: anywhere;
+}
+.adminseite .abmelden { position: static; }
+.adminseite .abmelden__taste {
+  min-height: 2.75rem;
+  padding: .45rem .7rem;
+  color: var(--porcelain, #fcf9f3);
+  background: transparent;
+  border: 1px solid rgba(243, 237, 223, .46);
+  border-radius: 2px;
+  font: inherit;
+  font-size: .78rem;
+  cursor: pointer;
+}
+.adminseite .abmelden__taste:hover { border-color: var(--champagner); color: var(--champagner-soft, #d1b27b); }
+
+.adminseite .admin {
+  width: min(100%, var(--admin-max));
+  max-width: none;
+  margin: 0 auto;
+  padding: clamp(2.2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem) 5rem;
+}
+.adminseite .bereichskopf { margin-bottom: 2rem; }
+.adminseite .bereichskopf__kicker,
+.adminseite .dashkopf__kicker {
+  margin: 0 0 .45rem;
+  color: var(--champagner-text);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+.adminseite .bereichskopf h1,
+.adminseite .dashkopf__tag,
+.adminseite .tag__datum {
+  font-family: var(--marken-serif);
+  font-weight: 400;
+  letter-spacing: -.015em;
+  color: var(--navy);
+}
+.adminseite .bereichskopf h1 { font-size: clamp(2.25rem, 4vw, 3.4rem); }
+.adminseite .bereichskopf__vorspann,
+.adminseite .dashkopf__vorspann { color: var(--text-leise); font-size: .98rem; }
+
+.adminseite .dashkopf {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 1.5rem;
+  margin-bottom: 1.35rem;
+}
+.adminseite .dashkopf__tag { font-size: clamp(2.6rem, 5vw, 4.25rem); line-height: 1.02; }
+.adminseite .dashkopf__aktion { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin: 0; }
+.adminseite .dashkopf__aktion a,
+.adminseite .dashkopf__aktion a:visited {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0 .8rem;
+  color: var(--navy);
+  background: transparent;
+  border: 1px solid rgba(10, 33, 57, .4);
+  border-radius: 2px;
+  font-size: .8rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.adminseite .dashkopf__aktion a:hover { border-color: var(--champagner); color: var(--champagner-text); }
+
+.adminseite .tagleiste {
+  margin-bottom: 2rem;
+  padding: .55rem .7rem;
+  background: var(--ivory, #f3eddf);
+  border: 1px solid rgba(197, 154, 82, .42);
+  border-radius: 2px;
+}
+.adminseite .schnellwahl__ziel,
+.adminseite .tagnav__pfeil,
+.adminseite .tagnav__formular input[type='date'] {
+  border-radius: 2px;
+}
+.adminseite .tagnav__pfeil { border-bottom: 0; }
+
+.adminseite .kennzahlwand--fokus { margin-bottom: 1.5rem; }
+.adminseite .kennzahlwand--fokus .kennzahlwand__gitter {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  border: 1px solid rgba(197, 154, 82, .55);
+  border-radius: 0;
+  box-shadow: none;
+}
+.adminseite .kennzahlwand--fokus .kennzahlkarte {
+  min-height: 9rem;
+  padding: 1.25rem 1.35rem;
+  background: var(--porzellan);
+}
+.adminseite .kennzahlwand--fokus .kennzahlkarte__label { font-size: .72rem; color: var(--text-leise); }
+.adminseite .kennzahlwand--fokus .kennzahlkarte__wert {
+  margin-top: .65rem;
+  font-family: var(--marken-sans);
+  font-size: clamp(2rem, 3.7vw, 3rem);
+  font-weight: 600;
+  letter-spacing: -.04em;
+}
+.adminseite .kennzahlwand--fokus .kennzahlkarte__hinweis { font-size: .8rem; }
+.adminseite .kennzahlwand--fokus .kennzahlkarte--betont {
+  background: var(--ivory, #f3eddf);
+  box-shadow: inset 3px 0 0 var(--champagner);
+}
+.adminseite--overview .overview-arbeitsflaeche {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1.35rem;
+}
+.adminseite--overview .overview-arbeitsflaeche .tafel { margin-top: 0; }
+.adminseite--overview .overview-arbeitsflaeche + .finanzen { margin-top: 1.35rem; }
+
+.adminseite .tafel,
+.adminseite .kennzahlwand:not(.kennzahlwand--fokus) .kennzahlwand__gitter {
+  background: var(--porzellan);
+  border: 1px solid rgba(197, 154, 82, .45);
+  border-radius: 0;
+  box-shadow: none;
+}
+.adminseite .tafel__kopf { padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(197, 154, 82, .35); }
+.adminseite .tafel__titel { font-family: var(--marken-serif); font-size: 1.55rem; font-weight: 400; }
+.adminseite .handlung,
+.adminseite .finanzen,
+.adminseite .topprodukte { margin-bottom: 1.5rem; }
+.adminseite .handlung__ruhe,
+.adminseite .handlung__ruhedetail { padding-inline: 1.25rem; }
+.adminseite .handlungszeile { padding-inline: 1.25rem; }
+.adminseite .topprodukte .topliste__zeile { padding-inline: 1.25rem; }
+.adminseite .topprodukte .topliste__name,
+.adminseite .topprodukte .topliste__menge { font-family: var(--marken-sans); }
+
+.adminseite .bestellliste .datentabelle,
+.adminseite .katalogbereich .datentabelle,
+.adminseite .kundenliste .datentabelle { background: transparent; }
+.adminseite .bestellliste .datentabelle thead th,
+.adminseite .katalogbereich .datentabelle thead th,
+.adminseite .kundenliste .datentabelle thead th { color: var(--text-leise); font-size: .7rem; letter-spacing: .12em; }
+.adminseite .bestellliste .datentabelle tbody tr:hover,
+.adminseite .katalogbereich .datentabelle tbody tr:hover,
+.adminseite .kundenliste .datentabelle tbody tr:hover { background: var(--ivory, #f3eddf); }
+
+/* Angebot: product list + editor, with closed secondary editors for no-JS use. */
+.adminseite .operator-neu {
+  margin: 0 0 1.5rem;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid rgba(197, 154, 82, .45);
+  border-radius: 0;
+}
+.adminseite .operator-neu > summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.9rem;
+  margin-bottom: 1rem;
+  padding: 0 1rem;
+  color: var(--porzellan);
+  background: var(--navy);
+  border-radius: 2px;
+  font-size: .86rem;
+  list-style-position: inside;
+}
+.adminseite .operator-neu[open] > summary { margin-bottom: 0; }
+.adminseite .operator-arbeitsplatz,
+.adminseite .kundenarbeitsplatz {
+  display: grid;
+  grid-template-columns: minmax(15rem, 22rem) minmax(0, 1fr);
+  gap: 2rem;
+  align-items: start;
+}
+.adminseite .operator-liste,
+.adminseite .kundenliste { min-width: 0; }
+.adminseite .operator-liste { margin-top: 0; }
+.adminseite .operator-liste__kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  margin-bottom: .85rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid rgba(197, 154, 82, .45);
+}
+.adminseite .operator-liste__kopf h2 { margin: 0; font-family: var(--marken-serif); font-size: 1.55rem; font-weight: 400; color: var(--navy); }
+.adminseite .operator-liste__kopf p { margin: 0; color: var(--text-leise); font-size: .78rem; }
+.adminseite .operator-liste__zeilen { border-top: 1px solid rgba(197, 154, 82, .35); }
+.adminseite .operator-eintrag {
+  margin: 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--leinen);
+  border-radius: 0;
+}
+.adminseite .operator-eintrag > summary {
+  min-height: 4.2rem;
+  padding: .85rem .1rem;
+  color: var(--navy);
+  font-weight: 600;
+}
+.adminseite .operator-eintrag[open] > summary {
+  margin-inline: -.75rem;
+  padding-inline: .75rem;
+  background: var(--ivory, #f3eddf);
+  border-left: 3px solid var(--champagner);
+}
+.adminseite .operator-status { border-radius: 2px; }
+.adminseite .operator-formular.operator-editor-pane {
+  min-width: 0;
+  padding: 1.5rem 0 0;
+}
+
+@media (min-width: 1100px) {
+  .adminseite .operator-arbeitsplatz {
+    position: relative;
+    grid-template-columns: minmax(18rem, 22rem) minmax(0, 1fr);
+    column-gap: 3rem;
+  }
+  .adminseite .operator-liste { display: contents; }
+  .adminseite .operator-liste__kopf { grid-column: 1; grid-row: 1; }
+  .adminseite .operator-liste__zeilen { display: contents; border-top: 0; }
+  .adminseite .operator-eintrag { display: contents; }
+  .adminseite .operator-eintrag > .operator-kurzwerte { display: none; }
+  .adminseite .operator-eintrag > summary,
+  .adminseite .operator-eintrag > .operator-kurzwerte { grid-column: 1; }
+  .adminseite .operator-eintrag[open] > .operator-editor-pane {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: calc(22rem + 3rem);
+    padding-top: 0;
+  }
+}
+
+.adminseite .operator-editor-pane__kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid rgba(197, 154, 82, .45);
+}
+.adminseite .operator-editor-pane__kicker { margin: 0; font-family: var(--marken-serif); font-size: 1.55rem; color: var(--navy); }
+.adminseite .operator-editor-pane__status { margin: 0; color: var(--text-leise); font-size: .78rem; }
+.adminseite .operator-editor-pane .operator-preisgruppe { border: 0; border-top: 1px solid var(--leinen); border-radius: 0; padding-inline: 0; }
+.adminseite .operator-editor-pane .operator-preisgruppe legend { padding: 0; font-family: var(--marken-serif); font-size: 1.1rem; font-weight: 400; }
+.adminseite .operator-editor-pane .senden { min-height: 2.9rem; padding-inline: 1.2rem; border-radius: 2px; }
+
+/* Customers inherit the same list/editor rhythm; creation stays progressive. */
+.adminseite .kundenarbeitsplatz { grid-template-columns: minmax(0, 1fr) minmax(20rem, 30rem); }
+.adminseite .kundenarbeitsplatz > .operator-editor { margin: 0; background: transparent; border: 0; border-top: 1px solid rgba(197, 154, 82, .45); border-radius: 0; }
+.adminseite .kundenarbeitsplatz > .operator-editor > summary { padding: .9rem 0; font-family: var(--marken-serif); font-size: 1.55rem; font-weight: 400; color: var(--navy); }
+.adminseite .kundenarbeitsplatz .operator-formular { padding-inline: 0; }
+.adminseite .kundenarbeitsplatz .operator-formular--kunden { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.adminseite .kundenliste .datentabelle tbody tr { background: transparent; }
+.adminseite .kundenliste .datentabelle th[scope='row'] { font-weight: 600; }
+.adminseite .kundenliste .kundenname { color: var(--navy); text-decoration: none; }
+
+/* Production: quantity-first work surface, no finance/dashboard styling. */
+.adminseite--production .admin { --admin-max: 1280px; padding-top: 2rem; }
+.adminseite--production .kopf { background: var(--navy-night, #061729); }
+.adminseite--production .produktion--workmode { margin-top: 0; }
+.adminseite--production .produktion__kopf { display: flex; align-items: baseline; gap: 1.5rem; margin-bottom: .85rem; }
+.adminseite--production .produktion__kopf h2 { margin: 0; font-family: var(--marken-serif); font-size: clamp(2rem, 3.6vw, 3rem); font-weight: 400; color: var(--navy); }
+.adminseite--production .produktion__meta { margin: 0; color: var(--text-leise); font-size: .9rem; }
+.adminseite--production .backliste { width: 100%; border-collapse: collapse; border: 1px solid rgba(197, 154, 82, .55); }
+.adminseite--production .backliste th,
+.adminseite--production .backliste td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--leinen); }
+.adminseite--production .backliste thead th { color: var(--text-leise); font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; text-align: left; }
+.adminseite--production .backliste__produkt { font-family: var(--marken-sans); font-size: 1.15rem; font-weight: 600; color: var(--navy); text-align: left; }
+.adminseite--production .backliste__menge { width: 10rem; background: var(--navy); text-align: right; }
+.adminseite--production .backliste__zahl { font-family: var(--marken-sans); font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 600; line-height: 1; color: var(--porzellan); }
+.adminseite--production .backliste__einheit { color: var(--porzellan); font-size: .85rem; }
+.adminseite--production .produktion--workmode .hinweis { color: var(--text-leise); }
+.adminseite--production .seitenaktion { display: flex; flex-wrap: wrap; gap: .65rem; margin: 0 0 1.5rem; }
+.adminseite--production .seitenaktion a { display: inline-flex; align-items: center; min-height: 2.9rem; padding: 0 .9rem; color: var(--navy); border: 1px solid rgba(10, 33, 57, .48); border-radius: 2px; font-weight: 600; text-decoration: none; }
+.adminseite--production .seitenaktion a:hover { border-color: var(--champagner); color: var(--champagner-text); }
+.adminseite--production .bestellungen { margin-top: 2rem; }
+
+/* Settings is intentionally quiet: the same controls, no dashboard framing. */
+.adminseite--settings .regelform { max-width: 52rem; }
+.adminseite--settings .regelstand,
+.adminseite--settings .regelblock { border-radius: 0; box-shadow: none; }
+.adminseite--settings .regelstand { border-left: 3px solid var(--champagner); }
+.adminseite--settings .regelform__senden { min-height: 2.9rem; border-radius: 2px; }
+
+.adminseite a:focus-visible,
+.adminseite button:focus-visible,
+.adminseite input:focus-visible,
+.adminseite select:focus-visible,
+.adminseite textarea:focus-visible,
+.adminseite summary:focus-visible {
+  outline: 2px solid var(--champagner);
+  outline-offset: 3px;
+}
+.adminseite button,
+.adminseite input,
+.adminseite select,
+.adminseite textarea { font-family: var(--marken-sans); }
+.adminseite input,
+.adminseite select,
+.adminseite textarea { border-radius: 2px; border-color: rgba(10, 33, 57, .28); }
+.adminseite input:hover,
+.adminseite select:hover,
+.adminseite textarea:hover { border-color: var(--champagner); }
+
+@media (max-width: 1099px) {
+  .adminseite .admin-shell { grid-template-columns: minmax(12rem, 15rem) minmax(0, 1fr); }
+  .adminseite .adminkopf__meta { grid-column: 2; grid-row: 1; }
+  .adminseite .adminnav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; border-top: 1px solid rgba(209, 178, 123, .25); padding-top: .6rem; }
+  .adminseite .kennzahlwand--fokus .kennzahlwand__gitter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .adminseite .operator-arbeitsplatz,
+  .adminseite .kundenarbeitsplatz { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 767px) {
+  .adminseite .admin-shell { grid-template-columns: 1fr auto; gap: .75rem 1rem; min-height: 0; padding: .9rem 1rem 1rem; }
+  .adminseite .adminkopf__marke { grid-column: 1; grid-row: 1; }
+  .adminseite .adminkopf__meta { grid-column: 2; grid-row: 1; }
+  .adminseite .kopf__kennung { display: none; }
+  .adminseite .adminnav { grid-column: 1 / -1; grid-row: 2; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .15rem; }
+  .adminseite .adminnav a { justify-content: center; padding-inline: .25rem; font-size: .76rem; }
+  .adminseite .admin { padding: 2rem 1rem 4rem; }
+  .adminseite .dashkopf { grid-template-columns: 1fr; align-items: start; }
+  .adminseite .dashkopf__aktion { justify-content: flex-start; }
+  .adminseite .dashkopf__tag { font-size: clamp(2.25rem, 10vw, 3.2rem); }
+  .adminseite--overview .overview-arbeitsflaeche { grid-template-columns: 1fr; }
+  .adminseite .kennzahlwand--fokus .kennzahlkarte { min-height: 7.5rem; padding: .9rem; }
+  .adminseite .kennzahlwand--fokus .kennzahlkarte__wert { font-size: clamp(1.65rem, 8vw, 2.3rem); }
+  .adminseite .operator-arbeitsplatz,
+  .adminseite .kundenarbeitsplatz { grid-template-columns: 1fr; gap: 1.75rem; }
+  .adminseite .operator-formular.operator-editor-pane { padding-top: 0; }
+  .adminseite .kundenarbeitsplatz { grid-template-columns: 1fr; }
+  .adminseite .kundenarbeitsplatz > .operator-editor { order: -1; }
+  .adminseite--production .produktion__kopf { display: block; }
+  .adminseite--production .produktion__meta { margin-top: .35rem; }
+  .adminseite--production .backliste th,
+  .adminseite--production .backliste td { padding: .8rem .65rem; }
+  .adminseite--production .backliste__menge { width: 7rem; }
+  .adminseite--production .backliste__zahl { font-size: 2.35rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adminseite *,
+  .adminseite *::before,
+  .adminseite *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+}
+
+@media print {
+  .adminseite .admin-shell,
+  .adminseite .dashkopf__aktion,
+  .adminseite .tagleiste { display: none !important; }
+}

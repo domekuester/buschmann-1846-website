@@ -51,13 +51,13 @@ export function renderAdminCatalogPage(view: AdminCatalogPageView): string {
         <p>${view.products.length} ${view.products.length === 1 ? 'Produkt' : 'Produkte'}</p>
       </div>
       <p id="herstellkosten" class="katalogbereich__intern"><strong>Herstellkosten bleiben intern.</strong> Kundinnen und Kunden sehen sie nirgends.</p>
-      ${view.products.length === 0 ? emptyState() : productList(view)}
+       ${view.products.length === 0 ? emptyState() : productList(view)}
     </section>`,
   );
 }
 
 function createSection(view: AdminCatalogPageView): string {
-  return `<details class="operator-neu" open>
+  return `<details class="operator-neu">
     <summary>Neues Produkt</summary>
     <p>Alle internen Datensätze und die Produktverknüpfung entstehen automatisch.</p>
     ${productForm(view, null)}
@@ -65,8 +65,14 @@ function createSection(view: AdminCatalogPageView): string {
 }
 
 function productList(view: AdminCatalogPageView): string {
-  return `<div class="operator-liste">${view.products.map((product) => `
-    <details class="operator-eintrag">
+  return `<div class="operator-arbeitsplatz" aria-label="Produkte bearbeiten">
+    <section class="operator-liste" aria-labelledby="produkte-liste-titel">
+      <div class="operator-liste__kopf">
+        <h2 id="produkte-liste-titel">Produkte</h2>
+        <p>${view.products.length} ${view.products.length === 1 ? 'Eintrag' : 'Einträge'}</p>
+      </div>
+      <div class="operator-liste__zeilen">${view.products.map((product, index) => `
+    <details class="operator-eintrag" id="produkt-${product.id}"${index === 0 ? ' open' : ''}>
       <summary>
         <span><strong>${escapeHtml(product.name)}</strong><small>${product.unit === '' ? 'Einheit nicht gepflegt' : escapeHtml(product.unit)}</small></span>
         <span class="${product.isActive ? 'operator-status operator-status--aktiv' : 'operator-status'}">${product.isActive ? 'Aktiv' : 'Inaktiv'}</span>
@@ -77,16 +83,22 @@ function productList(view: AdminCatalogPageView): string {
         <div><dt>Herstellkosten</dt><dd>${product.unitCostCents === null ? 'Nicht gepflegt' : formatEuro(product.unitCostCents)}</dd></div>
       </dl>
       ${productForm(view, product)}
-    </details>`).join('')}</div>`;
+    </details>`).join('')}</div>
+    </section>
+  </div>`;
 }
 
 function productForm(view: AdminCatalogPageView, product: AdminProductView | null): string {
   const prefix = product === null ? 'neu' : `produkt-${product.id}`;
   const action = product === null ? '/api/admin/products' : `/api/admin/products/${product.id}`;
 
-  return `<form method="post" action="${action}" class="operator-formular">
+  return `<form method="post" action="${action}" class="operator-formular operator-editor-pane">
     <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
     ${product === null ? '' : `<input type="hidden" name="expected_updated_at" value="${escapeHtml(product.updatedAt)}">`}
+    <div class="operator-editor-pane__kopf">
+      <p class="operator-editor-pane__kicker">${product === null ? 'Neues Produkt' : 'Produkt bearbeiten'}</p>
+      ${product === null ? '' : `<p class="operator-editor-pane__status">${product.isActive ? 'Aktiv' : 'Inaktiv'}</p>`}
+    </div>
     <div class="operator-felder">
       ${textField(`${prefix}-name`, 'Produktname', 'name', product?.name ?? '', 120, true)}
       ${textField(`${prefix}-unit`, 'Einheit / Format', 'unit', product?.unit ?? '', 120, true)}

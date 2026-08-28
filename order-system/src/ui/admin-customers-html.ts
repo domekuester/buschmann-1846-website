@@ -30,8 +30,16 @@ export function renderAdminCustomersPage(view: AdminCustomersPageView): string {
       <p class="bereichskopf__vorspann">Kundenzugänge, Preisgruppen und Lieferung an einer Stelle pflegen.</p>
     </header>
     ${notice(view.noticeCode)}
-    ${createForm(view.csrfToken, view.priceGroups)}
-    ${view.customers.length === 0 ? emptyState() : customerTable(view.customers)}`,
+    <div class="kundenarbeitsplatz">
+      <section class="kundenliste" aria-labelledby="kundenliste-titel">
+        <div class="operator-liste__kopf">
+          <h2 id="kundenliste-titel">Kunden</h2>
+          <p>${view.customers.length} ${view.customers.length === 1 ? 'Kunde' : 'Kunden'}</p>
+        </div>
+        ${view.customers.length === 0 ? emptyState() : customerTable(view.customers)}
+      </section>
+      ${createForm(view.csrfToken, view.priceGroups)}
+    </div>`,
   );
 }
 

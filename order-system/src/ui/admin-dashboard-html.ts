@@ -112,12 +112,14 @@ export function renderAdminOverviewPage(view: AdminDashboardPageView): string {
     `Übersicht ${view.day.day} — Buschmann 1846`,
     view,
     'overview',
-    `${kopf(view.day)}
+    `${kopf(view.day, true)}
     ${steuerung(view.day, view.quickDays, '/admin')}
-    ${kennzahlen(view.day)}
-    ${handlungsbedarf(view.day)}
-    ${finanzen(view.day)}
-    ${topProdukte(view.day)}`,
+    ${kennzahlen(view.day, true)}
+    <div class="overview-arbeitsflaeche">
+      ${handlungsbedarf(view.day, 'Als Nächstes')}
+      ${topProdukte(view.day, 'Produktion heute')}
+    </div>
+    ${finanzen(view.day)}`,
   );
 }
 
@@ -188,10 +190,10 @@ export function renderDashboardUnavailablePage(
  * ab Tablet neben dem Kopf statt darunter: Was den Blick zuerst bekommt, ist
  * der Tag und nicht der Weg von ihm fort.
  */
-function kopf(day: DashboardDayView): string {
+function kopf(day: DashboardDayView, overview = false): string {
   return `<header class="dashkopf">
       <div class="dashkopf__text">
-        <p class="dashkopf__kicker">Dashboard <span aria-hidden="true">·</span> Tagesübersicht</p>
+        <p class="dashkopf__kicker">${overview ? 'Betriebszentrale' : 'Dashboard · Tagesübersicht'}</p>
         <h1 class="dashkopf__tag">${escapeHtml(day.dayLabel)}</h1>
         <p class="dashkopf__vorspann">
           Alle Zahlen dieser Seite gehören zum Produktionstag — nicht dazu,
@@ -314,7 +316,18 @@ function schnellziel(ziel: QuickDayView): string {
  * Text; ein Betrieb, der die Seite auf einem verwaschenen Tresenbildschirm
  * liest, soll nichts an einem Farbton erkennen müssen.
  */
-function kennzahlen(day: DashboardDayView): string {
+function kennzahlen(day: DashboardDayView, overview = false): string {
+  if (overview) {
+    return `<section class="kennzahlwand kennzahlwand--fokus" aria-labelledby="kennzahlen-titel">
+      <h2 id="kennzahlen-titel" class="nur-vorlesen">Die vier wichtigsten Signale des Tages</h2>
+      <div class="kennzahlwand__gitter">
+        ${karte('Bestellungen', String(day.orderCount), storniertHinweis(day), null, '#bestellungen')}
+        ${karte('Einheiten', String(day.totalUnits), 'bestellte Menge', null)}
+        ${karte('Offen / in Arbeit', String(day.openCount), 'noch nicht abgeschlossen', null, `/admin/production?date=${day.day}`)}
+        ${karte('Noch nicht bezahlt', day.unpaidLabel, `${day.unpaidCount} ${day.unpaidCount === 1 ? 'Bestellung' : 'Bestellungen'}`, day.unpaidCount > 0 ? 'betont' : null, `/admin/orders?date=${day.day}&orders=unpaid#bestellungen`)}
+      </div>
+    </section>`;
+  }
   return `<section class="kennzahlwand" aria-labelledby="kennzahlen-titel">
       <h2 id="kennzahlen-titel" class="nur-vorlesen">Kennzahlen des Tages</h2>
       <div class="kennzahlwand__gitter">
@@ -411,7 +424,7 @@ function karte(
  * Drei Karten mit einer 0 wären das andere Extrem und wären Rauschen an der
  * Stelle, an der etwas stehen soll, wenn etwas ist.
  */
-function handlungsbedarf(day: DashboardDayView): string {
+function handlungsbedarf(day: DashboardDayView, title = 'Handlungsbedarf'): string {
   const inhalt =
     day.actions.length === 0
       ? `<p class="handlung__ruhe">Für diesen Produktionstag ist aktuell nichts offen.</p>
@@ -422,7 +435,7 @@ function handlungsbedarf(day: DashboardDayView): string {
 
   return `<section class="tafel handlung" aria-labelledby="handlung-titel">
       <div class="tafel__kopf">
-        <h2 id="handlung-titel" class="tafel__titel">Handlungsbedarf</h2>
+      <h2 id="handlung-titel" class="tafel__titel">${escapeHtml(title)}</h2>
         ${
           day.actions.length === 0
             ? ''
@@ -730,7 +743,7 @@ function storniertHinweis(day: DashboardDayView): string {
  * nicht, dass es diesen Abschnitt gibt. Ein Satz sagt, was fehlt, und nimmt
  * denselben Platz ein wie die Liste, die morgen dort steht.
  */
-function topProdukte(day: DashboardDayView): string {
+function topProdukte(day: DashboardDayView, title = 'Meistbestellt'): string {
   const inhalt =
     day.topProducts.length === 0
       ? `<p class="tafel__leer">Für diesen Tag ist noch kein Produkt bestellt. Sobald eine Bestellung eingeht, steht hier, wovon am meisten gebraucht wird.</p>`
@@ -750,7 +763,7 @@ function topProdukte(day: DashboardDayView): string {
 
   return `<section class="tafel topprodukte" aria-labelledby="topprodukte-titel">
       <div class="tafel__kopf">
-        <h2 id="topprodukte-titel" class="tafel__titel">Meistbestellt</h2>
+        <h2 id="topprodukte-titel" class="tafel__titel">${escapeHtml(title)}</h2>
         <p class="tafel__meta">nach Menge</p>
       </div>
       ${inhalt}

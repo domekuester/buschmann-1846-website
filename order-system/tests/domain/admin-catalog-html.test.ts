@@ -22,6 +22,8 @@ describe('Angebot als Produktarbeitsplatz', () => {
   it('zeigt genau eine h1, den Create-Flow und alle Operatorfelder', () => {
     const html = renderAdminCatalogPage(VIEW);
     expect(html.match(/<h1\b/g)).toHaveLength(1);
+    expect(html).toContain('operator-arbeitsplatz');
+    expect(html).toContain('operator-editor-pane');
     expect(html).toContain('Produkte und Preise');
     for (const text of [
       'Neues Produkt', 'Produktname', 'Einheit / Format', 'Gastronomiepreis',
