@@ -65,8 +65,8 @@ export function privateHeaders(extra: Record<string, string> = {}): Record<strin
  * Die Richtlinie aller angemeldeten Seiten — Login, Bestellung, Adminbereich.
  *
  * Ausgangspunkt ist 'none': Alles, was nicht ausdrücklich erlaubt ist, ist
- * verboten — Bilder, Schriften, Frames, Medien, Verbindungen zu fremden
- * Hosts. Erlaubt sind ausschließlich eigene Stylesheets und Skripte.
+ * verboten — Bilder, Frames, Medien, Verbindungen zu fremden Hosts. Erlaubt
+ * sind ausschließlich eigene Stylesheets, Skripte und lokale Markenschriften.
  *
  * Kein 'unsafe-inline' und kein Nonce, weil es nichts Inline gibt: CSS und JS
  * liegen als eigene Dateien unter /assets/.
@@ -88,6 +88,7 @@ export const APP_CSP = [
   "default-src 'none'",
   "script-src 'self'",
   "style-src 'self'",
+  "font-src 'self'",
   "connect-src 'self'",
   "form-action 'self'",
   "base-uri 'none'",

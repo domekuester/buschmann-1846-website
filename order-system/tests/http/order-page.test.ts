@@ -4,7 +4,7 @@ import worker from '../../src/worker';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
-import { GASTRO, PRICING_TABLES, assignPriceGroup, priceProduct, resetPriceLists } from '../support/pricing';
+import { GASTRO, PRICING_TABLES, PRIVAT, assignPriceGroup, priceProduct, resetPriceLists } from '../support/pricing';
 
 /**
  * Die Bestellseite an der HTTP-Grenze. Geprüft wird, was tatsächlich über die
@@ -171,6 +171,25 @@ describe('GET /bestellen — gültige Kundensitzung', () => {
     const html = await (await call('/bestellen', sitzung.cafe)).text();
     expect(html).toContain('4,35 €');
     expect(html).toContain('2,80 €');
+  });
+
+  it('zeigt den serverseitigen Geschäftskunden- und Lieferkontext', async () => {
+    const html = await (await call('/bestellen', sitzung.cafe)).text();
+
+    expect(html).toContain('Geschäftskundenpreise');
+    expect(html).toContain('Lieferung');
+  });
+
+  it('zeigt Privatkunden- und Abholkontext nur aus dem angemeldeten Konto', async () => {
+    await assignPriceGroup(env.DB, 1, PRIVAT);
+    await env.DB.prepare("UPDATE customers SET default_fulfillment = 'pickup' WHERE id = 1").run();
+
+    const html = await (await call('/bestellen', sitzung.cafe)).text();
+
+    expect(html).toContain('Privatkundenpreise');
+    expect(html).toContain('Abholung');
+    expect(html).not.toContain('name="price');
+    expect(html).not.toContain('name="fulfillment_type"');
   });
 
   /** Jede Seite bekommt ihre eigene Kennung, sonst schützt sie nichts. */

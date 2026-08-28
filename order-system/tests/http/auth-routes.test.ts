@@ -161,6 +161,7 @@ describe('GET /login', () => {
     const csp = response.headers.get('content-security-policy') ?? '';
 
     expect(csp).toContain("default-src 'none'");
+    expect(csp).toContain("font-src 'self'");
     expect(csp).toContain("form-action 'self'");
     expect(csp).toContain("frame-ancestors 'none'");
     expect(csp).not.toContain('unsafe-inline');

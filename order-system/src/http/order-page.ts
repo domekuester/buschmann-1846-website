@@ -2,7 +2,10 @@ import { toCatalogView } from '../application/catalog-view';
 import type { AppConfig } from '../config/app-config';
 import { businessDay, plusDays } from '../domain/clock';
 import { cutoffSentence, nextOrderableDay, orderDaysSentence } from '../domain/order-policy';
-import { loadCustomerPriceBook } from '../infrastructure/d1/customer-price-book-repository';
+import {
+  loadCustomerPriceBook,
+  loadCustomerPriceContextLabel,
+} from '../infrastructure/d1/customer-price-book-repository';
 import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
 import { loadCatalog } from '../infrastructure/d1/product-repository';
 import { renderOrderPage } from '../ui/order-page-html';
@@ -45,9 +48,10 @@ export async function orderPage(
    * ab. Die Preiswelt kommt aus dem Kunden der SITZUNG; es gibt auf dieser
    * Seite keinen Parameter, mit dem sich eine andere wählen ließe.
    */
-  const [catalog, priceBook, richtlinie] = await Promise.all([
+  const [catalog, priceBook, priceContextLabel, richtlinie] = await Promise.all([
     loadCatalog(db),
     loadCustomerPriceBook(db, wache.context.customer),
+    loadCustomerPriceContextLabel(db, wache.context.customer),
     loadOrderPolicy(db),
   ]);
   const today = businessDay(now);
@@ -92,6 +96,8 @@ export async function orderPage(
 
     /** Ob überhaupt Preise angezeigt werden können — kein Listencode, keine ID. */
     hasPriceGroup: priceBook.isResolvable(),
+    priceContextLabel,
+    fulfillmentType: wache.context.customer.defaultFulfillment,
 
     /**
      * Serverseitig erzeugt, einmal je Seitenaufruf. Nicht im Client: Ein

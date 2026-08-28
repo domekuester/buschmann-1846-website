@@ -30,9 +30,20 @@ const MAX_QUANTITY = 9999;
  *   form: HTMLFormElement,
  *   root: Document,
  *   submitButton: HTMLButtonElement,
+ *   reviewButton: HTMLButtonElement,
+ *   editButton: HTMLButtonElement,
+ *   workspace: HTMLElement,
  *   summaryBar: HTMLElement,
+ *   summaryEmpty: HTMLElement,
+ *   summaryItems: HTMLElement,
  *   summaryLines: HTMLElement,
  *   summaryTotal: HTMLElement,
+ *   summaryDate: HTMLElement,
+ *   reviewPanel: HTMLElement,
+ *   reviewItems: HTMLElement,
+ *   reviewTotal: HTMLElement,
+ *   reviewDate: HTMLElement,
+ *   reviewError: HTMLElement,
  *   confirmation: HTMLElement,
  *   formError: HTMLElement,
  *   liveRegion: HTMLElement,
@@ -49,6 +60,7 @@ const MAX_QUANTITY = 9999;
  * @typedef {{
  *   order_number?: string,
  *   fulfillment_date?: string,
+ *   fulfillment_type?: 'delivery' | 'pickup',
  *   total_cents?: number,
  *   items?: { name: string, quantity: number, unit: string }[],
  * }} Confirmation
@@ -66,9 +78,20 @@ export function initOrderForm(root) {
     form,
     root,
     submitButton: /** @type {HTMLButtonElement} */ (root.querySelector('[data-submit]')),
+    reviewButton: /** @type {HTMLButtonElement} */ (root.querySelector('[data-review]')),
+    editButton: /** @type {HTMLButtonElement} */ (root.querySelector('[data-edit-selection]')),
+    workspace: /** @type {HTMLElement} */ (root.querySelector('[data-order-workspace]')),
     summaryBar: /** @type {HTMLElement} */ (root.querySelector('[data-summary-bar]')),
+    summaryEmpty: /** @type {HTMLElement} */ (root.querySelector('[data-summary-empty]')),
+    summaryItems: /** @type {HTMLElement} */ (root.querySelector('[data-summary-items]')),
     summaryLines: /** @type {HTMLElement} */ (root.querySelector('[data-summary-lines]')),
     summaryTotal: /** @type {HTMLElement} */ (root.querySelector('[data-summary-total]')),
+    summaryDate: /** @type {HTMLElement} */ (root.querySelector('[data-summary-date]')),
+    reviewPanel: /** @type {HTMLElement} */ (root.querySelector('[data-review-panel]')),
+    reviewItems: /** @type {HTMLElement} */ (root.querySelector('[data-review-items]')),
+    reviewTotal: /** @type {HTMLElement} */ (root.querySelector('[data-review-total]')),
+    reviewDate: /** @type {HTMLElement} */ (root.querySelector('[data-review-date]')),
+    reviewError: /** @type {HTMLElement} */ (root.querySelector('[data-review-error]')),
     confirmation: /** @type {HTMLElement} */ (root.querySelector('[data-confirmation]')),
     formError: /** @type {HTMLElement} */ (root.querySelector('[data-form-error]')),
     liveRegion: /** @type {HTMLElement} */ (root.querySelector('[data-live-region]')),
@@ -94,6 +117,10 @@ export function initOrderForm(root) {
     input.addEventListener('input', () => refresh(state));
     input.addEventListener('change', () => setQuantity(state, input, readQuantity(input), false));
   }
+
+  state.dateField.addEventListener('change', () => refresh(state));
+  state.reviewButton.addEventListener('click', () => openReview(state));
+  state.editButton.addEventListener('click', () => editSelection(state));
 
   form.addEventListener('submit', (event) => {
     event.preventDefault();
@@ -134,12 +161,6 @@ function readQuantity(input) {
  * @param {number} value
  * @param {boolean} announce
  */
-/**
- * @param {FormState} state
- * @param {HTMLInputElement} input
- * @param {number} value
- * @param {boolean} announce
- */
 function setQuantity(state, input, value, announce) {
   const clamped = Math.max(0, Math.min(Math.trunc(value), MAX_QUANTITY));
   input.value = String(clamped);
@@ -160,6 +181,7 @@ function setQuantity(state, input, value, announce) {
 function refresh(state) {
   let lines = 0;
   let totalCents = 0;
+  const selected = [];
 
   for (const input of state.quantities) {
     const quantity = readQuantity(input);
@@ -179,15 +201,70 @@ function refresh(state) {
 
     if (quantity > 0) {
       lines += 1;
-      totalCents += quantity * Number(input.getAttribute('data-price-cents'));
+      const priceCents = Number(input.getAttribute('data-price-cents'));
+      const lineTotalCents = quantity * priceCents;
+      totalCents += lineTotalCents;
+      selected.push({
+        name: input.getAttribute('data-product-name') ?? '',
+        unit: input.getAttribute('data-product-unit') ?? '',
+        quantity,
+        priceCents,
+        lineTotalCents,
+      });
     }
   }
 
   state.summaryLines.textContent =
     lines === 0 ? 'Noch nichts ausgewählt' : lines === 1 ? '1 Position' : `${lines} Positionen`;
   state.summaryTotal.textContent = formatEuro(totalCents);
+  state.summaryDate.textContent = formatGermanDate(state.dateField.value);
+  state.summaryDate.setAttribute('datetime', state.dateField.value);
+  state.summaryEmpty.hidden = selected.length > 0;
+  state.summaryItems.innerHTML = selected.map(summaryLine).join('');
 
   if (lines > 0) hide(state.formError);
+}
+
+/** @param {{name:string, unit:string, quantity:number, priceCents:number, lineTotalCents:number}} line */
+function summaryLine(line) {
+  return `<li>
+    <span><strong>${escapeHtml(line.name)}</strong><small>${line.quantity} × ${escapeHtml(formatEuro(line.priceCents))}</small></span>
+    <strong>${escapeHtml(formatEuro(line.lineTotalCents))}</strong>
+  </li>`;
+}
+
+/** @param {FormState} state */
+function openReview(state) {
+  const items = collectItems(state);
+  if (items.length === 0) {
+    show(state.formError, 'Bitte mindestens ein Produkt auswählen.');
+    state.quantities[0]?.focus();
+    return;
+  }
+
+  if (state.dateField.value === '') {
+    showFieldError(state, 'fulfillment_date', 'Bitte ein Datum auswählen.');
+    return;
+  }
+
+  clearErrors(state);
+  state.reviewItems.innerHTML = state.summaryItems.innerHTML;
+  state.reviewTotal.textContent = state.summaryTotal.textContent;
+  state.reviewDate.textContent = formatGermanDate(state.dateField.value);
+  hide(state.reviewError);
+  state.workspace.hidden = true;
+  state.reviewPanel.hidden = false;
+  state.reviewPanel.focus();
+}
+
+/** @param {FormState} state */
+function editSelection(state) {
+  state.reviewPanel.hidden = true;
+  state.workspace.hidden = false;
+  state.form.hidden = false;
+  state.summaryBar.hidden = false;
+  hide(state.reviewError);
+  state.reviewButton.focus();
 }
 
 /**
@@ -245,6 +322,7 @@ async function submit(state) {
 
     if (response.status === 422) {
       const body = await response.json();
+      editSelection(state);
       showValidationErrors(state, body?.errors ?? {});
       setSubmitting(state, false);
       return;
@@ -256,7 +334,7 @@ async function submit(state) {
     // der gefährliche Zustand wäre Ungewissheit.
     if (response.status === 401 || response.status === 403) {
       show(
-        state.formError,
+        state.reviewError,
         'Die Anmeldung gilt nicht mehr. Die Bestellung wurde NICHT aufgenommen — ' +
           'bitte neu anmelden.',
       );
@@ -273,7 +351,7 @@ async function submit(state) {
      * ein Tap ist.
      */
     show(
-      state.formError,
+      state.reviewError,
       'Die Bestellung wurde NICHT bestätigt. Bitte noch einmal senden — ' +
         'oder kurz bei Buschmann 1846 anrufen.',
     );
@@ -305,7 +383,7 @@ function setSubmitting(state, submitting) {
   state.submitting = submitting;
   state.submitButton.disabled = submitting;
   state.submitButton.setAttribute('aria-busy', String(submitting));
-  state.submitButton.textContent = submitting ? 'Wird gesendet …' : 'Bestellung senden';
+  state.submitButton.textContent = submitting ? 'Wird gesendet …' : 'Verbindlich bestellen';
 }
 
 /**
@@ -314,22 +392,31 @@ function setSubmitting(state, submitting) {
  */
 function showConfirmation(state, data) {
   const lines = (data?.items ?? [])
-    .map((item) => `<li>${escapeHtml(String(item.quantity))} × ${escapeHtml(String(item.name))}</li>`)
+    .map((item) => `<li><strong>${escapeHtml(String(item.name))}</strong><span>${escapeHtml(String(item.quantity))} × ${escapeHtml(String(item.unit))}</span></li>`)
     .join('');
+  const fulfillment = data?.fulfillment_type === 'pickup' ? 'Abholung' : 'Lieferung';
 
   state.confirmation.innerHTML = `
-    <p class="bestaetigung__ok">Bestellung ist angekommen.</p>
+    <p class="bestellung__schritt">Bestätigt</p>
+    <h2 class="bestaetigung__ok">Bestellung erfolgreich</h2>
+    <p class="bestaetigung__text">Ihre Bestellung ist sicher bei Buschmann 1846 angekommen.</p>
+    <p class="bestaetigung__label">Bestellnummer</p>
     <p class="bestaetigung__nummer">${escapeHtml(String(data?.order_number ?? ''))}</p>
-    <p class="bestaetigung__label">Liefertag</p>
-    <p class="bestaetigung__tag">${escapeHtml(formatGermanDate(String(data?.fulfillment_date ?? '')))}</p>
+    <dl class="pruefung__details bestaetigung__details">
+      <div><dt>Fulfillment</dt><dd>${fulfillment}</dd></div>
+      <div><dt>Datum</dt><dd>${escapeHtml(formatGermanDate(String(data?.fulfillment_date ?? '')))}</dd></div>
+    </dl>
+    <p class="bestaetigung__label">Bestellte Positionen</p>
     <ul class="bestaetigung__positionen">${lines}</ul>
-    <p class="bestaetigung__summe">Summe ${escapeHtml(formatEuro(Number(data?.total_cents ?? 0)))}</p>
-    <p class="bestaetigung__text">Wir haben deine Bestellung erhalten.</p>
+    <p class="bestaetigung__summe"><span>Gesamtsumme</span><strong>${escapeHtml(formatEuro(Number(data?.total_cents ?? 0)))}</strong></p>
+    <p class="bestaetigung__text">Bitte halten Sie die Bestellnummer bei Rückfragen bereit.</p>
     <button type="button" class="senden senden--zweit" data-restart>Neue Bestellung</button>
   `;
 
   state.form.hidden = true;
+  state.workspace.hidden = true;
   state.summaryBar.hidden = true;
+  state.reviewPanel.hidden = true;
   state.confirmation.hidden = false;
   state.confirmation.focus();
 

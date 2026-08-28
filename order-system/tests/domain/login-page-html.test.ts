@@ -5,6 +5,20 @@ const OHNE_FEHLER = renderLoginPage({ errorMessage: null });
 const MIT_FEHLER = renderLoginPage({ errorMessage: GENERIC_LOGIN_ERROR });
 
 describe('renderLoginPage — Formular', () => {
+  it('ordnet Marke und Anmeldung als zwei klar getrennte Bereiche an', () => {
+    expect(OHNE_FEHLER).toContain('class="anmeldung__markenfeld"');
+    expect(OHNE_FEHLER).toContain('class="anmeldung__zugang"');
+    expect(OHNE_FEHLER).toContain('Düsseldorfer Pâtisserie. Seit 1846.');
+  });
+
+  it('erklärt Anmeldung und Kontopreise ohne eine Preiswahl anzubieten', () => {
+    expect(OHNE_FEHLER).toContain('Mit Kundencode oder E-Mail anmelden.');
+    expect(OHNE_FEHLER).toContain(
+      'Nach der Anmeldung siehst du automatisch die Preise für dein Kundenkonto.',
+    );
+    expect(OHNE_FEHLER).not.toContain('name="price');
+  });
+
   it('ist ein echtes Formular mit POST auf /login', () => {
     expect(OHNE_FEHLER).toContain('<form method="post" action="/login"');
   });
@@ -77,7 +91,8 @@ describe('renderLoginPage — Barrierefreiheit', () => {
 
 describe('renderLoginPage — Fehlermeldung', () => {
   it('zeigt ohne Fehler keinen Fehlerbereich', () => {
-    expect(OHNE_FEHLER).toContain('hidden');
+    expect(OHNE_FEHLER).not.toContain('id="login-fehler"');
+    expect(OHNE_FEHLER).not.toContain('role="alert"');
     expect(OHNE_FEHLER).not.toContain(GENERIC_LOGIN_ERROR);
   });
 
@@ -93,6 +108,10 @@ describe('renderLoginPage — Fehlermeldung', () => {
   it('verbindet die Meldung mit dem Kennungsfeld', () => {
     expect(MIT_FEHLER).toContain('aria-describedby="login-fehler"');
     expect(MIT_FEHLER).toContain('id="login-fehler"');
+  });
+
+  it('nennt einen professionellen Weg zurück zum Zugang', () => {
+    expect(OHNE_FEHLER).toContain('Zugang verloren? Bitte melde dich bei Buschmann 1846.');
   });
 
   /**

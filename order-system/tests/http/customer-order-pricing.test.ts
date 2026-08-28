@@ -357,7 +357,7 @@ describe('Nicht-Festpreise sind sichtbar, aber nicht bestellbar', () => {
 
     expect(html).toContain('ab 55,00 €');
     expect(html).toContain('55,00–75,00 €');
-    expect(html).toContain('Auf Anfrage');
+    expect(html).toContain('Preis auf Anfrage');
   });
 
   it('bietet für sie keine Mengenauswahl an', async () => {

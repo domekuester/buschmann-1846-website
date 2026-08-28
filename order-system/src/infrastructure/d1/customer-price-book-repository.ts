@@ -9,6 +9,11 @@ interface PriceListRow {
   is_active: number;
 }
 
+interface PriceContextRow {
+  code: string;
+  is_active: number;
+}
+
 interface PriceRow {
   product_id: number;
   price_type: CatalogPrice['type'];
@@ -100,6 +105,30 @@ export async function loadCustomerPriceBook(
   customer: Customer,
 ): Promise<CustomerPriceBook> {
   return (await loadOrderPricing(db, customer)).priceBook;
+}
+
+/**
+ * Der kurze, rein informative Preiskontext der Kundenoberfläche.
+ *
+ * Die Zuordnung kommt ausschließlich aus dem bereits authentifizierten
+ * Customer. Zurückgegeben wird kein Code und keine ID, sondern nur eine
+ * fertige Anzeige. Eine unbekannte oder inaktive Liste wird niemals geraten.
+ */
+export async function loadCustomerPriceContextLabel(
+  db: D1Database,
+  customer: Customer,
+): Promise<string> {
+  if (customer.priceListId === null) return 'Preise noch nicht verfügbar';
+
+  const row = await db
+    .prepare('SELECT code, is_active FROM price_lists WHERE id = ?')
+    .bind(customer.priceListId)
+    .first<PriceContextRow>();
+
+  if (row === null || row.is_active !== 1) return 'Preise noch nicht verfügbar';
+  if (row.code === 'gastro') return 'Geschäftskundenpreise';
+  if (row.code === 'private') return 'Privatkundenpreise';
+  return 'Kundenpreise';
 }
 
 /**

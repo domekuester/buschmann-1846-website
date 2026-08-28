@@ -30,6 +30,8 @@ function setUpPage(): void {
     cutoffNotice: null,
     defaultDate: '2026-08-25',
     hasPriceGroup: true,
+    priceContextLabel: 'Geschäftskundenpreise',
+    fulfillmentType: 'delivery',
   })
     // Nur <html>-Inhalt; doctype und äußeres Tag gehören nicht in innerHTML.
     .replace(/^[\s\S]*?<html[^>]*>/, '')
@@ -51,12 +53,19 @@ function stepper(row: number, direction: 1 | -1): HTMLButtonElement {
 function submitButton(): HTMLButtonElement {
   return document.querySelector('[data-submit]') as HTMLButtonElement;
 }
+function reviewButton(): HTMLButtonElement {
+  return document.querySelector('[data-review]') as HTMLButtonElement;
+}
+function editButton(): HTMLButtonElement {
+  return document.querySelector('[data-edit-selection]') as HTMLButtonElement;
+}
 function text(selector: string): string {
   return (document.querySelector(selector) as HTMLElement | null)?.textContent?.trim() ?? '';
 }
 function visibleFormError(): string {
-  const banner = document.querySelector('[data-form-error]') as HTMLElement;
-  return banner.hidden ? '' : (banner.textContent ?? '').trim();
+  const banners = [...document.querySelectorAll('[data-form-error], [data-review-error]')] as HTMLElement[];
+  const banner = banners.find((candidate) => !candidate.hidden);
+  return (banner?.textContent ?? '').trim();
 }
 
 function jsonResponse(status: number, body: unknown): Response {
@@ -69,6 +78,7 @@ function jsonResponse(status: number, body: unknown): Response {
 const CONFIRMATION = {
   order_number: 'BUS-2026-000001',
   fulfillment_date: '2026-08-25',
+  fulfillment_type: 'delivery',
   total_cents: 1305,
   items: [{ name: 'Beispiel Käsekuchen', quantity: 3, unit: 'Stück' }],
 };
@@ -186,18 +196,28 @@ describe('Zusammenfassung', () => {
     stepper(0, -1).click();
     expect(text('[data-summary-total]')).toBe('0,00 €');
   });
+
+  it('zeigt ausgewählte Positionen mit Menge, Einzelpreis und Zeilensumme', () => {
+    stepper(0, 1).click();
+    stepper(0, 1).click();
+
+    const summary = text('[data-summary-items]');
+    expect(summary).toContain('Beispiel Käsekuchen');
+    expect(summary).toContain('2 × 4,35 €');
+    expect(summary).toContain('8,70 €');
+  });
 });
 
-describe('Absenden verhindern', () => {
+describe('Prüfen und Absenden verhindern', () => {
   it('sendet ohne Auswahl nichts und sagt warum', () => {
-    submitButton().click();
+    reviewButton().click();
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(visibleFormError()).toContain('mindestens ein Produkt');
   });
 
   it('räumt die Meldung weg, sobald etwas ausgewählt ist', () => {
-    submitButton().click();
+    reviewButton().click();
     expect(visibleFormError()).not.toBe('');
 
     stepper(0, 1).click();
@@ -208,11 +228,32 @@ describe('Absenden verhindern', () => {
     stepper(0, 1).click();
     (document.querySelector('#liefertag') as HTMLInputElement).value = '';
 
-    submitButton().click();
+    reviewButton().click();
 
     expect(fetchMock).not.toHaveBeenCalled();
     const feld = document.querySelector('[data-error-for="fulfillment_date"]') as HTMLElement;
     expect(feld.hidden).toBe(false);
+  });
+
+  it('öffnet vor dem Senden eine vollständige Prüfung', () => {
+    stepper(0, 1).click();
+    reviewButton().click();
+
+    const panel = document.querySelector('[data-review-panel]') as HTMLElement;
+    expect(panel.hidden).toBe(false);
+    expect(text('[data-review-items]')).toContain('Beispiel Käsekuchen');
+    expect(text('[data-review-total]')).toBe('4,35 €');
+    expect(text('[data-review-fulfillment]')).toContain('Lieferung');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('kehrt aus der Prüfung mit unveränderter Auswahl zurück', () => {
+    stepper(0, 1).click();
+    reviewButton().click();
+    editButton().click();
+
+    expect(form().hidden).toBe(false);
+    expect(quantities()[0]?.value).toBe('1');
   });
 });
 
@@ -221,6 +262,7 @@ describe('Absenden', () => {
     stepper(0, 1).click();
     stepper(0, 1).click();
     stepper(0, 1).click();
+    reviewButton().click();
     submitButton().click();
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -254,6 +296,7 @@ describe('Absenden', () => {
     stepper(0, 1).click();
     stepper(1, 1).click();
     stepper(1, -1).click();
+    reviewButton().click();
     submitButton().click();
     await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
 
@@ -274,6 +317,7 @@ describe('Erfolg', () => {
   async function succeed(status = 201): Promise<void> {
     fetchMock.mockResolvedValue(jsonResponse(status, CONFIRMATION));
     stepper(0, 1).click();
+    reviewButton().click();
     submitButton().click();
     await vi.waitFor(() =>
       expect((document.querySelector('[data-confirmation]') as HTMLElement).hidden).toBe(false),
@@ -288,6 +332,11 @@ describe('Erfolg', () => {
   it('zeigt den Liefertag ausgeschrieben', async () => {
     await succeed();
     expect(text('[data-confirmation]')).toContain('Dienstag, 25. August 2026');
+  });
+
+  it('bestätigt Lieferung oder Abholung ausdrücklich', async () => {
+    await succeed();
+    expect(text('[data-confirmation]')).toContain('Lieferung');
   });
 
   it('zeigt, was tatsächlich bestellt wurde, und die Summe', async () => {
@@ -327,6 +376,7 @@ describe('Doppelklick', () => {
     fetchMock.mockReturnValue(new Promise<Response>((resolve) => (freigeben = resolve)));
 
     stepper(0, 1).click();
+    reviewButton().click();
     submitButton().click();
 
     expect(submitButton().disabled).toBe(true);
@@ -341,6 +391,7 @@ describe('Doppelklick', () => {
     fetchMock.mockReturnValue(new Promise<Response>((resolve) => (freigeben = resolve)));
 
     stepper(0, 1).click();
+    reviewButton().click();
     submitButton().click();
     submitButton().click();
     submitButton().click();
@@ -358,6 +409,7 @@ describe('Fehler', () => {
       fetchMock.mockResolvedValue(response);
     }
     stepper(0, 1).click();
+    reviewButton().click();
     submitButton().click();
     await vi.waitFor(() => expect(visibleFormError()).not.toBe(''));
   }
@@ -371,6 +423,7 @@ describe('Fehler', () => {
     );
 
     stepper(0, 1).click();
+    reviewButton().click();
     submitButton().click();
 
     const feld = document.querySelector('[data-error-for="fulfillment_date"]') as HTMLElement;
@@ -424,7 +477,7 @@ describe('Fehler', () => {
     await fail(jsonResponse(500, { error: 'internal_error' }));
 
     expect(submitButton().disabled).toBe(false);
-    expect(submitButton().textContent).toContain('Bestellung senden');
+    expect(submitButton().textContent).toContain('Verbindlich bestellen');
   });
 
   it('behält die eingestellten Mengen', async () => {

@@ -18,6 +18,8 @@ function page(overrides: Partial<Parameters<typeof renderOrderPage>[0]> = {}): s
     cutoffNotice: null,
     defaultDate: '2026-08-25',
     hasPriceGroup: true,
+    priceContextLabel: 'Geschäftskundenpreise',
+    fulfillmentType: 'delivery',
     ...overrides,
   });
 }
@@ -25,6 +27,19 @@ function page(overrides: Partial<Parameters<typeof renderOrderPage>[0]> = {}): s
 describe('renderOrderPage — das Café erkennt sich wieder', () => {
   it('nennt den Cafénamen', () => {
     expect(page()).toContain('Testcafé Nord');
+  });
+
+  it('zeigt Preis- und Fulfillment-Kontext als unveränderliche Kontoauskunft', () => {
+    const html = page();
+
+    expect(html).toContain('Geschäftskundenpreise');
+    expect(html).toContain('Lieferung');
+    expect(html).not.toContain('name="price');
+    expect(html).not.toContain('name="fulfillment_type"');
+  });
+
+  it('kennzeichnet die Customer-Oberfläche für ein isoliertes Layout', () => {
+    expect(page()).toContain('<body class="kundenseite">');
   });
 
   it('verlangt weder Name noch Adresse noch Kontaktdaten', () => {
@@ -95,14 +110,24 @@ describe('renderOrderPage — Lieferdatum, Notiz, Absenden', () => {
     expect(html).not.toContain('contenteditable');
   });
 
-  it('hat einen echten Absenden-Button, der zum Formular gehört', () => {
+  it('führt erst in die Prüfung und bietet dort den echten Absenden-Button', () => {
     const html = page();
-    expect(html).toMatch(/<button[^>]*type="submit"/);
-    // Der Button steht in der Fußleiste, also AUSSERHALB des Formulars. Ohne
-    // form-Attribut wäre er dort ein Knopf ohne Wirkung — auch für die
-    // Tastatur.
+    expect(html).toContain('data-review');
+    expect(html).toContain('Bestellung prüfen');
+    expect(html).toContain('Auswahl prüfen');
+    expect(html).toContain('data-review-panel');
+    expect(html).toContain('Verbindlich bestellen');
+    expect(html).toContain('Auswahl bearbeiten');
     expect(html).toContain('form="bestellformular"');
     expect(html).toContain('id="bestellformular"');
+  });
+
+  it('stellt eine vollständige Zusammenfassung für die laufende Auswahl bereit', () => {
+    const html = page();
+
+    expect(html).toContain('data-summary-items');
+    expect(html).toContain('data-summary-date');
+    expect(html).toContain('Gesamtsumme');
   });
 
   it('erklärt ohne JavaScript, was zu tun ist', () => {
@@ -119,9 +144,9 @@ describe('renderOrderPage — Lieferdatum, Notiz, Absenden', () => {
    * Platzierung fest, weil sie hier keine Gestaltungsfrage ist, sondern
    * darüber entscheidet, ob die Meldung ihren Zweck erfüllt.
    */
-  it('zeigt Fehler dort, wo der Absenden-Button steht', () => {
+  it('zeigt Fehler dort, wo der nächste Aktionsknopf steht', () => {
     const html = page();
-    const leiste = html.slice(html.indexOf('<footer'), html.indexOf('</footer>'));
+    const leiste = html.slice(html.indexOf('data-summary-bar'), html.indexOf('</aside>'));
 
     expect(leiste).toContain('data-form-error');
     expect(leiste).toContain('role="alert"');
@@ -261,10 +286,10 @@ describe('renderOrderPage — Preisformen', () => {
     expect(html).not.toContain('data-quantity');
   });
 
-  it('zeigt „Auf Anfrage" und bietet keine Mengenauswahl an', () => {
+  it('zeigt „Preis auf Anfrage" und bietet keine Mengenauswahl an', () => {
     const html = mitPreis({ kind: 'on_request' });
 
-    expect(html).toContain('Auf Anfrage');
+    expect(html).toContain('Preis auf Anfrage');
     expect(html).toContain('data-unorderable');
     expect(html).not.toContain('data-quantity');
   });
@@ -288,7 +313,7 @@ describe('renderOrderPage — Preisformen', () => {
     });
 
     expect(html).toContain('data-price-cents="435"');
-    expect(html).toContain('Auf Anfrage');
+    expect(html).toContain('Preis auf Anfrage');
     // Genau EINE Mengenauswahl, nämlich die des Käsekuchens.
     expect(html.match(/data-quantity/g)).toHaveLength(1);
   });
@@ -334,9 +359,14 @@ describe('renderOrderPage — Kunde ohne Preisgruppe', () => {
   });
 
   it('nennt keine internen Verwaltungszustände', () => {
-    const html = page({ hasPriceGroup: false });
+    const html = page({
+      hasPriceGroup: false,
+      priceContextLabel: 'Preise noch nicht verfügbar',
+    });
 
     expect(html).not.toContain('inaktiv');
     expect(html).not.toContain('price_list');
+    expect(html).not.toContain('Es gelten Ihre Preise noch nicht verfügbar');
+    expect(html).toContain('Bestellungen sind erst nach Zuordnung einer Preisgruppe möglich.');
   });
 });

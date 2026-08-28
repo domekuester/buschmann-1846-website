@@ -67,6 +67,10 @@ export interface LoginPageView {
 
 export function renderLoginPage(view: LoginPageView): string {
   const fehler = view.errorMessage;
+  const fehlerMarkup = fehler === null
+    ? ''
+    : `<p class="banner anmeldung__fehler" id="login-fehler" role="alert">${escapeHtml(fehler)}</p>`;
+  const fehlerVerweis = fehler === null ? '' : '\n        aria-describedby="login-fehler"';
 
   return `<!doctype html>
 <html lang="de">
@@ -76,55 +80,60 @@ export function renderLoginPage(view: LoginPageView): string {
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light">
 <title>Anmeldung — Buschmann 1846</title>
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/app.css?v=8b2b-4">
 </head>
 <body class="anmeldeseite">
-<header class="kopf kopf--schmal">
-  <p class="marke">Buschmann <span>1846</span></p>
-</header>
-
 <main id="inhalt" class="anmeldung">
-  <h1>Anmeldung</h1>
-  <p class="anmeldung__vorspann">Kundencode oder E-Mail eingeben und anmelden.</p>
-
-  <p class="banner" id="login-fehler" role="alert"${fehler === null ? ' hidden' : ''}>${
-    fehler === null ? '' : escapeHtml(fehler)
-  }</p>
-
-  <form method="post" action="/login" class="anmeldung__formular">
-    <div class="feld">
-      <label for="kennung">Kundencode oder E-Mail</label>
-      <input
-        type="text"
-        id="kennung"
-        name="identifier"
-        autocomplete="username"
-        autocapitalize="none"
-        autocorrect="off"
-        spellcheck="false"
-        required
-        aria-describedby="login-fehler"
-      >
+  <section class="anmeldung__markenfeld" aria-labelledby="markenname">
+    <div class="anmeldung__marke">
+      <p class="marke" id="markenname">Buschmann <span>1846</span></p>
+      <span class="anmeldung__goldlinie" aria-hidden="true"></span>
+      <p class="anmeldung__herkunft">Düsseldorfer Pâtisserie. Seit 1846.</p>
     </div>
+  </section>
 
-    <div class="feld">
-      <label for="geheimnis">PIN oder Passwort</label>
-      <input
-        type="password"
-        id="geheimnis"
-        name="secret"
-        autocomplete="current-password"
-        required
-      >
+  <section class="anmeldung__zugang" aria-labelledby="anmeldung-titel">
+    <div class="anmeldung__inhalt">
+      <h1 id="anmeldung-titel">Willkommen</h1>
+      <p class="anmeldung__vorspann">Mit Kundencode oder E-Mail anmelden.</p>
+
+      ${fehlerMarkup}
+
+      <form method="post" action="/login" class="anmeldung__formular">
+        <div class="feld">
+          <label for="kennung">Kundencode oder E-Mail</label>
+          <input
+            type="text"
+            id="kennung"
+            name="identifier"
+            autocomplete="username"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            required${fehlerVerweis}
+          >
+        </div>
+
+        <div class="feld">
+          <label for="geheimnis">PIN oder Passwort</label>
+          <input
+            type="password"
+            id="geheimnis"
+            name="secret"
+            autocomplete="current-password"
+            required
+          >
+        </div>
+
+        <button type="submit" class="senden senden--breit">Anmelden</button>
+      </form>
+
+      <p class="anmeldung__preishinweis">
+        Nach der Anmeldung siehst du automatisch die Preise für dein Kundenkonto.
+      </p>
+      <p class="anmeldung__hilfe">Zugang verloren? Bitte melde dich bei Buschmann 1846.</p>
     </div>
-
-    <button type="submit" class="senden senden--breit">Anmelden</button>
-  </form>
-
-  <p class="anmeldung__hilfe">
-    Zugang verloren oder Anmeldung schlägt weiter fehl?
-    Melde dich kurz bei Buschmann 1846 — dann geht es wie gewohnt weiter.
-  </p>
+  </section>
 </main>
 </body>
 </html>

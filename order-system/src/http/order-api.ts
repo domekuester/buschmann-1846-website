@@ -96,6 +96,7 @@ function confirmation(order: Order): unknown {
   return {
     order_number: order.orderNumber.value,
     fulfillment_date: order.fulfillmentDate.value,
+    fulfillment_type: order.fulfillmentType,
     total_cents: order.total().cents,
     items: order.items.map((item) => ({
       name: item.productNameSnapshot,

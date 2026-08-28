@@ -186,6 +186,7 @@ describe('POST /api/orders — der gute Fall', () => {
     expect(await response.json()).toEqual({
       order_number: 'BUS-2026-000001',
       fulfillment_date: MORGEN,
+      fulfillment_type: 'delivery',
       total_cents: 1305,
       items: [{ name: 'Beispiel Käsekuchen', quantity: 3, unit: 'Stück' }],
     });

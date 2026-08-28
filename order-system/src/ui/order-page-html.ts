@@ -1,4 +1,5 @@
 import type { CatalogItemPrice, CatalogItemView } from '../application/catalog-view';
+import type { FulfillmentType } from '../domain/fulfillment-type';
 import { escapeHtml, formatEuro } from './format';
 
 /**
@@ -65,100 +66,156 @@ export interface OrderPageView {
    * Café erfährt nicht, in welche Schublade Buschmann es einsortiert hat.
    */
   hasPriceGroup: boolean;
+  /** Rein informativer Kontokontext; niemals ein Formularwert. */
+  priceContextLabel: string;
+  /** Stammt aus dem angemeldeten Kundenkonto und ist nicht auswählbar. */
+  fulfillmentType: FulfillmentType;
 }
 
 export function renderOrderPage(view: OrderPageView): string {
   const name = escapeHtml(view.customerName);
+  const priceContext = escapeHtml(view.priceContextLabel);
+  const fulfillment = view.fulfillmentType === 'delivery' ? 'Lieferung' : 'Abholung';
+  const dateLabel = germanDate(view.defaultDate);
+  const priceHint = view.hasPriceGroup
+    ? `Es gelten Ihre ${priceContext}.`
+    : 'Bestellungen sind erst nach Zuordnung einer Preisgruppe möglich.';
 
   return htmlDocument(
     `Bestellung — ${name}`,
     `
-    <header class="kopf">
-      <p class="marke">Buschmann <span>1846</span></p>
-      <h1>Bestellung für ${name}</h1>
-      <p class="gruss">Schön, dass du da bist. Menge einstellen, Tag wählen, senden.</p>
-
-      <form method="post" action="/logout" class="abmelden">
-        <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
-        <button type="submit" class="abmelden__taste">Abmelden</button>
-      </form>
+    <header class="kundenkopf">
+      <div class="kundenkopf__innen">
+        <p class="marke">Buschmann <span>1846</span></p>
+        <div class="kundenkopf__konto">
+          <p class="kundenkopf__kunde">${name}</p>
+          <p class="kundenkopf__kontext">${priceContext} <span aria-hidden="true">·</span> ${fulfillment}</p>
+          <form method="post" action="/logout" class="abmelden">
+            <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
+            <button type="submit" class="abmelden__taste">Abmelden</button>
+          </form>
+        </div>
+      </div>
     </header>
 
-    <main id="inhalt">
-      <form class="formular" id="bestellformular" data-order-form data-submission-id="${escapeHtml(view.submissionId)}" data-csrf="${escapeHtml(view.csrfToken)}" novalidate>
-        ${view.hasPriceGroup ? '' : priceGroupNotice()}
+    <main id="inhalt" class="bestellung">
+      <header class="bestellung__intro">
+        <p class="bestellung__schritt">Ihre Bestellung</p>
+        <h1>Bestellung für ${name}</h1>
+        <p>Produkte auswählen, Menge festlegen und anschließend in Ruhe prüfen.</p>
+      </header>
 
-        <section aria-labelledby="titel-sortiment">
-          <h2 id="titel-sortiment">Sortiment</h2>
-          <ul class="produkte">
-            ${view.products.map(productRow).join('\n')}
-          </ul>
-        </section>
+      <div class="bestellung__layout" data-order-workspace>
+        <form class="formular" id="bestellformular" data-order-form data-submission-id="${escapeHtml(view.submissionId)}" data-csrf="${escapeHtml(view.csrfToken)}" novalidate>
+          ${view.hasPriceGroup ? '' : priceGroupNotice()}
 
-        <section aria-labelledby="titel-liefertag">
-          <h2 id="titel-liefertag">Liefertag</h2>
-          <div class="feld">
-            <label for="liefertag">Wann soll es da sein?</label>
-            <input
-              type="date"
-              id="liefertag"
-              name="fulfillment_date"
-              value="${escapeHtml(view.defaultDate)}"
-              min="${escapeHtml(view.earliestDate)}"
-              required
-              aria-describedby="fehler-liefertag"
-            >
-            <p class="feldfehler" id="fehler-liefertag" data-error-for="fulfillment_date" hidden></p>
-            ${bestellregeln(view)}
+          <section class="sortiment" aria-labelledby="titel-sortiment">
+            <div class="abschnittskopf">
+              <h2 id="titel-sortiment">Produkte auswählen</h2>
+              <p>Menge direkt am Produkt einstellen.</p>
+            </div>
+            <p class="feldfehler sortiment__fehler" data-error-for="items" hidden></p>
+            <ul class="produkte">
+              ${view.products.map(productRow).join('\n')}
+            </ul>
+          </section>
+
+          <section class="erfuellung" aria-labelledby="titel-liefertag">
+            <div class="abschnittskopf">
+              <h2 id="titel-liefertag">${fulfillment} planen</h2>
+              <p>Die Art ist in Ihrem Kundenkonto hinterlegt.</p>
+            </div>
+            <div class="erfuellung__felder">
+              <div class="erfuellung__konto">
+                <span>Fulfillment</span>
+                <strong>${fulfillment}</strong>
+              </div>
+              <div class="feld">
+                <label for="liefertag">Datum</label>
+                <input
+                  type="date"
+                  id="liefertag"
+                  name="fulfillment_date"
+                  value="${escapeHtml(view.defaultDate)}"
+                  min="${escapeHtml(view.earliestDate)}"
+                  required
+                  aria-describedby="fehler-liefertag"
+                >
+                <p class="feldfehler" id="fehler-liefertag" data-error-for="fulfillment_date" hidden></p>
+                ${bestellregeln(view)}
+              </div>
+            </div>
+          </section>
+
+          <section class="bestellnotiz" aria-labelledby="titel-notiz">
+            <div class="abschnittskopf">
+              <h2 id="titel-notiz">Hinweis zur Bestellung</h2>
+              <p>Nur wenn wir etwas beachten sollen.</p>
+            </div>
+            <div class="feld">
+              <label for="notiz">Notiz <span class="optional">(optional)</span></label>
+              <textarea
+                id="notiz"
+                name="note"
+                rows="3"
+                maxlength="500"
+                aria-describedby="fehler-notiz"
+                placeholder="Zum Beispiel: bitte an der Rückseite anliefern"
+              ></textarea>
+              <p class="feldfehler" id="fehler-notiz" data-error-for="note" hidden></p>
+            </div>
+          </section>
+
+          <noscript>
+            <p class="banner banner--statisch">
+              Für die Bestellung wird JavaScript gebraucht. Bitte aktiviere es —
+              oder melde dich direkt bei Buschmann 1846.
+            </p>
+          </noscript>
+        </form>
+
+        <aside class="bestelluebersicht" data-summary-bar aria-labelledby="titel-uebersicht">
+          <h2 id="titel-uebersicht">Ihre Auswahl</h2>
+          <div class="bestelluebersicht__positionen">
+            <p class="bestelluebersicht__leer" data-summary-empty>Noch keine Produkte ausgewählt.</p>
+            <ul class="bestelluebersicht__liste" data-summary-items></ul>
           </div>
-        </section>
-
-        <section aria-labelledby="titel-notiz">
-          <h2 id="titel-notiz">Noch etwas für uns?</h2>
-          <div class="feld">
-            <label for="notiz">Notiz <span class="optional">(optional)</span></label>
-            <textarea
-              id="notiz"
-              name="note"
-              rows="3"
-              maxlength="500"
-              aria-describedby="fehler-notiz"
-              placeholder="Zum Beispiel: bitte an der Rückseite anliefern"
-            ></textarea>
-            <p class="feldfehler" id="fehler-notiz" data-error-for="note" hidden></p>
+          <dl class="bestelluebersicht__details">
+            <div><dt>${fulfillment}</dt><dd>${fulfillment}</dd></div>
+            <div><dt>Datum</dt><dd><time datetime="${escapeHtml(view.defaultDate)}" data-summary-date>${escapeHtml(dateLabel)}</time></dd></div>
+          </dl>
+          <div class="bestelluebersicht__summe">
+            <span><span data-summary-lines>Noch nichts ausgewählt</span><span>Gesamtsumme</span></span>
+            <strong data-summary-total>0,00 €</strong>
           </div>
-        </section>
+          <p class="banner" role="alert" data-form-error hidden></p>
+          <button type="button" class="senden" data-review>
+            <span class="bestelluebersicht__aktion--mobil">Auswahl prüfen</span>
+            <span class="bestelluebersicht__aktion--desktop">Bestellung prüfen</span>
+          </button>
+          <p class="bestelluebersicht__hinweis">${priceHint}</p>
+        </aside>
+      </div>
 
-        <noscript>
-          <p class="banner banner--statisch">
-            Für die Bestellung wird JavaScript gebraucht. Bitte aktiviere es —
-            oder melde dich direkt bei Buschmann 1846.
-          </p>
-        </noscript>
-      </form>
+      <section class="pruefung" data-review-panel tabindex="-1" aria-labelledby="titel-pruefung" hidden>
+        <p class="bestellung__schritt">Letzter Schritt</p>
+        <h2 id="titel-pruefung">Bestellung prüfen</h2>
+        <p class="pruefung__intro">Bitte prüfen Sie Produkte, Mengen und Termin vor dem verbindlichen Absenden.</p>
+        <ul class="pruefung__positionen" data-review-items></ul>
+        <dl class="pruefung__details">
+          <div><dt>Fulfillment</dt><dd data-review-fulfillment>${fulfillment}</dd></div>
+          <div><dt>Datum</dt><dd data-review-date>${escapeHtml(dateLabel)}</dd></div>
+          <div class="pruefung__gesamt"><dt>Gesamtsumme</dt><dd data-review-total>—</dd></div>
+        </dl>
+        <p class="banner" role="alert" data-review-error hidden></p>
+        <div class="pruefung__aktionen">
+          <button type="submit" form="bestellformular" class="senden" data-submit>Verbindlich bestellen</button>
+          <button type="button" class="sekundaertaste" data-edit-selection>Auswahl bearbeiten</button>
+        </div>
+      </section>
 
       <section class="bestaetigung" data-confirmation role="status" tabindex="-1" hidden></section>
     </main>
-
-    <footer class="leiste" data-summary-bar>
-      <!--
-        Die Fehlermeldung steht IN der Fußleiste, nicht im Formular.
-
-        Im Formular stünde sie unter der Notiz — also außerhalb des sichtbaren
-        Bereichs, während der Daumen unten auf „Bestellung senden" liegt. Eine
-        Meldung, die man erst suchen muss, ist keine Meldung. Hier steht sie
-        direkt über der Schaltfläche, die gerade nicht funktioniert hat.
-      -->
-      <p class="banner" role="alert" data-form-error hidden></p>
-
-      <div class="leiste__zeile">
-        <p class="summe">
-          <span data-summary-lines>Noch nichts ausgewählt</span>
-          <strong data-summary-total>0,00 €</strong>
-        </p>
-        <button type="submit" form="bestellformular" class="senden" data-submit>Bestellung senden</button>
-      </div>
-    </footer>
 
     <p class="hinweis" aria-live="polite" data-live-region></p>
     `,
@@ -212,7 +269,7 @@ function priceLabel(price: CatalogItemPrice): string {
     case 'range':
       return `${formatEuro(price.minPriceCents).slice(0, -2)}–${formatEuro(price.maxPriceCents)}`;
     case 'on_request':
-      return 'Auf Anfrage';
+      return 'Preis auf Anfrage';
     default:
       /**
        * §38: NIEMALS „0,00 €".
@@ -275,8 +332,9 @@ function productRow(product: CatalogItemView): string {
             <li class="produkt${orderable ? '' : ' produkt--ohne-preis'}" data-product-row${orderable ? '' : ' data-unorderable'}>
               <div class="produkt__text">
                 <p class="produkt__name" id="produkt-${product.id}">${name}</p>
-                <p class="produkt__preis">${escapeHtml(preis)}${orderable ? ` / ${unit}` : ''}</p>
                 ${product.description === null ? '' : `<p class="produkt__beschreibung">${escapeHtml(product.description)}</p>`}
+                <p class="produkt__einheit">${unit}</p>
+                <p class="produkt__preis">${escapeHtml(preis)}</p>
                 ${orderable ? '' : `<p class="produkt__hinweis" id="hinweis-${product.id}">${escapeHtml(unorderableHint(product.price))}</p>`}
               </div>
               ${orderable ? stepper(product, inputId, name, unit) : ''}
@@ -339,14 +397,19 @@ function htmlDocument(title: string, body: string): string {
 <meta name="robots" content="noindex, nofollow">
 <meta name="color-scheme" content="light">
 <title>${escapeHtml(title)}</title>
-<link rel="stylesheet" href="/assets/app.css">
+<link rel="stylesheet" href="/assets/app.css?v=8b2b-4">
 <script type="module" src="/assets/app.js"></script>
 </head>
-<body>
+<body class="kundenseite">
 ${body}
 </body>
 </html>
 `;
+}
+
+function germanDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  return match === null ? value : `${match[3]}.${match[2]}.${match[1]}`;
 }
 
 /**
