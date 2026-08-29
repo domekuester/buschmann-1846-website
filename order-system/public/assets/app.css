@@ -743,7 +743,7 @@ textarea[aria-invalid='true'] {
 
 .anmeldung a:hover { color: var(--champagner-text); }
 
-@media (min-width: 760px) {
+@media (min-width: 784px) {
   .anmeldung {
     grid-template-columns: minmax(21rem, 38fr) minmax(28rem, 62fr);
     grid-template-rows: 1fr;
@@ -758,7 +758,7 @@ textarea[aria-invalid='true'] {
   }
 }
 
-@media (max-height: 720px) and (min-width: 760px) {
+@media (max-height: 720px) and (min-width: 784px) {
   .anmeldung__zugang { align-items: start; padding-block: 2.25rem; }
   .anmeldung__preishinweis { margin-top: 1rem; }
   .anmeldung__hilfe { margin-top: 1rem; padding-top: 1rem; }
@@ -5249,7 +5249,12 @@ textarea[aria-invalid='true'] {
 .adminseite .operator-editor-pane .senden { min-height: 2.9rem; padding-inline: 1.2rem; border-radius: 2px; }
 
 /* Customers inherit the same list/editor rhythm; creation stays progressive. */
-.adminseite .kundenarbeitsplatz { grid-template-columns: minmax(0, 1fr) minmax(20rem, 30rem); }
+.adminseite .kundenarbeitsplatz { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1100px) {
+  .adminseite .kundenarbeitsplatz:has(> .operator-editor[open]) {
+    grid-template-columns: minmax(0, 1fr) minmax(20rem, 30rem);
+  }
+}
 .adminseite .kundenarbeitsplatz > .operator-editor { margin: 0; background: transparent; border: 0; border-top: 1px solid rgba(197, 154, 82, .45); border-radius: 0; }
 .adminseite .kundenarbeitsplatz > .operator-editor > summary { padding: .9rem 0; font-family: var(--marken-serif); font-size: 1.55rem; font-weight: 400; color: var(--navy); }
 .adminseite .kundenarbeitsplatz .operator-formular { padding-inline: 0; }

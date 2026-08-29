@@ -189,7 +189,7 @@ export function renderOrderPage(view: OrderPageView): string {
             <strong data-summary-total>0,00 €</strong>
           </div>
           <p class="banner" role="alert" data-form-error hidden></p>
-          <button type="button" class="senden" data-review>
+          <button type="button" class="senden" data-review${view.hasPriceGroup ? '' : ' disabled'}>
             <span class="bestelluebersicht__aktion--mobil">Auswahl prüfen</span>
             <span class="bestelluebersicht__aktion--desktop">Bestellung prüfen</span>
           </button>

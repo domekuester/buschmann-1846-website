@@ -333,6 +333,14 @@ describe('renderOrderPage — Preisformen', () => {
 });
 
 describe('renderOrderPage — Kunde ohne Preisgruppe', () => {
+  it('bietet ohne Preisgruppe keine unerreichbare Bestellprüfung an', () => {
+    const html = page({ hasPriceGroup: false });
+    const reviewButton = html.match(/<button[^>]*data-review[^>]*>/)?.[0];
+
+    expect(reviewButton).toContain('disabled');
+    expect(page().match(/<button[^>]*data-review[^>]*>/)?.[0]).not.toContain('disabled');
+  });
+
   it('erklärt verständlich, warum keine Preise dastehen', () => {
     const html = page({
       hasPriceGroup: false,

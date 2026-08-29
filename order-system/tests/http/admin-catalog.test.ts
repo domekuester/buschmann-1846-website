@@ -43,7 +43,7 @@ beforeEach(async () => {
 
 async function adminCookie(): Promise<string> {
   const result = await logIn(env.DB, CONFIG, {
-    identifier: 'admin@example.test', secret: 'fiktives-admin-passwort-123', now: new Date(NOW), existingSessionToken: null,
+    identifier: 'admin@example.test', secret: 'fiktives-admin-passwort-123', now: new Date(), existingSessionToken: null,
   });
   if (!result) throw new Error('Testlogin fehlgeschlagen');
   return `buschmann_session_dev=${result.token}`;

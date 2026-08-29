@@ -36,7 +36,7 @@ beforeEach(async () => {
 async function admin(): Promise<{ cookie: string; csrf: string }> {
   const login = await logIn(env.DB, CONFIG, {
     identifier: 'admin@example.test', secret: 'fiktives-admin-passwort-123',
-    now: new Date(NOW), existingSessionToken: null,
+    now: new Date(), existingSessionToken: null,
   });
   if (!login) throw new Error('Testlogin fehlgeschlagen');
   return { cookie: `buschmann_session_dev=${login.token}`, csrf: login.csrfToken };
