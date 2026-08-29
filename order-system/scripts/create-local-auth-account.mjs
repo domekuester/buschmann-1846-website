@@ -34,7 +34,7 @@
  * tests/domain/create-local-auth-account.test.ts prüft die hier erzeugten
  * Verifier gegen verifyCredential aus dem Worker.
  */
-export const PBKDF2_ITERATIONS = 600_000;
+export const PBKDF2_ITERATIONS = 100_000;
 export const CREDENTIAL_ALGORITHM = 'pbkdf2-sha256';
 const SALT_BYTES = 16;
 const VERIFIER_BYTES = 32;

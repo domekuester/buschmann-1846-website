@@ -49,7 +49,7 @@ type DemoCatalogProduct = {
 
 const CREDENTIAL_ARGS = {
   pepper: DEMO_PEPPER,
-  // 1000 statt 600 000: Diese Datei prüft den BESTAND, nicht das
+  // 1000 statt des Betriebswerts: Diese Datei prüft den BESTAND, nicht das
   // Ableitungsverfahren — das steht in credential.test.ts.
   iterations: 1000,
   deriveCredential,

@@ -170,7 +170,7 @@ describe('validateInput — Kennung', () => {
 
 describe('deriveCredential', () => {
   it('benutzt denselben Algorithmus und Work Factor wie der Worker', async () => {
-    expect(PBKDF2_ITERATIONS).toBe(600_000);
+    expect(PBKDF2_ITERATIONS).toBe(100_000);
     expect(CREDENTIAL_ALGORITHM).toBe('pbkdf2-sha256');
 
     const credential = await deriveCredential(PIN, PEPPER, { iterations: 1000 });

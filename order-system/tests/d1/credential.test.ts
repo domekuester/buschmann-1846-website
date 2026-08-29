@@ -26,7 +26,7 @@ const DEMO_PIN = '01234567';
 const DEMO_PASSWORT = 'demo-passwort-nur-fuer-tests-16plus';
 
 /**
- * Für alles, was den Work Factor nicht selbst prüft: 100 000 statt 600 000.
+ * Für Tests, die den Work Factor nicht selbst prüfen: der Schema-Mindestwert.
  * Das ist die Untergrenze, die auch die D1-CHECK-Bedingung verlangt, und
  * kostet rund 8 ms statt 45 ms je Ableitung.
  */
@@ -57,9 +57,7 @@ describe('deriveCredential — Form', () => {
   });
 
   it('verwendet ohne Vorgabe den zentralen Work Factor', async () => {
-    // Nur die Konstante prüfen, nicht ableiten — 600 000 Iterationen kosten
-    // hier nichts an Erkenntnis und 45 ms an Zeit.
-    expect(PBKDF2_ITERATIONS).toBe(600_000);
+    expect(PBKDF2_ITERATIONS).toBe(100_000);
     expect(MIN_ITERATIONS).toBe(100_000);
   });
 

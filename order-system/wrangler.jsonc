@@ -56,6 +56,32 @@
   // Typen dafür stehen in src/env.d.ts, von Hand und nicht aus
   // `wrangler types` — sonst kennte ein frischer Klon sie nicht.
 
+  // ISOLIERTE ÖFFENTLICHE KUNDENDEMO.
+  //
+  // Diese benannte Umgebung erzeugt ausschließlich den Worker
+  // `buschmann-order-demo` auf workers.dev und bindet ausschließlich die
+  // gleichnamige entfernte Demo-D1. Die lokale Entwicklungsbindung oben bleibt
+  // davon unberührt. AUTH_PEPPER wird separat als Cloudflare Secret gesetzt.
+  "env": {
+    "demo": {
+      "name": "buschmann-order-demo",
+      "workers_dev": true,
+      "preview_urls": false,
+      "vars": {
+        "ENVIRONMENT": "demo",
+        "APP_ORIGIN": "https://buschmann-order-demo.domekuester.workers.dev"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "buschmann-order-demo",
+          "database_id": "0a869c1c-3b7c-4626-a5bc-4b79139088c2",
+          "migrations_dir": "migrations"
+        }
+      ]
+    }
+  },
+
   "observability": {
     "enabled": true
   }

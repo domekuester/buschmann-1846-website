@@ -7,7 +7,7 @@
  *     verifier = PBKDF2-HMAC-SHA256(
  *         password = HMAC-SHA256(key = AUTH_PEPPER, message = geheimnis),
  *         salt     = 16 zufällige Byte je Account,
- *         c        = 600 000,
+ *         c        = 100 000,
  *         dkLen    = 32 Byte
  *     )
  *
@@ -41,10 +41,9 @@
  * weil sie nichts kostet, was der Betrieb merkt: Ein Café meldet sich alle
  * 30 Tage an.
  *
- * Gemessen in der echten workerd-Runtime (400 Ableitungen in Folge):
- * 7,6 ms je 100 000 Iterationen, also rund 45 ms bei 600 000.
+ * Cloudflare Workers begrenzt PBKDF2 derzeit auf 100 000 Iterationen. Dieser
+ * Plattformhöchstwert ist deshalb zugleich der Work Factor der Anwendung.
  */
-
 import { constantTimeEquals } from './constant-time';
 
 const encoder = new TextEncoder();
@@ -52,11 +51,11 @@ const encoder = new TextEncoder();
 /**
  * Der zentrale Work Factor. Die eine Stelle, an der er steht.
  *
- * 600 000 entspricht der aktuellen OWASP-Guidance für PBKDF2-HMAC-SHA256.
+ * 100 000 ist der von Cloudflare Workers unterstützte Höchstwert für PBKDF2.
  * Eine Änderung hier macht bestehende Verifier NICHT ungültig: Jede Zeile in
  * auth_accounts trägt ihre eigene Iterationszahl mit (siehe StoredCredential).
  */
-export const PBKDF2_ITERATIONS = 600_000;
+export const PBKDF2_ITERATIONS = 100_000;
 
 /**
  * Die Untergrenze, die auch die CHECK-Bedingung in D1 verlangt.
@@ -68,8 +67,9 @@ export const PBKDF2_ITERATIONS = 600_000;
  * wie im Rest des Systems: die Anwendung als erste Verteidigungslinie, das
  * Schema als zweite.
  *
- * Der praktische Nutzen: Tests, die den Work Factor nicht prüfen, können mit
- * 100 000 statt 600 000 rechnen und laufen sechsmal schneller.
+ * Der praktische Nutzen: Datenbank und Anwendung teilen eine explizite
+ * Untergrenze; ein späterer höherer Plattformwert kann ohne Flag Day über die
+ * je Konto gespeicherte Iterationszahl eingeführt werden.
  */
 export const MIN_ITERATIONS = 100_000;
 
