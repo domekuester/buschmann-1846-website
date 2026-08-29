@@ -34,7 +34,10 @@ async function seedAccount(id: number, identifier: string, role: 'admin' | 'cust
 
 async function login(identifier: string, secret: string) {
   const result = await logIn(env.DB, CONFIG, {
-    identifier, secret, now: new Date(NOW), existingSessionToken: null,
+    // Die Route prüft die 12-Stunden-TTL gegen die echte Laufzeituhr. Der
+    // Login muss deshalb ebenfalls zur Laufzeit stattfinden; NOW bleibt nur
+    // der feste Zeitstempel der fiktiven Seed-Daten.
+    identifier, secret, now: new Date(), existingSessionToken: null,
   });
   if (!result) throw new Error('Testlogin fehlgeschlagen');
   const session = await env.DB.prepare(

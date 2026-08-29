@@ -1,6 +1,7 @@
 import { placeCafeOrder } from '../application/place-cafe-order';
 import type { AppConfig } from '../config/app-config';
 import type { Order } from '../domain/order';
+import type { EmailSender } from '../infrastructure/email/email-sender';
 import { assertCsrf, assertSameOrigin, requireRole } from './guard';
 import {
   RequestError,
@@ -46,6 +47,7 @@ export async function createOrder(
   config: AppConfig,
   request: Request,
   now: Date,
+  emailSender?: EmailSender,
 ): Promise<Response> {
   try {
     assertSameOrigin(request, config);
@@ -68,6 +70,7 @@ export async function createOrder(
       input,
       now,
       appOrigin: config.appOrigin,
+      emailSender,
     });
 
     // 201 für eine neue Bestellung, 200 für dieselbe noch einmal. Für das

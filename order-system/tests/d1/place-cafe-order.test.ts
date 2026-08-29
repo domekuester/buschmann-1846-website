@@ -239,14 +239,55 @@ describe('placeCafeOrder — E-Mail-Absichten', () => {
     expect(notification?.sentAt).not.toBeNull();
   });
 
+  it('wiederholt einen transienten Senderfehler genau einmal und markiert erst den Erfolg als sent', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: true,
+      customerConfirmationsEnabled: false,
+      operatorRecipients: ['betrieb@example.test'],
+    }, new Date(NOW));
+    let calls = 0;
+    const sender: EmailSender = {
+      async send() {
+        calls += 1;
+        if (calls === 1) throw new Error('temporär nicht erreichbar');
+        return { kind: 'sent' };
+      },
+    };
+
+    const placed = await order({}, { emailSender: sender });
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+
+    expect(calls).toBe(2);
+    expect(notification).toMatchObject({ status: 'sent', attempts: 2, lastError: null });
+    expect(notification?.sentAt).not.toBeNull();
+  });
+
+  it('sendet eine bereits versendete Absicht bei erneutem Delivery-Aufruf nicht doppelt', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: false,
+      customerConfirmationsEnabled: true,
+      operatorRecipients: [],
+    }, new Date(NOW));
+    const sender = new MemoryEmailSender();
+    const placed = await order({}, { emailSender: sender });
+
+    await deliverOrderNotifications(env.DB, placed.order, sender, NOW);
+
+    expect(sender.messages).toHaveLength(1);
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+    expect(notification).toMatchObject({ status: 'sent', attempts: 1 });
+  });
+
   it('lässt einen Senderfehler niemals die Bestellung entfernen oder den Erfolg verhindern', async () => {
     await saveEmailNotificationSettings(env.DB, {
       operatorNotificationsEnabled: true,
       customerConfirmationsEnabled: false,
       operatorRecipients: ['betrieb@example.test'],
     }, new Date(NOW));
+    let calls = 0;
     const failingSender: EmailSender = {
       async send() {
+        calls += 1;
         throw new Error(`SMTP credential=geheim ${'x'.repeat(1000)}`);
       },
     };
@@ -258,7 +299,8 @@ describe('placeCafeOrder — E-Mail-Absichten', () => {
     expect(placed.created).toBe(true);
     expect(stored?.orderNumber.value).toBe(placed.order.orderNumber.value);
     expect(await countOrders()).toBe(1);
-    expect(notification).toMatchObject({ status: 'failed', attempts: 1 });
+    expect(calls).toBe(2);
+    expect(notification).toMatchObject({ status: 'failed', attempts: 2 });
     expect(notification?.lastError).not.toContain('geheim');
     expect(notification?.lastError?.length).toBeLessThanOrEqual(240);
   });
@@ -284,7 +326,7 @@ describe('placeCafeOrder — E-Mail-Absichten', () => {
     )).resolves.toBeUndefined();
 
     const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
-    expect(notification).toMatchObject({ status: 'failed', attempts: 1 });
+    expect(notification).toMatchObject({ status: 'failed', attempts: 2 });
   });
 });
 

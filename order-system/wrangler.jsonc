@@ -78,6 +78,15 @@
           "database_id": "0a869c1c-3b7c-4626-a5bc-4b79139088c2",
           "migrations_dir": "migrations"
         }
+      ],
+      "send_email": [
+        {
+          "name": "EMAIL",
+          "destination_address": "domekuester@gmail.com",
+          "allowed_sender_addresses": [
+            "buschmann-demo@elsewherephotos.com"
+          ]
+        }
       ]
     }
   },

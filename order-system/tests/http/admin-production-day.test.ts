@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import worker from '../../src/worker';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
+import { businessDay, plusDays } from '../../src/domain/clock';
 import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/credential';
 
 /**
@@ -235,9 +236,7 @@ describe('Zugriff', () => {
 
 describe('Datum', () => {
   it('zeigt ohne date-Parameter den nächsten Kalendertag', async () => {
-    const morgen = new Date();
-    morgen.setUTCDate(morgen.getUTCDate() + 1);
-    const erwartet = morgen.toISOString().slice(0, 10);
+    const erwartet = plusDays(businessDay(new Date()), 1);
 
     const text = await alsAdmin('/admin/production');
 

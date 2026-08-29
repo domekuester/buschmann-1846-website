@@ -55,12 +55,16 @@ export async function listOrderNotifications(
   return results.map(toNotification);
 }
 
-export async function listPendingOrderNotifications(
+export async function listDeliverableOrderNotifications(
   db: D1Database,
   orderNumber: string,
+  maxAttempts: number,
 ): Promise<readonly EmailOutboxNotification[]> {
   const notifications = await listOrderNotifications(db, orderNumber);
-  return notifications.filter((notification) => notification.status === 'pending');
+  return notifications.filter((notification) =>
+    (notification.status === 'pending' || notification.status === 'failed')
+    && notification.attempts < maxAttempts,
+  );
 }
 
 export async function markEmailNotificationSent(
@@ -71,7 +75,9 @@ export async function markEmailNotificationSent(
   await db.prepare(
     `UPDATE email_outbox
         SET status = 'sent', attempts = attempts + 1, sent_at = ?, last_error = NULL
-      WHERE notification_id = ? AND status = 'pending'`,
+      WHERE notification_id = ?
+        AND status IN ('pending', 'failed')
+        AND attempts < 2`,
   ).bind(sentAt, notificationId).run();
 }
 
@@ -84,7 +90,9 @@ export async function markEmailNotificationFailed(
   await db.prepare(
     `UPDATE email_outbox
         SET status = 'failed', attempts = attempts + 1, sent_at = NULL, last_error = ?
-      WHERE notification_id = ? AND status = 'pending'`,
+      WHERE notification_id = ?
+        AND status IN ('pending', 'failed')
+        AND attempts < 2`,
   ).bind(safe, notificationId).run();
 }
 

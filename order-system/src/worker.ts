@@ -52,6 +52,7 @@ import { productionDay } from './http/production-api';
 import { cancelOrderPage, matchCancelOrderPath } from './http/admin-cancel-page';
 import { methodNotAllowed, notFound } from './http/responses';
 import { privateHeaders } from './http/security';
+import { createEnvironmentEmailSender } from './infrastructure/email/cloudflare-email-sender';
 
 /**
  * Die äußere Hülle des Systems — und bewusst nicht mehr als das.
@@ -505,7 +506,13 @@ export default {
         if (request.method !== 'POST') {
           return methodNotAllowed('POST');
         }
-        return await createOrder(env.DB, config, request, now);
+        return await createOrder(
+          env.DB,
+          config,
+          request,
+          now,
+          createEnvironmentEmailSender(env),
+        );
       }
 
       return notFound();
