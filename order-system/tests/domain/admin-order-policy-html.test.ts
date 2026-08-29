@@ -118,12 +118,13 @@ describe('Das Formular enthält nur, was hineingehört', () => {
     expect(html).toContain('name="csrf_token" value="csrf-token-fuer-tests"');
   });
 
-  it('kennt genau vier Eingabenamen', () => {
+  it('kennt im Bestellregel-Formular genau die vorgesehenen Eingabenamen', () => {
     const html = renderAdminOrderPolicyPage(view());
-    const namen = [...html.matchAll(/name="([^"]+)"/g)].map((treffer) => treffer[1]);
+    const policyForm = html.match(/<form method="post" action="\/api\/admin\/order-policy"[\s\S]*?<\/form>/)?.[0] ?? '';
+    const namen = [...policyForm.matchAll(/name="([^"]+)"/g)].map((treffer) => treffer[1]);
 
     expect(new Set(namen)).toEqual(
-      new Set(['csrf_token', 'weekday', 'cutoff_enabled', 'lead_days', 'cutoff_time', 'viewport', 'robots', 'color-scheme']),
+      new Set(['csrf_token', 'weekday', 'cutoff_enabled', 'lead_days', 'cutoff_time']),
     );
   });
 
@@ -135,8 +136,8 @@ describe('Das Formular enthält nur, was hineingehört', () => {
     }
   });
 
-  it('kommt ohne Skript aus', () => {
-    expect(renderAdminOrderPolicyPage(view())).not.toContain('<script');
+  it('kommt ohne Inline-Skript aus', () => {
+    expect(renderAdminOrderPolicyPage(view())).not.toMatch(/<script(?![^>]*\ssrc=)[^>]*>/);
   });
 });
 

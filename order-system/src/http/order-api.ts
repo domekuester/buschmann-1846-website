@@ -67,6 +67,7 @@ export async function createOrder(
       submissionId: readSubmissionId(input),
       input,
       now,
+      appOrigin: config.appOrigin,
     });
 
     // 201 für eine neue Bestellung, 200 für dieselbe noch einmal. Für das

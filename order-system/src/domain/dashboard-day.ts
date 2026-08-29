@@ -105,6 +105,10 @@ export interface DashboardOrder {
   /** Wann bestellt wurde — ISO-8601-UTC. Nicht der Liefertag. */
   readonly createdAt: string;
   readonly items: readonly DashboardOrderItem[];
+  readonly emailSummary?: {
+    readonly status: 'pending' | 'sent' | 'failed';
+    readonly count: number;
+  };
 }
 
 /** Eine Zeile aus „Meistbestellt". */

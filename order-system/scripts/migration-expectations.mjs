@@ -32,6 +32,9 @@ export const EXPECTED_TABLES = Object.freeze([
   'catalog_products',
   'catalog_product_prices',
   'order_policy',
+  'email_notification_settings',
+  'email_operator_recipients',
+  'email_outbox',
 ]);
 
 /** Fehlende Tabellen. Zusätzliche sind kein Befund — sie können aus einer neueren Migration stammen. */
@@ -143,5 +146,31 @@ export function checkOrderPolicyDefaults(zeilen) {
     );
   }
 
+  return befunde;
+}
+
+/** Neue Installationen versenden ohne ausdrückliche Betreiberentscheidung nichts. */
+export function checkEmailNotificationDefaults(settingsRows, recipientRows) {
+  const befunde = [];
+  if (settingsRows.length !== 1) {
+    befunde.push(
+      `email_notification_settings muss genau eine Zeile haben, hat aber ${settingsRows.length}.`,
+    );
+  } else {
+    const row = settingsRows[0];
+    if (Number(row.id) !== 1) befunde.push('email_notification_settings.id muss 1 sein.');
+    if (Number(row.operator_notifications_enabled) !== 0) {
+      befunde.push('Betreiberbenachrichtigungen müssen nach der Migration ausgeschaltet sein.');
+    }
+    if (Number(row.customer_confirmations_enabled) !== 0) {
+      befunde.push('Kundenbestätigungen müssen nach der Migration ausgeschaltet sein.');
+    }
+    if (row.updated_at !== null && row.updated_at !== undefined) {
+      befunde.push('email_notification_settings.updated_at muss NULL sein.');
+    }
+  }
+  if (recipientRows.length !== 0) {
+    befunde.push('Die Migration darf keine Betreiber-Empfänger erfinden.');
+  }
   return befunde;
 }

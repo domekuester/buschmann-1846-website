@@ -35,6 +35,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   checkForeignKeys,
+  checkEmailNotificationDefaults,
   checkMigrationLedger,
   checkOrderPolicyDefaults,
   checkTables,
@@ -130,6 +131,12 @@ function main() {
 
     melde('Voreinstellung der Bestellregeln …');
     befunde.push(...checkOrderPolicyDefaults(query(persistTo, 'SELECT * FROM order_policy;')));
+
+    melde('Voreinstellung der E-Mail-Benachrichtigungen …');
+    befunde.push(...checkEmailNotificationDefaults(
+      query(persistTo, 'SELECT * FROM email_notification_settings;'),
+      query(persistTo, 'SELECT email FROM email_operator_recipients;'),
+    ));
 
     process.stdout.write('\n');
     if (befunde.length > 0) {

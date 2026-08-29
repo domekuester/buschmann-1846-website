@@ -9,6 +9,7 @@ import {
 } from '../domain/order-policy';
 import { renderAdminShell } from './admin-page-html';
 import { escapeHtml, formatGermanTimestamp } from './format';
+import type { EmailNotificationSettings } from '../domain/email-notification-settings';
 
 /**
  * Bestellregeln — die Seite, auf der der Betrieb sagt, wann er Bestellungen
@@ -58,6 +59,7 @@ export interface AdminOrderPolicyPageView {
    * Regel wie auf der Kundenseite.
    */
   readonly noticeCode: string | null;
+  readonly notificationSettings?: EmailNotificationSettings;
 }
 
 const MELDUNGEN: Readonly<Record<string, string>> = {
@@ -71,29 +73,103 @@ const MELDUNGEN: Readonly<Record<string, string>> = {
   invalid: 'Das Formular war nicht lesbar. Es wurde nichts gespeichert.',
   internal:
     'Die Bestellregeln konnten gerade nicht gespeichert werden. Bitte versuche es gleich noch einmal.',
+  email_saved: 'Die E-Mail-Benachrichtigungen wurden gespeichert.',
+  email_invalid: 'Bitte prüfe die E-Mail-Adressen. Es wurde nichts gespeichert.',
+  email_too_many: 'Es können höchstens 10 Empfänger gespeichert werden. Es wurde nichts gespeichert.',
+  email_recipient_required:
+    'Bitte trage mindestens einen Empfänger ein oder schalte Betreiberbenachrichtigungen aus. Es wurde nichts gespeichert.',
+  email_internal:
+    'Die E-Mail-Benachrichtigungen konnten gerade nicht gespeichert werden. Bitte versuche es gleich noch einmal.',
 };
 
 export function renderAdminOrderPolicyPage(view: AdminOrderPolicyPageView): string {
   return renderAdminShell(
-    'Bestellregeln — Buschmann 1846',
+    'Einstellungen — Buschmann 1846',
     view,
     'settings',
     `<header class="bereichskopf">
-      <p class="bereichskopf__kicker">Bestellregeln</p>
-      <h1>Bestellregeln</h1>
-      <p class="bereichskopf__vorspann">An welchen Tagen wir Bestellungen annehmen — und bis wann.</p>
+      <p class="bereichskopf__kicker">Betrieb</p>
+      <h1>Einstellungen</h1>
+      <p class="bereichskopf__vorspann">Bestellannahme und Benachrichtigungen an einem ruhigen Ort.</p>
     </header>
     ${meldung(view.noticeCode)}
-    ${zusammenfassung(view)}
-    <form method="post" action="/api/admin/order-policy" class="regelform">
-      <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
-      ${bestelltage(view.policy)}
-      ${bestellschluss(view)}
-      <div class="regelform__fuss">
-        <button type="submit" class="senden regelform__senden">Speichern</button>
-      </div>
-    </form>`,
+    <section class="einstellungsabschnitt" aria-labelledby="bestellregeln-titel">
+      <h2 id="bestellregeln-titel">Bestellregeln</h2>
+      <p class="einstellungsabschnitt__vorspann">An welchen Tagen wir Bestellungen annehmen — und bis wann.</p>
+      ${zusammenfassung(view)}
+      <form method="post" action="/api/admin/order-policy" class="regelform">
+        <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
+        ${bestelltage(view.policy)}
+        ${bestellschluss(view)}
+        <div class="regelform__fuss">
+          <button type="submit" class="senden regelform__senden">Bestellregeln speichern</button>
+        </div>
+      </form>
+    </section>
+    ${emailSettings(view)}
+    <script type="module" src="/assets/admin-settings.js"></script>`,
   );
+}
+
+function emailSettings(view: AdminOrderPolicyPageView): string {
+  const settings = view.notificationSettings ?? {
+    operatorNotificationsEnabled: false,
+    customerConfirmationsEnabled: false,
+    operatorRecipients: [],
+    updatedAt: null,
+  };
+  const values = [...settings.operatorRecipients, ''];
+  const rows = values.map((value, index) => recipientRow(value, index + 1)).join('\n');
+  const updated = settings.updatedAt === null
+    ? 'Noch nie geändert.'
+    : `Zuletzt geändert am ${formatGermanTimestamp(settings.updatedAt)} Uhr.`;
+
+  return `<section class="einstellungsabschnitt email-einstellungen" aria-labelledby="email-einstellungen-titel">
+      <h2 id="email-einstellungen-titel">E-Mail-Benachrichtigungen</h2>
+      <p class="einstellungsabschnitt__vorspann">Wer bei einer neuen Bestellung informiert wird.</p>
+      <form method="post" action="/api/admin/email-notifications" class="regelform email-form">
+        <input type="hidden" name="csrf_token" value="${escapeHtml(view.csrfToken)}">
+        <fieldset class="regelblock">
+          <legend>Neue Bestellungen</legend>
+          <label class="regelschalter">
+            <input type="checkbox" name="operator_notifications_enabled" value="1"${settings.operatorNotificationsEnabled ? ' checked' : ''}>
+            <span>Neue Bestellungen an Betrieb senden</span>
+          </label>
+          <div class="email-empfaenger">
+            <p class="email-empfaenger__titel">Empfänger</p>
+            <p id="email-empfaenger-hinweis" class="regelblock__hinweis">Bis zu 10 E-Mail-Adressen.</p>
+            <div class="email-empfaenger__liste" data-email-recipients>${rows}</div>
+            <template data-email-recipient-template>${recipientRow('', 0)}</template>
+            <button type="button" class="sekundaertaste email-empfaenger__mehr" data-add-email-recipient>
+              + Weitere E-Mail-Adresse
+            </button>
+          </div>
+        </fieldset>
+        <fieldset class="regelblock">
+          <legend>Bestellbestätigung</legend>
+          <label class="regelschalter">
+            <input type="checkbox" name="customer_confirmations_enabled" value="1"${settings.customerConfirmationsEnabled ? ' checked' : ''}>
+            <span>Kunden erhalten eine Bestellbestätigung</span>
+          </label>
+          <p class="regelblock__hinweis">Nur wenn beim Kunden eine gültige E-Mail-Adresse hinterlegt ist.</p>
+        </fieldset>
+        <p class="regelstand__stand email-einstellungen__stand">${escapeHtml(updated)}</p>
+        <div class="regelform__fuss">
+          <button type="submit" class="senden regelform__senden">Benachrichtigungen speichern</button>
+        </div>
+      </form>
+    </section>`;
+}
+
+function recipientRow(value: string, number: number): string {
+  const suffix = number > 0 ? String(number) : 'neu';
+  const label = number > 0 ? `Empfänger ${number}` : 'Empfänger';
+  return `<div class="email-empfaenger__zeile">
+              <label for="email-empfaenger-${suffix}">${label}</label>
+              <input type="email" id="email-empfaenger-${suffix}" name="operator_recipient"
+                value="${escapeHtml(value)}" maxlength="190" autocomplete="email"
+                aria-describedby="email-empfaenger-hinweis">
+            </div>`;
 }
 
 /**
@@ -110,7 +186,7 @@ function meldung(code: string | null): string {
   const text = Object.prototype.hasOwnProperty.call(MELDUNGEN, code) ? MELDUNGEN[code] : null;
   if (text === undefined || text === null) return '';
 
-  const klasse = code === 'saved'
+  const klasse = code === 'saved' || code === 'email_saved'
     ? 'kundenmeldung kundenmeldung--erfolg'
     : 'banner kundenmeldung';
 

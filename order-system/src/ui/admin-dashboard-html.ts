@@ -862,6 +862,7 @@ function bestellzeile(order: DashboardOrderRowView, csrfToken: string): string {
       <th scope="row" data-label="Bestellung">
         <span class="bestellzeile__nummer">${escapeHtml(order.orderNumber)}</span>
         <span class="bestellzeile__zeit">${escapeHtml(order.orderedAtLabel)}</span>
+        ${order.emailStatusLabel === null ? '' : `<span class="bestellzeile__email">${escapeHtml(order.emailStatusLabel)}</span>`}
       </th>
       <td data-label="Kunde"><span class="bestellzeile__kunde">${escapeHtml(
         order.customerName,

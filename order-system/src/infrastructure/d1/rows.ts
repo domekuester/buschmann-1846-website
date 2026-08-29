@@ -192,6 +192,9 @@ export interface DashboardOrderRow {
   payment_status: string;
   total_amount_cents: number;
   created_at: string;
+  email_notification_count: number;
+  email_pending_count: number;
+  email_failed_count: number;
 }
 
 /**

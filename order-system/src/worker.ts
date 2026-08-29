@@ -11,6 +11,7 @@ import {
 } from './http/admin-customer-detail-page';
 import { adminOrderPolicyPage } from './http/admin-order-policy-page';
 import { saveOrderPolicyEndpoint } from './http/admin-order-policy-api';
+import { saveEmailNotificationsEndpoint } from './http/admin-email-notifications-api';
 import { changeOrderStatusEndpoint, matchOrderStatusPath } from './http/admin-order-api';
 import {
   changeCustomerPriceGroupEndpoint,
@@ -305,6 +306,13 @@ export default {
           return methodNotAllowed('POST', privateHeaders());
         }
         return await saveOrderPolicyEndpoint(env.DB, config, request, now);
+      }
+
+      if (pathname === '/api/admin/email-notifications') {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await saveEmailNotificationsEndpoint(env.DB, config, request, now);
       }
 
       if (pathname === '/api/admin/products') {

@@ -8,6 +8,8 @@ import { OrderNumber } from '../../domain/order-number';
 import { unitCostFromCents } from '../../domain/product-cost';
 import { isOrderStatus, type OrderStatus } from '../../domain/order-status';
 import type { PaymentStatus } from '../../domain/payment-status';
+import type { EmailNotificationIntent } from '../../domain/email-notification';
+import { prepareEmailIntentInsert } from './email-outbox-repository';
 import type { OrderItemRow, OrderRow } from './rows';
 
 /**
@@ -37,6 +39,7 @@ export async function saveOrder(
   db: D1Database,
   order: Order,
   submissionId: string | null = null,
+  emailIntents: readonly EmailNotificationIntent[] = [],
 ): Promise<void> {
   const insertOrder = db
     .prepare(
@@ -88,7 +91,10 @@ export async function saveOrder(
       ),
   );
 
-  await db.batch([insertOrder, ...insertItems]);
+  const insertEmailIntents = emailIntents.map((intent) =>
+    prepareEmailIntentInsert(db, order.orderNumber.value, intent));
+
+  await db.batch([insertOrder, ...insertItems, ...insertEmailIntents]);
 }
 
 /**

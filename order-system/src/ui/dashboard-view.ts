@@ -92,6 +92,8 @@ export interface DashboardOrderRowView {
   readonly fulfillmentLabel: string;
   /** Erlaubte nächste Statusschritte, aus derselben Domänenregel wie in Produktion. */
   readonly actions: readonly StatusActionView[];
+  /** Kurzer, wortbasierter Versandstand; null wenn keine Nachricht vorgesehen war. */
+  readonly emailStatusLabel: string | null;
 }
 
 export interface DashboardProductLineView {
@@ -383,6 +385,9 @@ export function toDashboardView(day: DashboardDay): DashboardDayView {
       orderedAtLabel: formatGermanTimestamp(order.createdAt),
       fulfillmentLabel: fulfillmentLabel(order.fulfillmentType),
       actions: statusAktionen(order.status),
+      emailStatusLabel: order.emailSummary === undefined
+        ? null
+        : `E-Mail: ${emailStatusLabel(order.emailSummary.status)} (${order.emailSummary.count})`,
     })),
 
     topProducts: day.topProducts.map((line) => ({
@@ -396,6 +401,12 @@ export function toDashboardView(day: DashboardDay): DashboardDayView {
     finance: finanzen(day.costs),
     actions: dashboardActions(day).map((aktion) => aktionsansicht(aktion, day.date)),
   };
+}
+
+function emailStatusLabel(status: 'pending' | 'sent' | 'failed'): string {
+  if (status === 'pending') return 'Ausstehend';
+  if (status === 'sent') return 'Versendet';
+  return 'Fehlgeschlagen';
 }
 
 /**

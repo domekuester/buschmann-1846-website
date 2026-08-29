@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   EXPECTED_TABLES,
+  checkEmailNotificationDefaults,
   checkForeignKeys,
   checkMigrationLedger,
   checkOrderPolicyDefaults,
@@ -30,6 +31,9 @@ describe('EXPECTED_TABLES', () => {
       'catalog_products',
       'catalog_product_prices',
       'order_policy',
+      'email_notification_settings',
+      'email_operator_recipients',
+      'email_outbox',
     ]) {
       expect(EXPECTED_TABLES).toContain(t);
     }
@@ -37,6 +41,25 @@ describe('EXPECTED_TABLES', () => {
 
   it('enthält KEINE Tabelle, die 0010 wieder entfernt hat', () => {
     expect(EXPECTED_TABLES).not.toContain('customer_access_tokens');
+  });
+});
+
+describe('checkEmailNotificationDefaults', () => {
+  const safe = {
+    id: 1,
+    operator_notifications_enabled: 0,
+    customer_confirmations_enabled: 0,
+    updated_at: null,
+  };
+
+  it('nimmt ausgeschaltete Benachrichtigungen ohne erfundene Empfänger an', () => {
+    expect(checkEmailNotificationDefaults([safe], [])).toEqual([]);
+  });
+
+  it('meldet aktivierte Voreinstellungen und voreingetragene Empfänger', () => {
+    expect(checkEmailNotificationDefaults([
+      { ...safe, operator_notifications_enabled: 1 },
+    ], [{ email: 'real@example.test' }]).join(' ')).toMatch(/ausgeschaltet|Empfänger/i);
   });
 });
 

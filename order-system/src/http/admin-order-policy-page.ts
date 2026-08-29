@@ -1,5 +1,6 @@
 import type { AppConfig } from '../config/app-config';
 import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
+import { loadEmailNotificationSettings } from '../infrastructure/d1/email-notification-settings-repository';
 import { renderAdminOrderPolicyPage } from '../ui/admin-order-policy-html';
 import { requireRole } from './guard';
 import { pageHeaders } from './security';
@@ -33,7 +34,10 @@ export async function adminOrderPolicyPage(
   const wache = await requireRole(db, config, request, now, 'admin', 'html');
   if (!wache.ok) return wache.response;
 
-  const { policy, updatedAt } = await loadOrderPolicy(db);
+  const [{ policy, updatedAt }, notificationSettings] = await Promise.all([
+    loadOrderPolicy(db),
+    loadEmailNotificationSettings(db),
+  ]);
 
   return new Response(
     renderAdminOrderPolicyPage({
@@ -41,6 +45,7 @@ export async function adminOrderPolicyPage(
       csrfToken: wache.context.csrfToken,
       policy,
       updatedAt,
+      notificationSettings,
       now,
       noticeCode: readNotice(request),
     }),

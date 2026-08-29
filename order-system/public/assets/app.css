@@ -4271,6 +4271,15 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
+.bestellzeile__email {
+  display: block;
+  margin-top: .3rem;
+  font-size: .76rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--text-leise);
+}
+
 /* DAS SICHERHEITSNETZ FÜR DIE SCHMALE MITTE.
 
    Zwischen 780px (ab da ist die Tabelle eine Tabelle) und rund 950px ist die
@@ -5286,10 +5295,48 @@ textarea[aria-invalid='true'] {
 
 /* Settings is intentionally quiet: the same controls, no dashboard framing. */
 .adminseite--settings .regelform { max-width: 52rem; }
+.adminseite--settings .einstellungsabschnitt {
+  max-width: 52rem;
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(10, 33, 57, .22);
+}
+.adminseite--settings .einstellungsabschnitt:first-of-type { margin-top: 1.5rem; }
+.adminseite--settings .einstellungsabschnitt > h2 {
+  margin: 0;
+  font-family: var(--marken-serif);
+  font-size: clamp(1.65rem, 3vw, 2.15rem);
+  font-weight: 500;
+  color: var(--navy);
+}
+.adminseite--settings .einstellungsabschnitt__vorspann {
+  margin: .35rem 0 1.25rem;
+  color: var(--text-leise);
+}
 .adminseite--settings .regelstand,
 .adminseite--settings .regelblock { border-radius: 0; box-shadow: none; }
 .adminseite--settings .regelstand { border-left: 3px solid var(--champagner); }
 .adminseite--settings .regelform__senden { min-height: 2.9rem; border-radius: 2px; }
+.adminseite--settings .email-empfaenger { margin-top: 1.25rem; padding-top: 1rem; border-top: var(--spur); }
+.adminseite--settings .email-empfaenger__titel { margin: 0; font-weight: 650; color: var(--navy); }
+.adminseite--settings .email-empfaenger__liste { display: grid; gap: .75rem; margin-top: .85rem; }
+.adminseite--settings .email-empfaenger__zeile { display: grid; gap: .3rem; }
+.adminseite--settings .email-empfaenger__zeile label { font-size: .82rem; color: var(--text-leise); }
+.adminseite--settings .email-empfaenger__zeile input {
+  width: min(100%, 30rem);
+  min-height: var(--tap);
+  padding: .55rem .65rem;
+  font: inherit;
+  color: var(--text);
+  background: #fff;
+  border: 1px solid var(--leinen);
+}
+.adminseite--settings .email-empfaenger__mehr {
+  min-height: var(--tap);
+  margin-top: .75rem;
+}
+.adminseite--settings .email-empfaenger__mehr:disabled { opacity: .55; cursor: default; }
+.adminseite--settings .email-einstellungen__stand { margin: -.25rem 0 0; }
 
 .adminseite a:focus-visible,
 .adminseite button:focus-visible,

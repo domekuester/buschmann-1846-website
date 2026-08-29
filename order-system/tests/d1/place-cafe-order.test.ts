@@ -1,9 +1,18 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { placeCafeOrder } from '../../src/application/place-cafe-order';
+import { deliverOrderNotifications } from '../../src/application/deliver-order-notifications';
 import type { Customer } from '../../src/domain/customer';
 import { ValidationError } from '../../src/domain/errors';
 import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
+import type { EmailSender } from '../../src/infrastructure/email/email-sender';
+import { MemoryEmailSender } from '../../src/infrastructure/email/email-sender';
+import {
+  listOrderNotifications,
+} from '../../src/infrastructure/d1/email-outbox-repository';
+import {
+  saveEmailNotificationSettings,
+} from '../../src/infrastructure/d1/email-notification-settings-repository';
 import { findOrderByNumber } from '../../src/infrastructure/d1/order-repository';
 import {
   GASTRO,
@@ -55,17 +64,27 @@ function request(overrides: Record<string, unknown> = {}): Record<string, unknow
 
 async function order(
   overrides: Record<string, unknown> = {},
-  opts: { customer?: Customer; submissionId?: string; now?: Date } = {},
+  opts: { customer?: Customer; submissionId?: string; now?: Date; emailSender?: EmailSender } = {},
 ) {
   return placeCafeOrder(env.DB, {
     customer: opts.customer ?? cafe.nord,
     submissionId: opts.submissionId ?? `sub-${crypto.randomUUID()}`,
     input: request(overrides),
     now: opts.now ?? NOW,
+    emailSender: opts.emailSender,
   });
 }
 
 beforeEach(async () => {
+  await env.DB.prepare('DELETE FROM email_outbox').run();
+  await env.DB.prepare('DELETE FROM email_operator_recipients').run();
+  await env.DB.prepare(
+    `UPDATE email_notification_settings
+        SET operator_notifications_enabled = 0,
+            customer_confirmations_enabled = 0,
+            updated_at = NULL
+      WHERE id = 1`,
+  ).run();
   for (const table of PRICING_TABLES) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
@@ -123,6 +142,150 @@ beforeEach(async () => {
   cafe.nord = await ladeCafe(1);
   cafe.sued = await ladeCafe(2);
   cafe.abholung = await ladeCafe(3);
+});
+
+describe('placeCafeOrder — E-Mail-Absichten', () => {
+  it('legt bei ausgeschalteten Benachrichtigungen keine Outboxzeile an', async () => {
+    const placed = await order();
+    expect(await listOrderNotifications(env.DB, placed.order.orderNumber.value)).toEqual([]);
+  });
+
+  it('legt für mehrere Betreiber und den Kunden die richtigen Absichten atomar an', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: true,
+      customerConfirmationsEnabled: true,
+      operatorRecipients: ['claudia@example.test', 'gregor@example.test'],
+    }, new Date(NOW));
+
+    const placed = await order();
+    const notifications = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+
+    expect(notifications.map(({ kind, recipient, status, attempts }) => ({ kind, recipient, status, attempts })))
+      .toEqual([
+        { kind: 'operator_new_order', recipient: 'claudia@example.test', status: 'pending', attempts: 0 },
+        { kind: 'operator_new_order', recipient: 'gregor@example.test', status: 'pending', attempts: 0 },
+        { kind: 'customer_order_confirmation', recipient: 'kontakt@example.org', status: 'pending', attempts: 0 },
+      ]);
+  });
+
+  it('legt bei einem Kunden ohne E-Mail keine erfundene Bestätigung an', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: false,
+      customerConfirmationsEnabled: true,
+      operatorRecipients: [],
+    }, new Date(NOW));
+
+    const placed = await order({}, { customer: cafe.sued });
+    expect(await listOrderNotifications(env.DB, placed.order.orderNumber.value)).toEqual([]);
+    expect(await countOrders()).toBe(1);
+  });
+
+  it('friert die aktuelle Kundenadresse als Empfänger ein, ohne sie später umzuschreiben', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: false,
+      customerConfirmationsEnabled: true,
+      operatorRecipients: [],
+    }, new Date(NOW));
+
+    const placed = await order();
+    await env.DB.prepare(
+      `UPDATE customers SET email = 'neu@example.org' WHERE id = ?`,
+    ).bind(cafe.nord.id).run();
+
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+    expect(notification?.recipient).toBe('kontakt@example.org');
+  });
+
+  it('erzeugt bei einer Wiederholung keine doppelte Benachrichtigungsabsicht', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: true,
+      customerConfirmationsEnabled: false,
+      operatorRecipients: ['betrieb@example.test'],
+    }, new Date(NOW));
+
+    const submissionId = 'sub-email-doppelt';
+    await order({}, { submissionId });
+    const replay = await order({}, { submissionId });
+
+    expect(replay.created).toBe(false);
+    expect(await listOrderNotifications(env.DB, replay.order.orderNumber.value)).toHaveLength(1);
+  });
+
+  it('lässt ohne Provider die Absicht ausstehend und behauptet keinen Versand', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: false,
+      customerConfirmationsEnabled: true,
+      operatorRecipients: [],
+    }, new Date(NOW));
+
+    const placed = await order();
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+    expect(notification).toMatchObject({ status: 'pending', attempts: 0, sentAt: null, lastError: null });
+  });
+
+  it('markiert erfolgreichen Testversand als versendet', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: false,
+      customerConfirmationsEnabled: true,
+      operatorRecipients: [],
+    }, new Date(NOW));
+    const sender = new MemoryEmailSender();
+
+    const placed = await order({}, { emailSender: sender });
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+
+    expect(sender.messages).toHaveLength(1);
+    expect(notification).toMatchObject({ status: 'sent', attempts: 1, lastError: null });
+    expect(notification?.sentAt).not.toBeNull();
+  });
+
+  it('lässt einen Senderfehler niemals die Bestellung entfernen oder den Erfolg verhindern', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: true,
+      customerConfirmationsEnabled: false,
+      operatorRecipients: ['betrieb@example.test'],
+    }, new Date(NOW));
+    const failingSender: EmailSender = {
+      async send() {
+        throw new Error(`SMTP credential=geheim ${'x'.repeat(1000)}`);
+      },
+    };
+
+    const placed = await order({}, { emailSender: failingSender });
+    const stored = await findOrderByNumber(env.DB, placed.order.orderNumber.value);
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+
+    expect(placed.created).toBe(true);
+    expect(stored?.orderNumber.value).toBe(placed.order.orderNumber.value);
+    expect(await countOrders()).toBe(1);
+    expect(notification).toMatchObject({ status: 'failed', attempts: 1 });
+    expect(notification?.lastError).not.toContain('geheim');
+    expect(notification?.lastError?.length).toBeLessThanOrEqual(240);
+  });
+
+  it('fängt auch einen unerwarteten Fehler beim Nachrichtenerzeugen nach dem Bestellcommit ab', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: true,
+      customerConfirmationsEnabled: false,
+      operatorRecipients: ['betrieb@example.test'],
+    }, new Date(NOW));
+    const placed = await order();
+    await env.DB.prepare(
+      `UPDATE email_outbox SET recipient = 'a@b' WHERE order_id = (
+        SELECT id FROM orders WHERE order_number = ?
+      )`,
+    ).bind(placed.order.orderNumber.value).run();
+
+    await expect(deliverOrderNotifications(
+      env.DB,
+      placed.order,
+      new MemoryEmailSender(),
+      NOW,
+    )).resolves.toBeUndefined();
+
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+    expect(notification).toMatchObject({ status: 'failed', attempts: 1 });
+  });
 });
 
 describe('placeCafeOrder — der gute Fall', () => {

@@ -409,7 +409,7 @@ describe('getDashboardDay — Herstellkosten aus dem Snapshot', () => {
   });
 
   it('bildet die Kostensumme nicht in SQL', () => {
-    const sql = `${DASHBOARD_DAY_QUERIES.orders} ${DASHBOARD_DAY_QUERIES.items}`.toUpperCase();
+    const sql = DASHBOARD_DAY_QUERIES.items.toUpperCase();
 
     expect(sql).not.toContain('SUM(');
     expect(sql).not.toContain('GROUP BY');

@@ -1,17 +1,25 @@
 import { businessDay, plusDays } from '../domain/clock';
 import type { Customer } from '../domain/customer';
+import { normalizeEmailAddress } from '../domain/email-notification-settings';
+import type { EmailNotificationIntent } from '../domain/email-notification';
 import { ValidationError } from '../domain/errors';
 import { Order } from '../domain/order';
 import { OrderDraft } from '../domain/order-draft';
 import { assertOrderableDay } from '../domain/order-policy';
 import { loadOrderPricing } from '../infrastructure/d1/customer-price-book-repository';
 import { loadOrderPolicy } from '../infrastructure/d1/order-policy-repository';
+import { loadEmailNotificationSettings } from '../infrastructure/d1/email-notification-settings-repository';
 import { reserveOrderNumber } from '../infrastructure/d1/order-number-sequence';
 import {
   findOrderBySubmission,
   saveOrder,
 } from '../infrastructure/d1/order-repository';
 import { loadCatalog } from '../infrastructure/d1/product-repository';
+import {
+  NoProviderEmailSender,
+  type EmailSender,
+} from '../infrastructure/email/email-sender';
+import { deliverOrderNotifications } from './deliver-order-notifications';
 
 /**
  * Wie weit im Voraus ein Café bestellen darf.
@@ -42,6 +50,10 @@ export interface PlaceCafeOrderCommand {
   /** Der ungeprüfte Anfragekörper. */
   input: unknown;
   now: Date;
+  /** Test- bzw. späterer Produktionsadapter; ohne ihn bleibt die Outbox pending. */
+  emailSender?: EmailSender | undefined;
+  /** Nur für einen sicheren Link in der Betreiber-E-Mail. */
+  appOrigin?: string | undefined;
 }
 
 export interface CafeOrderResult {
@@ -112,10 +124,11 @@ export async function placeCafeOrder(
    * Idempotenz, und die Antwort nennt den tatsächlich gespeicherten Preis
    * ohnehin.
    */
-  const [catalog, pricing, richtlinie] = await Promise.all([
+  const [catalog, pricing, richtlinie, emailSettings] = await Promise.all([
     loadCatalog(db),
     loadOrderPricing(db, customer),
     loadOrderPolicy(db),
+    loadEmailNotificationSettings(db),
   ]);
 
   /**
@@ -158,8 +171,14 @@ export async function placeCafeOrder(
     now: command.now,
   });
 
+  const emailIntents = notificationIntents(
+    emailSettings,
+    customer.email,
+    order.createdAt,
+  );
+
   try {
-    await saveOrder(db, order, command.submissionId);
+    await saveOrder(db, order, command.submissionId, emailIntents);
   } catch (error) {
     // Zwei überlappende Absendungen. Die zuerst geschriebene Bestellung ist
     // die gültige; diese hier hat nie existiert (der Batch ist vollständig
@@ -172,7 +191,49 @@ export async function placeCafeOrder(
     throw error;
   }
 
+  await deliverOrderNotifications(
+    db,
+    order,
+    command.emailSender ?? new NoProviderEmailSender(),
+    command.now,
+    command.appOrigin,
+  );
+
   return { order, created: true };
+}
+
+function notificationIntents(
+  settings: {
+    readonly operatorNotificationsEnabled: boolean;
+    readonly customerConfirmationsEnabled: boolean;
+    readonly operatorRecipients: readonly string[];
+  },
+  customerEmail: string | null,
+  createdAt: string,
+): readonly EmailNotificationIntent[] {
+  const intents: EmailNotificationIntent[] = [];
+
+  if (settings.operatorNotificationsEnabled) {
+    for (const recipient of settings.operatorRecipients) {
+      intents.push({
+        notificationId: crypto.randomUUID(),
+        kind: 'operator_new_order',
+        recipient,
+        createdAt,
+      });
+    }
+  }
+
+  if (settings.customerConfirmationsEnabled && customerEmail !== null) {
+    intents.push({
+      notificationId: crypto.randomUUID(),
+      kind: 'customer_order_confirmation',
+      recipient: normalizeEmailAddress(customerEmail),
+      createdAt,
+    });
+  }
+
+  return intents;
 }
 
 /**

@@ -554,6 +554,15 @@ describe('renderAdminDashboardPage — Bestellliste', () => {
     expect(html).toContain('Storniert');
   });
 
+  it('zeigt den E-Mail-Stand kurz unter der Bestellnummer und ohne reine Farbbedeutung', () => {
+    const html = seite({
+      orders: [bestellung({ emailSummary: { status: 'failed', count: 2 } })],
+    });
+
+    expect(html).toContain('E-Mail: Fehlgeschlagen (2)');
+    expect(html).not.toContain('<th scope="col">E-Mail</th>');
+  });
+
   /**
    * Der Befund kam aus dem Browser: Auf 375px brach „Testcafé Nord ·
    * Abholung" hinter dem Namen um, und die zweite Zeile begann mit einem

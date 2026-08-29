@@ -29,10 +29,10 @@ import type { DashboardItemRow, DashboardOrderRow } from './rows';
  * verbunden — der Kundenname steht als Snapshot in der Bestellung. Was nicht
  * in der Abfrage steht, kann nicht versehentlich in einer Seite landen.
  *
- * ES WIRD NICHT AGGREGIERT. Summen sind eine fachliche Regel und stehen in
- * domain/dashboard-day.ts, wo sie ohne Datenbank prüfbar sind. Ein SUM() in
- * SQL wäre schneller und wäre eine zweite Fassung der Umsatzregel — die
- * Fassung, die den Stornofilter eines Tages nicht mitbekommt.
+ * FACHLICHE BETRÄGE WERDEN NICHT AGGREGIERT. Umsatz und Herstellkosten stehen
+ * in domain/dashboard-day.ts, wo sie ohne Datenbank prüfbar sind. Die einzige
+ * SQL-Aggregation zählt rein operative E-Mail-Zustände je Bestellung; sie
+ * bildet weder Preise noch Kosten und dupliziert daher keine Geschäftsregel.
  */
 
 /**
@@ -51,8 +51,19 @@ import type { DashboardItemRow, DashboardOrderRow } from './rows';
 const Q_ORDERS = `
   SELECT o.id, o.order_number, o.customer_id, o.customer_name_snapshot,
          o.fulfillment_type, o.status, o.payment_status, o.total_amount_cents,
-         o.created_at
+         o.created_at,
+         COALESCE(e.notification_count, 0) AS email_notification_count,
+         COALESCE(e.pending_count, 0) AS email_pending_count,
+         COALESCE(e.failed_count, 0) AS email_failed_count
     FROM orders o
+    LEFT JOIN (
+      SELECT order_id,
+             COUNT(*) AS notification_count,
+             SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_count,
+             SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed_count
+        FROM email_outbox
+       GROUP BY order_id
+    ) e ON e.order_id = o.id
    WHERE o.fulfillment_date = ?
    ORDER BY o.created_at, o.order_number
 `;
@@ -211,6 +222,17 @@ function toDashboardOrder(
     throw new InvalidArgumentError('Der gespeicherte Zahlungsstatus der Bestellung ist unbekannt.');
   }
 
+  const emailSummary = zeile.email_notification_count === 0
+    ? undefined
+    : {
+        status: zeile.email_failed_count > 0
+          ? 'failed' as const
+          : zeile.email_pending_count > 0
+            ? 'pending' as const
+            : 'sent' as const,
+        count: zeile.email_notification_count,
+      };
+
   return {
     orderNumber: zeile.order_number,
     customerId: zeile.customer_id,
@@ -227,5 +249,6 @@ function toDashboardOrder(
      * ist schlimmer als eine, die sie mit null Positionen zeigt.
      */
     items: items ?? [],
+    ...(emailSummary === undefined ? {} : { emailSummary }),
   };
 }
