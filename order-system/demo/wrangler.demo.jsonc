@@ -1,0 +1,48 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+
+  // DIE KONFIGURATION DER VORFÜHRUNG — NICHT DIE DER ENTWICKLUNG.
+  //
+  // Sie liegt in einem eigenen Verzeichnis, und das ist ihr einziger Zweck:
+  // Wrangler sucht `.dev.vars` NEBEN DER KONFIGURATIONSDATEI. Läge diese
+  // Datei in order-system/, bekäme der Demo-Worker die .dev.vars der
+  // Entwicklung mit APP_ORIGIN=http://127.0.0.1:8787 — und jede schreibende
+  // Aktion der Vorführung scheiterte an der Origin-Prüfung.
+  //
+  // Alle Pfade sind relativ zu DIESER Datei.
+  "name": "buschmann-order-system-demo",
+  "main": "../src/worker.ts",
+  "compatibility_date": "2026-08-23",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buschmann-orders-demo",
+
+      // PLATZHALTER, und er bleibt einer. Es gibt keine entfernte
+      // Demo-Datenbank; für `--local` wird die Kennung nicht ausgewertet.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+
+      // DIESELBEN MIGRATIONEN WIE DIE ENTWICKLUNG. Die Demo läuft auf dem
+      // echten Schema und nicht auf einem vereinfachten Abzug — sonst führte
+      // sie etwas vor, das es so nicht gibt.
+      "migrations_dir": "../migrations"
+    }
+  ],
+
+  "assets": {
+    "directory": "../public"
+  }
+
+  // BEWUSST OHNE "vars" — aus demselben Grund wie wrangler.jsonc.
+  //
+  // AUTH_PEPPER, APP_ORIGIN und ENVIRONMENT der Demo schreibt
+  // scripts/demo-start.mjs bei jedem Start nach demo/.dev.vars (nicht
+  // eingecheckt, siehe demo/.gitignore). Stünde ENVIRONMENT=development hier,
+  // wäre es der eingecheckte Standardwert eines versehentlichen
+  // `wrangler deploy --config demo/wrangler.demo.jsonc` — Sitzungscookies
+  // ohne Secure, in Produktion.
+  //
+  // "observability" fehlt ebenfalls: Sie kostet nur Schreibarbeit in einer
+  // Datenbank, die nach der Vorführung gelöscht wird.
+}

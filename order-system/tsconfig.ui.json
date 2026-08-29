@@ -1,0 +1,41 @@
+{
+  /* Der Client läuft im BROWSER, nicht im Worker — deshalb ein eigener
+     Kompilierkontext. Der Worker-tsconfig hat bewusst keine DOM-Typen
+     (`lib: ["ES2022"]`); ein `document` dort wäre ein Fehler und soll ein
+     Fehler bleiben. Umgekehrt kennt der Browser weder D1Database noch Env.
+
+     Geprüft werden hier:
+       public/assets/*.js  — das ausgelieferte Client-Skript, als reines
+                             ES2022 ohne Build-Schritt, über checkJs
+       src/ui/*.ts         — das serverseitig gerenderte Seitengerüst, das
+                             die UI-Tests gegen dasselbe DOM stellen
+       tests/ui/*.ts       — die happy-dom-Tests
+
+     `npm run typecheck` führt beide Kontexte aus. */
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["vitest/globals"],
+
+    "allowJs": true,
+    "checkJs": true,
+
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+
+    "noEmit": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["public/assets/**/*.js", "src/ui/**/*.ts", "tests/ui/**/*.ts"],
+  "exclude": ["node_modules"]
+}

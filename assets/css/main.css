@@ -259,6 +259,11 @@ main, footer { padding-left: var(--spine-w); }
 }
 .site-nav a:hover { color: var(--champagne-light); }
 .site-nav a:hover::after, .site-nav a:focus-visible::after { transform: scaleX(1); }
+.site-nav a.order-entry {
+  color: var(--champagne-light);
+  display: inline-flex; align-items: center; min-height: 44px;
+}
+.site-nav a.order-entry::after { transform: scaleX(1); }
 
 /* Das Logo bestimmt die Headerhöhe und bekommt links und rechts dieselbe
    Luft — daraus entsteht der Raum für die beiden Medaillon-Linien. */
@@ -376,6 +381,8 @@ main, footer { padding-left: var(--spine-w); }
 .m-menu > nav a:hover .mn-mark, .m-menu > nav a:focus-visible .mn-mark {
   opacity: 1; background: var(--champagne);
 }
+.m-menu > nav a.order-entry { color: var(--champagne-light); }
+.m-menu > nav a.order-entry .mn-mark { opacity: 1; background: var(--champagne); }
 .m-sec {
   margin-top: auto; padding-top: 1.6rem;
   border-top: 1px solid var(--rule-dark);
@@ -1185,6 +1192,39 @@ footer { background: var(--navy-night); color: var(--on-dark); }
   margin-top: clamp(2.25rem, 5vw, 3.5rem);
   font-weight: 600;
 }
+
+/* ---------- Statische Bestellvorschau ----------
+   GitHub Pages kann den Worker nicht ausführen. Diese knappe Fläche macht
+   die Grenze sichtbar, ohne einen zweiten Bestellprozess vorzutäuschen. */
+.order-preview-page {
+  min-height: calc(100svh - var(--head-h));
+  display: grid;
+  align-items: center;
+}
+.order-preview-page .legal-inner { width: min(100%, 42rem); }
+.order-preview-page .legal-head { border-bottom-color: var(--champagne); }
+.order-preview-copy {
+  margin-top: 2rem;
+  max-width: 58ch;
+  color: var(--text-warm);
+  font-size: 1.08rem;
+  line-height: 1.7;
+}
+.order-preview-note {
+  margin-top: 1.2rem;
+  max-width: 58ch;
+  color: var(--text-secondary);
+}
+.order-preview-back {
+  margin-top: 2rem;
+  color: var(--navy-brand);
+  text-decoration-color: var(--champagne);
+  text-underline-offset: .35em;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.order-preview-back:hover { text-decoration-color: currentColor; }
 
 /* ---------- Reveal ----------
    Der Startzustand ist sichtbar. Nur wenn JavaScript wirklich läuft, setzt

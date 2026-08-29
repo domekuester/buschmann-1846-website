@@ -1,0 +1,24 @@
+-- Der Capability-Link ist kein aktiver Anmeldeweg mehr.
+--
+-- Phase 2 gab jedem Café einen persönlichen Link der Form /o/<token>; wer ihn
+-- besaß, durfte bestellen. Phase 3A ersetzt das durch eine Anmeldung mit
+-- Kundencode und PIN (Migration 0008) und eine Sitzung im Cookie (0009).
+--
+-- WARUM 0006 UNVERÄNDERT BLEIBT
+--
+-- Es wäre technisch folgenlos, die Tabelle einfach aus Migration 0006
+-- herauszunehmen: Es existiert keine produktive Datenbank, und ein frischer
+-- Klon merkte nichts davon. Trotzdem geschieht es nicht. Eine
+-- Migrationsfolge ist das Protokoll darüber, wie ein Schema entstanden ist.
+-- Wer in einem Jahr fragt, warum der Bestellfluss einmal ohne Anmeldung
+-- funktionierte, findet die Antwort in 0006 und hier — nicht in einer Lücke.
+-- Der Preis sind zwei Dateien statt keiner.
+--
+-- WAS MIT DEN DATEN GESCHIEHT
+--
+-- Die Tabelle enthielt ausschließlich Hashes, Kundenverweise und
+-- Zeitstempel. Sie enthielt nie einen Klartext-Token, und es geht mit ihr
+-- keine Information verloren, die sich nicht aus customers ergibt. Ein
+-- Café, dessen Link ungültig wird, braucht ohnehin einen Anmeldezugang —
+-- der wird mit scripts/create-local-auth-account.mjs ausgestellt.
+DROP TABLE IF EXISTS customer_access_tokens;

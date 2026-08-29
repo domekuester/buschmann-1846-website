@@ -1,0 +1,8 @@
+# Diese Herkunft trägt ausschließlich angemeldete Seiten: die Bestellung der
+# Stammcafés und den Adminbereich. Es gibt hier nichts zu indexieren, und eine
+# indexierte Loginseite wäre eine Einladung.
+#
+# robots.txt ist dabei die Bitte, nicht der Schutz. Der Schutz ist die
+# Anmeldung — dazu setzt jede Seite zusätzlich X-Robots-Tag: noindex.
+User-agent: *
+Disallow: /

@@ -1,0 +1,32 @@
+# Vorlage für order-system/.dev.vars — NUR PLATZHALTER.
+#
+# Kopieren und anpassen:
+#     cp .dev.vars.example .dev.vars
+#
+# .dev.vars steht in .gitignore und darf dort auch niemals herausgenommen
+# werden. Diese Datei hier ist die einzige .dev.vars.*, die eingecheckt wird,
+# und sie enthält deshalb ausschließlich erkennbare Platzhalter.
+
+# Der serverseitige Pepper der Credential-Verifikation.
+#
+# DIESER WERT IST ÖFFENTLICH BEKANNT UND KEIN GEHEIMNIS. Er steht in Git und
+# in jedem Klon. Produktiv wird stattdessen ein 256-Bit-Zufallswert als
+# Cloudflare Secret gesetzt — niemals hier.
+#
+# BITTE LOKAL GENAU SO ÜBERNEHMEN. Die Verifier in
+# seeds/002_cafe_ordering_dev.sql sind gegen exakt diesen Wert gerechnet; mit
+# einem anderen Pepper lässt sich kein Demokonto anmelden. Wer einen eigenen
+# Wert benutzen will, erzeugt sich die Konten neu:
+#
+#     npm run auth:account -- --role customer --identifier TESTCAFE \
+#         --customer 1 --secret 01234567
+AUTH_PEPPER="DEV-PEPPER-oeffentlich-bekannt-nur-lokal-kein-Echtbetrieb"
+
+# Der erwartete Origin schreibender Requests. Muss exakt ein Origin sein:
+# Schema, Host, gegebenenfalls Port — kein Pfad, kein abschließender Schrägstrich.
+APP_ORIGIN="http://127.0.0.1:8787"
+
+# Genau das Wort 'development' schaltet die Entwicklungs-Cookie-Policy frei
+# (kein Secure, anderer Cookiename). Jeder andere Wert — auch ein Tippfehler,
+# auch ein fehlender — bedeutet Produktion.
+ENVIRONMENT="development"

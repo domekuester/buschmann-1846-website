@@ -1,0 +1,37 @@
+{
+  "name": "buschmann-order-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "B2B-Vorbestellsystem für Buschmann 1846 — Cloudflare Worker + D1",
+  "scripts": {
+    "dev": "wrangler dev",
+    "demo": "node scripts/demo-start.mjs",
+    "demo:reset": "node scripts/demo-reset.mjs",
+    "demo:seed": "node scripts/demo-seed.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.ui.json --noEmit",
+    "release:check": "npm run typecheck && npm run test && npm run db:verify:migrations && npm run release:guard",
+    "release:guard": "node scripts/release-guard.mjs",
+    "db:verify:migrations": "node scripts/verify-migrations.mjs",
+    "db:restore:order": "node scripts/d1-restore-order.mjs",
+    "cf-typegen": "wrangler types",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:seed:local": "wrangler d1 execute DB --local --file=seeds/001_placeholder.sql",
+    "db:seed:cafe:local": "wrangler d1 execute DB --local --file=seeds/002_cafe_ordering_dev.sql",
+    "auth:account": "node scripts/create-local-auth-account.mjs",
+    "catalog:import": "node scripts/import-local-catalog-pricing.mjs"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.0.0",
+    "happy-dom": "^20.11.6",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.125.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "workerd@1.20260820.1": true
+  }
+}

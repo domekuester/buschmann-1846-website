@@ -1,0 +1,62 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "buschmann-order-system",
+  "main": "src/worker.ts",
+
+  // Ab dem 2026-08-04 ist Node.js-Kompatibilität in Workers voreingestellt.
+  // Ein zusätzliches "nodejs_compat" wäre redundant — und der Code kommt
+  // ohnehin mit Web-Standard-APIs aus.
+  "compatibility_date": "2026-08-23",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "buschmann-orders-local",
+      // PLATZHALTER. Es wurde bewusst KEINE entfernte D1-Datenbank angelegt.
+      // Für `--local` wird die ID nicht ausgewertet; vor einem späteren
+      // Remote-Betrieb muss hier die echte ID eingetragen werden.
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Statische Dateien der Bestelloberfläche (CSS, Client-Skript, robots.txt).
+  // Sie enthalten KEINE Kundendaten und werden von der Plattform ausgeliefert,
+  // bevor der Worker erreicht wird. Alles, wozu es keine Datei gibt — und dazu
+  // gehören /o/<token> und /api/* —, geht weiterhin an den Worker.
+  //
+  // Bewusst OHNE "binding": Der Worker muss die Dateien nicht selbst lesen.
+  // Ein Binding wäre eine zusätzliche Zeile in Env, die niemand benutzt.
+  "assets": {
+    "directory": "./public"
+  },
+
+  // BEWUSST OHNE "vars".
+  //
+  // Die Authentifizierung braucht drei Werte — AUTH_PEPPER, APP_ORIGIN und
+  // ENVIRONMENT —, und keiner davon steht hier. Der Grund ist nicht Vorsicht,
+  // sondern eine Eigenschaft dieser Datei: Sie ist eingecheckt.
+  //
+  //   AUTH_PEPPER  ist ein Geheimnis. Es gehört in ein Cloudflare Secret und
+  //                niemals in ein Repository.
+  //
+  //   ENVIRONMENT  stünde hier als "development", weil das der lokale Fall
+  //                ist — und wäre damit der eingecheckte Standardwert. Ein
+  //                Deployment, das ihn zu überschreiben vergisst, liefe mit
+  //                Cookies ohne Secure. src/config/app-config.ts ist genau
+  //                andersherum gebaut: Was fehlt, ist Produktion.
+  //
+  //   APP_ORIGIN   hinge sonst am selben Schalter.
+  //
+  // Lokal kommen alle drei aus .dev.vars (siehe .dev.vars.example, in Git;
+  // .dev.vars selbst nicht). Fehlen sie, startet der Worker zwar, aber jede
+  // Anmeldung scheitert mit einem Konfigurationsfehler — und das ist die
+  // gewollte Reihenfolge: lieber gar keine Anmeldung als eine unsichere.
+  //
+  // Typen dafür stehen in src/env.d.ts, von Hand und nicht aus
+  // `wrangler types` — sonst kennte ein frischer Klon sie nicht.
+
+  "observability": {
+    "enabled": true
+  }
+}
