@@ -87,6 +87,7 @@ describe('Migrationen', () => {
       'auth_sessions',
       'catalog_product_prices',
       'catalog_products',
+      'customer_account_requests',
       'customers',
       'email_notification_settings',
       'email_operator_recipients',
@@ -106,6 +107,8 @@ describe('Migrationen', () => {
     ).all<{ name: string }>();
 
     expect(results.map((r) => r.name)).toEqual([
+      'idx_account_requests_customer',
+      'idx_account_requests_status_created',
       'idx_auth_accounts_customer',
       'idx_auth_sessions_account',
       'idx_auth_sessions_expiry',

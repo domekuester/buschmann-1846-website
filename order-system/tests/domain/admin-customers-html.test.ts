@@ -24,6 +24,7 @@ function page(customers: readonly AdminCustomerView[] = [CUSTOMER], noticeCode: 
     customers,
     priceGroups: [{ code: 'gastro', label: 'Gastronomie' }, { code: 'private', label: 'Privatkunden' }],
     noticeCode,
+    pendingRequestCount: 0,
   });
 }
 

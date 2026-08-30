@@ -60,11 +60,11 @@ export async function createAdminCustomerEndpoint(
   now: Date,
 ): Promise<Response> {
   try {
-    const context = await guardedForm(db, config, request, now);
+    const context = await guardedAdminCustomerForm(db, config, request, now);
     if (context instanceof Response) return context;
     const { fields } = context;
-    const input = parseAdminCustomerInput(readCustomerFields(fields));
-    const pin = parseCustomerPin(single(fields, 'pin'));
+    const input = parseAdminCustomerInput(readAdminCustomerFields(fields));
+    const pin = parseCustomerPin(readSingleAdminCustomerField(fields, 'pin'));
     const credential = await deriveCredential(pin, config.pepper);
     const result = await createAdminCustomer(db, input, credential, toUtcTimestamp(now));
     if (result === 'duplicate_code') return toList('customer_duplicate_code');
@@ -84,14 +84,14 @@ export async function updateAdminCustomerEndpoint(
 ): Promise<Response> {
   let customerId: number | null = null;
   try {
-    const context = await guardedForm(db, config, request, now);
+    const context = await guardedAdminCustomerForm(db, config, request, now);
     if (context instanceof Response) return context;
     const { fields } = context;
     customerId = parseIdSegment(customerIdSegment);
     if (customerId === null) return toList('customer_unknown');
-    const expectedUpdatedAt = single(fields, 'expected_updated_at');
+    const expectedUpdatedAt = readSingleAdminCustomerField(fields, 'expected_updated_at');
     if (!isTimestamp(expectedUpdatedAt)) return toDetail(customerId, 'customer_invalid');
-    const input = parseAdminCustomerInput(readCustomerFields(fields));
+    const input = parseAdminCustomerInput(readAdminCustomerFields(fields));
     const result = await updateAdminCustomer(
       db,
       customerId,
@@ -115,15 +115,15 @@ export async function resetAdminCustomerPinEndpoint(
 ): Promise<Response> {
   let customerId: number | null = null;
   try {
-    const context = await guardedForm(db, config, request, now);
+    const context = await guardedAdminCustomerForm(db, config, request, now);
     if (context instanceof Response) return context;
     const { fields } = context;
     customerId = parseIdSegment(customerIdSegment);
     if (customerId === null) return toList('customer_unknown');
-    if (single(fields, 'confirm_pin') !== '1') return toDetail(customerId, 'pin_invalid');
-    const customerCode = normalizeLoginIdentifier(single(fields, 'customer_code'));
+    if (readSingleAdminCustomerField(fields, 'confirm_pin') !== '1') return toDetail(customerId, 'pin_invalid');
+    const customerCode = normalizeLoginIdentifier(readSingleAdminCustomerField(fields, 'customer_code'));
     if (customerCode === null) return toDetail(customerId, 'pin_invalid');
-    const pin = parseCustomerPin(single(fields, 'pin'));
+    const pin = parseCustomerPin(readSingleAdminCustomerField(fields, 'pin'));
     const credential = await deriveCredential(pin, config.pepper);
     const result = await resetAdminCustomerPin(
       db,
@@ -143,7 +143,7 @@ export async function resetAdminCustomerPinEndpoint(
   }
 }
 
-async function guardedForm(
+export async function guardedAdminCustomerForm(
   db: D1Database,
   config: AppConfig,
   request: Request,
@@ -158,24 +158,24 @@ async function guardedForm(
   return { fields };
 }
 
-function readCustomerFields(fields: URLSearchParams): AdminCustomerRawInput {
+export function readAdminCustomerFields(fields: URLSearchParams): AdminCustomerRawInput {
   return {
-    name: single(fields, 'name'),
-    customerCode: single(fields, 'customer_code'),
-    contactPerson: single(fields, 'contact_person'),
-    email: single(fields, 'email'),
-    phone: single(fields, 'phone'),
-    deliveryStreet: single(fields, 'delivery_street'),
-    deliveryPostalCode: single(fields, 'delivery_postal_code'),
-    deliveryCity: single(fields, 'delivery_city'),
-    priceGroup: single(fields, 'price_group'),
-    fulfillment: single(fields, 'fulfillment'),
+    name: readSingleAdminCustomerField(fields, 'name'),
+    customerCode: readSingleAdminCustomerField(fields, 'customer_code'),
+    contactPerson: readSingleAdminCustomerField(fields, 'contact_person'),
+    email: readSingleAdminCustomerField(fields, 'email'),
+    phone: readSingleAdminCustomerField(fields, 'phone'),
+    deliveryStreet: readSingleAdminCustomerField(fields, 'delivery_street'),
+    deliveryPostalCode: readSingleAdminCustomerField(fields, 'delivery_postal_code'),
+    deliveryCity: readSingleAdminCustomerField(fields, 'delivery_city'),
+    priceGroup: readSingleAdminCustomerField(fields, 'price_group'),
+    fulfillment: readSingleAdminCustomerField(fields, 'fulfillment'),
     isActive: optionalCheckbox(fields, 'is_active'),
-    internalNote: single(fields, 'internal_note'),
+    internalNote: readSingleAdminCustomerField(fields, 'internal_note'),
   };
 }
 
-function single(fields: URLSearchParams, name: string): string {
+export function readSingleAdminCustomerField(fields: URLSearchParams, name: string): string {
   const values = fields.getAll(name);
   if (values.length !== 1) throw new RequestError(400, 'invalid_customer');
   return values[0] ?? '';

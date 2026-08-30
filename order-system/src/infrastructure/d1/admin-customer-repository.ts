@@ -19,7 +19,11 @@ interface AdminCustomerRow {
   updated_at: string;
 }
 
-export type AdminCustomerCreateResult = 'created' | 'duplicate_code' | 'invalid_price_group';
+export type AdminCustomerCreateResult =
+  | 'created'
+  | 'duplicate_code'
+  | 'invalid_price_group'
+  | 'request_unavailable';
 export type AdminCustomerUpdateResult = 'updated' | 'conflict' | 'duplicate_code';
 export type AdminCustomerPinResult = 'updated' | 'unknown_customer' | 'duplicate_code';
 
@@ -56,9 +60,12 @@ export async function createAdminCustomer(
   input: AdminCustomerInput,
   credential: StoredCredential,
   now: string,
+  sourceRequest: { readonly id: number; readonly expectedUpdatedAt: string } | null = null,
 ): Promise<AdminCustomerCreateResult> {
   const customerId = randomId();
   const address = input.deliveryAddress;
+  const requestId = sourceRequest?.id ?? null;
+  const expectedRequestUpdatedAt = sourceRequest?.expectedUpdatedAt ?? null;
   try {
     const results = await db.batch([
       db.prepare(
@@ -68,7 +75,11 @@ export async function createAdminCustomer(
             internal_note, price_list_id, created_at, updated_at)
          SELECT ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, l.id, ?, ?
            FROM price_lists l
-          WHERE l.code = ? AND l.is_active = 1`,
+          WHERE l.code = ? AND l.is_active = 1
+            AND (? IS NULL OR EXISTS (
+              SELECT 1 FROM customer_account_requests r
+               WHERE r.id = ? AND r.status = 'pending' AND r.updated_at = ?
+            ))`,
       ).bind(
         customerId,
         input.name,
@@ -84,6 +95,9 @@ export async function createAdminCustomer(
         now,
         now,
         input.priceGroupCode,
+        requestId,
+        requestId,
+        expectedRequestUpdatedAt,
       ),
       db.prepare(
         `INSERT INTO auth_accounts
@@ -92,7 +106,11 @@ export async function createAdminCustomer(
             credential_verifier, is_active, failed_attempts, locked_until,
             created_at, updated_at)
          SELECT ?, 'customer', c.id, ?, ?, ?, ?, ?, 0, NULL, ?, ?
-           FROM customers c WHERE c.id = ? AND c.updated_at = ?`,
+           FROM customers c WHERE c.id = ? AND c.updated_at = ?
+            AND (? IS NULL OR EXISTS (
+              SELECT 1 FROM customer_account_requests r
+               WHERE r.id = ? AND r.status = 'pending' AND r.updated_at = ?
+            ))`,
       ).bind(
         input.customerCode,
         credential.algorithm,
@@ -104,8 +122,37 @@ export async function createAdminCustomer(
         now,
         customerId,
         now,
+        requestId,
+        requestId,
+        expectedRequestUpdatedAt,
+      ),
+      db.prepare(
+        `UPDATE customer_account_requests
+            SET status = 'converted', processed_at = ?, customer_id = ?, updated_at = ?
+          WHERE id = ? AND ? IS NOT NULL AND status = 'pending' AND updated_at = ?
+            AND EXISTS (
+              SELECT 1 FROM customers c
+              JOIN auth_accounts a ON a.customer_id = c.id AND a.role = 'customer'
+              WHERE c.id = ?
+            )`,
+      ).bind(
+        now,
+        customerId,
+        now,
+        requestId,
+        requestId,
+        expectedRequestUpdatedAt,
+        customerId,
       ),
     ]);
+    if (sourceRequest !== null && (results[2]?.meta.changes ?? 0) !== 1) {
+      const current = await db.prepare(
+        'SELECT status, updated_at FROM customer_account_requests WHERE id = ?',
+      ).bind(sourceRequest.id).first<{ status: string; updated_at: string }>();
+      return current?.status === 'pending' && current.updated_at === sourceRequest.expectedUpdatedAt
+        ? 'invalid_price_group'
+        : 'request_unavailable';
+    }
     return (results[0]?.meta.changes ?? 0) === 1 ? 'created' : 'invalid_price_group';
   } catch (error) {
     if (isDuplicateCode(error)) return 'duplicate_code';

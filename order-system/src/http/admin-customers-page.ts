@@ -2,6 +2,7 @@ import type { AppConfig } from '../config/app-config';
 import { loadAdminCustomerWorkspace } from '../infrastructure/d1/admin-customer-repository';
 import { loadAssignablePriceGroups } from '../infrastructure/d1/customer-price-group-repository';
 import { renderAdminCustomersPage } from '../ui/admin-customers-html';
+import { countPendingCustomerAccountRequests } from '../infrastructure/d1/customer-account-request-repository';
 import { requireRole } from './guard';
 import { pageHeaders } from './security';
 
@@ -32,9 +33,10 @@ export async function adminCustomersPage(
   const wache = await requireRole(db, config, request, now, 'admin', 'html');
   if (!wache.ok) return wache.response;
 
-  const [customers, priceGroups] = await Promise.all([
+  const [customers, priceGroups, pendingRequestCount] = await Promise.all([
     loadAdminCustomerWorkspace(db),
     loadAssignablePriceGroups(db),
+    countPendingCustomerAccountRequests(db),
   ]);
 
   return new Response(
@@ -43,6 +45,7 @@ export async function adminCustomersPage(
       csrfToken: wache.context.csrfToken,
       customers,
       priceGroups,
+      pendingRequestCount,
       noticeCode: readNotice(request),
     }),
     { status: 200, headers: pageHeaders() },

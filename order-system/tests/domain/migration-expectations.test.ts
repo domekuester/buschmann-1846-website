@@ -34,6 +34,7 @@ describe('EXPECTED_TABLES', () => {
       'email_notification_settings',
       'email_operator_recipients',
       'email_outbox',
+      'customer_account_requests',
     ]) {
       expect(EXPECTED_TABLES).toContain(t);
     }

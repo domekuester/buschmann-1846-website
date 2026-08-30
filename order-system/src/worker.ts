@@ -53,6 +53,21 @@ import { cancelOrderPage, matchCancelOrderPath } from './http/admin-cancel-page'
 import { methodNotAllowed, notFound } from './http/responses';
 import { privateHeaders } from './http/security';
 import { createEnvironmentEmailSender } from './infrastructure/email/cloudflare-email-sender';
+import {
+  customerAccountRequestPage,
+  submitCustomerAccountRequest,
+} from './http/customer-account-request-page';
+import {
+  adminCustomerAccountRequestDetailPage,
+  adminCustomerAccountRequestsPage,
+  matchCustomerAccountRequestDetailPath,
+} from './http/admin-customer-account-requests-page';
+import {
+  convertCustomerAccountRequestEndpoint,
+  matchCustomerAccountRequestConvertPath,
+  matchCustomerAccountRequestRejectPath,
+  rejectCustomerAccountRequestEndpoint,
+} from './http/admin-customer-account-request-api';
 
 /**
  * Die äußere Hülle des Systems — und bewusst nicht mehr als das.
@@ -178,6 +193,16 @@ export default {
 
       const config = readAppConfig(env);
 
+      if (pathname === '/konto-anfragen') {
+        if (request.method === 'GET' || request.method === 'HEAD') {
+          return await customerAccountRequestPage(request);
+        }
+        if (request.method === 'POST') {
+          return await submitCustomerAccountRequest(env.DB, config, request, now);
+        }
+        return methodNotAllowed('GET, POST');
+      }
+
       if (pathname === '/login') {
         if (request.method === 'GET' || request.method === 'HEAD') {
           return await loginPage(env.DB, config, request, now);
@@ -258,6 +283,27 @@ export default {
         return await adminCustomersPage(env.DB, config, request, now);
       }
 
+      if (pathname === '/admin/customers/requests') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminCustomerAccountRequestsPage(env.DB, config, request, now);
+      }
+
+      const customerAccountRequestDetailSegment = matchCustomerAccountRequestDetailPath(pathname);
+      if (customerAccountRequestDetailSegment !== null) {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminCustomerAccountRequestDetailPage(
+          env.DB,
+          config,
+          request,
+          now,
+          customerAccountRequestDetailSegment,
+        );
+      }
+
       /**
        * Die Detailansicht EINES Kunden — die sechste Route mit einem
        * veränderlichen Pfadteil und die erste LESENDE unter ihnen.
@@ -328,6 +374,34 @@ export default {
           return methodNotAllowed('POST', privateHeaders());
         }
         return await createAdminCustomerEndpoint(env.DB, config, request, now);
+      }
+
+      const customerAccountRequestConvertSegment = matchCustomerAccountRequestConvertPath(pathname);
+      if (customerAccountRequestConvertSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await convertCustomerAccountRequestEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          customerAccountRequestConvertSegment,
+        );
+      }
+
+      const customerAccountRequestRejectSegment = matchCustomerAccountRequestRejectPath(pathname);
+      if (customerAccountRequestRejectSegment !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await rejectCustomerAccountRequestEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          customerAccountRequestRejectSegment,
+        );
       }
 
       const cancelOrderNumber = matchCancelOrderPath(pathname);

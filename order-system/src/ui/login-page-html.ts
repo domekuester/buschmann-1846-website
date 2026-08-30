@@ -131,6 +131,10 @@ export function renderLoginPage(view: LoginPageView): string {
       <p class="anmeldung__preishinweis">
         Nach der Anmeldung siehst du automatisch die Preise für dein Kundenkonto.
       </p>
+      <div class="anmeldung__kontoanfrage">
+        <p>Noch kein Kundenkonto?</p>
+        <a href="/konto-anfragen">Kundenkonto anfragen</a>
+      </div>
       <p class="anmeldung__hilfe">Zugang verloren? Bitte melde dich bei Buschmann 1846.</p>
     </div>
   </section>

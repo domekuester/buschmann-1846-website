@@ -114,6 +114,14 @@ describe('renderLoginPage — Fehlermeldung', () => {
     expect(OHNE_FEHLER).toContain('Zugang verloren? Bitte melde dich bei Buschmann 1846.');
   });
 
+  it('führt dezent zur Kundenkonto-Anfrage, ohne den Login um weitere Felder zu erweitern', () => {
+    expect(OHNE_FEHLER).toContain('Noch kein Kundenkonto?');
+    expect(OHNE_FEHLER).toContain('href="/konto-anfragen"');
+    expect(OHNE_FEHLER).toContain('Kundenkonto anfragen');
+    expect(OHNE_FEHLER.match(/<form/g)).toHaveLength(1);
+    expect(OHNE_FEHLER.match(/<input/g)).toHaveLength(2);
+  });
+
   /**
    * Die Kennung bleibt NICHT stehen. Das ist ungewöhnlich und Absicht: Ein
    * vorbelegtes Feld wäre bequemer, aber die Seite wird auf einem geteilten

@@ -35,6 +35,7 @@ export const EXPECTED_TABLES = Object.freeze([
   'email_notification_settings',
   'email_operator_recipients',
   'email_outbox',
+  'customer_account_requests',
 ]);
 
 /** Fehlende Tabellen. Zusätzliche sind kein Befund — sie können aus einer neueren Migration stammen. */

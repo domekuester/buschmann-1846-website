@@ -2,6 +2,7 @@ import type { AdminCustomerView } from '../domain/admin-customer';
 import type { PriceGroupOption } from '../domain/customer-price-group';
 import { renderAdminShell } from './admin-page-html';
 import { escapeHtml } from './format';
+import { renderCustomerWorkspaceNav } from './admin-customer-account-request-html';
 
 export interface AdminCustomersPageView {
   readonly loginIdentifier: string;
@@ -9,6 +10,7 @@ export interface AdminCustomersPageView {
   readonly customers: readonly AdminCustomerView[];
   readonly priceGroups: readonly PriceGroupOption[];
   readonly noticeCode: string | null;
+  readonly pendingRequestCount: number;
 }
 
 const NOTICES: Readonly<Record<string, string>> = {
@@ -29,6 +31,7 @@ export function renderAdminCustomersPage(view: AdminCustomersPageView): string {
       <h1>Kunden</h1>
       <p class="bereichskopf__vorspann">Kundenzugänge, Preisgruppen und Lieferung an einer Stelle pflegen.</p>
     </header>
+    ${renderCustomerWorkspaceNav('customers', view.pendingRequestCount)}
     ${notice(view.noticeCode)}
     <div class="kundenarbeitsplatz">
       <section class="kundenliste" aria-labelledby="kundenliste-titel">

@@ -668,7 +668,9 @@ textarea[aria-invalid='true'] {
 }
 
 .anmeldung input[type='text'],
-.anmeldung input[type='password'] {
+.anmeldung input[type='password'],
+.anmeldung input[type='email'],
+.anmeldung input[type='tel'] {
   width: 100%;
   height: 3.25rem;
   padding: .75rem .9rem;
@@ -714,12 +716,78 @@ textarea[aria-invalid='true'] {
   line-height: 1.55;
 }
 
-.anmeldung__hilfe {
-  margin: 1.5rem 0 0;
-  padding-top: 1.25rem;
+.anmeldung__kontoanfrage {
+  margin-top: 1.35rem;
+  padding-top: 1.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .35rem 1rem;
   border-top: var(--spur);
+  font-size: .92rem;
+}
+
+.anmeldung__kontoanfrage p { margin: 0; color: var(--text-leise); }
+.anmeldung__kontoanfrage a { white-space: nowrap; }
+
+.anmeldung__hilfe {
+  margin: 1rem 0 0;
   color: var(--text-leise);
   font-size: .9rem;
+}
+
+/* ---------- Kundenkonto-Anfrage ---------- */
+
+.kontoanfrage__zugang { align-items: start; }
+.kontoanfrage__inhalt { width: min(100%, 39rem); }
+.kontoanfrage__kicker {
+  margin: 0 0 .45rem;
+  color: var(--champagner-text);
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.kontoanfrage__formular textarea {
+  min-height: 7rem;
+  border-radius: 4px;
+}
+
+.kontoanfrage__adresszeile {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.kontoanfrage__datenschutz {
+  margin: -.15rem 0 0;
+  color: var(--text-leise);
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.kontoanfrage__zurueck { margin: 1.35rem 0 0; font-size: .9rem; }
+.kontoanfrage__erfolg { max-width: 34rem; padding-block: 1rem; }
+.kontoanfrage__erfolg h1 { margin-bottom: 1.15rem; }
+.kontoanfrage__erfolg > p:not(.kontoanfrage__kicker) {
+  margin: 0;
+  color: var(--text-leise);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.formular-falle {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+@media (max-width: 420px) {
+  .kontoanfrage__adresszeile { grid-template-columns: 1fr; }
 }
 
 /* Der Weg zurück auf den Hinweisseiten.
@@ -756,6 +824,9 @@ textarea[aria-invalid='true'] {
     font-size: clamp(2.15rem, 3vw, 2.75rem);
     white-space: nowrap;
   }
+
+  .kontoanfrage__zugang { padding-block: 3rem; }
+  .kontoanfrage__inhalt { width: min(100%, 39rem); }
 }
 
 @media (max-height: 720px) and (min-width: 784px) {
@@ -5272,6 +5343,106 @@ textarea[aria-invalid='true'] {
 .adminseite .kundenliste .datentabelle th[scope='row'] { font-weight: 600; }
 .adminseite .kundenliste .kundenname { color: var(--navy); text-decoration: none; }
 
+/* Kundenanfragen bleiben ein Unterbereich von Kunden, nicht ein siebter
+   Hauptpunkt. Die zwei ruhigen Reiter übernehmen Form, Fokus und Farbe der
+   bestehenden Operator-Navigation. */
+.adminseite .kundenbereich-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1.35rem;
+  margin: 0 0 1.75rem;
+  padding-bottom: .7rem;
+  border-bottom: 1px solid rgba(197, 154, 82, .45);
+}
+
+.adminseite .kundenbereich-nav a {
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  color: var(--text-leise);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.adminseite .kundenbereich-nav a[aria-current='page'] {
+  color: var(--navy);
+  border-bottom-color: var(--champagner);
+}
+
+.adminseite .kundenbereich-nav__zahl {
+  min-width: 1.45rem;
+  height: 1.45rem;
+  padding-inline: .35rem;
+  display: inline-grid;
+  place-items: center;
+  color: var(--navy);
+  background: var(--elfenbein);
+  border-radius: 999px;
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.adminseite .anfragenliste { margin-top: 0; }
+.adminseite .anfragenliste .datentabelle { font-size: .88rem; }
+.adminseite .anfragenliste .datentabelle td { vertical-align: top; }
+.adminseite .kundenzustand--offen { color: var(--navy); border-color: var(--champagner); }
+
+.adminseite .anfragedaten {
+  margin: 0;
+  padding: 1.25rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 2rem;
+}
+
+.adminseite .anfragedaten div { min-width: 0; }
+.adminseite .anfragedaten__breit { grid-column: 1 / -1; }
+.adminseite .anfragedaten dt {
+  color: var(--text-leise);
+  font-size: .75rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.adminseite .anfragedaten dd {
+  margin: .25rem 0 0;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.adminseite .anfrage-ablehnen { margin-top: 1.5rem; }
+.adminseite .anfrage-ablehnen .operator-formular { padding-inline: 0; }
+.adminseite .anfrage-bearbeitet { margin-top: 1.5rem; }
+
+@media (min-width: 600px) and (max-width: 1099px) {
+  .adminseite .anfragenliste .datentabelle thead { display: none; }
+  .adminseite .anfragenliste .datentabelle tbody,
+  .adminseite .anfragenliste .datentabelle tr,
+  .adminseite .anfragenliste .datentabelle th,
+  .adminseite .anfragenliste .datentabelle td { display: block; }
+  .adminseite .anfragenliste .datentabelle tr {
+    margin-bottom: .8rem;
+    padding: 1rem;
+    border: 1px solid rgba(197, 154, 82, .45);
+  }
+  .adminseite .anfragenliste .datentabelle th,
+  .adminseite .anfragenliste .datentabelle td { padding: .35rem 0; border: 0; }
+  .adminseite .anfragenliste .datentabelle td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 10rem) minmax(0, 1fr);
+    gap: .75rem;
+  }
+  .adminseite .anfragenliste .datentabelle td::before {
+    content: attr(data-label);
+    color: var(--text-leise);
+    font-size: .72rem;
+    font-weight: 600;
+    letter-spacing: .04em;
+  }
+}
+
 /* Production: quantity-first work surface, no finance/dashboard styling. */
 .adminseite--production .admin { --admin-max: 1280px; padding-top: 2rem; }
 .adminseite--production .kopf { background: var(--navy-night, #061729); }
@@ -5386,6 +5557,8 @@ textarea[aria-invalid='true'] {
   .adminseite .operator-formular.operator-editor-pane { padding-top: 0; }
   .adminseite .kundenarbeitsplatz { grid-template-columns: 1fr; }
   .adminseite .kundenarbeitsplatz > .operator-editor { order: -1; }
+  .adminseite .anfragedaten { grid-template-columns: 1fr; padding: 1rem; }
+  .adminseite .anfragedaten__breit { grid-column: auto; }
   .adminseite--production .produktion__kopf { display: block; }
   .adminseite--production .produktion__meta { margin-top: .35rem; }
   .adminseite--production .backliste th,
