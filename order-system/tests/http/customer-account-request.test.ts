@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import worker from '../../src/worker';
+import { PUBLIC_REQUEST_LIMITS } from '../../src/application/public-request-rate-limit';
 
 const ORIGIN = 'http://127.0.0.1:8787';
 const PEPPER = 'TEST-PEPPER-nur-fuer-Tests-kein-Echtwert-0123456789';
@@ -26,16 +27,19 @@ async function call(
   body?: string,
   origin: string | null = ORIGIN,
   contentType = 'application/x-www-form-urlencoded',
+  connectingIp: string | null = '203.0.113.40',
 ): Promise<Response> {
   const headers = new Headers();
   if (origin !== null) headers.set('origin', origin);
   if (body !== undefined) headers.set('content-type', contentType);
+  if (connectingIp !== null) headers.set('cf-connecting-ip', connectingIp);
   const init: RequestInit = { method, headers };
   if (body !== undefined) init.body = body;
   return worker.fetch(new Request(`${ORIGIN}/konto-anfragen`, init), environment());
 }
 
 beforeEach(async () => {
+  await env.DB.prepare('DELETE FROM public_request_rate_limits').run();
   await env.DB.prepare('DELETE FROM customer_account_requests').run();
 });
 
@@ -101,6 +105,35 @@ describe('öffentliche Kundenkonto-Anfrage', () => {
     const response = await call('POST', `name=${'x'.repeat(13 * 1024)}`);
     expect(response.status).toBe(413);
     expect(await env.DB.prepare('SELECT COUNT(*) AS n FROM customer_account_requests').first()).toEqual({ n: 0 });
+  });
+
+  it('begrenzt Anfragen nach der zentralen Schwelle mit neutraler Antwort', async () => {
+    const policy = PUBLIC_REQUEST_LIMITS.accountRequest;
+    for (let attempt = 0; attempt < policy.maxRequests; attempt += 1) {
+      const response = await call('POST', validFields({
+        email: `anfrage-${attempt}@example.test`,
+      }).toString());
+      expect(response.status).toBe(303);
+    }
+
+    const limited = await call('POST', validFields({ email: 'noch-eine@example.test' }).toString());
+    expect(limited.status).toBe(429);
+    expect(await limited.text()).toContain('Bitte versuche es später erneut.');
+    expect(await env.DB.prepare(
+      'SELECT COUNT(*) AS n FROM customer_account_requests',
+    ).first()).toEqual({ n: policy.maxRequests });
+  });
+
+  it('isoliert normale Anfragen unterschiedlicher Clients', async () => {
+    const policy = PUBLIC_REQUEST_LIMITS.accountRequest;
+    for (let attempt = 0; attempt <= policy.maxRequests; attempt += 1) {
+      await call('POST', validFields({ email: `client-a-${attempt}@example.test` }).toString(), ORIGIN,
+        'application/x-www-form-urlencoded', '203.0.113.50');
+    }
+
+    const other = await call('POST', validFields({ email: 'client-b@example.test' }).toString(), ORIGIN,
+      'application/x-www-form-urlencoded', '203.0.113.51');
+    expect(other.status).toBe(303);
   });
 
   it('liefert den neutralen Erfolgszustand nur für den festen Statuscode', async () => {

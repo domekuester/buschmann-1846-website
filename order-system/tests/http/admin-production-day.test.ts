@@ -324,16 +324,15 @@ describe('Produktionsliste', () => {
     const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
     expect(text).toContain('Beispiel Käsekuchen');
-    expect(text).toContain('Beispiel Carrot Cake');
     expect(text).toContain('Beispiel Streuselblech');
+    expect(text).not.toContain('Beispiel Carrot Cake');
   });
 
-  /** DIE ZAHLEN MUESSEN STIMMEN: 8 + 3 = 11 Kaesekuchen. */
+  /** DIE ZAHLEN MUESSEN STIMMEN: new darf die 8 bestätigten Stück nicht erhöhen. */
   it('summiert die Mengen exakt', async () => {
     const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
-    expect(text).toMatch(/Beispiel Käsekuchen[\s\S]*?>11<[\s\S]*?Stück/);
-    expect(text).toMatch(/Beispiel Carrot Cake[\s\S]*?>5<[\s\S]*?Stück/);
+    expect(text).toMatch(/Beispiel Käsekuchen[\s\S]*?>8<[\s\S]*?Stück/);
     expect(text).toMatch(/Beispiel Streuselblech[\s\S]*?>2<[\s\S]*?Blech/);
   });
 
@@ -344,13 +343,13 @@ describe('Produktionsliste', () => {
 
   it('zeigt die Anzahl der Bestellungen', async () => {
     const text = await alsAdmin(`/admin/production?date=${TAG}`);
-    expect(text).toMatch(/>2<\/strong>\s*Bestellungen/);
+    expect(text).toMatch(/>1<\/strong>\s*Bestellung</);
   });
 
   it('zeigt die Gesamtzahl der Einheiten', async () => {
-    // 8 + 2 + 3 + 5 = 18
+    // Nur confirmed: 8 + 2 = 10. Die 3 + 5 aus new zählen noch nicht.
     const text = await alsAdmin(`/admin/production?date=${TAG}`);
-    expect(text).toMatch(/>18<\/strong>\s*Einheiten/);
+    expect(text).toMatch(/>10<\/strong>\s*Einheiten/);
   });
 
   it('schreibt bei genau einer Bestellung die Einzahl', async () => {
@@ -505,12 +504,12 @@ describe('Bestellungen', () => {
 });
 
 describe('Leerer Tag', () => {
-  it('erklärt einen Tag ohne offene Bestellungen verständlich', async () => {
+  it('erklärt einen Tag ohne bestätigten Produktionsbedarf verständlich', async () => {
     const response = await call('/admin/production?date=2026-09-20', await anmelden('admin@example.test', PASSWORT));
 
     expect(response.status).toBe(200);
     expect(await response.text()).toContain(
-      'Für diesen Tag sind keine offenen Bestellungen vorhanden.',
+      'Für diesen Tag sind keine bestätigten Produktionsbestellungen vorhanden.',
     );
   });
 
@@ -1024,13 +1023,16 @@ describe('Statusaktionen', () => {
     return alsAdmin(`/admin/production?date=${TAG}`);
   }
 
-  it('bietet einer neuen Bestellung Bestätigen und Stornieren an', async () => {
-    const text = await karte('new');
+  it('hält eine neue Bestellung aus der Produktion, zeigt ihre Aktionen aber unter Bestellungen', async () => {
+    await karte('new');
+    const produktion = await alsAdmin(`/admin/production?date=${TAG}`);
+    const text = await alsAdmin(`/admin/orders?date=${TAG}`);
 
+    expect(produktion).not.toContain('BUS-2026-000123');
     expect(text).toContain('Bestätigen');
     expect(text).toContain('Stornieren');
     expect(text).toContain('value="confirmed"');
-    expect(text).toContain('href="/admin/orders/BUS-2026-000123/cancel"');
+    expect(text).toContain('href="/admin/orders/BUS-2026-000123/cancel?workspace=orders"');
     expect(text).not.toContain('value="cancelled"');
     expect(text).not.toContain('value="in_production"');
     expect(text).not.toContain('value="completed"');
@@ -1057,7 +1059,7 @@ describe('Statusaktionen', () => {
 
   it('schickt jedes Statusformular an die eigene Bestellung', async () => {
     await seedBestellung({
-      id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'new',
+      id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'in_production',
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
     await seedBestellung({
@@ -1078,7 +1080,7 @@ describe('Statusaktionen', () => {
    */
   it('setzt den CSRF-Token der eigenen Sitzung in Abmeldung und Ein-Klick-Statusformular', async () => {
     await seedBestellung({
-      id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'new',
+      id: 1, orderNumber: 'BUS-2026-000123', customerName: 'Testcafé Nord', status: 'confirmed',
       items: [{ productId: 1, name: 'Beispiel Käsekuchen', unit: 'Stück', quantity: 3 }],
     });
 
@@ -1135,7 +1137,7 @@ describe('Statusaktionen', () => {
 
   /** Die Kernbedienung braucht kein Skript — die Seite trägt weiterhin keines. */
   it('kommt ohne JavaScript aus', async () => {
-    const text = await karte('new');
+    const text = await karte('confirmed');
 
     expect(text).not.toContain('<script');
     expect(text).not.toContain('onclick');
@@ -1144,9 +1146,9 @@ describe('Statusaktionen', () => {
   });
 
   it('stellt die Backliste weiterhin vor die Bestellkarten', async () => {
-    const text = await karte('new');
+    const text = await karte('confirmed');
 
     expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('<h2 id="titel-bestellungen">Bestellungen</h2>'));
-    expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('Bestätigen'));
+    expect(text.indexOf('Zu produzieren')).toBeLessThan(text.indexOf('Produktion starten'));
   });
 });

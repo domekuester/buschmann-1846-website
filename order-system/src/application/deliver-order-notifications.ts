@@ -1,9 +1,12 @@
 import { toUtcTimestamp } from '../domain/clock';
 import type { Order } from '../domain/order';
 import {
+  claimEmailNotification,
   listDeliverableOrderNotifications,
   markEmailNotificationFailed,
   markEmailNotificationSent,
+  releaseEmailNotificationClaim,
+  type ClaimedEmailNotification,
 } from '../infrastructure/d1/email-outbox-repository';
 import type { EmailSender } from '../infrastructure/email/email-sender';
 import {
@@ -38,53 +41,89 @@ export async function deliverOrderNotifications(
   }
 
   for (const notification of deliverable) {
-    let attempts = notification.attempts;
-    while (attempts < MAX_DELIVERY_ATTEMPTS) {
-      let message;
+    while (true) {
+      let claimed: ClaimedEmailNotification | null;
       try {
-        message = notification.kind === 'operator_new_order'
-          ? renderOperatorNewOrderEmail(order, notification.recipient, appOrigin)
-          : renderCustomerOrderConfirmationEmail(order, notification.recipient);
-      } catch {
-        if (!await recordFailure(db, notification.notificationId)) break;
-        attempts += 1;
-        continue;
-      }
-
-      let result;
-      try {
-        result = await sender.send(message);
-      } catch {
-        if (!await recordFailure(db, notification.notificationId)) break;
-        attempts += 1;
-        continue;
-      }
-
-      if (result.kind === 'unavailable') break;
-
-      // Nach Provider-Akzeptanz niemals erneut senden, auch wenn D1 gerade
-      // nicht erreichbar sein sollte. Dieser Statusfehler bleibt vom Auftrag
-      // getrennt und darf keinen möglichen Doppelversand erzeugen.
-      try {
-        await markEmailNotificationSent(
-          db,
-          notification.notificationId,
-          toUtcTimestamp(now),
+        claimed = await claimEmailNotification(
+          db, notification.notificationId, toUtcTimestamp(now), MAX_DELIVERY_ATTEMPTS,
         );
       } catch {
-        // Die Absicht bleibt durable; ein Statusfehler darf den Auftrag nicht berühren.
+        break;
       }
-      break;
+      if (claimed === null) break;
+
+      const outcome = await deliverClaimedEmailNotification(
+        db, order, claimed, sender, now, appOrigin,
+      );
+      if (outcome !== 'failed') break;
     }
   }
 }
 
-async function recordFailure(db: D1Database, notificationId: string): Promise<boolean> {
+export type ClaimedDeliveryOutcome =
+  | 'sent'
+  | 'failed'
+  | 'unavailable'
+  | 'accepted_unreconciled'
+  | 'state_error';
+
+/** Ein Provider-Aufruf für eine bereits atomar geclaimte Outboxzeile. */
+export async function deliverClaimedEmailNotification(
+  db: D1Database,
+  order: Order,
+  notification: ClaimedEmailNotification,
+  sender: EmailSender,
+  now: Date,
+  appOrigin?: string,
+): Promise<ClaimedDeliveryOutcome> {
+  let message;
   try {
-    await markEmailNotificationFailed(db, notificationId, SANITIZED_DELIVERY_ERROR);
-    return true;
+    message = notification.kind === 'operator_new_order'
+      ? renderOperatorNewOrderEmail(order, notification.recipient, appOrigin)
+      : renderCustomerOrderConfirmationEmail(order, notification.recipient);
   } catch {
-    // Ohne durable Versuchszählung kein weiterer Provider-Aufruf.
-    return false;
+    return recordFailure(db, notification);
+  }
+
+  let result;
+  try {
+    result = await sender.send(message);
+  } catch {
+    return recordFailure(db, notification);
+  }
+
+  if (result.kind === 'unavailable') {
+    try {
+      return await releaseEmailNotificationClaim(
+        db, notification.notificationId, notification.claimToken,
+      ) ? 'unavailable' : 'state_error';
+    } catch {
+      return 'state_error';
+    }
+  }
+
+  // Nach Provider-Akzeptanz niemals erneut senden. Scheitert die D1-Pflege,
+  // bleibt der Claim absichtlich stehen und sperrt jede automatische oder
+  // manuelle Wiederholung bis zu einer bewussten Betreiber-Reconciliation.
+  try {
+    return await markEmailNotificationSent(
+      db, notification.notificationId, notification.claimToken, toUtcTimestamp(now),
+    ) ? 'sent' : 'accepted_unreconciled';
+  } catch {
+    return 'accepted_unreconciled';
+  }
+}
+
+async function recordFailure(
+  db: D1Database,
+  notification: ClaimedEmailNotification,
+): Promise<ClaimedDeliveryOutcome> {
+  try {
+    return await markEmailNotificationFailed(
+      db, notification.notificationId, notification.claimToken, SANITIZED_DELIVERY_ERROR,
+    ) ? 'failed' : 'state_error';
+  } catch {
+    // Ohne durable Versuchszählung und Claim-Abschluss kein weiterer Aufruf.
+    return 'state_error';
   }
 }

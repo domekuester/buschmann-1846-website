@@ -101,6 +101,40 @@ beforeEach(async () => {
 });
 
 describe('getProductionDay', () => {
+  it('hält 10 bestätigte plus 2 neue Einheiten bei 10 Produktionsbedarf', async () => {
+    await bestellung({
+      id: 1,
+      customerId: 1,
+      customerName: 'Bestätigtes Testcafé',
+      day: TAG,
+      status: 'confirmed',
+      items: [{ productId: 1, quantity: 10 }],
+    });
+    await bestellung({
+      id: 2,
+      customerId: 2,
+      customerName: 'Neues Testcafé',
+      day: TAG,
+      status: 'new',
+      items: [{ productId: 1, quantity: 2 }],
+    });
+
+    const vorher = await getProductionDay(env.DB, TAG);
+    expect(vorher.orderCount).toBe(1);
+    expect(vorher.totalUnits).toBe(10);
+    expect(vorher.products[0]?.quantity).toBe(10);
+    expect(vorher.orders.map((order) => order.customerName)).not.toContain('Neues Testcafé');
+
+    await env.DB.prepare("UPDATE orders SET status = 'confirmed' WHERE customer_name_snapshot = ?")
+      .bind('Neues Testcafé')
+      .run();
+
+    const nachher = await getProductionDay(env.DB, TAG);
+    expect(nachher.orderCount).toBe(2);
+    expect(nachher.totalUnits).toBe(12);
+    expect(nachher.products[0]?.quantity).toBe(12);
+  });
+
   /**
    * DAS BEISPIEL AUS DER SPEZIFIKATION, Ende zu Ende.
    *
@@ -145,7 +179,7 @@ describe('getProductionDay', () => {
    * Der teuerste denkbare Fehler: eine stornierte Bestellung wird gebacken.
    * Hier steht sie mit 999 Stück daneben und darf die Summen nicht anfassen.
    */
-  it('lässt storniert und abgeschlossen aus den Summen heraus', async () => {
+  it('lässt neu, storniert und abgeschlossen aus den Summen heraus', async () => {
     await bestellung({
       id: 1,
       customerId: 1,
@@ -181,10 +215,10 @@ describe('getProductionDay', () => {
 
     const tag = await getProductionDay(env.DB, TAG);
 
-    expect(tag.orderCount).toBe(2);
-    expect(tag.totalUnits).toBe(7);
+    expect(tag.orderCount).toBe(1);
+    expect(tag.totalUnits).toBe(4);
     expect(tag.products).toEqual([
-      { productId: 1, productName: 'Beispiel Käsekuchen', productUnit: 'Stück', quantity: 7 },
+      { productId: 1, productName: 'Beispiel Käsekuchen', productUnit: 'Stück', quantity: 4 },
     ]);
   });
 

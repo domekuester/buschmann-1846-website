@@ -80,8 +80,8 @@ describe('OrderStatus', () => {
  * offene übersehen wird.
  */
 describe('offene Produktion', () => {
-  it('zählt new zur offenen Produktion', () => {
-    expect(isOpenProduction('new')).toBe(true);
+  it('zählt new noch nicht zur bestätigten Produktion', () => {
+    expect(isOpenProduction('new')).toBe(false);
   });
 
   it('zählt confirmed zur offenen Produktion', () => {
@@ -106,8 +106,8 @@ describe('offene Produktion', () => {
     expect(isOpenProduction('cancelled')).toBe(false);
   });
 
-  it('nennt genau drei Status, in der Reihenfolge des Lebenszyklus', () => {
-    expect(OPEN_PRODUCTION_STATUSES).toEqual(['new', 'confirmed', 'in_production']);
+  it('nennt genau die bestätigten Produktionsstatus in Lebenszyklus-Reihenfolge', () => {
+    expect(OPEN_PRODUCTION_STATUSES).toEqual(['confirmed', 'in_production']);
   });
 
   it('enthält keinen Status, den ORDER_STATUSES nicht kennt', () => {
@@ -125,7 +125,7 @@ describe('offene Produktion', () => {
    */
   it('ordnet jeden bekannten Status ausdrücklich ein', () => {
     const erwartung: Readonly<Record<(typeof ORDER_STATUSES)[number], boolean>> = {
-      new: true,
+      new: false,
       confirmed: true,
       in_production: true,
       completed: false,

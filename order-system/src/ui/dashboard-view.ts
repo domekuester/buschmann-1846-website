@@ -94,6 +94,7 @@ export interface DashboardOrderRowView {
   readonly actions: readonly StatusActionView[];
   /** Kurzer, wortbasierter Versandstand; null wenn keine Nachricht vorgesehen war. */
   readonly emailStatusLabel: string | null;
+  readonly emailRetryAvailable: boolean;
 }
 
 export interface DashboardProductLineView {
@@ -388,6 +389,7 @@ export function toDashboardView(day: DashboardDay): DashboardDayView {
       emailStatusLabel: order.emailSummary === undefined
         ? null
         : `E-Mail: ${emailStatusLabel(order.emailSummary.status)} (${order.emailSummary.count})`,
+      emailRetryAvailable: order.emailSummary?.canRetry ?? false,
     })),
 
     topProducts: day.topProducts.map((line) => ({
@@ -482,11 +484,9 @@ function kostenhinweis(costs: CostSummary): string {
 /**
  * DIE DREI AKTIONSTEXTE — an einer Stelle, samt ihrem Ziel.
  *
- * DIE ERSTEN BEIDEN FÜHREN AN DENSELBEN ORT, und das ist kein Versehen: Für
- * eine neue Bestellung wie für eine halbfertige ist die Produktionsansicht
- * dieses Tages der Platz, an dem etwas getan wird. Sie sagen nur
- * Verschiedenes darüber, WARUM man hingeht — und deshalb sind es zwei Zeilen
- * und nicht eine mit zwei Zahlen.
+ * DIE ERSTEN BEIDEN FÜHREN BEWUSST AN VERSCHIEDENE ORTE: Eine neue Bestellung
+ * bleibt bis zur Annahme in der Bestellliste sichtbar; die Produktionsansicht
+ * zeigt erst bestätigte und bereits laufende Aufträge.
  *
  * DIE ZAHLUNG FÜHRT AUF DIESELBE SEITE ZURÜCK, nur gefiltert. Eine eigene
  * Seite „offene Zahlungen" wäre eine zweite Bestellliste mit einer zweiten
@@ -506,8 +506,8 @@ function aktionsansicht(aktion: DashboardAction, day: string): DashboardActionVi
     new_orders: {
       title: eine ? 'Neue Bestellung' : 'Neue Bestellungen',
       detail: eine ? 'wartet auf Bestätigung' : 'warten auf Bestätigung',
-      linkLabel: 'Zur Produktion',
-      href: `/admin/production?date=${day}`,
+      linkLabel: 'Bestellungen prüfen',
+      href: `/admin/orders?date=${day}#bestellungen`,
     },
     open_production: {
       title: 'Offen in der Produktion',

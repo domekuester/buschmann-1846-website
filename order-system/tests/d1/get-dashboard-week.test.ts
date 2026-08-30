@@ -150,7 +150,7 @@ describe('getDashboardWeek', () => {
     await seedOrder({ day: MONTAG, status: 'in_production' });
     await seedOrder({ day: MONTAG, status: 'completed' });
 
-    expect((await getDashboardWeek(env.DB, MONTAG)).days[0]?.openCount).toBe(3);
+    expect((await getDashboardWeek(env.DB, MONTAG)).days[0]?.openCount).toBe(2);
   });
 
   it('summiert die offenen Zahlungen ohne die bezahlten', async () => {

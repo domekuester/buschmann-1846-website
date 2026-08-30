@@ -75,7 +75,7 @@ describe('Abholliste — Bestellblöcke', () => {
   it('rendert für einen leeren Tag nur den eindeutigen Empty State', () => {
     const html = renderPickupListPage({ day: day({ orders: [], products: [], orderCount: 0, totalUnits: 0 }) });
 
-    expect(html).toContain('Für diesen Produktionstag gibt es aktuell keine offenen Bestellungen.');
+    expect(html).toContain('Für diesen Produktionstag gibt es aktuell keine bestätigten Abholbestellungen.');
     expect(html).not.toContain('class="abholliste__bestellung"');
     expect(html).not.toContain('0 Bestellungen');
   });

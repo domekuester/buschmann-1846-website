@@ -195,6 +195,7 @@ export interface DashboardOrderRow {
   email_notification_count: number;
   email_pending_count: number;
   email_failed_count: number;
+  email_retryable_count: number;
 }
 
 /**

@@ -40,7 +40,7 @@ export function renderPickupListPage(view: PickupListPageView): string {
 
 function orders(day: ProductionDay): string {
   if (day.orders.length === 0) {
-    return '<p class="produktionsliste__leer">Für diesen Produktionstag gibt es aktuell keine offenen Bestellungen.</p>';
+    return '<p class="produktionsliste__leer">Für diesen Produktionstag gibt es aktuell keine bestätigten Abholbestellungen.</p>';
   }
 
   const blocks = day.orders.map(orderBlock).join('');

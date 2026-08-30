@@ -97,7 +97,7 @@ describe('toDashboardWeekView — der Rahmen', () => {
 describe('toDashboardWeekView — die Tageszeile', () => {
   it('beschriftet einen vollen Tag', () => {
     const tag = ansicht([
-      bestellung({ day: MONTAG, totalCents: 42050, status: 'new', paymentStatus: 'unpaid' }),
+      bestellung({ day: MONTAG, totalCents: 42050, status: 'confirmed', paymentStatus: 'unpaid' }),
       bestellung({
         day: MONTAG,
         totalCents: 3500,
@@ -158,7 +158,12 @@ describe('toDashboardWeekView — die Tageszeile', () => {
 describe('toDashboardWeekView — die Wochensumme', () => {
   it('beschriftet die Summe wie eine Tageszeile', () => {
     const woche = ansicht([
-      bestellung({ day: '2026-08-24', totalCents: 42050, paymentStatus: 'unpaid' }),
+      bestellung({
+        day: '2026-08-24',
+        totalCents: 42050,
+        status: 'confirmed',
+        paymentStatus: 'unpaid',
+      }),
       bestellung({
         day: '2026-08-26',
         totalCents: 31000,

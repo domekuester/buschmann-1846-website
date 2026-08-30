@@ -704,6 +704,61 @@ describe('Formular-POST — kontrollierte Fehler mit PRG', () => {
  * Weiterleitung, erneutes Laden der Seite.
  */
 describe('Formular-POST — Wirkung auf den Produktionstag', () => {
+  it('ändert 10 bestätigte plus 2 neue Einheiten erst nach new → confirmed auf 12', async () => {
+    await env.DB.prepare('UPDATE order_items SET quantity = 2, line_total_cents = 870 WHERE order_id = 42').run();
+    await env.DB.prepare('UPDATE orders SET total_amount_cents = 870 WHERE id = 42').run();
+    await bestellung(43, ZWEITE, 'confirmed');
+    await env.DB.prepare('UPDATE order_items SET quantity = 10, line_total_cents = 4350 WHERE order_id = 43').run();
+    await env.DB.prepare('UPDATE orders SET total_amount_cents = 4350 WHERE id = 43').run();
+
+    const beforeDashboard = await (await seite(`/admin?date=${TAG}`)).text();
+    expect(beforeDashboard).toContain('Neue Bestellung');
+    expect(beforeDashboard).toMatch(/Einheiten<\/span>\s*<span class="kennzahlkarte__wert">10<\/span>/);
+    expect(await (await seite(`/admin/orders?date=${TAG}`)).text()).toContain(NUMMER);
+
+    const beforeApi = await (await seite(`/api/admin/production-day?date=${TAG}`)).json<{
+      total_units: number;
+      products: readonly { quantity: number }[];
+      orders: readonly { order_number: string }[];
+    }>();
+    expect(beforeApi.total_units).toBe(10);
+    expect(beforeApi.products[0]?.quantity).toBe(10);
+    expect(beforeApi.orders.map((order) => order.order_number)).toEqual([ZWEITE]);
+
+    for (const path of [
+      `/admin/production?date=${TAG}`,
+      `/admin/production-list?date=${TAG}`,
+      `/admin/abholliste?date=${TAG}`,
+    ]) {
+      const html = await (await seite(path)).text();
+      expect(html).toContain(ZWEITE);
+      expect(html).not.toContain(NUMMER);
+    }
+
+    expect((await absenden('confirmed')).status).toBe(303);
+
+    const afterApi = await (await seite(`/api/admin/production-day?date=${TAG}`)).json<{
+      total_units: number;
+      products: readonly { quantity: number }[];
+      orders: readonly { order_number: string }[];
+    }>();
+    expect(afterApi.total_units).toBe(12);
+    expect(afterApi.products[0]?.quantity).toBe(12);
+    expect(afterApi.orders.map((order) => order.order_number).sort()).toEqual([NUMMER, ZWEITE]);
+
+    const afterDashboard = await (await seite(`/admin?date=${TAG}`)).text();
+    expect(afterDashboard).toMatch(/Einheiten<\/span>\s*<span class="kennzahlkarte__wert">12<\/span>/);
+    for (const path of [
+      `/admin/production?date=${TAG}`,
+      `/admin/production-list?date=${TAG}`,
+      `/admin/abholliste?date=${TAG}`,
+    ]) {
+      const html = await (await seite(path)).text();
+      expect(html).toContain(NUMMER);
+      expect(html).toContain(ZWEITE);
+    }
+  });
+
   it('nimmt eine abgeschlossene Bestellung aus der offenen Produktion', async () => {
     await absenden('confirmed');
     await absenden('in_production');
@@ -727,7 +782,7 @@ describe('Formular-POST — Wirkung auf den Produktionstag', () => {
   });
 
   it('lässt die übrigen Bestellungen des Tages stehen', async () => {
-    await bestellung(43, ZWEITE, 'new');
+    await bestellung(43, ZWEITE, 'confirmed');
 
     const response = await absenden('cancelled');
     const nachher = await (await seite(response.headers.get('location') ?? '')).text();

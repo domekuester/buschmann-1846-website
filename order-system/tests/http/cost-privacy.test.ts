@@ -232,6 +232,9 @@ describe('§17.17 — die Bestellantwort', () => {
 describe('§17.18 — die Produktionsliste (6D bleibt unverändert)', () => {
   it('enthält die Herstellkosten nicht', async () => {
     await bestellen(sitzung.kunde);
+    await env.DB.prepare("UPDATE orders SET status = 'confirmed' WHERE fulfillment_date = ?")
+      .bind(MORGEN)
+      .run();
 
     const antwort = await hole(`/admin/production-list?date=${MORGEN}`, sitzung.admin);
     expect(antwort.status).toBe(200);
@@ -243,6 +246,9 @@ describe('§17.18 — die Produktionsliste (6D bleibt unverändert)', () => {
 
   it('enthält auch die Produktionsansicht keine Kosten', async () => {
     await bestellen(sitzung.kunde);
+    await env.DB.prepare("UPDATE orders SET status = 'confirmed' WHERE fulfillment_date = ?")
+      .bind(MORGEN)
+      .run();
 
     frei(await (await hole(`/admin/production?date=${MORGEN}`, sitzung.admin)).text());
     frei(await (await hole(`/api/admin/production-day?date=${MORGEN}`, sitzung.admin)).text());

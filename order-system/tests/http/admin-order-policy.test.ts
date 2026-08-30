@@ -512,8 +512,9 @@ describe('Bestehende Bestellungen', () => {
     });
   });
 
-  it('zeigt sie in der Produktionsansicht weiterhin an', async () => {
+  it('zeigt eine bestätigte Bestellung in der Produktionsansicht weiterhin an', async () => {
     const { cookie, csrf } = await admin();
+    await env.DB.prepare("UPDATE orders SET status = 'confirmed' WHERE id = 1").run();
     await post({
       cookie,
       body: formular(csrf, { weekday: ['monday'], cutoff_enabled: '1', lead_days: '30', cutoff_time: '06:00' }),

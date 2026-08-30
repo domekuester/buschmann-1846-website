@@ -78,19 +78,20 @@ describe('GET /admin/abholliste', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
   });
 
-  it('zeigt offene Orders desselben Kunden getrennt mit ihren Items und Snapshotdaten', async () => {
-    await order('BUS-2026-000001', 'new', 2, TAG, 'Bis 10 Uhr <bereit>.');
-    await order('BUS-2026-000002', 'confirmed', 3);
+  it('zeigt bestätigte Orders mit Snapshotdaten und lässt new bis zur Bestätigung weg', async () => {
+    await order('BUS-2026-000001', 'new', 2, TAG, 'Noch nicht bestätigt');
+    await order('BUS-2026-000002', 'confirmed', 3, TAG, 'Bis 10 Uhr <bereit>.');
 
     const html = await (await call(`/admin/abholliste?date=${TAG}`, await login('admin@example.test'))).text();
-    expect(html.match(/class="abholliste__bestellung"/g)).toHaveLength(2);
-    expect(html).toContain('BUS-2026-000001');
+    expect(html.match(/class="abholliste__bestellung"/g)).toHaveLength(1);
+    expect(html).not.toContain('BUS-2026-000001');
     expect(html).toContain('BUS-2026-000002');
-    expect(html).toContain('2 <span aria-hidden="true">×</span> Käsekuchen Snapshot');
+    expect(html).not.toContain('2 <span aria-hidden="true">×</span> Käsekuchen Snapshot');
     expect(html).toContain('3 <span aria-hidden="true">×</span> Käsekuchen Snapshot');
     expect(html).toContain('Café Snapshot');
     expect(html).toContain('26-cm-Ring');
     expect(html).toContain('Bis 10 Uhr &lt;bereit&gt;.');
+    expect(html).not.toContain('Noch nicht bestätigt');
   });
 
   it('schließt completed, cancelled und andere fulfillment dates samt Notes aus', async () => {
@@ -107,7 +108,7 @@ describe('GET /admin/abholliste', () => {
   });
 
   it('gibt weder aktuelle Stammdaten noch Kontakte, interne IDs oder Preise aus', async () => {
-    await order('BUS-2026-000001', 'new', 2);
+    await order('BUS-2026-000001', 'confirmed', 2);
 
     const html = await (await call(`/admin/abholliste?date=${TAG}`, await login('admin@example.test'))).text();
     for (const forbidden of ['Aktueller Kundenname', 'Aktueller Produktname', 'Aktuelle Einheit', 'kontakt@example.test', '0211 12345', 'Geheimweg 1', '999,99', '1234,56', 'customer_id', 'auth_id']) {
@@ -123,7 +124,7 @@ describe('GET /admin/abholliste', () => {
 
   it('liefert den Abhol-Empty-State ohne Bestellblöcke', async () => {
     const html = await (await call(`/admin/abholliste?date=${TAG}`, await login('admin@example.test'))).text();
-    expect(html).toContain('Für diesen Produktionstag gibt es aktuell keine offenen Bestellungen.');
+    expect(html).toContain('Für diesen Produktionstag gibt es aktuell keine bestätigten Abholbestellungen.');
     expect(html).not.toContain('class="abholliste__bestellung"');
   });
 

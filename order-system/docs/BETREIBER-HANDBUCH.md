@@ -47,7 +47,7 @@ den Pfeilen daneben gehen Sie tageweise vor und zurück.
 | **Offen / in Arbeit** | Was noch nicht abgeschlossen ist. |
 | **Noch nicht bezahlt** | Wie viel Geld für diesen Tag noch aussteht. |
 | **Kunden** | Wie viele verschiedene Betriebe an diesem Tag bestellt haben. |
-| **Einheiten** | Wie viele Stück, Bleche und Torten insgesamt. |
+| **Einheiten** | Wie viele Stück, Bleche und Torten bereits für die Produktion bestätigt sind. |
 
 ### Handlungsbedarf
 
@@ -69,7 +69,10 @@ Zwei Ringe: Wer hat schon bezahlt, und wie weit ist die Produktion.
 
 Ganz unten die Liste des Tages: Bestellnummer, Kunde, Lieferung oder
 Abholung, Status, Betrag und Zahlung. Hier tragen Sie auch die Zahlung nach
-(Kapitel 5).
+(Kapitel 5). Steht eine vorgesehene E-Mail auf „Ausstehend“ oder
+„Fehlgeschlagen“, erscheint dort **E-Mail erneut senden**. Die Adresse kommt
+fest aus dem gespeicherten Versandauftrag und kann im Browser nicht geändert
+werden. Bereits versendete Nachrichten bieten diese Aktion nicht an.
 
 ---
 
@@ -101,7 +104,9 @@ steht in einer Bestellung immer das, was tatsächlich bestellt wurde.
 
 ## 4 · Produktion
 
-Die Seite **Produktion** ist die Arbeitsseite des Tages.
+Die Seite **Produktion** ist die Arbeitsseite für bereits bestätigte
+Bestellungen des Tages. Neue, noch nicht angenommene Eingänge bleiben unter
+**Bestellungen** sichtbar und erhöhen weder Backplan noch Drucklisten.
 
 **Oben** stehen die zusammengezählten Mengen: „Käsekuchen 6 Stück,
 Butterkuchen 3 Blech, Croissant 6 Stück". Das ist Ihr Backplan.
@@ -342,8 +347,8 @@ ist ohne Schaden zu korrigieren beziehungsweise zu ergänzen.
 
 1. **Dashboard** öffnen. Es steht auf morgen.
 2. **Handlungsbedarf** ansehen: Gibt es neue Bestellungen?
-3. **Produktion** öffnen und die neuen Bestellungen **bestätigen**.
-4. **Produktionsliste drucken** und in die Backstube geben.
+3. **Bestellungen** öffnen und die neuen Bestellungen **bestätigen**.
+4. **Produktion** öffnen und die **Produktionsliste drucken**.
 
 ### Während der Produktion
 
@@ -359,8 +364,9 @@ ist ohne Schaden zu korrigieren beziehungsweise zu ergänzen.
 ### Zwischendurch
 
 9. Kommt eine neue Bestellung herein, erscheint sie sofort im Dashboard und
-   in der Produktion. Es gibt keine Benachrichtigung — ein Blick am Vormittag
-   und einer am Nachmittag reichen.
+   unter **Bestellungen**. Erst nach der Bestätigung erscheint sie in der
+   Produktion. Je nach Einstellung kann zusätzlich eine E-Mail vorgesehen
+   sein; ihr Versandstand steht an der Bestellung.
 
 ### Wöchentlich, nach Bedarf
 
@@ -393,8 +399,8 @@ von vor drei Monaten deshalb nicht rückwirkend schlechter aus.
 
 **Kunden sehen Herstellkosten niemals.**
 
-**Was das System nicht tut:** Es verschickt keine E-Mails, es schreibt keine
-Rechnungen, es führt keine Kasse, es gibt nichts an Dritte weiter, und es
+**Was das System nicht tut:** Es schreibt keine Rechnungen, es führt keine
+Kasse, es gibt nichts außer ausdrücklich konfigurierten E-Mail-Nachrichten an Dritte weiter, und es
 wertet nichts über Ihre Kunden aus, was Sie nicht selbst eingetragen haben.
 
 ---

@@ -149,7 +149,7 @@ describe('aggregateDashboardWeek — die Zahlen je Tag', () => {
       bestellung({ day: MONTAG, status: 'cancelled' }),
     ]);
 
-    expect(woche.days[0]?.openCount).toBe(3);
+    expect(woche.days[0]?.openCount).toBe(2);
   });
 
   it('summiert die offenen Zahlungen ohne die stornierten', () => {
@@ -243,7 +243,7 @@ describe('aggregateDashboardWeek — die Wochensumme', () => {
       orderCount: 3,
       cancelledCount: 1,
       revenueCents: 7640,
-      openCount: 2,
+      openCount: 1,
       unpaidCents: 6350,
       unpaidCount: 2,
     });

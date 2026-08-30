@@ -78,8 +78,8 @@ describe('GET /admin/production-list', () => {
   });
 
   it('aggregiert offene Snapshot-Produkte nach fulfillment_date und schließt Endstatus aus', async () => {
-    await order('BUS-2026-000001', 'new', 2, TAG, 'Bis 10 Uhr <bereit>.');
-    await order('BUS-2026-000002', 'in_production', 3);
+    await order('BUS-2026-000001', 'new', 2, TAG, 'Noch nicht bestätigt');
+    await order('BUS-2026-000002', 'in_production', 3, TAG, 'Bis 10 Uhr <bereit>.');
     await order('BUS-2026-000003', 'completed', 50, TAG, 'Nicht zeigen');
     await order('BUS-2026-000004', 'cancelled', 70, TAG, 'Nie zeigen');
     await order('BUS-2026-000005', 'confirmed', 90, '2026-09-16');
@@ -87,8 +87,9 @@ describe('GET /admin/production-list', () => {
     const html = await (await call(`/admin/production-list?date=${TAG}`, await login('admin@example.test'))).text();
     expect(html).toContain('Käsekuchen Snapshot');
     expect(html).toContain('26-cm-Ring');
-    expect(html).toContain('>5<');
+    expect(html).toContain('>3<');
     expect(html).toContain('Bis 10 Uhr &lt;bereit&gt;.');
+    expect(html).not.toContain('Noch nicht bestätigt');
     for (const forbidden of ['Aktueller Name', 'Aktuelle Einheit', '999,99', '1234,56', 'kontakt@example.test', '0211 12345', 'Geheimweg 1', 'Nicht zeigen', 'Nie zeigen']) {
       expect(html).not.toContain(forbidden);
     }

@@ -1,5 +1,9 @@
 import { authenticateRequest, type AuthContext } from '../application/authenticate-request';
 import { logIn } from '../application/log-in';
+import {
+  PUBLIC_REQUEST_LIMITS,
+  consumePublicRequestLimit,
+} from '../application/public-request-rate-limit';
 import type { AppConfig } from '../config/app-config';
 import type { AuthRole } from '../domain/auth-role';
 import {
@@ -11,6 +15,7 @@ import { revokeSession } from '../infrastructure/d1/auth-session-repository';
 import { GENERIC_LOGIN_ERROR, renderLoginPage } from '../ui/login-page-html';
 import { UnauthenticatedError, assertCsrf, assertSameOrigin } from './guard';
 import { json } from './responses';
+import { assertAnnouncedSizeOk, readBody } from './json-body';
 import { pageHeaders, privateHeaders } from './security';
 
 /**
@@ -52,8 +57,15 @@ function seeOther(location: string, extra: Record<string, string> = {}): Respons
   });
 }
 
-function loginSeite(errorMessage: string | null, status = 200): Response {
-  return new Response(renderLoginPage({ errorMessage }), { status, headers: pageHeaders() });
+function loginSeite(
+  errorMessage: string | null,
+  status = 200,
+  extraHeaders: Record<string, string> = {},
+): Response {
+  return new Response(renderLoginPage({ errorMessage }), {
+    status,
+    headers: { ...pageHeaders(), ...extraHeaders },
+  });
 }
 
 /** Liest die aktuelle Sitzung — oder null. */
@@ -113,6 +125,19 @@ export async function loginSubmit(
   now: Date,
 ): Promise<Response> {
   assertSameOrigin(request, config);
+
+  const rateLimit = await consumePublicRequestLimit(
+    db,
+    config.pepper,
+    request.headers.get('cf-connecting-ip'),
+    PUBLIC_REQUEST_LIMITS.login,
+    now,
+  );
+  if (!rateLimit.allowed) {
+    return loginSeite(GENERIC_LOGIN_ERROR, 429, {
+      'retry-after': String(rateLimit.retryAfterSeconds),
+    });
+  }
 
   const body = await formularKoerper(request);
 
@@ -184,16 +209,12 @@ const MAX_FORM_BYTES = 8 * 1024;
 
 async function formularKoerper(request: Request): Promise<URLSearchParams> {
   const contentType = request.headers.get('content-type') ?? '';
-  if (!contentType.split(';')[0]?.trim().toLowerCase().endsWith('application/x-www-form-urlencoded')) {
+  if (contentType.split(';')[0]?.trim().toLowerCase() !== 'application/x-www-form-urlencoded') {
     throw new UnsupportedMediaTypeError();
   }
 
-  const text = await request.text();
-  if (new TextEncoder().encode(text).length > MAX_FORM_BYTES) {
-    throw new UnsupportedMediaTypeError();
-  }
-
-  return new URLSearchParams(text);
+  assertAnnouncedSizeOk(request, MAX_FORM_BYTES);
+  return new URLSearchParams(await readBody(request, MAX_FORM_BYTES));
 }
 
 /**

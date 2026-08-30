@@ -98,6 +98,7 @@ describe('Migrationen', () => {
       'orders',
       'price_lists',
       'products',
+      'public_request_rate_limits',
     ]);
   });
 
@@ -115,6 +116,7 @@ describe('Migrationen', () => {
       'idx_customers_active_name',
       'idx_customers_price_list',
       'idx_email_outbox_order',
+      'idx_email_outbox_retry',
       'idx_email_outbox_status_created',
       'idx_order_items_order',
       'idx_order_items_product',
@@ -122,6 +124,7 @@ describe('Migrationen', () => {
       'idx_orders_day',
       'idx_products_catalog_product',
       'idx_products_orderable',
+      'idx_public_request_limits_updated',
     ]);
   });
 

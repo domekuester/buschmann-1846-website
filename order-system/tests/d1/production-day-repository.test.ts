@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { InvalidArgumentError } from '../../src/domain/errors';
+import { OPEN_PRODUCTION_STATUSES } from '../../src/domain/order-status';
 import {
   PRODUCTION_DAY_QUERIES,
   findProductionOrders,
@@ -267,8 +268,8 @@ describe('findProductionOrders — Statusfilter', () => {
     return (await findProductionOrders(env.DB, TAG)).length;
   }
 
-  it('nimmt new auf', async () => {
-    expect(await nurStatus('new')).toBe(1);
+  it('lässt new bis zur Bestätigung aus dem Produktionsbedarf', async () => {
+    expect(await nurStatus('new')).toBe(0);
   });
 
   it('nimmt confirmed auf', async () => {
@@ -648,7 +649,7 @@ describe('findProductionOrders — Randfälle des Schemas', () => {
 describe('Query Plan', () => {
   async function plan(sql: string): Promise<string[]> {
     const { results } = await env.DB.prepare(`EXPLAIN QUERY PLAN ${sql}`)
-      .bind(TAG, 'new', 'confirmed', 'in_production')
+      .bind(TAG, ...OPEN_PRODUCTION_STATUSES)
       .all<{ detail: string }>();
 
     return results.map((zeile) => zeile.detail);

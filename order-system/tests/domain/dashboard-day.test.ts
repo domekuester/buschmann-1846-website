@@ -38,7 +38,7 @@ function bestellung(overrides: Partial<DashboardOrder> = {}): DashboardOrder {
     orderNumber: `BUS-2026-${String(laufendeNummer).padStart(6, '0')}`,
     customerId: 1,
     customerName: 'Fiktives Café Nord',
-    status: 'new' as OrderStatus,
+    status: 'confirmed' as OrderStatus,
     paymentStatus: 'unpaid' as PaymentStatus,
     fulfillmentType: 'pickup',
     totalCents: 1000,
@@ -227,14 +227,27 @@ describe('aggregateDashboardDay — Bestellungen und Storno', () => {
 });
 
 describe('aggregateDashboardDay — offene Bestellungen', () => {
-  it('zählt neu, bestätigt und in Produktion als offen', () => {
+  it('zählt nur bestätigte und bereits laufende Produktion als offen', () => {
     const tag = aggregateDashboardDay(TAG, [
       bestellung({ status: 'new' }),
       bestellung({ status: 'confirmed' }),
       bestellung({ status: 'in_production' }),
     ]);
 
-    expect(tag.openCount).toBe(3);
+    expect(tag.openCount).toBe(2);
+  });
+
+  it('zeigt new als Eingang, zählt dessen Menge aber nicht als Produktionsbedarf', () => {
+    const tag = aggregateDashboardDay(TAG, [
+      bestellung({ status: 'confirmed', items: [position({ quantity: 10 })] }),
+      bestellung({ status: 'new', items: [position({ quantity: 2 })] }),
+    ]);
+
+    expect(tag.orderCount).toBe(2);
+    expect(tag.statusCounts.new).toBe(1);
+    expect(tag.openCount).toBe(1);
+    expect(tag.totalUnits).toBe(10);
+    expect(tag.topProducts[0]?.quantity).toBe(10);
   });
 
   it('zählt abgeschlossen und storniert nicht als offen', () => {

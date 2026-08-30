@@ -284,13 +284,14 @@ describe('Produktion und Listen sind gefüllt', () => {
     expect(arten).toContain('pickup');
   });
 
-  it('lässt jede offene Bestellung des Leittags weiterschalten', async () => {
+  it('enthält nur bestätigte offene Produktionszustände', async () => {
     const tag = await getProductionDay(env.DB, LEITTAG);
 
-    // Mindestens eine Bestellung in jedem der drei offenen Zustände: Nur so
-    // ist jeder Statuswechsel vorführbar, ohne vorher etwas herzurichten.
+    // Neu bleibt in der Bestellansicht sichtbar, gehört aber nicht in eine
+    // bestätigte Produktionsabfrage. Die beiden Produktionszustände bleiben
+    // im Demo-Leittag vorführbar.
     const status = new Set(tag.orders.map((b) => b.status));
-    expect(status).toContain('new');
+    expect(status).not.toContain('new');
     expect(status).toContain('confirmed');
     expect(status).toContain('in_production');
   });

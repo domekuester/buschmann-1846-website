@@ -539,6 +539,13 @@ describe('renderAdminDashboardPage — Ringe', () => {
 });
 
 describe('renderAdminDashboardPage — Bestellliste', () => {
+  it('führt neue Eingänge zur sichtbaren Bestellliste statt zur bestätigten Produktion', () => {
+    const html = seite({ orders: [bestellung({ status: 'new' })] });
+    const action = html.match(/handlungszeile--new_orders[^>]*href="([^"]+)"/)?.[1];
+
+    expect(action).toBe('/admin/orders?date=2026-08-28#bestellungen');
+  });
+
   it('zeigt Bestellnummer, Kunde, Status, Betrag und Zeitpunkt', () => {
     const html = seite();
 
@@ -556,11 +563,24 @@ describe('renderAdminDashboardPage — Bestellliste', () => {
 
   it('zeigt den E-Mail-Stand kurz unter der Bestellnummer und ohne reine Farbbedeutung', () => {
     const html = seite({
-      orders: [bestellung({ emailSummary: { status: 'failed', count: 2 } })],
+      orders: [bestellung({ emailSummary: { status: 'failed', count: 2, canRetry: true } })],
     });
 
     expect(html).toContain('E-Mail: Fehlgeschlagen (2)');
     expect(html).not.toContain('<th scope="col">E-Mail</th>');
+    expect(html).toContain('E-Mail erneut senden');
+    expect(html).toContain('action="/api/admin/orders/BUS-2026-000001/email-retry"');
+    expect(html).toContain('name="csrf_token" value="test-csrf-token"');
+  });
+
+  it('bietet für ausschließlich versendete E-Mails keinen Retry an', () => {
+    const html = seite({
+      orders: [bestellung({ emailSummary: { status: 'sent', count: 1, canRetry: false } })],
+    });
+
+    expect(html).toContain('E-Mail: Versendet (1)');
+    expect(html).not.toContain('E-Mail erneut senden');
+    expect(html).not.toContain('/email-retry');
   });
 
   /**
@@ -676,8 +696,12 @@ describe('renderAdminDashboardPage — Meistbestellt', () => {
     const html = seite({ topProducts: [] });
 
     expect(html).toContain('Meistbestellt');
-    expect(html).toContain('Für diesen Tag ist noch kein Produkt bestellt');
+    expect(html).toContain('Für diesen Tag ist noch keine Bestellung bestätigt');
     expect(html).not.toContain('class="topliste"');
+  });
+
+  it('bezeichnet Einheiten ausdrücklich als bestätigte Produktionsmenge', () => {
+    expect(seite()).toContain('bestätigte Menge');
   });
 });
 
@@ -913,9 +937,10 @@ describe('§15 — der negative Rohertrag auf der Seite', () => {
 describe('§19.19 bis §19.21 — was 7B NICHT verändert', () => {
   const tagMitKosten = () => ({
     orders: [
-      bestellung({ orderNumber: 'BUS-2026-000001', totalCents: 4350, items: [position(1000, 2)] }),
+      bestellung({ orderNumber: 'BUS-2026-000001', status: 'confirmed', totalCents: 4350, items: [position(1000, 2)] }),
       bestellung({
         orderNumber: 'BUS-2026-000002',
+        status: 'confirmed',
         totalCents: 1290,
         paymentStatus: 'paid_cash',
         items: [position(300, 1)],

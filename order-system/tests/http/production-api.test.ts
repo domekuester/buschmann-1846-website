@@ -507,7 +507,7 @@ describe('GET /api/admin/production-day — Antwort', () => {
     });
   });
 
-  it('lässt storniert und abgeschlossen weg', async () => {
+  it('lässt neu, storniert und abgeschlossen weg', async () => {
     await bestellung({
       id: 1,
       customerName: 'Testcafé Nord',
@@ -529,6 +529,13 @@ describe('GET /api/admin/production-day — Antwort', () => {
       status: 'completed',
       items: [{ productId: 1, quantity: 500 }],
     });
+    await bestellung({
+      id: 4,
+      customerName: 'Testcafé Ost',
+      day: TAG,
+      status: 'confirmed',
+      items: [{ productId: 1, quantity: 4 }],
+    });
 
     const body = (await (await call(`?date=${TAG}`, await alsAdmin())).json()) as {
       order_count: number;
@@ -536,7 +543,7 @@ describe('GET /api/admin/production-day — Antwort', () => {
     };
 
     expect(body.order_count).toBe(1);
-    expect(body.total_units).toBe(3);
+    expect(body.total_units).toBe(4);
   });
 
   it('ist application/json', async () => {

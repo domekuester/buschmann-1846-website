@@ -324,7 +324,8 @@ widersprechen, weil die Summe aus den Bestellungen gerechnet wird.
 
 | Status | zählt | warum |
 |---|---|---|
-| `new`, `confirmed` | **ja** | muss gebacken werden |
+| `new` | **nein** | eingegangen, aber noch nicht für die Produktion angenommen |
+| `confirmed` | **ja** | vom Betrieb angenommen und zu produzieren |
 | `in_production` | **ja** | bleibt bis zum Abschluss Teil der Tagesmenge — sonst schrumpfte die Liste, während gearbeitet wird |
 | `completed` | nein | gehört nicht mehr zur offenen Menge |
 | `cancelled` | nein | darf niemals Produktion erzeugen |
@@ -334,7 +335,23 @@ Die Liste steht **an einer Stelle**: `OPEN_PRODUCTION_STATUSES` in
 Werte werden gebunden — es gibt keinen Weg, sie zu ändern, ohne dass die
 Abfrage folgt.
 
-Lieferung und Abholung zählen beide: Gebacken werden muss so oder so.
+Lieferung und Abholung zählen beide, sobald die Bestellung bestätigt ist.
+
+### Abuse-Control der öffentlichen Schreibpfade
+
+`POST /login` (Kunden und Admins) und `POST /konto-anfragen` verwenden einen
+kleinen atomaren Fixed-Window-Zähler in D1. Die zentralen Fenster und
+Schwellen stehen in `application/public-request-rate-limit.ts`. Als Identität
+dient ausschließlich Cloudflares `CF-Connecting-IP`; gespeichert wird nur
+eine HMAC-SHA-256-Kennung mit `AUTH_PEPPER`, niemals die rohe IP, E-Mail oder
+Login-Kennung. Fehlt die Cloudflare-Kopfzeile oder ist sie unlesbar, teilen
+sich diese Requests einen fail-safe Ersatz-Bucket.
+
+Das ist eine zusätzliche Geschwindigkeitsgrenze und kein Bot-Erkennungssystem:
+Nutzer hinter demselben NAT teilen ein Budget, während verteilte Angriffe über
+viele IP-Adressen nicht zusammengeführt werden. Cloudflare-WAF/Bot-Regeln
+können diese anwendungsseitige Schranke später ergänzen, sind aber keine
+Voraussetzung für sie.
 
 ### Das Datum
 
@@ -557,9 +574,9 @@ kommt in Phase 4B) · kein Audit-Log · kein Bearbeiten von Positionen oder
 Liefertag durch den Admin · keine Wochen- oder Mehrtagesansicht · keine Kunden- oder
 Produktpflege ·
 kein Passwort-/PIN-Wechsel · kein „Passwort vergessen" · kein 2FA · kein
-Payment · kein Mailversand · kein R2 · keine Wiederbestellung · keine
+Payment · kein Queue-/Cron-Mailversand · kein R2 · keine Wiederbestellung · keine
 Bestellhistorie für das Café · kein Ändern oder Stornieren · keine
-Lieferplanung · keine Rechnungen · keine Analytics · kein Rate-Limiting.
+Lieferplanung · keine Rechnungen · keine Analytics · keine Cloudflare-WAF-/Bot-Regeln über den anwendungsseitigen D1-Schutz hinaus.
 
 ## Stand
 

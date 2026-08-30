@@ -4,6 +4,7 @@ export interface CustomerAccountRequestPageView {
   readonly values: Readonly<Record<string, string>>;
   readonly errors: Readonly<Record<string, string>>;
   readonly success: boolean;
+  readonly rateLimited?: boolean;
 }
 
 export function renderCustomerAccountRequestPage(view: CustomerAccountRequestPageView): string {
@@ -51,7 +52,7 @@ function form(view: CustomerAccountRequestPageView): string {
   return `<p class="kontoanfrage__kicker">Kundenkonto</p>
       <h1 id="kontoanfrage-titel">Kundenkonto anfragen</h1>
       <p class="anmeldung__vorspann">Schick uns kurz deine Kontaktdaten. Buschmann prüft die Anfrage und richtet passende Konditionen persönlich ein.</p>
-      ${hasErrors ? '<p class="banner anmeldung__fehler" role="alert">Die Anfrage wurde noch nicht gesendet. Bitte prüfe die Angaben.</p>' : ''}
+      ${view.rateLimited ? '<p class="banner anmeldung__fehler" role="alert">Zu viele Anfragen in kurzer Zeit. Bitte versuche es später erneut.</p>' : hasErrors ? '<p class="banner anmeldung__fehler" role="alert">Die Anfrage wurde noch nicht gesendet. Bitte prüfe die Angaben.</p>' : ''}
       <form method="post" action="/konto-anfragen" class="anmeldung__formular kontoanfrage__formular">
         ${input(view, 'name', 'Name / Firma', 120, true, 'organization')}
         ${input(view, 'contact_person', 'Ansprechpartner', 120, false, 'name')}

@@ -11,8 +11,9 @@ import type { DashboardItemRow, DashboardOrderRow } from './rows';
  * Sie ist der Zwilling von production-day-repository.ts und unterscheidet
  * sich von ihm in genau zwei Punkten, die beide fachlich sind:
  *
- *   KEIN STATUSFILTER. Die Produktionsabfrage lässt nur die drei offenen
- *   Status durch, weil eine Backliste nur zeigt, was noch zu backen ist. Der
+ *   KEIN STATUSFILTER. Die Produktionsabfrage lässt nur die zwei bestätigten
+ *   Produktionsstatus durch, weil eine Backliste nur zeigt, was angenommen
+ *   wurde und noch zu backen ist. Der
  *   Überblick zeigt den GANZEN Tag: abgeschlossene Bestellungen, weil sie
  *   Umsatz sind, und stornierte, weil ihr Fehlen sonst wie ein Datenverlust
  *   aussähe. Gefiltert wird nicht in SQL, sondern in der Aggregation — und
@@ -55,12 +56,16 @@ const Q_ORDERS = `
          COALESCE(e.notification_count, 0) AS email_notification_count,
          COALESCE(e.pending_count, 0) AS email_pending_count,
          COALESCE(e.failed_count, 0) AS email_failed_count
+         , COALESCE(e.retryable_count, 0) AS email_retryable_count
     FROM orders o
     LEFT JOIN (
       SELECT order_id,
              COUNT(*) AS notification_count,
              SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) AS pending_count,
              SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) AS failed_count
+             , SUM(CASE
+                 WHEN status IN ('pending', 'failed') AND claim_token IS NULL THEN 1 ELSE 0
+               END) AS retryable_count
         FROM email_outbox
        GROUP BY order_id
     ) e ON e.order_id = o.id
@@ -231,6 +236,7 @@ function toDashboardOrder(
             ? 'pending' as const
             : 'sent' as const,
         count: zeile.email_notification_count,
+        canRetry: zeile.email_retryable_count > 0,
       };
 
   return {

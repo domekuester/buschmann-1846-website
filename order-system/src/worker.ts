@@ -54,6 +54,10 @@ import { methodNotAllowed, notFound } from './http/responses';
 import { privateHeaders } from './http/security';
 import { createEnvironmentEmailSender } from './infrastructure/email/cloudflare-email-sender';
 import {
+  matchOrderEmailRetryPath,
+  retryOrderEmailEndpoint,
+} from './http/admin-email-retry-api';
+import {
   customerAccountRequestPage,
   submitCustomerAccountRequest,
 } from './http/customer-account-request-page';
@@ -573,6 +577,21 @@ export default {
           request,
           now,
           paymentOrderNumber,
+        );
+      }
+
+      const emailRetryOrderNumber = matchOrderEmailRetryPath(pathname);
+      if (emailRetryOrderNumber !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await retryOrderEmailEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          emailRetryOrderNumber,
+          createEnvironmentEmailSender(env),
         );
       }
 

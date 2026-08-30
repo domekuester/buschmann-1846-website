@@ -238,7 +238,7 @@ describe('renderProductionSummary — leerer Tag', () => {
       ansicht({ isEmpty: true, products: [], orders: [], orderCount: 0, totalUnits: 0 }),
     );
 
-    expect(html).toContain('Für diesen Tag sind keine offenen Bestellungen vorhanden.');
+    expect(html).toContain('Für diesen Tag sind keine bestätigten Produktionsbestellungen vorhanden.');
   });
 
   it('nennt einen leeren Tag nicht Fehler und warnt nicht', () => {

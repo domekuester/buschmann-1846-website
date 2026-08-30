@@ -35,6 +35,7 @@ describe('EXPECTED_TABLES', () => {
       'email_operator_recipients',
       'email_outbox',
       'customer_account_requests',
+      'public_request_rate_limits',
     ]) {
       expect(EXPECTED_TABLES).toContain(t);
     }

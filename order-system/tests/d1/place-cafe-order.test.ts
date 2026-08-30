@@ -2,6 +2,7 @@ import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { placeCafeOrder } from '../../src/application/place-cafe-order';
 import { deliverOrderNotifications } from '../../src/application/deliver-order-notifications';
+import { retryOrderEmailNotifications } from '../../src/application/retry-order-email-notifications';
 import type { Customer } from '../../src/domain/customer';
 import { ValidationError } from '../../src/domain/errors';
 import { findCustomer } from '../../src/infrastructure/d1/customer-repository';
@@ -327,6 +328,100 @@ describe('placeCafeOrder — E-Mail-Absichten', () => {
 
     const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
     expect(notification).toMatchObject({ status: 'failed', attempts: 2 });
+  });
+});
+
+describe('manuelle Wiederholung fehlgeschlagener E-Mails', () => {
+  async function failedOrder() {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: true,
+      customerConfirmationsEnabled: false,
+      operatorRecipients: ['betrieb@example.test'],
+    }, new Date(NOW));
+    const failingSender: EmailSender = {
+      async send() { throw new Error('Provider temporär nicht erreichbar'); },
+    };
+    return order({}, { emailSender: failingSender });
+  }
+
+  it('sendet eine eligible failed Nachricht manuell und setzt sent_at erst nach Erfolg', async () => {
+    const placed = await failedOrder();
+    const sender = new MemoryEmailSender();
+
+    const result = await retryOrderEmailNotifications(
+      env.DB, placed.order.orderNumber.value, sender, NOW,
+    );
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+
+    expect(result).toMatchObject({ outcome: 'processed', sentCount: 1, failedCount: 0 });
+    expect(sender.messages).toHaveLength(1);
+    expect(sender.messages[0]?.to).toBe('betrieb@example.test');
+    expect(notification).toMatchObject({ status: 'sent', attempts: 3, lastError: null });
+    expect(notification?.sentAt).not.toBeNull();
+  });
+
+  it('sendet eine bereits als sent markierte Nachricht niemals erneut', async () => {
+    await saveEmailNotificationSettings(env.DB, {
+      operatorNotificationsEnabled: false,
+      customerConfirmationsEnabled: true,
+      operatorRecipients: [],
+    }, new Date(NOW));
+    const initialSender = new MemoryEmailSender();
+    const placed = await order({}, { emailSender: initialSender });
+    const retrySender = new MemoryEmailSender();
+
+    const result = await retryOrderEmailNotifications(
+      env.DB, placed.order.orderNumber.value, retrySender, NOW,
+    );
+
+    expect(result.outcome).toBe('nothing_to_retry');
+    expect(initialSender.messages).toHaveLength(1);
+    expect(retrySender.messages).toHaveLength(0);
+  });
+
+  it('verhindert mit atomarem Claim den parallelen Doppelversand', async () => {
+    const placed = await failedOrder();
+    let calls = 0;
+    let signalStarted!: () => void;
+    let release!: () => void;
+    const started = new Promise<void>((resolve) => { signalStarted = resolve; });
+    const hold = new Promise<void>((resolve) => { release = resolve; });
+    const sender: EmailSender = {
+      async send() {
+        calls += 1;
+        signalStarted();
+        await hold;
+        return { kind: 'sent' };
+      },
+    };
+
+    const first = retryOrderEmailNotifications(env.DB, placed.order.orderNumber.value, sender, NOW);
+    await started;
+    const second = retryOrderEmailNotifications(env.DB, placed.order.orderNumber.value, sender, NOW);
+    release();
+    await Promise.all([first, second]);
+
+    expect(calls).toBe(1);
+    expect((await listOrderNotifications(env.DB, placed.order.orderNumber.value))[0])
+      .toMatchObject({ status: 'sent', attempts: 3 });
+  });
+
+  it('hält Providerfehler sanitisiert, den Outboxstand wahr und die Bestellung unverändert', async () => {
+    const placed = await failedOrder();
+    const sender: EmailSender = {
+      async send() { throw new Error('API-Key=geheim und interne Providerdetails'); },
+    };
+
+    const result = await retryOrderEmailNotifications(
+      env.DB, placed.order.orderNumber.value, sender, NOW,
+    );
+    const [notification] = await listOrderNotifications(env.DB, placed.order.orderNumber.value);
+
+    expect(result).toMatchObject({ outcome: 'processed', sentCount: 0, failedCount: 1 });
+    expect(notification).toMatchObject({ status: 'failed', attempts: 3, sentAt: null });
+    expect(notification?.lastError).not.toContain('geheim');
+    expect(await findOrderByNumber(env.DB, placed.order.orderNumber.value)).not.toBeNull();
+    expect(await countOrders()).toBe(1);
   });
 });
 

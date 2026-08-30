@@ -135,7 +135,7 @@ describe('getDashboardDay', () => {
 
     expect(tag.orders).toHaveLength(4);
     expect(tag.orderCount).toBe(4);
-    expect(tag.openCount).toBe(3);
+    expect(tag.openCount).toBe(2);
   });
 
   it('zeigt eine stornierte Bestellung, ohne sie mitzuzählen', async () => {
@@ -164,10 +164,12 @@ describe('getDashboardDay', () => {
   it('ordnet die Positionen ihrer eigenen Bestellung zu', async () => {
     await seedOrder({
       orderNumber: 'BUS-2026-000001',
+      status: 'confirmed',
       items: [{ productId: 1, quantity: 3 }],
     });
     await seedOrder({
       orderNumber: 'BUS-2026-000002',
+      status: 'confirmed',
       items: [{ productId: 2, quantity: 4 }],
     });
 
@@ -189,6 +191,7 @@ describe('getDashboardDay', () => {
   it('bildet die Top-Produkte aus den Positionen des Tages', async () => {
     await seedOrder({
       orderNumber: 'BUS-2026-000001',
+      status: 'confirmed',
       items: [
         { productId: 1, quantity: 2, name: 'Fiktiver Käsekuchen' },
         { productId: 2, quantity: 7, name: 'Fiktive Tarte' },

@@ -117,7 +117,7 @@ function produktZeile(line: ProductionLineView, index: number): string {
 }
 
 /**
- * Ein Tag ohne offene Bestellungen.
+ * Ein Tag ohne bestätigten Produktionsbedarf.
  *
  * DAS IST EIN NORMALER BETRIEBSZUSTAND UND KEIN FEHLER. Kein Warnzeichen,
  * keine rote Fläche, keine Illustration, keine Animation — ein Montag im
@@ -128,7 +128,7 @@ function renderEmptyState(): string {
   return `
       <section class="produktion produktion--leer" aria-labelledby="titel-produktion">
         <h2 id="titel-produktion">Zu produzieren</h2>
-        <p class="leer">Für diesen Tag sind keine offenen Bestellungen vorhanden.</p>
+        <p class="leer">Für diesen Tag sind keine bestätigten Produktionsbestellungen vorhanden.</p>
       </section>`;
 }
 

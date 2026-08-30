@@ -108,6 +108,7 @@ export interface DashboardOrder {
   readonly emailSummary?: {
     readonly status: 'pending' | 'sent' | 'failed';
     readonly count: number;
+    readonly canRetry: boolean;
   };
 }
 
@@ -274,7 +275,8 @@ export function aggregateDashboardDay(
     revenueCents += order.totalCents;
     kunden.add(order.customerId);
 
-    if (isOpenProduction(order.status)) {
+    const countsAsProduction = isOpenProduction(order.status);
+    if (countsAsProduction) {
       openCount += 1;
     }
 
@@ -294,8 +296,9 @@ export function aggregateDashboardDay(
 
     kosten.addOrder(order.items);
 
-    for (const item of order.items) {
-      totalUnits += item.quantity;
+    if (countsAsProduction) {
+      for (const item of order.items) {
+        totalUnits += item.quantity;
 
       /**
        * DER SCHLÜSSEL IST EIN TRIPEL — dieselbe Regel wie in
@@ -311,16 +314,17 @@ export function aggregateDashboardDay(
        * und nicht als echtes Byte in der Datei: Ein NUL im Quelltext macht
        * die Datei für grep und für manche Editoren zu einer Binärdatei.
        */
-      const schluessel = `${item.productId}\u0000${item.productName}\u0000${item.productUnit}`;
-      const bisher = mengen.get(schluessel);
+        const schluessel = `${item.productId}\u0000${item.productName}\u0000${item.productUnit}`;
+        const bisher = mengen.get(schluessel);
 
-      mengen.set(schluessel, {
-        productId: item.productId,
-        productName: item.productName,
-        productUnit: item.productUnit,
-        sortOrder: item.sortOrder,
-        quantity: (bisher?.quantity ?? 0) + item.quantity,
-      });
+        mengen.set(schluessel, {
+          productId: item.productId,
+          productName: item.productName,
+          productUnit: item.productUnit,
+          sortOrder: item.sortOrder,
+          quantity: (bisher?.quantity ?? 0) + item.quantity,
+        });
+      }
     }
   }
 

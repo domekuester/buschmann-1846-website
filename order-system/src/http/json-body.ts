@@ -43,8 +43,10 @@ export function assertJsonContentType(request: Request): void {
  * zu großen Körper ab, bevor er überhaupt gelesen wird.
  */
 export function assertAnnouncedSizeOk(request: Request, maxBytes: number): void {
-  const announced = Number(request.headers.get('content-length'));
-  if (Number.isFinite(announced) && announced > maxBytes) {
+  const header = request.headers.get('content-length');
+  if (header === null || !/^\d+$/.test(header)) return;
+  const announced = Number(header);
+  if (Number.isSafeInteger(announced) && announced > maxBytes) {
     throw new RequestError(413, 'payload_too_large');
   }
 }
@@ -54,11 +56,51 @@ export function assertAnnouncedSizeOk(request: Request, maxBytes: number): void 
  * chunked transfer encoding — käme sonst an der ersten Prüfung vorbei.
  */
 export async function readBody(request: Request, maxBytes: number): Promise<string> {
-  const text = await request.text();
-  if (new TextEncoder().encode(text).length > maxBytes) {
-    throw new RequestError(413, 'payload_too_large');
+  if (request.body === null) return '';
+
+  const reader = request.body.getReader();
+  const decoder = new TextDecoder('utf-8', { fatal: true, ignoreBOM: false });
+  const parts: string[] = [];
+  let bytesRead = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      bytesRead += value.byteLength;
+      if (bytesRead > maxBytes) {
+        await cancelReader(reader);
+        throw new RequestError(413, 'payload_too_large');
+      }
+
+      try {
+        parts.push(decoder.decode(value, { stream: true }));
+      } catch {
+        await cancelReader(reader);
+        throw new RequestError(400, 'bad_request');
+      }
+    }
+
+    try {
+      parts.push(decoder.decode());
+    } catch {
+      throw new RequestError(400, 'bad_request');
+    }
+
+    return parts.join('');
+  } finally {
+    reader.releaseLock();
   }
-  return text;
+}
+
+async function cancelReader(reader: ReadableStreamDefaultReader<Uint8Array>): Promise<void> {
+  try {
+    await reader.cancel();
+  } catch {
+    // Die kontrollierte 400/413-Antwort darf nicht von einem fehlerhaften
+    // Abbruch des bereits zurückgewiesenen Eingabestreams verdeckt werden.
+  }
 }
 
 export function parseBody(text: string): Record<string, unknown> {

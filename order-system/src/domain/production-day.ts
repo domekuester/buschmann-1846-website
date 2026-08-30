@@ -65,9 +65,9 @@ export interface ProductionOrderItem {
  * `note` ist KUNDENEINGABE. Sie wird unverändert durchgereicht und nirgends
  * als Markup verstanden. Wer sie später in HTML rendert, escapet sie.
  *
- * `status` ist mit dabei, obwohl die Abfrage bereits filtert: Eine spätere
- * Oberfläche soll „neu" von „in Produktion" unterscheiden können, ohne dass
- * dafür ein zweiter Endpunkt entsteht.
+ * `status` ist mit dabei, obwohl die Abfrage bereits filtert: Die Oberfläche
+ * unterscheidet „bestätigt" von „in Produktion", ohne dafür einen zweiten
+ * Endpunkt zu brauchen.
  *
  * Keine Adresse, keine Zeitstempel, keine Beträge, keine internen Kennungen.
  */

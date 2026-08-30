@@ -44,8 +44,8 @@ describe('toDashboardView — Handlungsbedarf', () => {
       title: 'Neue Bestellungen',
       detail: 'warten auf Bestätigung',
       amountLabel: '',
-      linkLabel: 'Zur Produktion',
-      href: `/admin/production?date=${TAG}`,
+      linkLabel: 'Bestellungen prüfen',
+      href: `/admin/orders?date=${TAG}#bestellungen`,
     });
   });
 

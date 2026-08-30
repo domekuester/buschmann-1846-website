@@ -5,6 +5,7 @@ import { MIN_ITERATIONS, deriveCredential } from '../../src/infrastructure/auth/
 import { findValidSession } from '../../src/infrastructure/d1/auth-session-repository';
 import { logIn } from '../../src/application/log-in';
 import type { AppConfig } from '../../src/config/app-config';
+import { PUBLIC_REQUEST_LIMITS } from '../../src/application/public-request-rate-limit';
 
 const NOW_ISO = '2026-08-24T07:00:00.000Z';
 const NOW = new Date(NOW_ISO);
@@ -76,6 +77,9 @@ interface AnfrageOptionen {
   contentType?: string | null;
   cookie?: string | null;
   env?: Env;
+  connectingIp?: string | null;
+  contentLength?: string | null;
+  xForwardedFor?: string | null;
 }
 
 async function call(pfad: string, optionen: AnfrageOptionen = {}): Promise<Response> {
@@ -88,6 +92,10 @@ async function call(pfad: string, optionen: AnfrageOptionen = {}): Promise<Respo
   if (contentType !== null && optionen.body !== undefined) headers.set('content-type', contentType);
 
   if (optionen.cookie != null) headers.set('cookie', optionen.cookie);
+  const connectingIp = optionen.connectingIp === undefined ? '203.0.113.10' : optionen.connectingIp;
+  if (connectingIp !== null) headers.set('cf-connecting-ip', connectingIp);
+  if (optionen.contentLength != null) headers.set('content-length', optionen.contentLength);
+  if (optionen.xForwardedFor != null) headers.set('x-forwarded-for', optionen.xForwardedFor);
 
   const init: RequestInit = { method: optionen.method ?? 'GET', headers };
   if (optionen.body !== undefined) init.body = optionen.body;
@@ -112,7 +120,7 @@ function formular(felder: Record<string, string>): string {
 }
 
 beforeEach(async () => {
-  for (const table of ['auth_sessions', 'auth_accounts', 'customers']) {
+  for (const table of ['public_request_rate_limits', 'auth_sessions', 'auth_accounts', 'customers']) {
     await env.DB.prepare(`DELETE FROM ${table}`).run();
   }
 
@@ -347,6 +355,89 @@ describe('POST /login — Ablehnung', () => {
   });
 });
 
+describe('POST /login — Abuse-Control', () => {
+  it('erlaubt normale Anmeldungen und sperrt erst oberhalb der zentralen Schwelle', async () => {
+    const policy = PUBLIC_REQUEST_LIMITS.login;
+    for (let attempt = 0; attempt < policy.maxRequests; attempt += 1) {
+      const response = await call('/login', {
+        method: 'POST',
+        body: formular({ identifier: 'gibtesnicht', secret: PIN }),
+      });
+      expect(response.status).toBe(200);
+    }
+
+    const limited = await call('/login', {
+      method: 'POST',
+      body: formular({ identifier: 'gibtesnicht', secret: PIN }),
+    });
+    expect(limited.status).toBe(429);
+    expect(await limited.text()).toContain('Anmeldung nicht möglich. Bitte Zugangsdaten prüfen.');
+    expect(limited.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('isoliert Clients und vertraut keinem X-Forwarded-For als Identität', async () => {
+    const policy = PUBLIC_REQUEST_LIMITS.login;
+    for (let attempt = 0; attempt <= policy.maxRequests; attempt += 1) {
+      await call('/login', {
+        method: 'POST',
+        connectingIp: '203.0.113.20',
+        xForwardedFor: `198.51.100.${attempt + 1}`,
+        body: formular({ identifier: 'gibtesnicht', secret: PIN }),
+      });
+    }
+
+    const spoofed = await call('/login', {
+      method: 'POST',
+      connectingIp: '203.0.113.20',
+      xForwardedFor: '192.0.2.200',
+      body: formular({ identifier: 'testcafe', secret: PIN }),
+    });
+    expect(spoofed.status).toBe(429);
+
+    const other = await call('/login', {
+      method: 'POST',
+      connectingIp: '203.0.113.21',
+      body: formular({ identifier: 'testcafe', secret: PIN }),
+    });
+    expect(other.status).toBe(303);
+  });
+
+  it('liefert für bekannte und unbekannte Kennungen unter Limit weiter dieselbe Antwort', async () => {
+    const known = await call('/login', {
+      method: 'POST', connectingIp: '203.0.113.30',
+      body: formular({ identifier: 'testcafe', secret: '99999999' }),
+    });
+    const unknown = await call('/login', {
+      method: 'POST', connectingIp: '203.0.113.31',
+      body: formular({ identifier: 'gibtesnicht', secret: PIN }),
+    });
+
+    expect(known.status).toBe(unknown.status);
+    expect(await known.text()).toBe(await unknown.text());
+  });
+
+  it('schließt bei ausgefallenem serverseitigem Zähler neutral und ohne Anmeldung', async () => {
+    await env.DB.prepare(
+      'ALTER TABLE public_request_rate_limits RENAME TO public_request_rate_limits_unavailable',
+    ).run();
+    let response: Response;
+    try {
+      response = await call('/login', {
+        method: 'POST',
+        body: formular({ identifier: 'testcafe', secret: PIN }),
+      });
+    } finally {
+      await env.DB.prepare(
+        'ALTER TABLE public_request_rate_limits_unavailable RENAME TO public_request_rate_limits',
+      ).run();
+    }
+
+    expect(response.status).toBe(500);
+    expect(await response.text()).toBe('{"error":"internal_error"}');
+    expect(response.headers.get('set-cookie')).toBeNull();
+  });
+});
+
 describe('POST /login — Anfrageform', () => {
   it('lehnt einen fremden Origin ab', async () => {
     const response = await call('/login', {
@@ -377,6 +468,17 @@ describe('POST /login — Anfrageform', () => {
     });
 
     expect(response.status).toBe(415);
+  });
+
+  it('lehnt ein offensichtlich zu großes Content-Length vor dem Lesen mit 413 ab', async () => {
+    const response = await call('/login', {
+      method: 'POST',
+      contentLength: String(8 * 1024 + 1),
+      body: formular({ identifier: 'testcafe', secret: PIN }),
+    });
+
+    expect(response.status).toBe(413);
+    expect(response.headers.get('set-cookie')).toBeNull();
   });
 
   /**

@@ -84,6 +84,11 @@ const MELDUNGEN: Readonly<Record<string, string>> = {
   status_conflict: 'Die Bestellung wurde zwischenzeitlich geändert. Bitte prüfe den aktuellen Stand.',
   status_not_found: 'Diese Bestellung gibt es nicht mehr. Es wurde nichts geändert.',
   status_internal: 'Der Bestellstatus wurde nicht gespeichert. Bitte versuche es gleich noch einmal.',
+  email_retry_sent: 'Die E-Mail wurde erneut gesendet.',
+  email_retry_failed: 'Die E-Mail konnte weiterhin nicht gesendet werden. Der Fehlerstand wurde gespeichert.',
+  email_retry_unavailable: 'Der E-Mail-Versand ist in dieser Umgebung nicht verfügbar.',
+  email_retry_not_available: 'Für diese Bestellung ist aktuell keine E-Mail zur Wiederholung verfügbar.',
+  email_retry_reconciliation_required: 'Der Provider hat die E-Mail angenommen, aber der Versandstand muss geprüft werden.',
   unknown_order: 'Diese Bestellung gibt es nicht. Der Zahlungsstatus wurde nicht gespeichert.',
   invalid: 'Die Auswahl war nicht lesbar. Der Zahlungsstatus wurde nicht gespeichert.',
   internal:
@@ -322,7 +327,7 @@ function kennzahlen(day: DashboardDayView, overview = false): string {
       <h2 id="kennzahlen-titel" class="nur-vorlesen">Die vier wichtigsten Signale des Tages</h2>
       <div class="kennzahlwand__gitter">
         ${karte('Bestellungen', String(day.orderCount), storniertHinweis(day), null, '#bestellungen')}
-        ${karte('Einheiten', String(day.totalUnits), 'bestellte Menge', null)}
+        ${karte('Einheiten', String(day.totalUnits), 'bestätigte Menge', null)}
         ${karte('Offen / in Arbeit', String(day.openCount), 'noch nicht abgeschlossen', null, `/admin/production?date=${day.day}`)}
         ${karte('Noch nicht bezahlt', day.unpaidLabel, `${day.unpaidCount} ${day.unpaidCount === 1 ? 'Bestellung' : 'Bestellungen'}`, day.unpaidCount > 0 ? 'betont' : null, `/admin/orders?date=${day.day}&orders=unpaid#bestellungen`)}
       </div>
@@ -348,7 +353,7 @@ function kennzahlen(day: DashboardDayView, overview = false): string {
           `/admin/orders?date=${day.day}&orders=unpaid#bestellungen`,
         )}
         ${karte('Kunden', String(day.customerCount), 'verschiedene Betriebe', 'zweit', '/admin/customers')}
-        ${karte('Einheiten', String(day.totalUnits), 'bestellte Menge', 'zweit')}
+        ${karte('Einheiten', String(day.totalUnits), 'bestätigte Menge', 'zweit')}
       </div>
     </section>`;
 }
@@ -746,7 +751,7 @@ function storniertHinweis(day: DashboardDayView): string {
 function topProdukte(day: DashboardDayView, title = 'Meistbestellt'): string {
   const inhalt =
     day.topProducts.length === 0
-      ? `<p class="tafel__leer">Für diesen Tag ist noch kein Produkt bestellt. Sobald eine Bestellung eingeht, steht hier, wovon am meisten gebraucht wird.</p>`
+      ? `<p class="tafel__leer">Für diesen Tag ist noch keine Bestellung bestätigt. Sobald eine Bestellung bestätigt ist, steht hier, wovon am meisten gebraucht wird.</p>`
       : `<ol class="topliste">
         ${day.topProducts
           .map(
@@ -863,6 +868,7 @@ function bestellzeile(order: DashboardOrderRowView, csrfToken: string): string {
         <span class="bestellzeile__nummer">${escapeHtml(order.orderNumber)}</span>
         <span class="bestellzeile__zeit">${escapeHtml(order.orderedAtLabel)}</span>
         ${order.emailStatusLabel === null ? '' : `<span class="bestellzeile__email">${escapeHtml(order.emailStatusLabel)}</span>`}
+        ${emailRetryForm(order, csrfToken)}
       </th>
       <td data-label="Kunde"><span class="bestellzeile__kunde">${escapeHtml(
         order.customerName,
@@ -884,6 +890,15 @@ function bestellzeile(order: DashboardOrderRowView, csrfToken: string): string {
         csrfToken,
       )}</td>
     </tr>`;
+}
+
+function emailRetryForm(order: DashboardOrderRowView, csrfToken: string): string {
+  if (!order.emailRetryAvailable) return '';
+  const orderNumber = escapeHtml(encodeURIComponent(order.orderNumber));
+  return `<form class="emailretry" method="post" action="/api/admin/orders/${orderNumber}/email-retry">
+          <input type="hidden" name="csrf_token" value="${escapeHtml(csrfToken)}">
+          <button type="submit" class="statustaste">E-Mail erneut senden<span class="hinweis"> — Bestellung ${escapeHtml(order.orderNumber)}</span></button>
+        </form>`;
 }
 
 function statusaktionen(order: DashboardOrderRowView, csrfToken: string): string {

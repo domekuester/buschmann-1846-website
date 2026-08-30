@@ -44,17 +44,19 @@ const ALLOWED_TARGETS: Readonly<Record<OrderStatus, readonly OrderStatus[]>> = {
  * die Frage „erzeugt der neue Status Produktion?" übersehbar — und das
  * Übersehen fiele erst auf, wenn etwas fehlt oder zu viel gebacken wurde.
  *
- * WARUM DIESE DREI:
+ * WARUM DIESE BEIDEN:
  *
- *   new            bestellt, noch nicht angefasst. Muss gebacken werden.
- *   confirmed      bestätigt. Muss gebacken werden.
+ *   confirmed      vom Betrieb angenommen. Muss gebacken werden.
  *   in_production  wird gerade gebacken — und bleibt bis zum Abschluss Teil
  *                  der Tagesmenge. Sie herauszunehmen hieße, dass die
  *                  Tagesliste schrumpft, während gearbeitet wird, und die
  *                  Backstube nicht mehr sähe, was sie gerade tut.
  *
- * WARUM DIE ANDEREN BEIDEN NICHT:
+ * WARUM DIE ANDEREN NICHT:
  *
+ *   new            eingegangen, aber noch nicht vom Betrieb angenommen. Sie
+ *                  bleibt als Eingang und Handlungsbedarf sichtbar, erzeugt
+ *                  bis zur Bestätigung jedoch keinen Produktionsbedarf.
  *   completed      erledigt. Gehört nicht mehr zur OFFENEN Menge.
  *   cancelled      storniert. Darf niemals Produktion erzeugen. Das ist die
  *                  Regel, deren Verletzung echten Schaden anrichtet.
@@ -62,7 +64,7 @@ const ALLOWED_TARGETS: Readonly<Record<OrderStatus, readonly OrderStatus[]>> = {
  * Die Reihenfolge ist die des Lebenszyklus — sie hat keine fachliche
  * Bedeutung, macht die Liste aber gegen ORDER_STATUSES lesbar.
  */
-export const OPEN_PRODUCTION_STATUSES = ['new', 'confirmed', 'in_production'] as const;
+export const OPEN_PRODUCTION_STATUSES = ['confirmed', 'in_production'] as const;
 
 /**
  * Zählt eine Bestellung in diesem Status kaufmännisch mit?

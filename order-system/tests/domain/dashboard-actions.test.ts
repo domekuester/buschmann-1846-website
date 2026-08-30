@@ -56,7 +56,7 @@ describe('dashboardActions — neue Bestellungen', () => {
 });
 
 describe('dashboardActions — offene Produktion', () => {
-  it('meldet die Bestellungen, die noch nicht abgeschlossen sind', () => {
+  it('meldet nur bestätigte und laufende Produktionsbestellungen', () => {
     const orders = [
       bestellung({ status: 'new' }),
       bestellung({ status: 'confirmed' }),
@@ -66,7 +66,7 @@ describe('dashboardActions — offene Produktion', () => {
 
     expect(eine(orders, 'open_production')).toEqual({
       key: 'open_production',
-      count: 3,
+      count: 2,
       amountCents: null,
     });
   });

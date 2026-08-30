@@ -1,5 +1,9 @@
 import type { AppConfig } from '../config/app-config';
 import {
+  PUBLIC_REQUEST_LIMITS,
+  consumePublicRequestLimit,
+} from '../application/public-request-rate-limit';
+import {
   hasFilledAccountRequestHoneypot,
   parseCustomerAccountRequest,
   type CustomerAccountRequestRawInput,
@@ -30,6 +34,19 @@ export async function submitCustomerAccountRequest(
   now: Date,
 ): Promise<Response> {
   assertSameOrigin(request, config);
+
+  const rateLimit = await consumePublicRequestLimit(
+    db,
+    config.pepper,
+    request.headers.get('cf-connecting-ip'),
+    PUBLIC_REQUEST_LIMITS.accountRequest,
+    now,
+  );
+  if (!rateLimit.allowed) {
+    return html({ values: {}, errors: {}, success: false, rateLimited: true }, 429, {
+      'retry-after': String(rateLimit.retryAfterSeconds),
+    });
+  }
 
   let fields: URLSearchParams;
   try {
@@ -103,6 +120,10 @@ function successRedirect(): Response {
 function html(
   view: Parameters<typeof renderCustomerAccountRequestPage>[0],
   status = 200,
+  extraHeaders: Record<string, string> = {},
 ): Response {
-  return new Response(renderCustomerAccountRequestPage(view), { status, headers: pageHeaders() });
+  return new Response(renderCustomerAccountRequestPage(view), {
+    status,
+    headers: { ...pageHeaders(), ...extraHeaders },
+  });
 }

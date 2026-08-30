@@ -74,6 +74,7 @@ describe('E-Mail-Migration', () => {
     ).all<{ name: string }>();
     expect(results.map((row) => row.name)).toEqual([
       'idx_email_outbox_order',
+      'idx_email_outbox_retry',
       'idx_email_outbox_status_created',
     ]);
   });

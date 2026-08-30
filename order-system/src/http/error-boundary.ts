@@ -3,6 +3,7 @@ import { UnsupportedMediaTypeError, unsupportedMediaType } from './auth-routes';
 import { ForbiddenError, UnauthenticatedError } from './guard';
 import { json } from './responses';
 import { privateHeaders } from './security';
+import { RequestError } from './json-body';
 
 /**
  * Die einzige Stelle, an der aus einem Fehler eine Antwort wird.
@@ -57,6 +58,10 @@ export function toSafeResponse(error: unknown): Response {
 
   if (error instanceof UnsupportedMediaTypeError) {
     return unsupportedMediaType();
+  }
+
+  if (error instanceof RequestError) {
+    return json({ error: error.code }, error.status, privateHeaders());
   }
 
   return json({ error: 'internal_error' }, 500, privateHeaders());
