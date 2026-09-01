@@ -93,6 +93,12 @@ const MELDUNGEN: Readonly<Record<string, string>> = {
   invalid: 'Die Auswahl war nicht lesbar. Der Zahlungsstatus wurde nicht gespeichert.',
   internal:
     'Der Zahlungsstatus wurde nicht gespeichert. Bitte versuche es gleich noch einmal.',
+  order_cancelled_by_items:
+    'Die letzte Position wurde storniert. Die Bestellung ist damit vollständig storniert.',
+  edit_not_editable:
+    'Diese Bestellung kann nicht mehr bearbeitet werden. Es wurde nichts geändert.',
+  edit_unknown_order: 'Diese Bestellung gibt es nicht. Es wurde nichts geändert.',
+  edit_internal: 'Die Änderung wurde nicht gespeichert. Bitte versuche es gleich noch einmal.',
 };
 
 export function renderAdminDashboardPage(view: AdminDashboardPageView): string {
@@ -878,7 +884,9 @@ function bestellzeile(order: DashboardOrderRowView, csrfToken: string): string {
           ? `<span class="bestellzeile__storno">${escapeHtml(order.statusLabel)}</span>`
           : escapeHtml(order.statusLabel)
       }</td>
-      <td data-label="Status ändern" class="statusaktionen">${statusaktionen(order, csrfToken)}</td>
+      <td data-label="Status ändern" class="statusaktionen">${statusaktionen(order, csrfToken)}${bearbeitenLink(
+        order,
+      )}</td>
       <td data-label="Betrag" class="bestellzeile__betrag">${escapeHtml(order.amountLabel)}</td>
       <td data-label="Zahlung">${
         order.isPaid
@@ -890,6 +898,33 @@ function bestellzeile(order: DashboardOrderRowView, csrfToken: string): string {
         csrfToken,
       )}</td>
     </tr>`;
+}
+
+/**
+ * Der Weg zur Positionsbearbeitung — ein LINK und kein Formular.
+ *
+ * Er steht in derselben Spalte wie die Statusschaltflächen, weil er zur
+ * selben Frage gehört: „was tue ich mit dieser Bestellung?". Er ist trotzdem
+ * anders gebaut, und der Unterschied ist die Aussage — ein Statuswechsel
+ * geschieht mit dem Klick, die Bearbeitung führt erst einmal auf eine Seite,
+ * auf der man sieht, was drinsteht.
+ *
+ * ER ERSCHEINT NICHT, WENN ER NICHT DARF. Ob bearbeitet werden kann, hat
+ * canEditOrderItems() im Ansichtsmodell entschieden; diese Datei prüft keinen
+ * Status. Ein Knopf, den der Server ablehnt, ist schlimmer als kein Knopf.
+ *
+ * Die Bestellnummer steht im sichtbar unsichtbaren Zusatz, damit ein
+ * Screenreader nicht zwanzigmal „Bestellung bearbeiten" ohne Bezug liest —
+ * dieselbe Bauart wie bei den Statusschaltflächen daneben.
+ */
+function bearbeitenLink(order: DashboardOrderRowView): string {
+  if (order.editHref === null) return '';
+
+  return `<a class="statustaste statustaste--bearbeiten" href="${escapeHtml(
+    order.editHref,
+  )}">Bestellung bearbeiten<span class="hinweis"> — Bestellung ${escapeHtml(
+    order.orderNumber,
+  )}</span></a>`;
 }
 
 function emailRetryForm(order: DashboardOrderRowView, csrfToken: string): string {
@@ -987,7 +1022,8 @@ function meldung(code: string | null): string {
   const text = Object.prototype.hasOwnProperty.call(MELDUNGEN, code) ? MELDUNGEN[code] : null;
   if (text === undefined || text === null) return '';
 
-  const istErfolg = code === 'payment_saved' || code === 'status_saved';
+  const istErfolg =
+    code === 'payment_saved' || code === 'status_saved' || code === 'order_cancelled_by_items';
   const klasse = istErfolg ? 'kundenmeldung kundenmeldung--erfolg' : 'banner kundenmeldung';
 
   return `<p class="${klasse}" role="status">${escapeHtml(text)}</p>`;

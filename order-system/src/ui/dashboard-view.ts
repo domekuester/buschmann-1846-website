@@ -7,7 +7,12 @@ import {
 import type { CostSummary } from '../domain/cost-summary';
 import type { DashboardDay } from '../domain/dashboard-day';
 import { fulfillmentLabel } from '../domain/fulfillment-type';
-import { ORDER_STATUSES, countsTowardsRevenue, orderStatusLabel } from '../domain/order-status';
+import {
+  ORDER_STATUSES,
+  canEditOrderItems,
+  countsTowardsRevenue,
+  orderStatusLabel,
+} from '../domain/order-status';
 import {
   PAYMENT_STATUSES,
   isPaid,
@@ -95,6 +100,18 @@ export interface DashboardOrderRowView {
   /** Kurzer, wortbasierter Versandstand; null wenn keine Nachricht vorgesehen war. */
   readonly emailStatusLabel: string | null;
   readonly emailRetryAvailable: boolean;
+  /**
+   * Der Weg zur Positionsbearbeitung — oder null, wenn diese Bestellung nicht
+   * mehr bearbeitet werden darf.
+   *
+   * DASS ES EIN `string | null` UND KEIN `canEdit: boolean` IST, ist Absicht:
+   * Die Zeile trägt damit entweder ein Ziel oder gar keins, und es gibt in der
+   * Oberfläche keine Stelle, an der aus einem `true` noch eine Adresse gebaut
+   * werden müsste. Ob bearbeitet werden darf, entscheidet canEditOrderItems()
+   * in der Domäne — dieselbe Funktion, mit der die Seite und der Endpunkt
+   * prüfen. Es gibt keine dritte Fassung dieser Regel.
+   */
+  readonly editHref: string | null;
 }
 
 export interface DashboardProductLineView {
@@ -390,6 +407,9 @@ export function toDashboardView(day: DashboardDay): DashboardDayView {
         ? null
         : `E-Mail: ${emailStatusLabel(order.emailSummary.status)} (${order.emailSummary.count})`,
       emailRetryAvailable: order.emailSummary?.canRetry ?? false,
+      editHref: canEditOrderItems(order.status)
+        ? `/admin/orders/${encodeURIComponent(order.orderNumber)}/bearbeiten`
+        : null,
     })),
 
     topProducts: day.topProducts.map((line) => ({

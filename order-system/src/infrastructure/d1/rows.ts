@@ -263,3 +263,51 @@ export interface DashboardWeekItemRow {
   quantity: number;
   unit_cost_cents_snapshot: number | null;
 }
+
+/**
+ * Die Kopfzeile einer Bestellung, wie die BEARBEITUNGSANSICHT sie liest.
+ *
+ * Sie ist nicht OrderRow: Jene trägt Kunde, Erfüllungsart, Lieferadresse,
+ * Notiz und Zeitstempel, weil das Bestelldokument sie braucht. Diese hier
+ * trägt sieben Spalten, und was fehlt, kann auf der Seite nicht landen.
+ */
+export interface EditableOrderRow {
+  id: number;
+  order_number: string;
+  customer_name_snapshot: string;
+  fulfillment_date: string;
+  status: string;
+  payment_status: string;
+  total_amount_cents: number;
+  /**
+   * Der Stand der Bestellung — hier NICHT als Zeitpunkt gelesen, sondern als
+   * optimistisches Vergleichsmerkmal. Siehe EditableOrder.version.
+   */
+  updated_at: string;
+}
+
+/**
+ * Eine Position, wie die BEARBEITUNGSANSICHT sie liest.
+ *
+ * ZWEI SPALTEN UNTERSCHEIDEN SIE VON OrderItemRow, und beide sind der Grund,
+ * warum es diese Zeilenform gibt:
+ *
+ *   id            die Zeilen-ID. Ein Formular muss eine Position benennen
+ *                 können; das Bestelldokument muss das nie.
+ *   cancelled_at  der Stornierungszeitpunkt. Diese Abfrage ist die einzige,
+ *                 die stornierte Positionen überhaupt lädt.
+ *
+ * unit_cost_cents_snapshot steht hier NICHT — anders als in OrderItemRow,
+ * DashboardItemRow und DashboardWeekItemRow. Herstellkosten gehören nicht auf
+ * eine Seite, auf der Mengen geändert werden.
+ */
+export interface EditableOrderItemRow {
+  id: number;
+  product_id: number;
+  product_name_snapshot: string;
+  product_unit_snapshot: string;
+  unit_price_cents: number;
+  quantity: number;
+  line_total_cents: number;
+  cancelled_at: string | null;
+}

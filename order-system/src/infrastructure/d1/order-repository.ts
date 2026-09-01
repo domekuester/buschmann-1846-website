@@ -123,10 +123,23 @@ export async function findOrderByNumber(db: D1Database, orderNumber: string): Pr
 
   const { results } = await db
     .prepare(
+      /**
+       * NUR AKTIVE POSITIONEN — seit Migration 0022.
+       *
+       * Eine stornierte Position steht weiterhin in der Tabelle; sie gehört
+       * nur nicht mehr in das GÜLTIGE Dokument. Ohne diese Bedingung wäre
+       * der Betrag der Bestellung die Summe aus Gültigem und Storniertem,
+       * und die Prüfung gegen total_amount_cents in toOrder() schlüge fehl.
+       *
+       * Wer die stornierten Positionen SEHEN will — die Bearbeitungsansicht
+       * tut das —, liest sie über admin-order-edit-repository.ts. Zwei
+       * Fragen, zwei Abfragen: „was gilt?" und „was stand hier einmal?".
+       */
       `SELECT product_id, product_name_snapshot, product_unit_snapshot, unit_price_cents, quantity,
               unit_cost_cents_snapshot
          FROM order_items
         WHERE order_id = ?
+          AND cancelled_at IS NULL
         ORDER BY id`,
     )
     .bind(row.id)
@@ -269,6 +282,29 @@ export interface OrderStatusUpdate {
  * (Migration 0003). Der Vergleich auf genau 1 hält das fest, statt sich darauf
  * zu verlassen.
  */
+/**
+ * WAS EIN STATUSWECHSEL SCHREIBT — genau einmal formuliert.
+ *
+ * Es gibt zwei Anweisungen im System, die den Status einer Bestellung setzen:
+ * updateOrderStatus() unten (der Klick eines Admins) und
+ * prepareCancelOrderWhenNoActiveItems() darunter (die letzte stornierte
+ * Position zieht die Bestellung nach). Sie unterscheiden sich in ihrer
+ * BEDINGUNG und in nichts sonst — und deshalb steht die Zuweisung hier und
+ * nicht zweimal darunter.
+ *
+ * Eine zweite Fassung wäre die Sorte Abweichung, die niemand bemerkt: Ein
+ * Auditfeld, das der eine Weg schreibt und der andere vergisst, fällt erst
+ * auf, wenn jemand fragt, wer eine Bestellung storniert hat, und die Antwort
+ * für die Hälfte der Fälle leer ist.
+ *
+ * Die vier Platzhalter sind, in dieser Reihenfolge: newStatus, updatedAt,
+ * actorAccountId, statusChangedAt.
+ */
+const STATUS_SET_CLAUSE = `SET status = ?,
+              updated_at = ?,
+              status_changed_by_account_id = ?,
+              status_changed_at = ?`;
+
 export async function updateOrderStatus(
   db: D1Database,
   update: OrderStatusUpdate,
@@ -276,10 +312,7 @@ export async function updateOrderStatus(
   const { meta } = await db
     .prepare(
       `UPDATE orders
-          SET status = ?,
-              updated_at = ?,
-              status_changed_by_account_id = ?,
-              status_changed_at = ?
+          ${STATUS_SET_CLAUSE}
         WHERE order_number = ?
           AND status = ?`,
     )
@@ -392,4 +425,71 @@ export async function findOrderFulfillmentDate(
     .first<{ fulfillment_date: string }>();
 
   return row === null ? null : row.fulfillment_date;
+}
+
+/**
+ * Die Anweisung, die eine Bestellung storniert, WEIL ihre letzte aktive
+ * Position storniert wurde.
+ *
+ * SIE WIRD VORBEREITET UND NICHT AUSGEFÜHRT. Der Aufrufer hängt sie an
+ * denselben db.batch(), in dem die Position storniert und der Gesamtbetrag
+ * fortgeschrieben wird — sonst könnte eine Bestellung ohne aktive Position in
+ * einem aktiven Status stehenbleiben, wenn zwischen zwei Aufrufen etwas
+ * schiefgeht. Das ist der Grund, warum sie hier steht und nicht als zweiter
+ * Aufruf von changeOrderStatus() in der Anwendungsschicht.
+ *
+ * SIE ENTHÄLT KEINE STATUSREGEL. Dass 'cancelled' von hier aus erreichbar
+ * ist, hat canTransitionTo() in der Domäne entschieden, bevor diese Funktion
+ * gerufen wurde; dass jede bearbeitbare Bestellung auch stornierbar ist, ist
+ * dort als Eigenschaft festgehalten und getestet. Diese Datei bindet Werte.
+ *
+ * DIE BEIDEN BEDINGUNGEN, und beide sind nötig:
+ *
+ *   status = ?        derselbe optimistische Schutz wie in
+ *                     updateOrderStatus(): geschrieben wird nur, wenn die
+ *                     Bestellung noch dort steht, wo der Aufrufer sie gelesen
+ *                     hat.
+ *
+ *   NOT EXISTS (...)  die eigentliche Aussage. Storniert wird die Bestellung
+ *                     nur, wenn im selben Batch tatsächlich die LETZTE aktive
+ *                     Position verschwunden ist. Hat die Stornierung davor
+ *                     nichts getroffen — ein veralteter Stand —, ist hier
+ *                     noch eine aktive Position da, und diese Anweisung
+ *                     trifft keine Zeile. Ohne sie könnte eine Bestellung mit
+ *                     aktiven Positionen storniert werden.
+ */
+export interface CancelOrderForEmptyItems {
+  readonly orderNumber: string;
+  readonly orderId: number;
+  readonly expectedStatus: OrderStatus;
+  readonly updatedAt: string;
+  readonly actorAccountId: number;
+  readonly statusChangedAt: string;
+}
+
+export function prepareCancelOrderWhenNoActiveItems(
+  db: D1Database,
+  update: CancelOrderForEmptyItems,
+): D1PreparedStatement {
+  return db
+    .prepare(
+      `UPDATE orders
+          ${STATUS_SET_CLAUSE}
+        WHERE order_number = ?
+          AND status = ?
+          AND NOT EXISTS (
+                SELECT 1 FROM order_items
+                 WHERE order_id = ?
+                   AND cancelled_at IS NULL
+              )`,
+    )
+    .bind(
+      'cancelled',
+      update.updatedAt,
+      update.actorAccountId,
+      update.statusChangedAt,
+      update.orderNumber,
+      update.expectedStatus,
+      update.orderId,
+    );
 }

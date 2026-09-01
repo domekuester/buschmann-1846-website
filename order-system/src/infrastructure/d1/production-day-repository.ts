@@ -100,6 +100,16 @@ const Q_ORDERS = `
  *
  * unit_price_cents und line_total_cents werden NICHT gelesen. Was nicht
  * geladen wird, kann nicht versehentlich serialisiert werden.
+ *
+ * `i.cancelled_at IS NULL` IST DIE WICHTIGSTE ZEILE DIESER ABFRAGE — seit
+ * Migration 0022. Eine stornierte Position darf niemals Produktion erzeugen;
+ * das ist dieselbe Regel wie bei einer stornierten Bestellung, nur eine
+ * Ebene tiefer. Ohne sie stünde eine abbestellte Position weiterhin auf der
+ * Backliste und kostete Zutaten und Arbeitszeit.
+ *
+ * Sie steht in der ABFRAGE und nicht in einem Filter dahinter, aus demselben
+ * Grund wie der Statusfilter: Was nicht geladen wird, kann auf keinem
+ * Ausdruck landen, der in der Backstube liegt.
  */
 const Q_ITEMS = `
   SELECT i.order_id, i.product_id, i.product_name_snapshot,
@@ -109,6 +119,7 @@ const Q_ITEMS = `
     JOIN products p ON p.id = i.product_id
    WHERE o.fulfillment_date = ?
      AND o.status IN (${STATUS_PLATZHALTER})
+     AND i.cancelled_at IS NULL
    ORDER BY i.order_id, p.sort_order, i.product_name_snapshot, i.product_id
 `;
 

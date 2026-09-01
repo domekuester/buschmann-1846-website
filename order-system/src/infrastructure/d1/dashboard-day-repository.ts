@@ -104,6 +104,12 @@ const Q_ORDERS = `
  * nach wie vor GENAU ZWEI Abfragen, ob der Tag eine Bestellung hat oder
  * vierzig.
  *
+ * `i.cancelled_at IS NULL` — seit Migration 0022. Eine stornierte Position
+ * hat keinen Umsatz gemacht und keine Herstellkosten verursacht; sie gehört
+ * weder in „Meistbestellt" noch in die Zahl der Einheiten noch in die
+ * Kostenbasis. Der Gesamtbetrag der Bestellung kommt ohnehin aus
+ * total_amount_cents und ist beim Stornieren mitgeschrieben worden.
+ *
  * DER JOIN GEHT NICHT AUF catalog_products. Der HEUTIGE Kostenwert eines
  * Produkts hat in dieser Abfrage nichts zu suchen: Er würde eine Bestellung
  * von letzter Woche rückwirkend neu bewerten. Gelesen wird ausschließlich
@@ -117,6 +123,7 @@ const Q_ITEMS = `
     JOIN orders   o ON o.id = i.order_id
     JOIN products p ON p.id = i.product_id
    WHERE o.fulfillment_date = ?
+     AND i.cancelled_at IS NULL
    ORDER BY i.order_id, p.sort_order, i.product_name_snapshot, i.product_id
 `;
 

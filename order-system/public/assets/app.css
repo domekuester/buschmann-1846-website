@@ -2686,6 +2686,262 @@ textarea[aria-invalid='true'] {
 
 .statusmeldung { margin: 0 0 1.5rem; }
 
+/* ---------- Bestellung bearbeiten ---------- */
+
+/* Die Seite ist breiter als die Stornobestätigung, weil sie eine Tabelle
+   trägt — und schmaler als das Dashboard, weil sie genau eine Bestellung
+   zeigt. Ab 375px steht jede Position als Block untereinander (die
+   .datentabelle-Regeln weiter oben tun das für jede Tabelle des Systems);
+   ab 900px wird daraus wieder eine echte Tabelle. */
+.bearbeitung {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 1.75rem var(--rand, 1rem) 3rem;
+}
+
+.bearbeitung__kicker {
+  margin: 0 0 .35rem;
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.bearbeitung h1 {
+  margin: 0 0 1.5rem;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 6vw, 2.05rem);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--navy);
+  overflow-wrap: anywhere;
+}
+
+.bearbeitung__daten {
+  display: grid;
+  gap: 0;
+  margin: 0 0 1.25rem;
+  border-top: var(--spur);
+}
+
+.bearbeitung__daten div {
+  padding: .7rem 0;
+  border-bottom: var(--spur);
+}
+
+.bearbeitung__daten dt {
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.bearbeitung__daten dd {
+  margin: .15rem 0 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* Die Zahlungswarnung trägt dieselbe Sprache wie jede andere ernste Meldung
+   des Systems: Fehlerfarbe, linker Balken, kein Symbol aus einer Schriftart,
+   die nicht geladen sein könnte. */
+.bearbeitung__zahlwarnung {
+  margin: 0 0 1.25rem;
+  padding: .85rem .9rem;
+  color: var(--fehler);
+  background: var(--fehler-grund);
+  border: 1px solid rgba(141, 43, 28, .45);
+  border-left: 4px solid var(--fehler);
+  border-radius: var(--radius);
+}
+
+.bearbeitung__zahlwarnung strong { display: block; margin-bottom: .2rem; }
+
+.bearbeitung__storno {
+  margin: 0 0 1.5rem;
+  padding: 1rem .95rem;
+  background: var(--fehler-grund);
+  border: 1px solid rgba(141, 43, 28, .45);
+  border-left: 4px solid var(--fehler);
+  border-radius: var(--radius);
+}
+
+.bearbeitung__storno h2 {
+  margin: 0 0 .5rem;
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--fehler);
+}
+
+.bearbeitung__storno-position { margin: 0 0 .45rem; overflow-wrap: anywhere; }
+
+.bearbeitung__storno-hinweis {
+  margin: 0 0 1rem;
+  font-size: .92rem;
+  color: var(--text-leise);
+}
+
+.bearbeitung__storno-aktionen {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: .6rem;
+}
+
+.bearbeitung__storno-aktionen form { margin: 0; }
+
+.bearbeitung__abbrechen,
+.bearbeitung__abbrechen:visited {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--tap, 44px);
+  padding: 0 1rem;
+  font-weight: 600;
+  color: var(--navy);
+  text-decoration: none;
+  background: transparent;
+  border: 1px solid var(--navy);
+  border-radius: var(--radius);
+}
+
+.bearbeitung__abbrechen:hover,
+.bearbeitung__abbrechen:focus-visible { background: rgba(10, 33, 57, .07); }
+
+.bearbeitung__produkt { display: block; font-weight: 600; overflow-wrap: anywhere; }
+.bearbeitung__einheit { display: block; font-size: .85rem; color: var(--text-leise); }
+
+.bearbeitung__betrag { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* Die Spaltenüberschriften dieser Tabelle dürfen NICHT mitten im Wort
+   umbrechen. `.datentabelle th` trägt systemweit `overflow-wrap: anywhere`,
+   damit lange Kundennamen eine schmale Zelle nicht sprengen — für eine
+   Überschrift wie „Stückpreis" ergibt dieselbe Regel „STÜCKPREI / S". Fünf
+   Spalten auf einem Tablet sind genau die Breite, in der das auffällt. */
+.bearbeitung__tabelle thead th { overflow-wrap: normal; hyphens: none; }
+
+/* Das Mengenfeld ist bewusst groß: Es wird am Telefon bedient, oft einhändig,
+   und eine 44px-Tippfläche ist hier keine Zugabe, sondern die Bedingung. */
+.bearbeitung__menge {
+  width: 6.5rem;
+  min-height: var(--tap, 44px);
+  padding: .35rem .6rem;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+  background: #fff;
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+}
+
+.bearbeitung__menge:focus-visible {
+  outline: 2px solid var(--navy);
+  outline-offset: 2px;
+}
+
+.bearbeitung__zeile--storniert { opacity: .72; }
+
+.bearbeitung__storniert {
+  display: inline-block;
+  padding: .1rem .5rem;
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--fehler);
+  background: var(--fehler-grund);
+  border: 1px solid rgba(141, 43, 28, .4);
+  border-radius: 999px;
+}
+
+.bearbeitung__urmenge {
+  display: block;
+  margin-top: .2rem;
+  font-size: .85rem;
+  color: var(--text-leise);
+}
+
+.bearbeitung__stornolink,
+.bearbeitung__stornolink:visited {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap, 44px);
+  font-weight: 600;
+  color: var(--fehler);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.bearbeitung__stornolink:hover,
+.bearbeitung__stornolink:focus-visible { color: #742216; }
+
+.bearbeitung__fuss {
+  display: flex;
+  flex-direction: column;
+  gap: .9rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--navy);
+}
+
+.bearbeitung__summe {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+}
+
+.bearbeitung__summe-wort {
+  font-size: .8rem;
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+.bearbeitung__summe-zahl {
+  font-family: var(--serif);
+  font-size: clamp(1.35rem, 5vw, 1.7rem);
+  font-variant-numeric: tabular-nums;
+  color: var(--navy);
+}
+
+.bearbeitung__leer { margin: 0; color: var(--text-leise); }
+
+/* Der Weg zurück — in der Linkfarbe des Adminbereichs und nicht im
+   Browserblau, das an dieser Stelle wie ein Fremdkörper aussieht. */
+.bearbeitung__weg { margin: 1.75rem 0 0; font-size: .95rem; }
+
+.bearbeitung__weg a,
+.bearbeitung__weg a:visited {
+  color: var(--navy);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.bearbeitung__weg a:hover,
+.bearbeitung__weg a:focus-visible { color: var(--champagner-text); }
+
+@media (min-width: 600px) {
+  .bearbeitung { padding-top: 2.5rem; }
+  .bearbeitung__daten { grid-template-columns: repeat(3, 1fr); gap: 0 1.5rem; }
+  .bearbeitung__storno-aktionen {
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .bearbeitung__fuss {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .bearbeitung__summe { justify-content: flex-start; gap: .75rem; }
+  .bearbeitung__fuss .senden { width: auto; }
+}
+
 @media (min-width: 600px) {
   .stornobestaetigung { padding-top: 2.5rem; }
   .stornobestaetigung__aktionen {

@@ -86,6 +86,14 @@ const Q_ORDERS = `
  * ES GIBT KEIN ORDER BY. Gezählt wird summierend; jede Sortierung wäre Arbeit
  * für ein Ergebnis, das niemand sieht.
  *
+ * `i.cancelled_at IS NULL` STEHT TROTZDEM IN SQL — und das ist kein
+ * Widerspruch zum Absatz darunter. Der Statusfilter fehlt, weil „zählt diese
+ * BESTELLUNG?" eine fachliche Regel mit einem Namen ist
+ * (countsTowardsRevenue). Die Stornierung einer POSITION ist keine Regel,
+ * sondern die Frage, welche Zeilen überhaupt zur Bestellung gehören — und
+ * die beantwortet die Abfrage, so wie sie auch beantwortet, welcher Tag
+ * gemeint ist.
+ *
  * KEIN STATUSFILTER IN SQL. Welche Bestellung zählt, entscheidet
  * countsTowardsRevenue() in der Domäne — an EINER Stelle für Umsatz und
  * Kosten. Ein `WHERE status <> 'cancelled'` hier wäre eine zweite Fassung der
@@ -96,6 +104,7 @@ const Q_ITEMS = `
     FROM order_items i
     JOIN orders o ON o.id = i.order_id
    WHERE o.fulfillment_date >= ? AND o.fulfillment_date <= ?
+     AND i.cancelled_at IS NULL
 `;
 
 /**

@@ -13,7 +13,7 @@
  */
 
 /**
- * Die Tabellen, die es nach 0017 geben muss.
+ * Die Tabellen, die es nach 0022 geben muss.
  *
  * `customer_access_tokens` steht bewusst NICHT hier: Sie kam mit 0006 und
  * wurde von 0010 wieder entfernt. Eine Prüfliste, die einfach jede jemals
@@ -37,6 +37,7 @@ export const EXPECTED_TABLES = Object.freeze([
   'email_outbox',
   'customer_account_requests',
   'public_request_rate_limits',
+  'order_item_changes',
 ]);
 
 /** Fehlende Tabellen. Zusätzliche sind kein Befund — sie können aus einer neueren Migration stammen. */

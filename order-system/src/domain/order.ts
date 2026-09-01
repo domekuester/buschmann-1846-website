@@ -109,7 +109,29 @@ export class Order {
   readonly updatedAt: string;
 
   private constructor(state: OrderState) {
-    if (state.items.length === 0) {
+    /**
+     * Eine Bestellung braucht mindestens eine Position — außer, sie ist
+     * storniert.
+     *
+     * DIE AUSNAHME IST NICHT AUFWEICHUNG, SONDERN DER EINZIGE EHRLICHE
+     * ZUSTAND einer Bestellung, deren letzte Position storniert wurde. Seit
+     * der Positionsbearbeitung kann genau das geschehen: Storniert ein Admin
+     * die letzte aktive Position, folgt die Bestellung selbst in den
+     * Storno-Zustand (siehe application/edit-order-item.ts). Das Repository
+     * liest ausschließlich AKTIVE Positionen; für eine so entstandene
+     * Bestellung sind das keine.
+     *
+     * Ohne diese Ausnahme wäre sie danach nicht mehr LESBAR — Stornoseite,
+     * Statusendpunkt und E-Mail-Nachversand liefen alle in diesen Fehler.
+     * Eine Bestellung, die man storniert hat und danach nicht mehr aufrufen
+     * kann, ist der schlechtere Zustand.
+     *
+     * Die stornierten Positionen sind dabei nicht verloren: Sie stehen
+     * unverändert in order_items und werden von der Bearbeitungsansicht
+     * gezeigt. Sie gehören nur nicht mehr in das GÜLTIGE Dokument, und der
+     * Gesamtbetrag einer stornierten Bestellung ist 0.
+     */
+    if (state.items.length === 0 && state.status !== 'cancelled') {
       throw new InvalidArgumentError('Eine Bestellung braucht mindestens eine Position.');
     }
     if (!Number.isInteger(state.customerId) || state.customerId <= 0) {

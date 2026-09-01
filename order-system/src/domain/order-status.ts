@@ -67,6 +67,53 @@ const ALLOWED_TARGETS: Readonly<Record<OrderStatus, readonly OrderStatus[]>> = {
 export const OPEN_PRODUCTION_STATUSES = ['confirmed', 'in_production'] as const;
 
 /**
+ * Die Status, deren POSITIONEN ein Admin noch ändern darf.
+ *
+ * DIESE LISTE IST DIE EINZIGE STELLE, an der steht, wann „Bestellung
+ * bearbeiten" möglich ist — dieselbe Bauart und derselbe Grund wie bei
+ * OPEN_PRODUCTION_STATUSES darüber. Sie steht auch aus demselben Grund hier
+ * und nicht in einem eigenen Modul: Wer einen sechsten Status hinzufügt,
+ * bearbeitet ORDER_STATUSES und steht dabei unvermeidlich vor dieser Liste.
+ *
+ * SIE IST NICHT DIE UMKEHRUNG VON isOpenProduction(), auch wenn sie so
+ * aussehen könnte. Die beiden Fragen sind verschieden, und sie überschneiden
+ * sich nur bei einem Wert:
+ *
+ *   new            Produktion: nein.   Bearbeiten: JA.
+ *   confirmed      Produktion: ja.     Bearbeiten: JA.
+ *   in_production  Produktion: ja.     Bearbeiten: nein.
+ *
+ * WARUM DIESE BEIDEN:
+ *
+ *   new            eingegangen, noch nicht angenommen. Es ist noch nichts
+ *                  geschehen, was eine Änderung widerlegen könnte.
+ *   confirmed      angenommen, aber noch nicht in Arbeit. Genau hier ruft
+ *                  das Café an — und genau hier ist die Änderung folgenlos
+ *                  bis auf die Zahl auf der Backliste von morgen.
+ *
+ * WARUM DIE ANDEREN NICHT:
+ *
+ *   in_production  die Backstube arbeitet bereits. Eine Menge, die sich unter
+ *                  der Hand ändert, widerspricht dem, was gerade im Ofen
+ *                  steht: Die Liste würde schrumpfen, während danach gebacken
+ *                  wird, und niemand sähe, welche der beiden Zahlen gilt. Wer
+ *                  hier eingreifen muss, storniert die Bestellung — das ist
+ *                  eine sichtbare Entscheidung und kein stiller Abgleich.
+ *   completed      erledigt. Eine abgeschlossene Bestellung nachträglich zu
+ *                  ändern hieße, den Umsatz eines vergangenen Tages
+ *                  umzuschreiben.
+ *   cancelled      storniert. Es gibt nichts mehr zu ändern.
+ *
+ * JEDER BEARBEITBARE STATUS MUSS AUCH STORNIERBAR SEIN. Wird die letzte
+ * aktive Position einer Bestellung storniert, folgt die Bestellung selbst in
+ * den Storno-Zustand; ginge das von hier aus nicht, entstünde eine Bestellung
+ * ohne aktive Position in einem aktiven Status. Die Kopplung ist getestet und
+ * gilt für beide Werte oben (ALLOWED_TARGETS führt von 'new' und 'confirmed'
+ * jeweils nach 'cancelled').
+ */
+export const EDITABLE_ITEM_STATUSES = ['new', 'confirmed'] as const;
+
+/**
  * Zählt eine Bestellung in diesem Status kaufmännisch mit?
  *
  * DIE FRAGE DES BETRIEBS, NICHT DIE DER BACKSTUBE. Für die Produktion zählt,
@@ -124,4 +171,17 @@ export function orderStatusLabel(status: OrderStatus): string {
  */
 export function isOpenProduction(status: OrderStatus): boolean {
   return (OPEN_PRODUCTION_STATUSES as readonly OrderStatus[]).includes(status);
+}
+
+/**
+ * Darf ein Admin die Positionen dieser Bestellung noch ändern?
+ *
+ * Die Frage wird HIER beantwortet und nirgends sonst — nicht in der
+ * HTTP-Schicht, nicht im Anwendungsfall, nicht in der Oberfläche. Ein
+ * `status === 'new' || status === 'confirmed'` an einer dieser Stellen wäre
+ * eine zweite Fassung dieser Regel, und die Fassung in der Oberfläche wäre
+ * diejenige, die eines Tages einen Knopf anzeigt, den der Server ablehnt.
+ */
+export function canEditOrderItems(status: OrderStatus): boolean {
+  return (EDITABLE_ITEM_STATUSES as readonly OrderStatus[]).includes(status);
 }

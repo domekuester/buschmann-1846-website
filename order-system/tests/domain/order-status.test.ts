@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ORDER_STATUSES,
   OPEN_PRODUCTION_STATUSES,
+  canEditOrderItems,
   canTransitionTo,
   isFinalStatus,
   isOpenProduction,
@@ -134,6 +135,68 @@ describe('offene Produktion', () => {
 
     for (const status of ORDER_STATUSES) {
       expect(isOpenProduction(status)).toBe(erwartung[status]);
+    }
+  });
+});
+
+/**
+ * Seit Phase „Bestellung bearbeiten": Darf ein Admin die Positionen dieser
+ * Bestellung noch ändern?
+ *
+ * Die Frage ist NICHT dieselbe wie isOpenProduction(). Eine Bestellung „in
+ * Produktion" erzeugt Produktionsbedarf UND ist gesperrt; eine Bestellung
+ * „neu" erzeugt keinen Bedarf UND ist offen. Die beiden Regeln überschneiden
+ * sich nur bei „bestätigt" — genau deshalb sind es zwei.
+ */
+describe('canEditOrderItems', () => {
+  it('erlaubt die Bearbeitung einer neuen Bestellung', () => {
+    expect(canEditOrderItems('new')).toBe(true);
+  });
+
+  it('erlaubt die Bearbeitung einer bestätigten Bestellung', () => {
+    expect(canEditOrderItems('confirmed')).toBe(true);
+  });
+
+  it('sperrt eine Bestellung, sobald sie in Produktion ist', () => {
+    expect(canEditOrderItems('in_production')).toBe(false);
+  });
+
+  it('sperrt jeden Endzustand', () => {
+    expect(canEditOrderItems('completed')).toBe(false);
+    expect(canEditOrderItems('cancelled')).toBe(false);
+  });
+
+  /**
+   * DER WÄCHTERTEST — dieselbe Bauart wie bei isOpenProduction() darüber. Wer
+   * einen sechsten Status hinzufügt, muss ausdrücklich entscheiden, ob er
+   * bearbeitbar ist; ein stilles „ist er halt nicht" gibt es nicht.
+   */
+  it('ordnet jeden bekannten Status ausdrücklich ein', () => {
+    const erwartung: Readonly<Record<(typeof ORDER_STATUSES)[number], boolean>> = {
+      new: true,
+      confirmed: true,
+      in_production: false,
+      completed: false,
+      cancelled: false,
+    };
+
+    for (const status of ORDER_STATUSES) {
+      expect(canEditOrderItems(status)).toBe(erwartung[status]);
+    }
+  });
+
+  /**
+   * Die Kopplung, die den fachlichen Kern absichert: Was bearbeitbar ist,
+   * muss auch stornierbar sein. Sonst könnte die letzte Position einer
+   * Bestellung storniert werden, ohne dass die Bestellung selbst in den
+   * Storno-Zustand folgen kann — und es entstünde eine Bestellung ohne
+   * aktive Position in einem aktiven Status.
+   */
+  it('kann jede bearbeitbare Bestellung auch stornieren', () => {
+    for (const status of ORDER_STATUSES) {
+      if (canEditOrderItems(status)) {
+        expect(canTransitionTo(status, 'cancelled')).toBe(true);
+      }
     }
   });
 });

@@ -96,9 +96,90 @@ gefragt, ob Sie wirklich stornieren wollen. Eine stornierte Bestellung
 verschwindet nicht — sie bleibt sichtbar, zählt aber nicht mehr zum Umsatz
 und nicht mehr zur Produktion.
 
-**Ändern kann eine Bestellung niemand.** Weder Sie noch der Kunde. Wenn sich
-etwas ändert: stornieren und neu bestellen lassen. Auch das ist Absicht — so
-steht in einer Bestellung immer das, was tatsächlich bestellt wurde.
+### Einzelne Positionen ändern
+
+Der häufigste Anruf im Betrieb: „Wir haben fünf Käsekuchen bestellt, wir
+brauchen nur drei." Dafür müssen Sie die Bestellung nicht mehr komplett
+stornieren.
+
+**Wo Sie es finden:** unter **Bestellungen**, in der Liste, bei jeder
+Bestellung in der Spalte für die Statusschaltflächen: **Bestellung
+bearbeiten**. Sie kommen auf eine eigene Seite, die alle Positionen dieser
+Bestellung zeigt — mit Produkt, Einheit, Stückpreis, Menge und
+Positionsbetrag.
+
+**Menge reduzieren:** Im Mengenfeld der Position die neue Zahl eintragen —
+aus 5 wird 3. Unten auf **Änderungen speichern**.
+
+**Menge erhöhen:** Genauso. Ruft das Café an und braucht zwei mehr, tragen
+Sie statt 3 eine 5 ein und speichern.
+
+Sie können mehrere Mengen auf einmal ändern; **Änderungen speichern** nimmt
+alle zusammen an.
+
+**Eine einzelne Position stornieren:** Rechts an der Position steht
+**Position stornieren**. Sie werden gefragt, ob Sie das wirklich wollen —
+erst danach wird storniert. Die übrigen Positionen der Bestellung bleiben
+unberührt. Für eine Mengenänderung werden Sie nicht gefragt; die können Sie
+einfach zurückschreiben.
+
+Eine Menge auf **0** setzen geht nicht. Wenn ein Produkt ganz wegfällt, ist
+das eine Stornierung der Position — und die soll man sehen.
+
+**Was Sie nicht selbst rechnen müssen:**
+
+* Der **Bestellbetrag** wird sofort neu gerechnet. Aus 5 × 22,00 € = 110,00 €
+  werden 3 × 22,00 € = 66,00 €. Es gilt weiterhin der Preis, zu dem damals
+  bestellt wurde — eine spätere Preisänderung im Sortiment wirkt nicht
+  rückwirkend.
+* Die **Produktion** zieht sofort nach. Standen fünf Käsekuchen auf dem
+  Backplan, stehen danach drei. Eine stornierte Position steht gar nicht mehr
+  darauf — auch nicht auf den Drucklisten.
+
+**Stornierte Positionen bleiben stehen.** Sie verschwinden nicht aus der
+Bestellung, sondern sind auf der Bearbeitungsseite weiterhin sichtbar,
+gekennzeichnet mit **Storniert** und mit der ursprünglich bestellten Menge.
+So bleibt nachvollziehbar, was das Café tatsächlich bestellt hatte und was
+später abbestellt wurde. Dasselbe gilt für eine geänderte Menge: Dass einmal
+5 bestellt waren, geht nicht verloren.
+
+**Wird die letzte verbliebene Position storniert**, ist damit die ganze
+Bestellung storniert. Sie landen wieder in der Bestellliste und sehen es dort.
+
+### Wann eine Bestellung bearbeitet werden kann
+
+Nur solange sie **Neu** oder **Bestätigt** ist. Sobald sie **In Produktion**
+steht, ist **Bestellung bearbeiten** nicht mehr da — die Backstube arbeitet
+bereits, und eine Menge, die sich dann noch heimlich ändert, widerspricht
+dem, was gerade im Ofen ist. Auch **Abgeschlossen** und **Storniert** lassen
+sich nicht mehr bearbeiten.
+
+Wenn sich an einer Bestellung in Produktion doch noch etwas ändern muss,
+sprechen Sie es in der Backstube ab und stornieren die Bestellung — das ist
+eine sichtbare Entscheidung.
+
+### Wenn die Bestellung schon als bezahlt eingetragen ist
+
+Dann steht oben auf der Bearbeitungsseite ein deutlicher Hinweis, bevor Sie
+speichern:
+
+> Diese Bestellung ist bereits als bezahlt markiert. Durch die Änderung
+> verändert sich der Bestellbetrag. Bitte die Zahlung bzw. Erstattung separat
+> prüfen.
+
+Ändern dürfen Sie trotzdem — der Anruf des Cafés ist ja echt. Das System
+rechnet aber **nichts** von selbst zurück: Es erstattet nichts, fordert
+nichts nach und ändert den eingetragenen Zahlungsstand nicht. Die Differenz
+klären Sie mit dem Kunden, wie Sie es ohnehin tun. Den neuen Bestellbetrag
+sehen Sie unten auf der Seite.
+
+### Der Kunde kann das nicht
+
+**Cafés und Privatkunden können ihre Bestellungen weder ändern noch
+stornieren.** In deren Ansicht gibt es dafür nichts — keine Schaltfläche,
+keinen Link, keine Seite. Jede Änderung an einer bestehenden Bestellung geht
+über Sie, nach einer Absprache am Telefon oder per Nachricht. Genau so ist es
+gedacht: Sie sollen wissen, was sich geändert hat, bevor es sich ändert.
 
 ---
 

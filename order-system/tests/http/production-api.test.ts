@@ -768,8 +768,10 @@ describe('GET /api/admin/production-day — Fehler', () => {
   it('verrät bei einem Datenbankfehler nichts über die Datenbank', async () => {
     const cookie = await alsAdmin();
 
-    // Die Tabelle verschwindet unter der laufenden Abfrage. Der
-    // Fremdschlüssel auf order_items zwingt dazu, sie zuerst zu leeren.
+    // Die Tabelle verschwindet unter der laufenden Abfrage. Die
+    // Fremdschlüssel zwingen zur Reihenfolge von innen nach außen:
+    // order_item_changes zeigt auf order_items, order_items auf orders.
+    await env.DB.prepare(`DROP TABLE order_item_changes`).run();
     await env.DB.prepare(`DROP TABLE order_items`).run();
     await env.DB.prepare(`DROP TABLE orders`).run();
 

@@ -50,6 +50,13 @@ import { createOrder } from './http/order-api';
 import { orderPage } from './http/order-page';
 import { productionDay } from './http/production-api';
 import { cancelOrderPage, matchCancelOrderPath } from './http/admin-cancel-page';
+import { adminOrderEditPage, matchOrderEditPath } from './http/admin-order-edit-page';
+import {
+  cancelOrderItemEndpoint,
+  matchOrderItemCancelPath,
+  matchOrderItemsPath,
+  saveOrderItemQuantitiesEndpoint,
+} from './http/admin-order-item-api';
 import { methodNotAllowed, notFound } from './http/responses';
 import { privateHeaders } from './http/security';
 import { createEnvironmentEmailSender } from './infrastructure/email/cloudflare-email-sender';
@@ -408,6 +415,23 @@ export default {
         );
       }
 
+      /**
+       * Die Bearbeitungsseite EINER Bestellung — lesend, admin only.
+       *
+       * Sie steht neben der Stornoseite und kann mit ihr nicht kollidieren:
+       * Beide Muster enden auf ein festes, verschiedenes Segment
+       * ('/cancel' und '/bearbeiten'), und ein Pfad kann nicht auf beide
+       * passen. Die 405 trägt privateHeaders(), damit auch die abweisende
+       * Antwort no-store trägt — wie bei jeder Adminroute.
+       */
+      const editOrderNumber = matchOrderEditPath(pathname);
+      if (editOrderNumber !== null) {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminOrderEditPage(env.DB, config, request, now, editOrderNumber);
+      }
+
       const cancelOrderNumber = matchCancelOrderPath(pathname);
       if (cancelOrderNumber !== null) {
         if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -577,6 +601,45 @@ export default {
           request,
           now,
           paymentOrderNumber,
+        );
+      }
+
+      /**
+       * Die Stornierung EINER Position — der schreibende Vorgang mit den
+       * meisten Pfadsegmenten und deshalb VOR dem Mengenendpunkt geprüft:
+       * Beide beginnen gleich, dieses Muster verlangt zwei weitere Segmente.
+       */
+      const orderItemCancel = matchOrderItemCancelPath(pathname);
+      if (orderItemCancel !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await cancelOrderItemEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          orderItemCancel.orderNumber,
+          orderItemCancel.itemId,
+        );
+      }
+
+      /**
+       * Die Mengen einer Bestellung speichern. Er kann mit /status,
+       * /payment und /email-retry nicht kollidieren — alle enden auf ein
+       * anderes festes Segment.
+       */
+      const orderItemsOrderNumber = matchOrderItemsPath(pathname);
+      if (orderItemsOrderNumber !== null) {
+        if (request.method !== 'POST') {
+          return methodNotAllowed('POST', privateHeaders());
+        }
+        return await saveOrderItemQuantitiesEndpoint(
+          env.DB,
+          config,
+          request,
+          now,
+          orderItemsOrderNumber,
         );
       }
 

@@ -439,4 +439,36 @@ describe('Order.restore', () => {
     expect(() => restored({ deliveryAddressSnapshot: null })).toThrow();
     expect(() => restored({ customerId: 0 })).toThrow();
   });
+
+  /**
+   * DIE EINE AUSNAHME VON „mindestens eine Position" — und sie hat einen
+   * genauen Grund.
+   *
+   * Seit der Positionsbearbeitung kann ein Admin die letzte aktive Position
+   * einer Bestellung stornieren. Die Bestellung folgt dann selbst in den
+   * Storno-Zustand; sie hat danach keine aktive Position mehr, und das
+   * Repository liest ausschließlich aktive Positionen.
+   *
+   * Ohne diese Ausnahme wäre eine so entstandene Bestellung nicht mehr
+   * LESBAR: Die Stornoseite, der Statusendpunkt und der E-Mail-Nachversand
+   * liefen alle in denselben Konstruktorfehler. Eine Bestellung, die man
+   * storniert hat und danach nicht mehr aufrufen kann, ist ein schlechterer
+   * Zustand als eine leere Positionsliste.
+   *
+   * Sie gilt AUSSCHLIESSLICH für 'cancelled'. Eine aktive Bestellung ohne
+   * Positionen bleibt das, was sie immer war: ein Fehler.
+   */
+  it('nimmt eine stornierte Bestellung ohne aktive Position an', () => {
+    const order = restored({ status: 'cancelled', items: [] });
+
+    expect(order.status).toBe('cancelled');
+    expect(order.items).toEqual([]);
+    expect(order.total().cents).toBe(0);
+  });
+
+  it('lehnt eine Bestellung ohne Position in jedem AKTIVEN Status ab', () => {
+    for (const status of ['new', 'confirmed', 'in_production', 'completed']) {
+      expect(() => restored({ status, items: [] })).toThrow();
+    }
+  });
 });
