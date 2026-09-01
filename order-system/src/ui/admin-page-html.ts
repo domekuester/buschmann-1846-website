@@ -360,12 +360,18 @@ export function renderStatusChangeFailurePage(
  * und Virenscannern ausgelöst und meldet dann jemanden ab, der nichts getan
  * hat.
  *
- * KEINE SIDEBAR. Seit Phase 6F gibt es genau FÜNF echte Ziele: Dashboard,
- * Produktion, Sortiment & Preise, Kunden und Bestellregeln. Mehr Navigation
+ * KEINE SIDEBAR. Es gibt genau SIEBEN echte Ziele: Übersicht, Bestellungen,
+ * Produktion, Angebot, Kunden, Auswertung und Einstellungen. Mehr Navigation
  * wäre weiterhin Attrappe — ein Menüpunkt „Finanzen", hinter dem keine Seite
  * liegt, ist kein Ausblick, sondern eine Unwahrheit im Kopf jeder Seite.
- * Jeder dieser fünf Einträge führt auf eine Seite, die es gibt und die etwas
- * tut.
+ * Jeder dieser sieben Einträge führt auf eine Seite, die es gibt und die
+ * etwas tut.
+ *
+ * AUSWERTUNG STEHT ZWISCHEN KUNDEN UND EINSTELLUNGEN, und das ist eine
+ * Aussage über den Tag: Die fünf Einträge davor sind das laufende Geschäft —
+ * was heute eingeht, was gebacken wird, was verkauft wird, wer bestellt.
+ * Auswertung ist der Blick zurück, und den nimmt man nach der Arbeit und
+ * nicht vor ihr. Vor die Produktion gesetzt wäre sie jeden Morgen im Weg.
  *
  * BESTELLREGELN STEHT ZULETZT, und das ist eine Aussage über den Tag: Es ist
  * die einzige Seite, die man EINMAL benutzt und dann monatelang nicht mehr.
@@ -386,7 +392,14 @@ export function renderStatusChangeFailurePage(
  * Tag, nicht das Vorzimmer der übrigen Seiten — eine Zwischenseite mit vier
  * Kacheln wäre ein Klick ohne Entscheidung.
  */
-export type AdminArea = 'overview' | 'orders' | 'production' | 'catalog' | 'customers' | 'settings';
+export type AdminArea =
+  | 'overview'
+  | 'orders'
+  | 'production'
+  | 'catalog'
+  | 'customers'
+  | 'analytics'
+  | 'settings';
 
 export function renderAdminShell(
   title: string,
@@ -416,6 +429,7 @@ export function renderAdminShell(
     <a href="/admin/production"${activeArea === 'production' ? ' aria-current="page"' : ''}>Produktion</a>
     <a href="/admin/catalog"${activeArea === 'catalog' ? ' aria-current="page"' : ''}>Angebot</a>
     <a href="/admin/customers"${activeArea === 'customers' ? ' aria-current="page"' : ''}>Kunden</a>
+    <a href="/admin/auswertung"${activeArea === 'analytics' ? ' aria-current="page"' : ''}>Auswertung</a>
     <a href="/admin/settings"${activeArea === 'settings' ? ' aria-current="page"' : ''}>Einstellungen</a>
   </nav>
   <div class="adminkopf__meta">

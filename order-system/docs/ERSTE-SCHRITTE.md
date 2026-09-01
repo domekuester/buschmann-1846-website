@@ -138,7 +138,7 @@ Ein guter erster Satz am Telefon:
 ## Danach
 
 Halten Sie sich in der ersten Woche an **„Ein typischer Arbeitstag"** im
-Betreiber-Handbuch, Kapitel 13. Nach ein paar Tagen geht es von selbst.
+Betreiber-Handbuch, Kapitel 14. Nach ein paar Tagen geht es von selbst.
 
 Was Sie in Ruhe später machen können:
 

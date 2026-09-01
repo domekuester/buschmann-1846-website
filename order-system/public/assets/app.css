@@ -1533,14 +1533,8 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
-.bereichskopf h1 {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: clamp(1.65rem, 7vw, 2.15rem);
-  font-weight: 500;
-  line-height: 1.2;
-  color: var(--navy);
-}
+/* Der Titel selbst ist Rolle 1 des Adminsystems (siehe Phase 9B) und steht
+   deshalb nicht mehr hier. */
 
 .bereichskopf__vorspann {
   margin: .45rem 0 0;
@@ -1575,8 +1569,6 @@ textarea[aria-invalid='true'] {
 
 .datentabelle th[scope='row'] {
   padding-bottom: .65rem;
-  color: var(--navy);
-  font-size: 1.05rem;
   text-align: left;
   border-bottom: var(--spur);
 }
@@ -1589,14 +1581,7 @@ textarea[aria-invalid='true'] {
   color: var(--text);
 }
 
-.datentabelle td::before {
-  content: attr(data-label);
-  color: var(--text-leise);
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
+.datentabelle td::before { content: attr(data-label); }
 
 .katalogpreis { font-variant-numeric: tabular-nums; }
 
@@ -1988,15 +1973,7 @@ textarea[aria-invalid='true'] {
 
 .katalogbereich + .katalogbereich { margin-top: 2.75rem; }
 
-.katalogbereich__titel {
-  margin: 0 0 .35rem;
-  color: var(--navy);
-  font-family: var(--serif);
-  font-size: 1.15rem;
-  font-weight: 500;
-  letter-spacing: 0;
-  text-transform: none;
-}
+.katalogbereich__titel { margin: 0 0 .35rem; color: var(--navy); }
 
 .katalogbereich__vorspann {
   margin: 0 0 1.1rem;
@@ -2222,22 +2199,9 @@ textarea[aria-invalid='true'] {
   gap: .15rem;
 }
 
-.tag__label {
-  font-family: var(--sans);
-  font-size: .78rem;
-  font-weight: 600;
-  letter-spacing: .09em;
-  text-transform: uppercase;
-  color: var(--text-leise);
-}
-
-.tag__datum {
-  font-family: var(--serif);
-  font-size: 1.5rem;
-  font-weight: 500;
-  line-height: 1.2;
-  color: var(--navy);
-}
+/* Beschriftung und Datum sind die Rollen 2 und 1 des Adminsystems. Der
+   frühere Stand setzte das Datum hier auf 1,5rem — kleiner als die
+   Abschnittsüberschrift darunter. */
 
 /* ---------- Datumsnavigation ---------- */
 
@@ -2606,14 +2570,7 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
-.stornobestaetigung h1 {
-  margin: 0 0 1.5rem;
-  font-family: var(--serif);
-  font-size: clamp(1.6rem, 7vw, 2.15rem);
-  font-weight: 500;
-  line-height: 1.2;
-  color: var(--navy);
-}
+/* Die Überschrift ist Rolle 1 des Adminsystems. */
 
 .stornobestaetigung__daten {
   margin: 0 0 1.25rem;
@@ -2708,15 +2665,7 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
-.bearbeitung h1 {
-  margin: 0 0 1.5rem;
-  font-family: var(--serif);
-  font-size: clamp(1.5rem, 6vw, 2.05rem);
-  font-weight: 500;
-  line-height: 1.2;
-  color: var(--navy);
-  overflow-wrap: anywhere;
-}
+/* Die Überschrift ist Rolle 1 des Adminsystems. */
 
 .bearbeitung__daten {
   display: grid;
@@ -2768,13 +2717,7 @@ textarea[aria-invalid='true'] {
   border-radius: var(--radius);
 }
 
-.bearbeitung__storno h2 {
-  margin: 0 0 .5rem;
-  font-family: var(--serif);
-  font-size: 1.2rem;
-  font-weight: 500;
-  color: var(--fehler);
-}
+.bearbeitung__storno h2 { margin: 0 0 .5rem; color: var(--fehler); }
 
 .bearbeitung__storno-position { margin: 0 0 .45rem; overflow-wrap: anywhere; }
 
@@ -2902,12 +2845,7 @@ textarea[aria-invalid='true'] {
   color: var(--text-leise);
 }
 
-.bearbeitung__summe-zahl {
-  font-family: var(--serif);
-  font-size: clamp(1.35rem, 5vw, 1.7rem);
-  font-variant-numeric: tabular-nums;
-  color: var(--navy);
-}
+.bearbeitung__summe-zahl { color: var(--navy); }
 
 .bearbeitung__leer { margin: 0; color: var(--text-leise); }
 
@@ -2981,18 +2919,8 @@ textarea[aria-invalid='true'] {
     vertical-align: top;
     border-bottom: var(--spur);
   }
-  .datentabelle thead th {
-    color: var(--text-leise);
-    font-size: .75rem;
-    letter-spacing: .05em;
-    text-transform: uppercase;
-    border-top: var(--spur);
-  }
-  .datentabelle th[scope='row'] {
-    color: var(--navy);
-    font-size: .95rem;
-    border-bottom: var(--spur);
-  }
+  .datentabelle thead th { border-top: var(--spur); }
+  .datentabelle th[scope='row'] { border-bottom: var(--spur); }
   .datentabelle td::before { content: none; }
 
   /* DIE WOCHENTABELLE HAT SEIT PHASE 7B SECHS SPALTEN — und zwischen 600px
@@ -3278,14 +3206,7 @@ textarea[aria-invalid='true'] {
   color: var(--champagner-text);
 }
 
-.dashkopf__tag {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: clamp(1.5rem, 5.4vw, 1.95rem);
-  font-weight: 500;
-  line-height: 1.15;
-  color: var(--navy);
-}
+/* Der Tag ist der Seitentitel der Übersicht — Rolle 1 des Adminsystems. */
 
 /* HILFSINFORMATION, KEIN VORSPANN.
 
@@ -3551,16 +3472,7 @@ textarea[aria-invalid='true'] {
 /* Die Beschriftung tritt zurück: klein, gesperrt, in Versalien und in der
    leisen Textfarbe. Sie sagt, WORÜBER die Zahl spricht — sie spricht nicht
    selbst. */
-.kennzahlkarte__label {
-  grid-area: label;
-  margin: 0;
-  font-size: .7rem;
-  font-weight: 700;
-  letter-spacing: .1em;
-  line-height: 1.3;
-  text-transform: uppercase;
-  color: var(--text-leise);
-}
+.kennzahlkarte__label { grid-area: label; color: var(--text-leise); }
 
 /* DIE ZAHL IST DIE ANTWORT DER SEITE. Sie steht in der Serife der Marke, in
    der Farbe der Marke und größer als alles andere auf der Seite außer dem
@@ -3578,44 +3490,19 @@ textarea[aria-invalid='true'] {
    Serife mit Tabellenziffern steht, greift die Zeile; wo nicht, kostet sie
    nichts. Die sechs Zahlen stehen in getrennten Feldern und nicht in einer
    Spalte — es hängt an dieser Zeile also keine Ausrichtung. */
-.kennzahlkarte__wert {
-  grid-area: wert;
-  margin: 0;
-  font-family: var(--serif);
-  font-size: clamp(1.45rem, 6.2vw, 1.85rem);
-  font-weight: 500;
-  line-height: 1.1;
-  color: var(--navy);
-  text-align: right;
-  white-space: nowrap;
-  font-variant-numeric: lining-nums tabular-nums;
-}
+.kennzahlkarte__wert { grid-area: wert; text-align: right; }
 
 /* Der Hilfstext ordnet ein und darf mit der Zahl nie konkurrieren: kleiner
    als der Fließtext, in der leisen Textfarbe, ohne eigenes Gewicht. */
-.kennzahlkarte__hinweis {
-  grid-area: hinweis;
-  margin: .1rem 0 0;
-  font-size: .76rem;
-  line-height: 1.35;
-  color: var(--text-leise);
-}
+.kennzahlkarte__hinweis { grid-area: hinweis; margin: .1rem 0 0; }
 
 @media (min-width: 480px) {
-  .kennzahlkarte__wert {
-    margin: .45rem 0 0;
-    font-size: clamp(1.8rem, 4.2vw, 2.3rem);
-    text-align: left;
-  }
+  .kennzahlkarte__wert { margin: .45rem 0 0; text-align: left; }
 
   /* margin-top: auto — der Hilfstext sitzt am Fuß der Zelle. Damit stehen die
      Hilfstexte einer Reihe auf einer Linie, statt jeder unter seiner Zahl zu
      hängen. */
-  .kennzahlkarte__hinweis {
-    margin-top: auto;
-    padding-top: .5rem;
-    font-size: .78rem;
-  }
+  .kennzahlkarte__hinweis { margin-top: auto; padding-top: .5rem; }
 }
 
 /* UMSATZ DARF EINE STUFE LAUTER SEIN — und nur eine.
@@ -3633,13 +3520,9 @@ textarea[aria-invalid='true'] {
      eine Ziffer abschneidet. Der Unterschied zwischen 40px und 41,6px ist
      keiner, den jemand bemerkt; der zwischen einem vollständigen und einem
      angeschnittenen Betrag schon. */
-  .kennzahlkarte--haupt .kennzahlkarte__wert {
-    font-size: clamp(2rem, 4.7vw, 2.5rem);
-  }
-
-  .kennzahlkarte--zweit .kennzahlkarte__wert {
-    font-size: clamp(1.5rem, 3.4vw, 1.85rem);
-  }
+  /* Die eine Stufe für die Hauptzahl steht in Rolle 8; eine dritte Stufe
+     („--zweit") gibt es nicht mehr — sie war der Unterschied, den niemand
+     benennen konnte. */
 }
 
 /* DIE EINZIGE ZELLE, DIE ZU ETWAS AUFFORDERT.
@@ -3822,16 +3705,7 @@ textarea[aria-invalid='true'] {
 
    Die feste Mindestbreite hält die Kante auch dann, wenn eine Zahl zweistellig
    ist und die nächste einstellig. */
-.handlungszeile__zahl {
-  min-width: 1.9rem;
-  font-family: var(--serif);
-  font-size: 1.65rem;
-  font-weight: 500;
-  line-height: 1;
-  color: var(--navy);
-  text-align: right;
-  font-variant-numeric: lining-nums tabular-nums;
-}
+.handlungszeile__zahl { min-width: 1.9rem; color: var(--navy); text-align: right; }
 
 .handlungszeile__text { min-width: 0; }
 
@@ -4251,14 +4125,7 @@ textarea[aria-invalid='true'] {
   text-align: center;
 }
 
-.ring__zahl {
-  font-family: var(--serif);
-  font-size: 1.85rem;
-  font-weight: 500;
-  line-height: 1;
-  color: var(--navy);
-  font-variant-numeric: lining-nums tabular-nums;
-}
+.ring__zahl { color: var(--navy); }
 
 .ring__wort {
   margin-top: .25rem;
@@ -4427,14 +4294,7 @@ textarea[aria-invalid='true'] {
   border-bottom: var(--spur);
 }
 
-.tafel__titel {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 1.15rem;
-  font-weight: 500;
-  line-height: 1.2;
-  color: var(--navy);
-}
+.tafel__titel { color: var(--navy); }
 
 /* Die kleine Angabe rechts im Tafelkopf sagt, WAS in der Tafel steht —
    „nach Menge" bei Meistbestellt, die Zahl der Einträge bei den Bestellungen.
@@ -4490,13 +4350,7 @@ textarea[aria-invalid='true'] {
 
 /* Eine Ziffer, keine Medaille: schmal, in der Serife der Marke, im gedeckten
    Gold der Kicker. Sie ordnet, sie prämiert nicht. */
-.topliste__rang {
-  font-family: var(--serif);
-  font-size: .95rem;
-  line-height: 1.4;
-  color: var(--champagner-text);
-  font-variant-numeric: lining-nums tabular-nums;
-}
+.topliste__rang { line-height: 1.4; color: var(--champagner-text); }
 
 .topliste__zeile:last-child { border-bottom: 0; }
 
@@ -4515,12 +4369,7 @@ textarea[aria-invalid='true'] {
 /* Dieselbe Bauart wie in der Backliste der Produktionsansicht: die Zahl in
    der Serife, die Einheit klein daneben. Die Menge ist die Antwort der
    Zeile — der Name ist die Frage. */
-.topliste__zahl {
-  font-family: var(--serif);
-  font-size: 1.15rem;
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-}
+/* Die Menge ist Rolle 9 des Adminsystems — die Zahl in einer Zeile. */
 
 .topliste__einheit {
   font-size: .8rem;
@@ -5114,14 +4963,7 @@ textarea[aria-invalid='true'] {
   border: var(--spur);
   border-radius: var(--radius);
 }
-.regelblock legend {
-  padding: 0 .4rem;
-  margin-left: -.4rem;
-  font-family: var(--serif);
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--navy);
-}
+.regelblock legend { padding: 0 .4rem; margin-left: -.4rem; color: var(--navy); }
 .regelblock__hinweis {
   margin: .5rem 0 0;
   font-size: .92rem;
@@ -5257,7 +5099,70 @@ textarea[aria-invalid='true'] {
 
 .adminseite {
   --admin-max: 1200px;
-  font-family: var(--marken-sans);
+
+  /* ---- Typografie: EIN System für alle sieben Bereiche ----
+
+     Der Befund, aus dem diese Schicht entstanden ist: Übersicht, Produktion,
+     Angebot, Kunden, Auswertung und Einstellungen setzten ihre Überschriften
+     in SECHS verschiedenen Maßen, ihre Kennzahlen in zwei verschiedenen
+     Schriftarten und ihre Beschriftungen in sieben Varianten derselben Idee.
+     Jede einzelne Entscheidung war für sich vertretbar; zusammen ergaben sie
+     einen Adminbereich, der aussah wie sechs Adminbereiche.
+
+     JEDE ROLLE HAT GENAU EINE GRÖSSE. Wer eine neue Größe zu brauchen glaubt,
+     braucht in Wahrheit eine der vorhandenen Rollen. Eine achte Zwischengröße
+     wäre die erste, bei der der Blick nicht mehr weiß, wohin.
+
+     DIE SCHRIFTEN SIND DIE DER MARKE UND KEINE NEUEN. Newsreader trägt alles,
+     was benannt und abgelesen wird — Überschriften und Zahlen; Instrument
+     Sans trägt alles, was gelesen und bedient wird — Fließtext, Tabellen,
+     Felder, Schaltflächen. Das ist die ganze Regel.
+
+     DIE clamp()-WERTE RECHNEN MIT rem + vw statt mit reinem vw. Reines vw
+     schrumpft auf 375px unter die Lesbarkeit und springt zwischen 1024 und
+     1440 sichtbar mit der Fensterbreite; die Mischung hält die Kurve flach
+     und die Untergrenze auf einem Wert, den man auf einem Tresengerät noch
+     aus einem Meter Entfernung liest.
+
+     GEMESSEN UND NICHT GERATEN: Newsreader setzt seine Ziffern von Haus aus
+     auf gleiche Breite (alle zehn messen 1100 Einheiten) und führt zusätzlich
+     `tnum`; Instrument Sans setzt sie proportional (391–666) und führt
+     `tnum`. Deshalb steht `font-variant-numeric: tabular-nums` unten überall
+     dort, wo Zahlen untereinander stehen — in der Sans ist es die Bedingung
+     für eine gerade Spalte, in der Serife die Bestätigung. */
+  --admin-serif: var(--marken-serif);
+  --admin-sans: var(--marken-sans);
+
+  /* Überschriften — drei Stufen, mehr nicht. */
+  --tp-titel: clamp(2.05rem, 1.5rem + 2.4vw, 3.05rem);
+  --tp-abschnitt: clamp(1.55rem, 1.25rem + 1.05vw, 2.05rem);
+  --tp-tafel: clamp(1.28rem, 1.15rem + .5vw, 1.5rem);
+  --tp-unter: 1.1rem;
+
+  /* Zahlen — drei Stufen plus die eine Ablesezahl der Produktion. */
+  --tp-wert-ablesen: clamp(2.4rem, 1.6rem + 3.4vw, 3.8rem);
+  --tp-wert-gross: clamp(2rem, 1.4rem + 2.05vw, 2.9rem);
+  --tp-wert: clamp(1.6rem, 1.15rem + 1.5vw, 2.3rem);
+  --tp-wert-akzent: 1.7rem;
+  --tp-wert-klein: 1.12rem;
+
+  /* Text — vom Vorspann bis zur kleinsten Beschriftung. */
+  --tp-vorspann: .95rem;
+  --tp-basis: 1rem;
+  --tp-hilfe: .85rem;
+  --tp-mikro: .75rem;
+  --tp-label: .72rem;
+
+  --tp-label-spur: .1em;
+  --tp-kicker-spur: .14em;
+  --tp-titel-spur: -.015em;
+
+  --lh-titel: 1.1;
+  --lh-wert: 1.05;
+  --lh-text: 1.55;
+
+  font-family: var(--admin-sans);
+  font-size: var(--tp-basis);
   color: var(--text);
   background: var(--porzellan);
 }
@@ -5285,11 +5190,15 @@ textarea[aria-invalid='true'] {
   color: var(--porzellan);
 }
 .adminseite .marke span { color: var(--champagner-soft, #d1b27b); }
+/* Die Unterzeile des Kopfes ist ein Kicker wie jeder andere — sie trug
+   zuletzt .68rem und war damit die kleinste Schrift des ganzen
+   Adminbereichs, auf einem Tresengerät gemessene 10,9px. */
 .adminkopf__subline {
   margin: .35rem 0 0;
   color: rgba(243, 237, 223, .66);
-  font-size: .68rem;
-  letter-spacing: .14em;
+  font-size: var(--tp-label);
+  font-weight: 600;
+  letter-spacing: var(--tp-kicker-spur);
   text-transform: uppercase;
 }
 
@@ -5355,27 +5264,341 @@ textarea[aria-invalid='true'] {
   margin: 0 auto;
   padding: clamp(2.2rem, 5vw, 4rem) clamp(1.25rem, 4vw, 3rem) 5rem;
 }
-.adminseite .bereichskopf { margin-bottom: 2rem; }
-.adminseite .bereichskopf__kicker,
-.adminseite .dashkopf__kicker {
-  margin: 0 0 .45rem;
-  color: var(--champagner-text);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .14em;
-  text-transform: uppercase;
-}
+
+/* ---- Die Rollen ----
+
+   Hier steht jede Rolle GENAU EINMAL, mit allen Bereichen, die sie tragen,
+   in einer Selektorliste. Das ist der Unterschied zwischen einem System und
+   sieben Seiten, die sich zufällig ähneln: Wer die Größe einer Überschrift
+   ändern will, ändert sie hier — und sie ändert sich überall.
+
+   Die Auswertung steht in jeder dieser Listen. Sie ist der siebte Bereich
+   und nicht der erste Bereich einer zweiten Oberfläche. */
+
+/* ROLLE 1 — DER SEITENTITEL. Die eine große Zeile, mit der eine Seite
+   anfängt: der Bereichsname auf Bestellungen, Angebot und Kunden, der Tag
+   auf Übersicht und Produktion, der Zeitraum auf der Auswertung. Sie sagen
+   alle dasselbe — „worüber spricht diese Seite" — und sehen deshalb ab jetzt
+   gleich aus.
+
+   `text-wrap: balance` verteilt einen zweizeiligen Titel auf zwei ähnlich
+   lange Zeilen, statt ein einzelnes Wort in die zweite fallen zu lassen. Wo
+   der Browser es nicht kennt, passiert nichts. */
 .adminseite .bereichskopf h1,
+.adminseite .auswertkopf__titel,
+.adminseite .stornobestaetigung h1,
+.adminseite .bearbeitung h1,
 .adminseite .dashkopf__tag,
 .adminseite .tag__datum {
-  font-family: var(--marken-serif);
+  margin: 0;
+  font-family: var(--admin-serif);
+  font-size: var(--tp-titel);
   font-weight: 400;
-  letter-spacing: -.015em;
+  line-height: var(--lh-titel);
+  letter-spacing: var(--tp-titel-spur);
+  color: var(--navy);
+  text-wrap: balance;
+}
+
+/* Die beiden Einzelseiten — Stornobestätigung und Bestellung bearbeiten —
+   führen ihren Titel ohne Kicker und brauchen deshalb den Abstand, den die
+   Bereichsköpfe von ihrer Kopfzeile bekommen. Ein langer Kundenname darf
+   dort weiterhin im Wort umbrechen. */
+.adminseite .stornobestaetigung h1,
+.adminseite .bearbeitung h1 { margin-bottom: 1.5rem; overflow-wrap: anywhere; }
+
+/* ROLLE 2 — DER KICKER. Zwei Wörter über dem Titel, die sagen, welche Art
+   Seite das ist. Klein, gesperrt, in Versalien — die einzige Stelle des
+   Systems, an der Versalien noch stehen, weil sie hier Auszeichnung sind und
+   keine Steifheit.
+
+   ALLE VIER STEHEN IM GEDECKTEN GOLD. Der Kicker der Produktion
+   (`.tag__label`) war zuletzt der einzige in der leisen Textfarbe — auf
+   sechs goldenen Kickern der sechste in Grau, und damit die letzte Stelle,
+   an der ein Bereich sich selbst zitierte statt dem System zu folgen. */
+.adminseite .bereichskopf__kicker,
+.adminseite .dashkopf__kicker,
+.adminseite .auswertkopf__kicker,
+.adminseite .tag__label {
+  margin: 0 0 .4rem;
+  font-family: var(--admin-sans);
+  font-size: var(--tp-label);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: var(--tp-kicker-spur);
+  text-transform: uppercase;
+}
+.adminseite .bereichskopf__kicker,
+.adminseite .dashkopf__kicker,
+.adminseite .auswertkopf__kicker,
+.adminseite .tag__label { color: var(--champagner-text); }
+
+/* ROLLE 3 — DER VORSPANN. Ein Satz unter dem Titel, der einordnet. Er ist
+   Hilfsinformation und kein Anreißer: auf Lesebreite begrenzt, eine Stufe
+   leiser als der Fließtext, mit der offenen Zeilenhöhe eines Satzes. */
+.adminseite .bereichskopf__vorspann,
+.adminseite .dashkopf__vorspann,
+.adminseite .auswertkopf__vorspann,
+.adminseite .produktion__meta {
+  max-width: 68ch;
+  font-size: var(--tp-vorspann);
+  line-height: var(--lh-text);
+  color: var(--text-leise);
+}
+
+/* ROLLE 4 — DER ABSCHNITTSTITEL. Die großen Zwischenüberschriften INNERHALB
+   einer Seite: „Zu produzieren", „Produkte", „Bestellannahme". Eine Stufe
+   unter dem Seitentitel und eine über dem Tafelkopf.
+
+   Hier lag der auffälligste Bruch des alten Standes: Auf der Produktion
+   stand die h1 mit dem Datum in 1,5rem, die h2 darunter in bis zu 3rem — die
+   Überschrift der Seite war kleiner als die ihres ersten Abschnitts. */
+.adminseite .produktion__kopf h2,
+.adminseite .einstellungsabschnitt > h2,
+.adminseite .katalogbereich__titel {
+  margin: 0;
+  font-family: var(--admin-serif);
+  font-size: var(--tp-abschnitt);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: var(--tp-titel-spur);
+  color: var(--navy);
+  text-transform: none;
+}
+
+/* ROLLE 5 — DER TAFELKOPF. Der Titel einer einzelnen Tafel, Liste oder
+   Bearbeitungsfläche. Er ist eine Beschriftung der Fläche und keine Ansage;
+   deshalb fällt er auf dem Telefon mit, statt dort so groß zu stehen wie auf
+   dem Schreibtisch.
+
+   HIER LAG DER ZWEITE BRUCH: Auf der Angebotsseite steht „Produkte" INNERHALB
+   von „Bestehende Produkte" — und die innere Überschrift war größer als die
+   äußere, die sie enthält. Der Abschnitt ist Rolle 4, seine beiden Flächen
+   sind Rolle 5. */
+.adminseite .tafel__titel,
+.adminseite .operator-liste__kopf h2,
+.adminseite .operator-editor-pane__kicker,
+.adminseite .kundenarbeitsplatz > .operator-editor > summary,
+.adminseite .bearbeitung__storno h2 {
+  margin: 0;
+  font-family: var(--admin-serif);
+  font-size: var(--tp-tafel);
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: 0;
+  color: var(--navy);
+  text-transform: none;
+}
+
+/* Die eine Tafel, die nicht in der Markenfarbe steht: die Stornofläche der
+   Bestellbearbeitung. Sie behält ihr Rot — die Rolle regelt die Schrift, die
+   Farbe bleibt eine Aussage der Fläche. */
+.adminseite .bearbeitung__storno h2 { margin-bottom: .5rem; color: var(--fehler); }
+
+/* ROLLE 6 — DIE FELDGRUPPE. Die Legende über einer Gruppe von Feldern. Die
+   kleinste Überschrift des Systems — und immer noch eine Überschrift. */
+.adminseite .operator-editor-pane .operator-preisgruppe legend,
+.adminseite .operator-preisgruppe legend,
+.adminseite .regelblock legend {
+  font-family: var(--admin-serif);
+  font-size: var(--tp-unter);
+  font-weight: 500;
+  line-height: 1.25;
   color: var(--navy);
 }
-.adminseite .bereichskopf h1 { font-size: clamp(2.25rem, 4vw, 3.4rem); }
-.adminseite .bereichskopf__vorspann,
-.adminseite .dashkopf__vorspann { color: var(--text-leise); font-size: .98rem; }
+
+/* ROLLE 7 — DIE BESCHRIFTUNG EINER ZAHL. Sie sagt, WORÜBER die Zahl spricht;
+   sie spricht nicht selbst. Übersicht und Auswertung setzten sie bisher in
+   zwei verschiedenen Maßen — ein Unterschied, den niemand benennen konnte
+   und den trotzdem jeder sah, der die beiden Seiten nacheinander öffnete. */
+.adminseite .kennzahlkarte__label,
+.adminseite .kennzahlwand--fokus .kennzahlkarte__label,
+.adminseite .auswertlabel,
+.adminseite .vergleich__titel,
+.adminseite .kurve__skala-wort {
+  margin: 0;
+  font-family: var(--admin-sans);
+  font-size: var(--tp-label);
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: var(--tp-label-spur);
+  text-transform: uppercase;
+}
+
+/* ROLLE 8 — DIE ZAHL. Die Antwort einer Karte.
+
+   SIE STEHT IN DER SERIFE DER MARKE — auf allen Seiten. Die Übersicht setzte
+   sie zuletzt in der Sans mit −.04em Laufweite; das ist die Zahl, die jedes
+   SaaS-Dashboard dieser Welt zeigt, und sie ist auf einer Seite mit
+   Bäckereizahlen austauschbar. Newsreader ist die Schrift, die diesem
+   Betrieb gehört, ihre Ziffern sind von Haus aus gleich breit, und sie
+   stand auf fünf der sieben Seiten ohnehin schon.
+
+   BETRÄGE BRECHEN NICHT: „1.240,50" auf der einen und „€" auf der nächsten
+   Zeile ist kein Betrag mehr. Dass die Zahl trotzdem in jede Zelle passt,
+   besorgt das clamp(). */
+.adminseite .kennzahlkarte__wert,
+.adminseite .auswertwert {
+  margin: 0;
+  font-family: var(--admin-serif);
+  font-size: var(--tp-wert);
+  font-weight: 500;
+  line-height: var(--lh-wert);
+  letter-spacing: 0;
+  color: var(--navy);
+  white-space: nowrap;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Die eine Zahl, nach der zuerst gesucht wird, darf EINE Stufe lauter sein.
+   Nicht zwei, und keine zweite Farbe dazu. */
+.adminseite .kennzahlwand--fokus .kennzahlkarte__wert,
+.adminseite .kennzahlkarte--haupt .kennzahlkarte__wert,
+.adminseite .auswertkarte--haupt .auswertwert {
+  font-size: var(--tp-wert-gross);
+}
+
+/* ROLLE 9 — DIE ZAHL IN EINER ZEILE. Mengen und Beträge, die in Listen und
+   Tabellen untereinander stehen. Dieselbe Serife, dieselben Tabellenziffern,
+   ein Maß kleiner — und damit endlich eine gerade Spalte statt neun
+   verschiedener Ziffernbreiten.
+
+   Die Ausrichtung, die Farbe und der Umbruchschutz bleiben bei der Zeile:
+   Sie sind eine Eigenschaft der Liste und nicht der Schrift. */
+.adminseite .topliste__zahl,
+.adminseite .topliste__betrag,
+.adminseite .anteil__wert,
+.adminseite .kurve__skala-wert,
+.adminseite .vergleich__zeile--vorher .vergleich__wert {
+  font-family: var(--admin-serif);
+  font-size: var(--tp-wert-klein);
+  font-weight: 500;
+  line-height: 1.2;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ROLLE 9b — DIE ZAHL, DIE ALLEIN STEHT. Die Ziffer in der Mitte eines
+   Rings, die Zahl vor einer Handlungszeile, die Summe einer Bearbeitung,
+   der Betrag eines Vergleichs: Sie steht nicht in einer Spalte, sondern für
+   sich, und trägt deshalb ein Maß mehr. */
+.adminseite .handlungszeile__zahl,
+.adminseite .ring__zahl,
+.adminseite .vergleich__wert,
+.adminseite .bearbeitung__summe-zahl {
+  font-family: var(--admin-serif);
+  font-size: var(--tp-wert-akzent);
+  font-weight: 500;
+  line-height: 1.1;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* Der Rang einer Topliste ist eine Ordnungszahl und keine Aussage: dieselbe
+   Serife, aber im Maß des Fließtextes — er ordnet, er prämiert nicht. */
+.adminseite .topliste__rang {
+  font-family: var(--admin-serif);
+  font-size: var(--tp-basis);
+  font-weight: 500;
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+/* ROLLE 10 — DER HILFSTEXT. Er ordnet ein und darf mit der Zahl nie
+   konkurrieren: kleiner als der Fließtext, in der leisen Textfarbe, ohne
+   eigenes Gewicht — und trotzdem groß genug, um ihn zu lesen und nicht nur
+   zu bemerken. */
+.adminseite .kennzahlkarte__hinweis,
+.adminseite .kennzahlwand--fokus .kennzahlkarte__hinweis,
+.adminseite .auswerthinweis,
+.adminseite .topliste__zusatz,
+.adminseite .vergleich__wann,
+.adminseite .anteil__anzahl,
+.adminseite .tafel__meta,
+.adminseite .operator-liste__kopf p,
+.adminseite .operator-editor-pane__status {
+  font-size: var(--tp-hilfe);
+  line-height: 1.4;
+  color: var(--text-leise);
+}
+
+/* ROLLE 11 — DER TABELLENKOPF. Eine Beschriftung und keine Überschrift:
+   dasselbe Maß und dieselbe Sperrung wie jede andere Beschriftung des
+   Systems. Vorher trugen dieselben Tabellen je nach Seite .7rem/.12em,
+   .72rem/.12em oder .75rem/.05em. */
+.adminseite .datentabelle thead th,
+.adminseite .bestellliste .datentabelle thead th,
+.adminseite .katalogbereich .datentabelle thead th,
+.adminseite .kundenliste .datentabelle thead th,
+.adminseite .backliste thead th,
+.adminseite .datentabelle td::before,
+.adminseite .anfragenliste .datentabelle td::before {
+  font-family: var(--admin-sans);
+  font-size: var(--tp-label);
+  font-weight: 700;
+  letter-spacing: var(--tp-label-spur);
+  text-transform: uppercase;
+  color: var(--text-leise);
+}
+
+/* ROLLE 12 — DIE TABELLENZEILE. Der Zeilenkopf trägt den Namen und ist die
+   Antwort der Zeile; die Zellen tragen die Angaben.
+
+   TABELLENZIFFERN FÜR DIE GANZE TABELLE. Instrument Sans setzt seine Ziffern
+   von Haus aus proportional — gemessen reichen sie von 391 bis 666
+   Einheiten. In einer Betragsspalte heißt das: Kein Komma steht unter einem
+   Komma. Eine Zeile, und die Spalte steht. */
+.adminseite .datentabelle {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+.adminseite .datentabelle th[scope='row'] {
+  font-family: var(--admin-sans);
+  font-size: var(--tp-basis);
+  font-weight: 600;
+  color: var(--navy);
+}
+.adminseite .datentabelle td { font-size: var(--tp-vorspann); }
+
+/* ROLLE 13 — FORMULAR UND BEDIENUNG. Beschriftungen über Feldern sind RUHIG
+   und nicht gesperrt: Ein Feldname wird gelesen, nicht überflogen — Versalien
+   wären hier Steifheit ohne Gewinn. Felder und Schaltflächen tragen dieselbe
+   Größe wie der Fließtext; alles darunter zwingt iOS beim Fokus zum Zoomen. */
+.adminseite .operator-formular label,
+.adminseite .feld label,
+.adminseite .feld--eng label,
+.adminseite .regelform label,
+.adminseite .email-empfaenger__zeile label,
+.adminseite .tagnav__formular label,
+.adminseite .zeitwahl__feld label,
+.adminseite .anfragedaten dt {
+  font-family: var(--admin-sans);
+  font-size: var(--tp-hilfe);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-leise);
+}
+.adminseite input,
+.adminseite select,
+.adminseite textarea,
+.adminseite button {
+  font-size: var(--tp-basis);
+}
+.adminseite input,
+.adminseite select { font-variant-numeric: lining-nums tabular-nums; }
+
+/* ROLLE 14 — DER LEERZUSTAND. „Für diesen Tag liegt nichts vor." Ein leerer
+   Zustand ist kein Kleingedrucktes: Er wird gelesen, und er ist oft die
+   einzige Zeile der Fläche. Deshalb steht er im Maß des Vorspanns und nicht
+   im Maß einer Fußnote.
+
+   `.hinweis` steht bewusst NICHT in dieser Liste — das ist die Vorlesehilfe
+   und hat keine sichtbare Größe. */
+.adminseite .leer,
+.adminseite .tafel__leer,
+.adminseite .kundenbereich-nav {
+  font-size: var(--tp-vorspann);
+  line-height: var(--lh-text);
+}
+
+.adminseite .bereichskopf { margin-bottom: 2rem; }
 
 .adminseite .dashkopf {
   display: grid;
@@ -5384,7 +5607,6 @@ textarea[aria-invalid='true'] {
   gap: 1.5rem;
   margin-bottom: 1.35rem;
 }
-.adminseite .dashkopf__tag { font-size: clamp(2.6rem, 5vw, 4.25rem); line-height: 1.02; }
 .adminseite .dashkopf__aktion { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .5rem; margin: 0; }
 .adminseite .dashkopf__aktion a,
 .adminseite .dashkopf__aktion a:visited {
@@ -5428,15 +5650,8 @@ textarea[aria-invalid='true'] {
   padding: 1.25rem 1.35rem;
   background: var(--porzellan);
 }
-.adminseite .kennzahlwand--fokus .kennzahlkarte__label { font-size: .72rem; color: var(--text-leise); }
-.adminseite .kennzahlwand--fokus .kennzahlkarte__wert {
-  margin-top: .65rem;
-  font-family: var(--marken-sans);
-  font-size: clamp(2rem, 3.7vw, 3rem);
-  font-weight: 600;
-  letter-spacing: -.04em;
-}
-.adminseite .kennzahlwand--fokus .kennzahlkarte__hinweis { font-size: .8rem; }
+.adminseite .kennzahlwand--fokus .kennzahlkarte__label { color: var(--text-leise); }
+.adminseite .kennzahlwand--fokus .kennzahlkarte__wert { margin-top: .65rem; }
 .adminseite .kennzahlwand--fokus .kennzahlkarte--betont {
   background: var(--ivory, #f3eddf);
   box-shadow: inset 3px 0 0 var(--champagner);
@@ -5458,7 +5673,6 @@ textarea[aria-invalid='true'] {
   box-shadow: none;
 }
 .adminseite .tafel__kopf { padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(197, 154, 82, .35); }
-.adminseite .tafel__titel { font-family: var(--marken-serif); font-size: 1.55rem; font-weight: 400; }
 .adminseite .handlung,
 .adminseite .finanzen,
 .adminseite .topprodukte { margin-bottom: 1.5rem; }
@@ -5472,9 +5686,6 @@ textarea[aria-invalid='true'] {
 .adminseite .bestellliste .datentabelle,
 .adminseite .katalogbereich .datentabelle,
 .adminseite .kundenliste .datentabelle { background: transparent; }
-.adminseite .bestellliste .datentabelle thead th,
-.adminseite .katalogbereich .datentabelle thead th,
-.adminseite .kundenliste .datentabelle thead th { color: var(--text-leise); font-size: .7rem; letter-spacing: .12em; }
 .adminseite .bestellliste .datentabelle tbody tr:hover,
 .adminseite .katalogbereich .datentabelle tbody tr:hover,
 .adminseite .kundenliste .datentabelle tbody tr:hover { background: var(--ivory, #f3eddf); }
@@ -5519,8 +5730,7 @@ textarea[aria-invalid='true'] {
   padding-bottom: .75rem;
   border-bottom: 1px solid rgba(197, 154, 82, .45);
 }
-.adminseite .operator-liste__kopf h2 { margin: 0; font-family: var(--marken-serif); font-size: 1.55rem; font-weight: 400; color: var(--navy); }
-.adminseite .operator-liste__kopf p { margin: 0; color: var(--text-leise); font-size: .78rem; }
+.adminseite .operator-liste__kopf p { margin: 0; }
 .adminseite .operator-liste__zeilen { border-top: 1px solid rgba(197, 154, 82, .35); }
 .adminseite .operator-eintrag {
   margin: 0;
@@ -5578,10 +5788,9 @@ textarea[aria-invalid='true'] {
   padding-bottom: .75rem;
   border-bottom: 1px solid rgba(197, 154, 82, .45);
 }
-.adminseite .operator-editor-pane__kicker { margin: 0; font-family: var(--marken-serif); font-size: 1.55rem; color: var(--navy); }
-.adminseite .operator-editor-pane__status { margin: 0; color: var(--text-leise); font-size: .78rem; }
+.adminseite .operator-editor-pane__status { margin: 0; }
 .adminseite .operator-editor-pane .operator-preisgruppe { border: 0; border-top: 1px solid var(--leinen); border-radius: 0; padding-inline: 0; }
-.adminseite .operator-editor-pane .operator-preisgruppe legend { padding: 0; font-family: var(--marken-serif); font-size: 1.1rem; font-weight: 400; }
+.adminseite .operator-editor-pane .operator-preisgruppe legend { padding: 0; }
 .adminseite .operator-editor-pane .senden { min-height: 2.9rem; padding-inline: 1.2rem; border-radius: 2px; }
 
 /* Customers inherit the same list/editor rhythm; creation stays progressive. */
@@ -5592,7 +5801,7 @@ textarea[aria-invalid='true'] {
   }
 }
 .adminseite .kundenarbeitsplatz > .operator-editor { margin: 0; background: transparent; border: 0; border-top: 1px solid rgba(197, 154, 82, .45); border-radius: 0; }
-.adminseite .kundenarbeitsplatz > .operator-editor > summary { padding: .9rem 0; font-family: var(--marken-serif); font-size: 1.55rem; font-weight: 400; color: var(--navy); }
+.adminseite .kundenarbeitsplatz > .operator-editor > summary { padding: .9rem 0; }
 .adminseite .kundenarbeitsplatz .operator-formular { padding-inline: 0; }
 .adminseite .kundenarbeitsplatz .operator-formular--kunden { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .adminseite .kundenliste .datentabelle tbody tr { background: transparent; }
@@ -5641,7 +5850,6 @@ textarea[aria-invalid='true'] {
 }
 
 .adminseite .anfragenliste { margin-top: 0; }
-.adminseite .anfragenliste .datentabelle { font-size: .88rem; }
 .adminseite .anfragenliste .datentabelle td { vertical-align: top; }
 .adminseite .kundenzustand--offen { color: var(--navy); border-color: var(--champagner); }
 
@@ -5655,12 +5863,7 @@ textarea[aria-invalid='true'] {
 
 .adminseite .anfragedaten div { min-width: 0; }
 .adminseite .anfragedaten__breit { grid-column: 1 / -1; }
-.adminseite .anfragedaten dt {
-  color: var(--text-leise);
-  font-size: .75rem;
-  font-weight: 600;
-  letter-spacing: .04em;
-}
+.adminseite .anfragedaten dt { color: var(--text-leise); }
 .adminseite .anfragedaten dd {
   margin: .25rem 0 0;
   color: var(--text);
@@ -5690,13 +5893,7 @@ textarea[aria-invalid='true'] {
     grid-template-columns: minmax(7rem, 10rem) minmax(0, 1fr);
     gap: .75rem;
   }
-  .adminseite .anfragenliste .datentabelle td::before {
-    content: attr(data-label);
-    color: var(--text-leise);
-    font-size: .72rem;
-    font-weight: 600;
-    letter-spacing: .04em;
-  }
+  .adminseite .anfragenliste .datentabelle td::before { content: attr(data-label); }
 }
 
 /* Production: quantity-first work surface, no finance/dashboard styling. */
@@ -5704,16 +5901,29 @@ textarea[aria-invalid='true'] {
 .adminseite--production .kopf { background: var(--navy-night, #061729); }
 .adminseite--production .produktion--workmode { margin-top: 0; }
 .adminseite--production .produktion__kopf { display: flex; align-items: baseline; gap: 1.5rem; margin-bottom: .85rem; }
-.adminseite--production .produktion__kopf h2 { margin: 0; font-family: var(--marken-serif); font-size: clamp(2rem, 3.6vw, 3rem); font-weight: 400; color: var(--navy); }
-.adminseite--production .produktion__meta { margin: 0; color: var(--text-leise); font-size: .9rem; }
+.adminseite--production .produktion__meta { margin: 0; }
 .adminseite--production .backliste { width: 100%; border-collapse: collapse; border: 1px solid rgba(197, 154, 82, .55); }
 .adminseite--production .backliste th,
 .adminseite--production .backliste td { padding: 1rem 1.25rem; border-bottom: 1px solid var(--leinen); }
-.adminseite--production .backliste thead th { color: var(--text-leise); font-size: .72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; text-align: left; }
-.adminseite--production .backliste__produkt { font-family: var(--marken-sans); font-size: 1.15rem; font-weight: 600; color: var(--navy); text-align: left; }
-.adminseite--production .backliste__menge { width: 10rem; background: var(--navy); text-align: right; }
-.adminseite--production .backliste__zahl { font-family: var(--marken-sans); font-size: clamp(2.4rem, 5vw, 4rem); font-weight: 600; line-height: 1; color: var(--porzellan); }
-.adminseite--production .backliste__einheit { color: var(--porzellan); font-size: .85rem; }
+.adminseite--production .backliste thead th { text-align: left; }
+.adminseite--production .backliste__produkt { font-family: var(--admin-sans); font-size: var(--tp-unter); font-weight: 600; color: var(--navy); text-align: left; }
+/* DIE EINHEIT DARF UMBRECHEN, DIE ZAHL NICHT.
+
+   Der Mengenkasten trug `white-space: nowrap` mit der Begründung, die Zahl
+   dürfe nie umbrechen. Das stimmt — nur braucht eine Zahl dafür keine Regel:
+   „16" hat keine Stelle, an der ein Browser sie trennen könnte. Betroffen war
+   in Wahrheit nur die Einheit daneben, und bei „30 cm Kasten oder 26 cm Ring"
+   lief die Zeile auf 375px 39px über die rechte Tabellenkante hinaus und
+   wurde abgeschnitten — im Browser nachgemessen.
+
+   Kurze Einheiten stehen weiterhin neben der Zahl; nur die lange bricht. */
+.adminseite--production .backliste__menge { width: 10rem; background: var(--navy); text-align: right; white-space: normal; }
+/* DIE ABLESEZAHL — die einzige Zahl des Systems, die aus zwei Metern gelesen
+   wird, und deshalb die einzige mit einer eigenen Stufe. Sie steht in
+   derselben Serife wie jede andere Zahl des Adminbereichs; was sie
+   auszeichnet, ist ihre Größe und nicht eine zweite Schriftart. */
+.adminseite--production .backliste__zahl { font-family: var(--admin-serif); font-size: var(--tp-wert-ablesen); font-weight: 500; line-height: 1; color: var(--porzellan); font-variant-numeric: lining-nums tabular-nums; }
+.adminseite--production .backliste__einheit { color: var(--porzellan); font-size: var(--tp-hilfe); }
 .adminseite--production .produktion--workmode .hinweis { color: var(--text-leise); }
 .adminseite--production .seitenaktion { display: flex; flex-wrap: wrap; gap: .65rem; margin: 0 0 1.5rem; }
 .adminseite--production .seitenaktion a { display: inline-flex; align-items: center; min-height: 2.9rem; padding: 0 .9rem; color: var(--navy); border: 1px solid rgba(10, 33, 57, .48); border-radius: 2px; font-weight: 600; text-decoration: none; }
@@ -5729,15 +5939,11 @@ textarea[aria-invalid='true'] {
   border-top: 1px solid rgba(10, 33, 57, .22);
 }
 .adminseite--settings .einstellungsabschnitt:first-of-type { margin-top: 1.5rem; }
-.adminseite--settings .einstellungsabschnitt > h2 {
-  margin: 0;
-  font-family: var(--marken-serif);
-  font-size: clamp(1.65rem, 3vw, 2.15rem);
-  font-weight: 500;
-  color: var(--navy);
-}
 .adminseite--settings .einstellungsabschnitt__vorspann {
   margin: .35rem 0 1.25rem;
+  max-width: 68ch;
+  font-size: var(--tp-vorspann);
+  line-height: var(--lh-text);
   color: var(--text-leise);
 }
 .adminseite--settings .regelstand,
@@ -5745,10 +5951,9 @@ textarea[aria-invalid='true'] {
 .adminseite--settings .regelstand { border-left: 3px solid var(--champagner); }
 .adminseite--settings .regelform__senden { min-height: 2.9rem; border-radius: 2px; }
 .adminseite--settings .email-empfaenger { margin-top: 1.25rem; padding-top: 1rem; border-top: var(--spur); }
-.adminseite--settings .email-empfaenger__titel { margin: 0; font-weight: 650; color: var(--navy); }
+.adminseite--settings .email-empfaenger__titel { margin: 0; font-family: var(--admin-serif); font-size: var(--tp-unter); font-weight: 500; color: var(--navy); }
 .adminseite--settings .email-empfaenger__liste { display: grid; gap: .75rem; margin-top: .85rem; }
 .adminseite--settings .email-empfaenger__zeile { display: grid; gap: .3rem; }
-.adminseite--settings .email-empfaenger__zeile label { font-size: .82rem; color: var(--text-leise); }
 .adminseite--settings .email-empfaenger__zeile input {
   width: min(100%, 30rem);
   min-height: var(--tap);
@@ -5804,10 +6009,8 @@ textarea[aria-invalid='true'] {
   .adminseite .admin { padding: 2rem 1rem 4rem; }
   .adminseite .dashkopf { grid-template-columns: 1fr; align-items: start; }
   .adminseite .dashkopf__aktion { justify-content: flex-start; }
-  .adminseite .dashkopf__tag { font-size: clamp(2.25rem, 10vw, 3.2rem); }
   .adminseite--overview .overview-arbeitsflaeche { grid-template-columns: 1fr; }
   .adminseite .kennzahlwand--fokus .kennzahlkarte { min-height: 7.5rem; padding: .9rem; }
-  .adminseite .kennzahlwand--fokus .kennzahlkarte__wert { font-size: clamp(1.65rem, 8vw, 2.3rem); }
   .adminseite .operator-arbeitsplatz,
   .adminseite .kundenarbeitsplatz { grid-template-columns: 1fr; gap: 1.75rem; }
   .adminseite .operator-formular.operator-editor-pane { padding-top: 0; }
@@ -5820,7 +6023,6 @@ textarea[aria-invalid='true'] {
   .adminseite--production .backliste th,
   .adminseite--production .backliste td { padding: .8rem .65rem; }
   .adminseite--production .backliste__menge { width: 7rem; }
-  .adminseite--production .backliste__zahl { font-size: 2.35rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -5833,4 +6035,671 @@ textarea[aria-invalid='true'] {
   .adminseite .admin-shell,
   .adminseite .dashkopf__aktion,
   .adminseite .tagleiste { display: none !important; }
+}
+
+/* ==========================================================================
+   Auswertung
+
+   Der siebte Adminbereich — und die einzige Seite des Systems, die
+   ZURÜCKSCHAUT. Alles andere im Operator Center beantwortet „was ist jetzt
+   zu tun"; hier steht „wie ist es gelaufen". Das ist der Grund für ihre
+   Ruhe: Wer sie öffnet, hat Zeit. Nichts blinkt, nichts warnt, nichts
+   drängt.
+
+   SIE ERFINDET KEINE GESTALTUNG. Fläche, Haarlinie, Serifenzahl, gesperrte
+   Versalienbeschriftung, Porzellangrund, Champagner als einziger Akzent —
+   alles davon steht bereits im Dashboard und in den Listenseiten. Was hier
+   dazukommt, sind vier Dinge, die es vorher nicht gab: eine Zeitraumleiste,
+   eine Balkenkurve, zwei nebeneinanderliegende Tafeln und ein
+   Vergleichsblock. Jedes davon ist aus den vorhandenen Teilen gebaut.
+
+   KEIN DIAGRAMMWALD. Eine Kurve, zwei liegende Balkenreihen — mehr nicht.
+   Die Ringe des Tagesüberblicks werden hier NICHT wiederholt: Zwei
+   Kreisdiagramme auf der Nachbarseite und zwei weitere hier wären
+   Verzierung, und Verzierung ist auf einer Seite mit Geldbeträgen das
+   Gegenteil von Vertrauen.
+
+   KEINE FARBE ALS EINZIGE AUSSAGE. Jede Steigerung trägt einen Pfeil UND
+   ein Wort UND ein Vorzeichen. Auf einem verwaschenen Tresenbildschirm
+   bleibt jede Angabe dieser Seite vollständig lesbar.
+   ========================================================================== */
+
+/* Derselbe flache, navy-getönte Schatten wie auf dem Dashboard. Er steht auf
+   dem Body und nicht in :root, damit die übrigen Oberflächen ihn nicht erben. */
+.adminseite--analytics {
+  --schatten: 0 1px 2px rgba(10, 33, 57, .05), 0 8px 20px -14px rgba(10, 33, 57, .35);
+}
+
+/* --- Kopf --- */
+
+.auswertkopf { margin: 0 0 1rem; }
+
+/* KICKER, ÜBERSCHRIFT UND VORSPANN STEHEN NICHT MEHR HIER. Sie sind die
+   Rollen 1 bis 3 des gemeinsamen Adminsystems und tragen dieselben Maße wie
+   der Kopf jeder anderen Seite — das war der Unterschied, an dem man dieser
+   Seite ansah, dass sie zuletzt dazukam.
+
+   DIE ÜBERSCHRIFT IST WEITERHIN DER ZEITRAUM und nicht das Wort
+   „Auswertung". Wer hier ankommt, weiß aus der Navigation, wo er ist; was er
+   nicht weiß, ist, worüber die Zahlen darunter sprechen. */
+.auswertkopf__vorspann { margin: .4rem 0 0; }
+
+/* --- Zeitraumleiste --- */
+
+/* Alles, was man EINSTELLT, steht in diesem einen Feld; alles darunter ist
+   Anzeige. Derselbe beige Grund wie die Tagesleiste des Dashboards — er
+   trennt die beiden Rollen, ohne eine Farbe hinzuzufügen. */
+.zeitleiste {
+  display: grid;
+  gap: .65rem;
+  margin: 0 0 1.75rem;
+  padding: .7rem .75rem;
+  background: var(--elfenbein);
+  border: 1px solid var(--leinen);
+  border-radius: var(--radius);
+}
+
+/* FÜNF ECHTE LINKS. Sie umbrechen, statt zu schrumpfen: Auf 375px passen
+   drei nebeneinander, die restlichen zwei fallen in die zweite Zeile — das
+   ist lesbar. Fünf geschrumpfte Beschriftungen wären es nicht. */
+.zeitwahl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+}
+
+.zeitwahl__ziel {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 .95rem;
+  border: 1px solid rgba(197, 154, 82, .45);
+  border-radius: var(--radius);
+  background: #fff;
+  font-size: var(--tp-vorspann);
+  font-weight: 600;
+  color: var(--navy);
+  text-decoration: none;
+}
+
+.zeitwahl__ziel:hover { background: var(--elfenbein); }
+
+.zeitwahl__ziel:focus-visible {
+  outline: 2px solid var(--champagner-text);
+  outline-offset: 2px;
+}
+
+/* Der aktive Zustand trägt zusätzlich aria-current="page". Das Navy ist die
+   zweite Auskunft und nicht die einzige. */
+.zeitwahl__ziel--aktiv {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--porzellan);
+}
+
+.zeitwahl__ziel--aktiv:hover { background: var(--navy-tief); }
+
+/* DIE FREIE SPANNE KLAPPT NICHT AUF. Ein Feld, das erst nach einem Klick
+   erscheint, bräuchte ein Skript — und ohne Skript wäre die freie Spanne
+   dann unerreichbar. Sie ist stattdessen die zweite Zeile derselben Leiste:
+   sichtbar, ruhig, mit den Grenzen des gewählten Zeitraums vorbelegt. */
+.zeitwahl__spanne {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .5rem;
+  margin: 0;
+  padding-top: .55rem;
+  border-top: 1px solid rgba(197, 154, 82, .35);
+}
+
+.zeitwahl__feld {
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+/* Der Feldname ist Rolle 13 — ruhig und ohne Versalien. Ein Feld heißt
+   „Von" und nicht „VON": Es wird gelesen und nicht überflogen. */
+.zeitwahl__feld input {
+  min-height: var(--tap);
+  padding: 0 .6rem;
+  border: 1px solid rgba(10, 33, 57, .35);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--text);
+  font: inherit;
+}
+
+.zeitwahl__feld input:focus-visible {
+  outline: 2px solid var(--champagner-text);
+  outline-offset: 1px;
+}
+
+.zeitwahl__senden { flex: 0 0 auto; min-height: var(--tap); }
+
+/* Der ruhige Leerzustand der ganzen Seite. Kein Warnzeichen, kein roter
+   Grund: Ein Zeitraum ohne Bestellungen ist kein Fehler. */
+.auswertleer {
+  margin: 0 0 1.75rem;
+  padding: 1.1rem 1.15rem;
+  max-width: 58ch;
+  background: #fff;
+  border: var(--spur);
+  border-left: 3px solid var(--champagner);
+  border-radius: var(--radius);
+  font-size: var(--tp-vorspann);
+  line-height: var(--lh-text);
+  color: var(--text-leise);
+}
+
+/* --- Die sechs Zahlen --- */
+
+/* DIE KENNZAHLENWAND IST EINE TAFEL, KEINE SAMMLUNG VON KÄSTCHEN — dieselbe
+   Bauart und derselbe Befund wie auf dem Dashboard: Das GITTER trägt Rand,
+   Radius und Schatten, die Zellen sind weiß, und der eine Pixel zwischen
+   ihnen ist die Trennlinie. Eine Linie ZWISCHEN zwei Feldern statt sechs
+   Rändern UM sechs Karten. */
+.auswertwand { margin: 0 0 1.75rem; }
+
+.auswertwand__gitter {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background: var(--leinen);
+  border: var(--spur);
+  border-radius: var(--radius);
+  box-shadow: var(--schatten);
+  /* Ohne das säßen weiße Rechtecke in den runden Ecken der Tafel. */
+  overflow: hidden;
+}
+
+@media (min-width: 480px) {
+  .auswertwand__gitter { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* AB DESKTOP DREI SPALTEN UND ZWEI REIHEN — genau die Aufteilung, die der
+   Betrieb im Kopf hat: oben die drei Mengen (Umsatz, Bestellungen, Stück),
+   unten die drei Ableitungen (Durchschnitt, offen, Deckungsbeitrag). Vier
+   Spalten hätten die sechste Zelle allein in eine zweite Reihe geschoben. */
+@media (min-width: 780px) {
+  .auswertwand__gitter { grid-template-columns: repeat(3, 1fr); }
+}
+
+.auswertkarte {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: .95rem 1.1rem 1rem;
+  background: #fff;
+}
+
+@media (min-width: 480px) {
+  .auswertkarte { min-height: 8.5rem; padding: 1.05rem 1.15rem 1.1rem; }
+}
+
+/* Beschriftung und Zahl sind die Rollen 7 und 8 — dieselben, die die
+   Kennzahlenwand der Übersicht trägt. Auch die eine Stufe für den Umsatz
+   („--haupt") steht dort und nicht hier: Es ist dieselbe Rangfolge und
+   deshalb dieselbe Regel.
+
+   Was hier bleibt, ist der Abstand der Zahl zu ihrer Beschriftung. */
+.auswertwert { margin: .4rem 0 0; }
+
+/* DER SATZ STATT DER ZAHL — „Noch nicht vollständig".
+
+   Er steht dort, wo sonst der Betrag steht, aber nicht in dessen Größe: Ein
+   Satz in der Größe eines Betrags wäre ein Ausrufezeichen, und eine fehlende
+   Kostenangabe ist kein Notfall, sondern eine Aufgabe. Er darf zudem
+   umbrechen — im Gegensatz zu jedem Betrag dieser Seite. */
+.auswertkarte--offen .auswertwert {
+  font-family: var(--admin-sans);
+  font-size: var(--tp-unter);
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: normal;
+  color: var(--text-leise);
+}
+
+/* Der Unterschied zum Vorzeitraum: Pfeil und Wort, nie die Farbe allein. */
+.auswertdelta {
+  display: flex;
+  align-items: baseline;
+  gap: .3rem;
+  margin: .35rem 0 0;
+  font-size: var(--tp-hilfe);
+  line-height: 1.35;
+  font-weight: 600;
+}
+
+.auswertdelta__pfeil { font-size: .9rem; line-height: 1; }
+
+/* Grün und Rot sind gedeckt und stammen aus der Palette der Marke — es sind
+   dieselben beiden Töne, die das System für Erfolg und Fehler verwendet.
+   Sie verstärken den Pfeil und das Wort; sie ersetzen sie nie. */
+.auswertdelta--up { color: var(--erfolg); }
+.auswertdelta--down { color: var(--fehler); }
+.auswertdelta--flat,
+.auswertdelta--new,
+.auswertdelta--none { color: var(--text-leise); font-weight: 500; }
+
+/* Der Hilfstext sitzt am Fuß der Zelle. Damit stehen die Hilfstexte einer
+   Reihe auf einer Linie, statt jeder unter seiner Zahl zu hängen. */
+.auswerthinweis {
+  margin: .45rem 0 0;
+  padding-top: .3rem;
+}
+
+@media (min-width: 480px) {
+  .auswerthinweis { margin-top: auto; padding-top: .55rem; }
+}
+
+/* DIE EINZIGE ZELLE, DIE ZU ETWAS AUFFORDERT — und sie tut es nur, wenn es
+   etwas zu tun gibt. Drei sehr leise Zeichen: ein fast weißer warmer Grund,
+   eine schmale Kante an der Vorderkante, die Beschriftung im dunklen Ton.
+   DIE ZAHL BLEIBT NAVY wie die fünf anderen — was Aufmerksamkeit bekommt,
+   ist das FELD, nicht der Betrag, als wäre er falsch. Der Streifen ist ein
+   innerer Schatten und kein Rand: Ein 3px-Rand verschöbe den Inhalt dieser
+   einen Zelle gegen die fünf anderen. */
+.auswertkarte--betont {
+  background: var(--fehler-grund);
+  box-shadow: inset 3px 0 0 rgba(141, 43, 28, .5);
+}
+
+.auswertkarte--betont .auswertlabel { color: var(--fehler); }
+
+/* --- Die Kurve --- */
+
+.kurventafel .tafel__kopf { align-items: center; }
+
+/* Der Umschalter zwischen den beiden Reihen. Zwei echte Links, im Tafelkopf
+   und nicht über der Grafik: Er gehört zur Frage „was zeigt diese Tafel" und
+   damit neben ihren Titel. Kleiner als die Zeitraumleiste — er wählt eine
+   Reihe, keinen Zeitraum. */
+.metrikwahl { display: flex; gap: .3rem; }
+
+.metrikwahl__ziel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.1rem;
+  padding: 0 .7rem;
+  border: 1px solid var(--leinen);
+  border-radius: 999px;
+  font-size: var(--tp-hilfe);
+  font-weight: 600;
+  color: var(--text-leise);
+  text-decoration: none;
+}
+
+.metrikwahl__ziel:hover { color: var(--navy); border-color: rgba(10, 33, 57, .35); }
+
+.metrikwahl__ziel:focus-visible {
+  outline: 2px solid var(--champagner-text);
+  outline-offset: 2px;
+}
+
+.metrikwahl__ziel--aktiv {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: var(--porzellan);
+}
+
+.metrikwahl__ziel--aktiv:hover { background: var(--navy-tief); color: var(--porzellan); }
+
+.kurve { padding: 1.15rem 1.15rem 1.25rem; }
+
+/* Die Skala steht als ZAHL da und nicht als Achse mit fünf Zwischenwerten.
+   In einer 180px hohen Fläche auf dem Telefon wären Gitterlinien und
+   Zwischenmarken Rauschen; der größte Wert genügt, um jeden Balken
+   einzuordnen. */
+.kurve__skala {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .2rem .75rem;
+  margin: 0 0 .75rem;
+  padding-bottom: .5rem;
+  border-bottom: var(--spur);
+}
+
+/* Skalenwert und Skalenwort sind die Rollen 9 und 7 — die Zahl in einer
+   Zeile und ihre Beschriftung. */
+.kurve__skala-wert { color: var(--navy); }
+.kurve__skala-wort { color: var(--text-leise); }
+
+/* EIN SVG JE BALKEN UND NICHT EINES FÜR ALLE. Ein einziges SVG müsste seine
+   Beschriftungen selbst zeichnen, und die schrumpften mit der Grafik — auf
+   375px unlesbar. Hier ist jede Spalte eine Rasterzelle; die Texte sind
+   echtes HTML in echter Schriftgröße, und nur das Rechteck skaliert.
+
+   ZWEI RASTER ÜBEREINANDER — Balken oben, Marken unten — und beide mit
+   derselben Spaltenregel. Der Grund ist die Grundlinie: Sie muss unter der
+   ganzen Fläche durchlaufen und nicht unter jedem einzelnen Balken enden.
+   Läge sie an der Säule, verschwände sie mit ihr, sobald ein Balken schmaler
+   ist als seine Spalte — und genau das ist seit der Breitenbegrenzung unten
+   der Normalfall. */
+.kurve__saeulen,
+.kurve__achse {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kurve__saeulen {
+  align-items: end;
+  border-bottom: 1px solid rgba(10, 33, 57, .35);
+}
+
+.kurve__spalte {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: end;
+  min-width: 0;
+  text-align: center;
+}
+
+.kurve__wert {
+  font-size: var(--tp-mikro);
+  line-height: 1.2;
+  color: var(--text-leise);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  padding-bottom: .25rem;
+}
+
+/* AUF DEM TELEFON KEINE ZAHLEN ÜBER DEN BALKEN. Sieben Beträge in je 45px
+   Spaltenbreite überlappen; zwölf erst recht. Die Zahl geht dabei nicht
+   verloren — sie steht in der Tabelle darunter, die ein Screenreader
+   vorliest, und die Skala über der Fläche nennt weiterhin den größten Wert. */
+@media (max-width: 599px) {
+  .kurve__wert { display: none; }
+}
+
+/* DIE BALKENBREITE IST GEDECKELT, und das ist ein Befund aus dem Browser:
+   Ein Monat, der am Ersten geöffnet wird, hat EINEN Tag — und ein Balken,
+   der eine ganze Spaltenbreite füllt, war eine 700px breite navy Wand mit
+   einem Datum darunter. Eine Kurve mit wenigen Punkten soll aussehen wie
+   eine Kurve mit wenigen Punkten und nicht wie ein Fehler.
+
+   Bei 31 Tagen greift die Grenze nicht: Dort ist die Spalte selbst schmaler
+   als 3rem, und die Balken stehen dicht an dicht. */
+.kurve__saeule {
+  display: block;
+  width: 100%;
+  max-width: 3rem;
+  margin: 0 auto;
+  height: 150px;
+}
+
+@media (min-width: 780px) {
+  .kurve__saeule { height: 200px; }
+}
+
+/* Eckige Balken sind hier kein Stilwille, sondern Physik:
+   `preserveAspectRatio="none"` zieht den 10 × 100 großen Kasten auf die
+   Spaltenbreite, und eine Rundung würde dabei zum Ei. Ein Rechteck ohne
+   Strich verzerrt nicht sichtbar. */
+.kurve__balken { fill: var(--navy); }
+
+.kurve__spalte:hover .kurve__balken { fill: var(--blau-hell); }
+
+.kurve__achse {
+  margin-top: .1rem;
+  padding-top: .45rem;
+  /* Alle Marken sind absolut gesetzt (siehe unten) und tragen deshalb keine
+     Höhe bei. Diese eine Zeile hält der Achse ihren Platz frei. */
+  min-height: 1.3rem;
+}
+
+.kurve__marke {
+  position: relative;
+  min-width: 0;
+  font-size: var(--tp-mikro);
+  line-height: 1.2;
+  color: var(--text-leise);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* DIE MARKE WIRD ABSOLUT ZENTRIERT UND NICHT MIT `text-align`.
+
+   Ein Befund aus dem Browser, und ein überraschender: Bei 31 Tagen ist eine
+   Spalte auf 375px acht Pixel breit, die Marke „01.09." aber 33 — die Zeile
+   ist also breiter als ihr Kasten. In diesem Fall hat `text-align` KEINE
+   Wirkung mehr: Der Überhang läuft immer nach rechts, gleich ob zentriert
+   oder rechtsbündig gesetzt. Die letzte Marke ragte deshalb aus der Tafel
+   heraus und wurde abgeschnitten.
+
+   `left: 50%` plus `translateX(-50%)` zentriert die Marke auch dann noch,
+   wenn sie breiter ist als ihre Spalte. Der Überhang verteilt sich damit auf
+   beide Seiten — je rund 12px — und bleibt innerhalb der 18px Innenabstand
+   der Tafel. */
+.kurve__markentext {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* NICHT JEDE MARKE WIRD BESCHRIFTET. Bei 31 Tagen stünden 31 Datumsangaben
+   nebeneinander und überlappten auf jeder Breite. Die Zwischenmarken bleiben
+   im Quelltext stehen und behalten ihren Platz — `visibility` statt
+   `display`, damit die Achse ihre Höhe nicht verliert —, sichtbar ist jede
+   fünfte und die letzte. Die vollständige Beschriftung steht in der Tabelle
+   darunter, die ein Screenreader vorliest. */
+.kurve__marke--leise { visibility: hidden; }
+
+/* --- Zwei Tafeln nebeneinander --- */
+
+/* AB TABLET ZWEI SPALTEN. Top-Produkte und Top-Kunden beantworten dieselbe
+   Art Frage und werden nebeneinander gelesen, nicht nacheinander. Auf dem
+   Telefon stehen sie untereinander — in dieser Reihenfolge: erst was, dann
+   wer. */
+.auswertpaar {
+  display: grid;
+  gap: 1.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.auswertpaar > .tafel { margin-bottom: 0; }
+
+@media (min-width: 780px) {
+  .auswertpaar { grid-template-columns: 1fr 1fr; }
+}
+
+/* Die Toplisten benutzen die vorhandene .topliste des Dashboards und
+   erweitern sie um eine vierte Spalte: den Betrag. Er steht ganz rechts, wo
+   auf jeder Liste dieses Systems der Wert steht. */
+.topliste__zeile--zwei {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: .5rem .9rem;
+}
+
+@media (min-width: 480px) {
+  .topliste__zeile--zwei { grid-template-columns: auto minmax(0, 1fr) auto auto; }
+}
+
+/* Die Einheit beim Produkt und die Bestellzahl beim Kunden: die Erklärung
+   der Zeile, eine Stufe leiser und unter dem Namen. */
+.topliste__zusatz {
+  display: block;
+  margin-top: .1rem;
+}
+
+.topliste__betrag {
+  color: var(--navy);
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Auf dem Telefon steht der Betrag unter Menge und Name in derselben
+   Rasterzeile — er bekommt die zweite Zeile der Spalte. */
+.topliste__zeile--zwei .topliste__betrag { grid-column: 2 / -1; }
+
+@media (min-width: 480px) {
+  .topliste__zeile--zwei .topliste__betrag { grid-column: auto; min-width: 5.5rem; }
+}
+
+/* --- Vergleich --- */
+
+.vergleich {
+  display: grid;
+  gap: 1px;
+  background: var(--leinen);
+}
+
+@media (min-width: 780px) {
+  .vergleich { grid-template-columns: repeat(3, 1fr); }
+}
+
+.vergleich__karte { padding: 1.1rem 1.15rem 1.2rem; background: #fff; }
+
+.vergleich__titel { margin: 0 0 .7rem; color: var(--text-leise); }
+
+/* Zwei Zeilen, zwei Zeiträume — und beide TRAGEN IHREN NAMEN. „12.480 €"
+   gegen „11.510 €" ohne Beschriftung wären zwei Zahlen ohne Aussage.
+
+   WERT ÜBER ETIKETT UND NICHT DANEBEN. Nebeneinander gesetzt brach
+   „September 2026 (bis heute)" im Browser auf zwei Zeilen und schob die Zahl
+   aus der Mitte ihrer eigenen Zeile — ein Befund aus dem Browser. Gestapelt
+   stehen die beiden Beträge zudem UNTEREINANDER und damit dort, wo man zwei
+   Zahlen vergleicht. */
+.vergleich__zeile {
+  display: block;
+  margin: 0 0 .7rem;
+}
+
+.vergleich__wert {
+  color: var(--navy);
+  white-space: nowrap;
+}
+
+/* Die frühere Zahl ist die Bezugsgröße und nicht die Antwort: kleiner
+   (Rolle 9 statt 9b), leiser, aber vollständig lesbar. */
+.vergleich__zeile--vorher .vergleich__wert { color: var(--text-leise); }
+
+.vergleich__wann {
+  display: block;
+  margin-top: .1rem;
+  font-size: var(--tp-hilfe);
+  line-height: 1.35;
+  color: var(--text-leise);
+}
+
+.vergleich__unterschied {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .1rem .5rem;
+  margin: .8rem 0 0;
+  padding-top: .7rem;
+  border-top: var(--spur);
+  font-weight: 700;
+  font-size: var(--tp-vorspann);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.vergleich__prozent { font-weight: 600; font-size: var(--tp-hilfe); }
+
+.vergleich__unterschied--up { color: var(--erfolg); }
+.vergleich__unterschied--down { color: var(--fehler); }
+.vergleich__unterschied--flat,
+.vergleich__unterschied--new,
+.vergleich__unterschied--none {
+  color: var(--text-leise);
+  font-weight: 600;
+  font-size: var(--tp-hilfe);
+}
+
+/* --- Aufteilungen --- */
+
+/* WAAGERECHTE BALKEN UND KEINE RINGE. Zwei Ringe stehen bereits auf der
+   Übersicht; ein drittes und viertes Kreisdiagramm wären Zierrat. Ein
+   liegender Balken sagt dasselbe auf einem Achtel der Höhe und lässt sich in
+   der Breite eines Telefons zu Ende lesen. */
+.auswertpaar--leise { margin-bottom: 0; }
+
+.anteile { margin: 0; padding: 0; list-style: none; }
+
+.anteil { padding: .85rem 1.15rem; border-bottom: var(--spur); }
+.anteil:last-child { border-bottom: 0; }
+
+.anteil__kopf,
+.anteil__fuss {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  margin: 0;
+}
+
+.anteil__name { font-size: var(--tp-vorspann); color: var(--text); min-width: 0; overflow-wrap: anywhere; }
+
+.anteil__wert { color: var(--navy); white-space: nowrap; }
+
+.anteil__grafik {
+  display: block;
+  width: 100%;
+  height: 8px;
+  margin: .45rem 0 .35rem;
+}
+
+.anteil__spur { fill: var(--leinen); }
+.anteil__balken { fill: var(--navy); }
+
+.anteil__quote {
+  font-size: var(--tp-hilfe);
+  font-weight: 700;
+  color: var(--text-leise);
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+.anteil__anzahl { color: var(--text-leise); }
+
+/* --- Breiten --- */
+
+/* Dieselbe 60rem-Spalte wie das Dashboard, und aus demselben Grund: Die
+   Seite trägt zwei nebeneinanderliegende Tafeln und eine Kurve mit bis zu 31
+   Marken. In 44rem hätten die beiden Toplisten je 20rem — zu wenig für einen
+   Kundennamen samt Betrag. 60rem sind immer noch eine SPALTE und keine
+   Datenwüste über die ganze Fensterbreite; Kopf, Inhalt und Abmeldung
+   richten sich gemeinsam an ihr aus. */
+/* NUR DIE INHALTSSPALTE, NICHT DER KOPF. Die Dashboardregel setzt zusätzlich
+   `padding-inline` am Kopf, damit Marke und Inhalt eine gemeinsame linke
+   Kante haben. Für die Auswertung wäre das ein Rückschritt: Seit die
+   Navigation SIEBEN Einträge führt, bleiben in der 60rem-Spalte keine 400px
+   für sie übrig, und sie bricht in eine zweite Zeile um — im Browser
+   nachgemessen. Der Kopf ist eine Leiste über die volle Breite und regelt
+   seinen Rand selbst (.admin-shell); die Spalte darunter bleibt eine Spalte. */
+@media (min-width: 780px) {
+  .adminseite--analytics .admin { max-width: 60rem; }
+}
+
+/* --- Bewegung --- */
+
+/* Die einzige Bewegung der Seite ist der Farbwechsel eines Balkens unter dem
+   Zeiger. Sie ist kurz und sie verschwindet, wenn das Betriebssystem darum
+   bittet. */
+@media (prefers-reduced-motion: no-preference) {
+  .kurve__balken { transition: fill .12s ease-out; }
+  .zeitwahl__ziel,
+  .metrikwahl__ziel { transition: background-color .12s ease-out, color .12s ease-out; }
+}
+
+/* --- Druck --- */
+
+/* Eine ausgedruckte Auswertung ist denkbar — die Bedienelemente darauf sind
+   es nicht. */
+@media print {
+  .zeitleiste { display: none !important; }
+  .metrikwahl { display: none !important; }
+  .auswertpaar { grid-template-columns: 1fr 1fr; }
+  .tafel { break-inside: avoid; }
 }

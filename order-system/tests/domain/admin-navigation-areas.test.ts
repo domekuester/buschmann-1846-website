@@ -1,16 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { renderAdminShell, type AdminArea } from '../../src/ui/admin-page-html';
 
-const AREAS: readonly AdminArea[] = ['overview', 'orders', 'production', 'catalog', 'customers', 'settings'];
+const AREAS: readonly AdminArea[] = [
+  'overview', 'orders', 'production', 'catalog', 'customers', 'analytics', 'settings',
+];
 
 describe('genehmigte Admin-Navigation', () => {
-  it('führt genau die sechs Operatorbereiche in der freigegebenen Reihenfolge', () => {
+  it('führt genau die sieben Operatorbereiche in der freigegebenen Reihenfolge', () => {
     const html = renderAdminShell('Test', { loginIdentifier: 'admin@example.test', csrfToken: 'csrf' }, 'overview', '<h1>Test</h1>');
     const nav = /<nav class="adminnav"[^>]*>([\s\S]*?)<\/nav>/.exec(html)?.[1] ?? '';
     expect([...nav.matchAll(/<a [^>]*>([^<]+)<\/a>/g)].map((match) => match[1]?.replace('&amp;', '&'))).toEqual([
-      'Übersicht', 'Bestellungen', 'Produktion', 'Angebot', 'Kunden', 'Einstellungen',
+      'Übersicht', 'Bestellungen', 'Produktion', 'Angebot', 'Kunden', 'Auswertung', 'Einstellungen',
     ]);
-    for (const href of ['/admin', '/admin/orders', '/admin/production', '/admin/catalog', '/admin/customers', '/admin/settings']) {
+    for (const href of ['/admin', '/admin/orders', '/admin/production', '/admin/catalog', '/admin/customers', '/admin/auswertung', '/admin/settings']) {
       expect(nav).toContain(`href="${href}"`);
     }
     expect(nav).not.toContain('verknüpfen');

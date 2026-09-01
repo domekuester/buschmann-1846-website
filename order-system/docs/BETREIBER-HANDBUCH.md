@@ -4,7 +4,7 @@
 Dieses Heft beschreibt, was Sie im Bestellsystem sehen und tun können.
 Es ist nach den Seiten aufgebaut, die oben in der Navigation stehen.
 
-Wenn Sie nur eine Seite lesen: **Kapitel 13, „Ein typischer Arbeitstag"**.
+Wenn Sie nur eine Seite lesen: **Kapitel 14, „Ein typischer Arbeitstag"**.
 
 ---
 
@@ -377,7 +377,113 @@ Kundenansicht, die einen Kostenwert enthält.
 
 ---
 
-## 12 · Was tun bei einem Fehler?
+## 12 · Auswertung
+
+### Wofür die Seite da ist
+
+**Auswertung** in der Kopfzeile. Sie beantwortet acht Fragen — und keine
+neunte:
+
+* Wie viel haben wir verkauft?
+* Mehr oder weniger als vorher?
+* Wie viele Bestellungen hatten wir?
+* Was verkauft sich am besten?
+* Welche Kunden bestellen am meisten?
+* Wie viel Geld ist noch offen?
+* Sind die Kosten vollständig?
+* Was bleibt ungefähr übrig?
+
+Das ist **keine Buchhaltung**. Keine Steuer, keine Rechnung, kein Export.
+Für den Steuerberater bleibt alles so, wie es bisher war.
+
+### Zeitraum auswählen
+
+Oben stehen fünf Schalter: **Heute · Woche · Monat · Jahr · Zeitraum**.
+Anklicken genügt, die Seite lädt sofort neu.
+
+Für einen eigenen Abschnitt: unter den Schaltern **Von** und **Bis**
+ausfüllen und auf **Anwenden** klicken.
+
+Zwei Dinge, die man einmal wissen muss:
+
+* **Gezählt wird nach Liefer- und Abholtag.** Eine Bestellung, die am
+  Freitag hereinkommt und am Dienstag abgeholt wird, zählt zum Dienstag —
+  weil Sie am Dienstag gebacken und übergeben haben.
+* **Die Seite blickt nur zurück.** Ein laufender Monat wird bis heute
+  gezählt; das steht in der Überschrift („September 2026 (bis heute)").
+  Bestellungen für kommende Tage sehen Sie in der **Übersicht** und in der
+  **Produktion**.
+
+### Die sechs Zahlen oben
+
+| Zahl | Was sie sagt |
+|---|---|
+| **Bestellumsatz** | Alles, was in diesem Zeitraum bestellt wurde. Ohne stornierte Bestellungen. |
+| **Bestellungen** | Wie viele es waren. |
+| **Verkaufte Stück** | Wie viele Kuchen, Bleche, Ringe. |
+| **Ø pro Bestellung** | Der Umsatz geteilt durch die Zahl der Bestellungen. |
+| **Noch offen** | Was davon noch nicht bezahlt ist. |
+| **Deckungsbeitrag** | Was nach den bekannten Herstellkosten übrig bleibt. |
+
+Unter den ersten drei Zahlen steht ein Pfeil mit einem Satz: „19,2 % mehr
+als im Vormonat". Verglichen wird immer mit dem gleich langen Abschnitt
+davor — am 15. September also der 1.–15. September gegen den
+1.–15. August. Was verglichen wird, steht auch oben unter der Überschrift.
+
+Gibt es nichts zu vergleichen, steht **„Neu"** oder **„Noch keine
+Vorjahresdaten"** da. Nie eine Prozentzahl, die es gar nicht gibt.
+
+### Wenn Kosten fehlen
+
+Steht beim Deckungsbeitrag **„Noch nicht vollständig"** und darunter „Bei 3
+Positionen fehlen die Herstellkosten", dann fehlt bei mindestens einem
+verkauften Produkt der Kostenwert.
+
+Nachtragen können Sie ihn unter **Sortiment & Preise** (siehe Kapitel 11).
+Danach rechnet die Auswertung von selbst.
+
+Das System rechnet lieber gar nichts als etwas Falsches — dieselbe Regel
+wie im Dashboard.
+
+### So hat es sich entwickelt
+
+Der Balken darunter zeigt jeden Tag (oder jeden Monat, wenn Sie ein Jahr
+gewählt haben). Mit den zwei kleinen Schaltern rechts oben schalten Sie
+zwischen **Bestellumsatz** und **Bestellungen** um.
+
+### Top-Produkte und Top-Kunden
+
+Zwei Listen, jeweils die sechs besten, sortiert nach Bestellumsatz.
+
+Bei den Produkten steht der Name so da, wie er zum Zeitpunkt der Bestellung
+hieß, und der Preis so, wie er damals berechnet wurde. Eine spätere
+Preisänderung schreibt vergangene Monate nicht um.
+
+**Geänderte und stornierte Bestellungen sind überall berücksichtigt.** Haben
+Sie eine Menge von 5 auf 3 gesetzt, zählen 3. Haben Sie eine Position
+storniert, zählt sie gar nicht mehr.
+
+### Vergleich
+
+Drei Karten mit beiden Zeiträumen untereinander und dem Unterschied darunter
+— in Euro und in Prozent. Grün heißt mehr, rot heißt weniger; das Wort und
+der Pfeil stehen immer daneben.
+
+### Ganz unten
+
+**Gastronomie und Privatkunden** sowie **Lieferung und Abholung** — zwei
+ruhige Balkenreihen, die zeigen, woher der Umsatz kommt. Ein Kunde ohne
+Preisgruppe erscheint als „Ohne Preisgruppe" und wird nicht heimlich
+mitgezählt.
+
+### Wenn nichts da ist
+
+Ein Zeitraum ohne Bestellungen sagt das in einem Satz. Keine Fehlermeldung,
+keine leeren Diagramme — es war schlicht nichts los.
+
+---
+
+## 13 · Was tun bei einem Fehler?
 
 ### Ein Kunde sagt, er kann nicht bestellen
 
@@ -422,7 +528,7 @@ ist ohne Schaden zu korrigieren beziehungsweise zu ergänzen.
 
 ---
 
-## 13 · Ein typischer Arbeitstag
+## 14 · Ein typischer Arbeitstag
 
 ### Morgens, vor der Backstube
 
@@ -458,7 +564,7 @@ ist ohne Schaden zu korrigieren beziehungsweise zu ergänzen.
 
 ---
 
-## 14 · Ihre Daten
+## 15 · Ihre Daten
 
 **Die Preise gehören Ihrem Betrieb.** Sie legen fest, was ein Kunde zahlt,
 und Sie legen fest, wer zu welcher Preisgruppe gehört. Es gibt keine

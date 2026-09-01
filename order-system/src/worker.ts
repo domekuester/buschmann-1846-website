@@ -5,6 +5,7 @@ import { adminProductionListPage } from './http/admin-production-list-page';
 import { adminPickupListPage } from './http/admin-pickup-list-page';
 import { adminCatalogPage } from './http/admin-catalog-page';
 import { adminCustomersPage } from './http/admin-customers-page';
+import { adminAnalyticsPage } from './http/admin-analytics-page';
 import {
   adminCustomerDetailPage,
   matchCustomerDetailPath,
@@ -278,6 +279,22 @@ export default {
           return methodNotAllowed('GET', privateHeaders());
         }
         return await adminPickupListPage(env.DB, config, request, now);
+      }
+
+      /**
+       * DIE AUSWERTUNG — der siebte Adminbereich.
+       *
+       * Sie steht als eigener Pfad und nicht als weiterer `view`-Parameter
+       * des Dashboards: Sie beantwortet eine andere Frage (was war), hat
+       * einen eigenen Zeitraumbegriff und eigene Abfragen. Ein
+       * `/admin?view=analytics` wäre ein Dashboard, das je nach Parameter
+       * eine völlig andere Seite ist.
+       */
+      if (pathname === '/admin/auswertung') {
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          return methodNotAllowed('GET', privateHeaders());
+        }
+        return await adminAnalyticsPage(env.DB, config, request, now);
       }
 
       if (pathname === '/admin/catalog') {

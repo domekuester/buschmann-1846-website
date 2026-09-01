@@ -962,14 +962,16 @@ describe('Struktur und Zugänglichkeit', () => {
   it('baut keine Attrappen-Navigation', async () => {
     const text = await alsAdmin(`/admin/production?date=${TAG}`);
 
-    // „Dashboard" stand bis Phase 5D in dieser Liste. Seit Phase 6A gibt es
-    // die Seite wirklich — und genau das macht den Eintrag zulässig: Er führt
-    // auf eine Route, die antwortet. Der Test prüft deshalb beides.
+    // „Dashboard" stand bis Phase 5D in dieser Liste, „Auswertung" bis zur
+    // Phase Business Analytics. Beide Seiten gibt es inzwischen wirklich —
+    // und genau das macht den Eintrag zulässig: Er führt auf eine Route, die
+    // antwortet. Der Test prüft deshalb beides.
     expect(text).toContain('href="/admin"');
     expect(text).toContain('href="/admin/orders"');
+    expect(text).toContain('href="/admin/auswertung"');
     expect(text).toContain('href="/admin/production" aria-current="page"');
 
-    for (const verboten of ['Auswertung', 'Analytics', 'Kunden verwalten', 'Bestellprodukte verknüpfen']) {
+    for (const verboten of ['Analytics', 'Kunden verwalten', 'Bestellprodukte verknüpfen']) {
       expect(text).not.toContain(verboten);
     }
   });

@@ -222,6 +222,23 @@ export function formatGermanDayMonthYear(day: string): string {
   return GERMAN_DAY_MONTH_YEAR.format(pruefeTag(day));
 }
 
+/**
+ * 'JJJJ-MM-TT' als Monat mit Jahr: „September 2026".
+ *
+ * Die Überschrift eines Auswertungsmonats. Der Tag spielt keine Rolle — jeder
+ * Tag des Monats ergibt dieselbe Zeichenkette, und genau das macht sie als
+ * Etikett eines Zeitraums brauchbar.
+ */
+export function formatGermanMonthYear(day: string): string {
+  return GERMAN_MONTH_YEAR.format(pruefeTag(day));
+}
+
+const GERMAN_MONTH_YEAR = new Intl.DateTimeFormat('de-DE', {
+  timeZone: 'UTC',
+  month: 'long',
+  year: 'numeric',
+});
+
 const GERMAN_NUMERIC_DATE = new Intl.DateTimeFormat('de-DE', {
   timeZone: 'UTC',
   day: '2-digit',
